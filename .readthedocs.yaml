@@ -6,6 +6,5 @@ build:
     python: "3.12"
   commands:
     - pip install uv
-    - uv sync --group docs
-    - uv pip install -e ".[yaml,json5,toml,secure]"
-    - uv run mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
+    - uv pip install --system -e ".[yaml,json5,toml,secure]" --group docs
+    - python -m mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
