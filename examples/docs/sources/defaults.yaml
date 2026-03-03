@@ -1,0 +1,6 @@
+host: "localhost"
+port: 3000
+debug: false
+workers: 1
+tags:
+  - "default"

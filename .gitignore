@@ -61,3 +61,4 @@ htmlcov/
 .claude
 uv.lock
 tmp/
+site/

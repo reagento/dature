@@ -6,7 +6,7 @@ import sys
 import pytest
 
 examples_dir = pathlib.Path(__file__).parent.parent / "examples"
-example_scripts = list(examples_dir.glob("*.py"))
+example_scripts = sorted(examples_dir.rglob("*.py"))
 
 
 @pytest.mark.parametrize("script_path", example_scripts, ids=lambda p: p.name)

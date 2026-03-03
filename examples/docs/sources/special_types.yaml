@@ -1,0 +1,4 @@
+api_url: "https://api.example.com"
+max_upload: "1.5 GB"
+card_number: "4111111111111111"
+token: "aGVsbG8gd29ybGQ="

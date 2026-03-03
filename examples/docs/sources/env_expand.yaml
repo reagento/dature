@@ -1,0 +1,4 @@
+api_url: "$BASE_URL/api/v1"
+database_url: "${DATABASE_URL:-postgres://localhost:5432/dev}"
+secret: "${SECRET_KEY}"
+price: "$$100"

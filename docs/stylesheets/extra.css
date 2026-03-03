@@ -1,0 +1,5 @@
+/* Custom styles for dature documentation */
+
+.md-typeset table:not([class]) th {
+  min-width: 6rem;
+}

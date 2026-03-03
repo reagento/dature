@@ -1,0 +1,103 @@
+site_name: dature
+site_url: https://dature.readthedocs.io/
+site_description: Type-safe configuration loader for Python dataclasses
+site_author: Niccolum
+
+repo_name: Niccolum/dature
+repo_url: https://github.com/Niccolum/dature
+
+copyright: Copyright &copy; 2026-2026 Niccolum
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+  custom_dir: docs/overrides
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Introduction: introduction.md
+    - Naming: naming.md
+  - Features:
+    - Validation: validation.md
+    - Merging: merging.md
+    - Masking: masking.md
+    - Advanced: advanced.md
+  - Reference:
+    - API Reference: api-reference.md
+    - Changelog: changelog.md
+
+plugins:
+  - search
+  - macros
+  - git-revision-date-localized:
+      enable_creation_date: true
+      enable_git_follow: false
+      fallback_to_build_date: true
+  - llmstxt:
+      full_output: llms-full.txt
+      sections:
+        Getting Started:
+          - introduction.md
+          - naming.md
+        Features:
+          - validation.md
+          - merging.md
+          - masking.md
+          - advanced.md
+        Reference:
+          - api-reference.md
+          - changelog.md
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - "."
+  - pymdownx.mark
+  - pymdownx.keys
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true

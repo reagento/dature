@@ -43,6 +43,7 @@ dependencies = [
 Homepage = "https://github.com/Niccolum/dature"
 Repository = "https://github.com/Niccolum/dature"
 Issues = "https://github.com/Niccolum/dature/issues"
+Documentation = "https://dature.readthedocs.io/"
 
 [project.optional-dependencies]
 yaml = ["ruamel.yaml>=0.18"]
@@ -77,6 +78,8 @@ ignore = [
     "T201",    # print
     "S105",    # possible hardcoded password
     "DTZ001",  # datetime without tzinfo
+    "PLR2004", # magic values in examples
+    "SIM103",  # return condition directly
 ]
 
 [tool.ruff.lint.pylint]
@@ -103,6 +106,10 @@ mypy_path = "src"
 module = "tests.*"
 disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-returns-value", "call-arg", "attr-defined", "index"]
 
+[[tool.mypy.overrides]]
+module = "examples.*"
+disable_error_code = ["arg-type", "call-overload"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -119,4 +126,12 @@ dev = [
     "ruff>=0.14.14",
     "prek>=0.3.1",
     "tzdata>=2024.1; sys_platform == 'win32'",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.6",
+    "mkdocs-macros-plugin>=1.0",
+    "mkdocs-git-revision-date-localized-plugin>=1.2",
+    "mkdocs-llmstxt>=0.5",
+    "pymdown-extensions>=10.7",
 ]
