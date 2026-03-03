@@ -40,11 +40,11 @@ theme:
   custom_dir: docs/overrides
 
 nav:
-  - Home: index.md
   - Getting Started:
+    - Home: index.md
     - Introduction: introduction.md
-    - Naming: naming.md
   - Features:
+    - Naming: naming.md
     - Validation: validation.md
     - Merging: merging.md
     - Masking: masking.md
