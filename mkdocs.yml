@@ -60,6 +60,7 @@ plugins:
       enable_creation_date: true
       enable_git_follow: false
       fallback_to_build_date: true
+      strict: false
   - llmstxt:
       full_output: llms-full.txt
       sections:
