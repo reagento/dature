@@ -17,6 +17,6 @@ class Config:
 
 config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.json5")), Config)
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
-print(f"debug: {config.debug}")
+print(f"host: {config.host}")  # host: localhost
+print(f"port: {config.port}")  # port: 8080
+print(f"debug: {config.debug}")  # debug: False

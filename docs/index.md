@@ -2,13 +2,13 @@
 
 **Type-safe configuration loader for Python dataclasses.**
 
-Load config from YAML, JSON, TOML, INI, ENV files, environment variables, and Docker secrets with automatic type conversion, validation, and human-readable error messages.
+Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Docker secrets with automatic type conversion, validation and human-readable error messages.
 
 ---
 
 ## Features
 
-- **Type-safe** — full type conversion from strings to `int`, `float`, `bool`, `date`, `datetime`, `list`, nested dataclasses, and more
+- **Type-safe** — automatic conversion from strings to all Python types (`int`, `float`, `bool`, `date`, `datetime`, `Enum`, `IPv4Address`, etc.) and nested dataclasses
 - **Multiple formats** — YAML (1.1, 1.2), JSON, JSON5, TOML (1.0, 1.1), INI, ENV, Docker secrets, environment variables
 - **Merge sources** — combine defaults, overrides, and env vars with configurable strategies
 - **Validation** — built-in validators via `Annotated`, root validators, custom validators
@@ -18,32 +18,86 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables, and Do
 
 ## Installation
 
-```bash
-pip install dature
-```
+=== "pip"
+
+    ```bash
+    pip install dature
+    ```
+
+=== "uv"
+
+    ```bash
+    uv add dature
+    ```
+
+=== "poetry"
+
+    ```bash
+    poetry add dature
+    ```
 
 ### Optional format support
 
-```bash
-pip install dature[yaml]    # YAML support (ruamel.yaml)
-pip install dature[json5]   # JSON5 support
-pip install dature[toml]    # TOML support (toml_rs)
-pip install dature[secure]  # Secret detection heuristics
-```
+=== "pip"
 
-Install everything:
+    ```bash
+    pip install dature[yaml]    # YAML support (ruamel.yaml)
+    pip install dature[json5]   # JSON5 support
+    pip install dature[toml]    # TOML support (toml_rs)
+    pip install dature[secure]  # Secret detection heuristics
+    ```
 
-```bash
-pip install dature[yaml,json5,toml,secure]
-```
+    Install everything:
+
+    ```bash
+    pip install dature[yaml,json5,toml,secure]
+    ```
+
+=== "uv"
+
+    ```bash
+    uv add dature[yaml]    # YAML support (ruamel.yaml)
+    uv add dature[json5]   # JSON5 support
+    uv add dature[toml]    # TOML support (toml_rs)
+    uv add dature[secure]  # Secret detection heuristics
+    ```
+
+    Install everything:
+
+    ```bash
+    uv add dature[yaml,json5,toml,secure]
+    ```
+
+=== "poetry"
+
+    ```bash
+    poetry add dature[yaml]    # YAML support (ruamel.yaml)
+    poetry add dature[json5]   # JSON5 support
+    poetry add dature[toml]    # TOML support (toml_rs)
+    poetry add dature[secure]  # Secret detection heuristics
+    ```
+
+    Install everything:
+
+    ```bash
+    poetry add dature[yaml,json5,toml,secure]
+    ```
 
 ## Quick Start
 
 ### Function mode
 
-```python
---8<-- "examples/docs/intro_function.py"
-```
+=== "app.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/app.yaml"
+    ```
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/intro_function.py"
+    ```
 
 ### Decorator mode
 
