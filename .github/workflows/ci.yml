@@ -260,7 +260,7 @@ jobs:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
           BRANCH: ${{ github.head_ref }}
         run: |
-          ENCODED_BRANCH="${BRANCH//\//%2F}"
+          RTD_SLUG="${BRANCH//\//-}"
 
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
@@ -272,8 +272,8 @@ jobs:
             -H "Authorization: Token $RTD_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"active": true, "hidden": true}' \
-            "https://readthedocs.org/api/v3/projects/dature/versions/$ENCODED_BRANCH/"
+            "https://readthedocs.org/api/v3/projects/dature/versions/$RTD_SLUG/"
 
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
-            "https://readthedocs.org/api/v3/projects/dature/versions/$ENCODED_BRANCH/builds/"
+            "https://readthedocs.org/api/v3/projects/dature/versions/$RTD_SLUG/builds/"
