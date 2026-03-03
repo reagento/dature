@@ -319,7 +319,7 @@ class RootValidator:
 | `Yaml11Loader` | `dature.sources_loader.yaml_` | YAML 1.1 |
 | `Yaml12Loader` | `dature.sources_loader.yaml_` | YAML 1.2 |
 | `Toml10Loader` | `dature.sources_loader.toml_` | TOML 1.0 |
-| `TomlLoader` | `dature.sources_loader.toml_` | TOML 1.1 |
+| `Toml11Loader` | `dature.sources_loader.toml_` | TOML 1.1 |
 | `IniLoader` | `dature.sources_loader.ini_` | INI |
 | `EnvLoader` | `dature.sources_loader.env_` | Environment variables |
 | `EnvFileLoader` | `dature.sources_loader.env_` | .env files |

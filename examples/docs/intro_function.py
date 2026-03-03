@@ -1,22 +1,24 @@
-"""Function mode — load config from a YAML file."""
+"""Function mode — load config from environment variables."""
 
+import os
 from dataclasses import dataclass
-from pathlib import Path
 
 from dature import LoadMetadata, load
 
-SOURCES_DIR = Path(__file__).parent / "sources"
+os.environ["APP_HOST"] = "0.0.0.0"  # noqa: S104
+os.environ["APP_PORT"] = "8080"
+os.environ["APP_DEBUG"] = "true"
 
 
 @dataclass
-class Config:
+class AppConfig:
     host: str
     port: int
     debug: bool = False
 
 
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+config = load(LoadMetadata(prefix="APP_"), AppConfig)
 
-print(f"host: {config.host}")  # host: localhost
+print(f"host: {config.host}")  # host: 0.0.0.0
 print(f"port: {config.port}")  # port: 8080
-print(f"debug: {config.debug}")  # debug: False
+print(f"debug: {config.debug}")  # debug: True

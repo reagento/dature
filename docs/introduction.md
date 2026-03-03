@@ -6,34 +6,38 @@ dature offers two ways to load configuration: **function mode** and **decorator 
 
 Call `load()` with a `LoadMetadata` descriptor and a dataclass type:
 
-```python
---8<-- "examples/docs/intro_function.py"
-```
+=== "app.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/app.yaml"
+    ```
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/format_yaml.py"
+    ```
 
 ## Decorator Mode
 
 Use `@load()` as a decorator. The dataclass auto-loads on every instantiation:
 
-```python
---8<-- "examples/docs/intro_decorator.py"
-```
+=== "app.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/app.yaml"
+    ```
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/intro_decorator_file.py"
+    ```
 
 Explicit arguments to `__init__` take priority over loaded values:
 
 ```python
-config = AppConfig(port=9090)  # host from env, port overridden
-```
-
-### Caching
-
-Caching is enabled by default in decorator mode. Disable it with `cache=False`:
-
-```python
-@load(LoadMetadata(file_="config.yaml"), cache=False)
-@dataclass
-class Config:
-    host: str
-    port: int
+config = Config(port=9090)  # host from source, port overridden
 ```
 
 ## All Formats
@@ -120,7 +124,7 @@ dature auto-detects the format from the file extension. Here's the same config l
 | `.yaml`, `.yml` | `Yaml12Loader` (default) |
 | `.json` | `JsonLoader` |
 | `.json5` | `Json5Loader` |
-| `.toml` | `TomlLoader` |
+| `.toml` | `Toml11Loader` (default) |
 | `.ini`, `.cfg` | `IniLoader` |
 | `.env` | `EnvFileLoader` |
 | directory | `DockerSecretsLoader` |
@@ -165,10 +169,10 @@ class LoadMetadata:
 | `root_validators` | Post-load validation of the entire object. See [Validation](validation.md) |
 | `validators` | Per-field validators in metadata. See [Validation](validation.md) |
 | `expand_env_vars` | ENV variable expansion mode. See [Advanced](advanced.md#env-variable-expansion) |
-| `skip_if_broken` | Skip this source if it fails to load (merge mode) |
-| `skip_if_invalid` | Skip invalid fields from this source |
+| `skip_if_broken` | Skip this source if it fails to load. See [Merging — Skipping Broken Sources](merging.md#skipping-broken-sources) |
+| `skip_if_invalid` | Skip invalid fields from this source. See [Merging — Skipping Invalid Fields](merging.md#skipping-invalid-fields) |
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](masking.md) |
-| `mask_secrets` | Enable/disable secret masking for this source |
+| `mask_secrets` | Enable/disable secret masking for this source. See [Masking — Configuration](masking.md#configuration) |
 
 ## Type Coercion
 

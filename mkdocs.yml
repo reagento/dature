@@ -66,8 +66,8 @@ plugins:
       sections:
         Getting Started:
           - introduction.md
-          - naming.md
         Features:
+          - naming.md
           - validation.md
           - merging.md
           - masking.md

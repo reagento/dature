@@ -87,17 +87,9 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 
 ### Function mode
 
-=== "app.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/sources/app.yaml"
-    ```
-
-=== "Python"
-
-    ```python
-    --8<-- "examples/docs/intro_function.py"
-    ```
+```python
+--8<-- "examples/docs/intro_function.py"
+```
 
 ### Decorator mode
 
@@ -114,7 +106,7 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 | JSON | `.json` | `JsonLoader` | — |
 | JSON5 | `.json5` | `Json5Loader` | `json-five` |
 | TOML 1.0 | `.toml` | `Toml10Loader` | — |
-| TOML 1.1 | `.toml` | `TomlLoader` | `toml-rs` |
+| TOML 1.1 | `.toml` | `Toml11Loader` | `toml-rs` |
 | INI | `.ini`, `.cfg` | `IniLoader` | — |
 | ENV file | `.env` | `EnvFileLoader` | — |
 | Environment variables | — | `EnvLoader` | — |
