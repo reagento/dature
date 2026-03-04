@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from dature import LoadMetadata, load
 from dature.sources_loader.docker_secrets import DockerSecretsLoader
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources_loader.checker import assert_all_types_equal
@@ -8,8 +9,10 @@ from tests.sources_loader.checker import assert_all_types_equal
 
 class TestDockerSecretsLoader:
     def test_comprehensive_type_conversion(self, all_types_docker_secrets_dir: Path):
-        loader = DockerSecretsLoader()
-        result = loader.load(all_types_docker_secrets_dir, AllPythonTypesCompact)
+        result = load(
+            LoadMetadata(file_=str(all_types_docker_secrets_dir), loader=DockerSecretsLoader),
+            AllPythonTypesCompact,
+        )
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -68,8 +71,10 @@ class TestDockerSecretsLoader:
             api_url: str
             base: str
 
-        loader = DockerSecretsLoader()
-        result = loader.load(tmp_path, Config)
+        result = load(
+            LoadMetadata(file_=str(tmp_path), loader=DockerSecretsLoader),
+            Config,
+        )
 
         assert result.api_url == "https://api.example.com/v1"
         assert result.base == "https://api.example.com"

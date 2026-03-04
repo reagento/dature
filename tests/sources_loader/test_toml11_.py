@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from dature import LoadMetadata, load
 from dature.sources_loader.toml_ import Toml11Loader
 from examples.all_types_dataclass import (
     EXPECTED_ALL_TYPES,
@@ -16,8 +17,7 @@ class TestToml11Loader:
 
     def test_comprehensive_type_conversion(self, all_types_toml11_file: Path):
         """Test loading TOML with full type coercion to dataclass."""
-        loader = Toml11Loader()
-        result = loader.load(all_types_toml11_file, AllPythonTypesCompact)
+        result = load(LoadMetadata(file_=str(all_types_toml11_file), loader=Toml11Loader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -35,9 +35,11 @@ class TestToml11Loader:
             debug=False,
             environment="production",
         )
-        loader = Toml11Loader(prefix="app")
 
-        result = loader.load(prefixed_toml_file, PrefixedConfig)
+        result = load(
+            LoadMetadata(file_=str(prefixed_toml_file), loader=Toml11Loader, prefix="app"),
+            PrefixedConfig,
+        )
 
         assert result == expected_data
 
@@ -63,8 +65,7 @@ class TestToml11Loader:
             name: str
             port: int
 
-        loader = Toml11Loader()
-        result = loader.load(toml_file, Config)
+        result = load(LoadMetadata(file_=str(toml_file), loader=Toml11Loader), Config)
 
         assert result.name == "MyApp"
         assert result.port == 9090
@@ -80,8 +81,7 @@ class TestToml11Loader:
         class Config:
             url: str
 
-        loader = Toml11Loader()
-        result = loader.load(toml_file, Config)
+        result = load(LoadMetadata(file_=str(toml_file), loader=Toml11Loader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -95,8 +95,7 @@ class TestToml11Loader:
         class Config:
             value: str
 
-        loader = Toml11Loader()
-        result = loader.load(toml_file, Config)
+        result = load(LoadMetadata(file_=str(toml_file), loader=Toml11Loader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -110,7 +109,6 @@ class TestToml11Loader:
         class Config:
             value: str
 
-        loader = Toml11Loader()
-        result = loader.load(toml_file, Config)
+        result = load(LoadMetadata(file_=str(toml_file), loader=Toml11Loader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"

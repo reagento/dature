@@ -1,8 +1,9 @@
 import logging
 from collections.abc import Callable
 from dataclasses import asdict, fields, is_dataclass
+from enum import Flag
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast, get_type_hints
 
 from dature.config import config
 from dature.errors.exceptions import DatureConfigError
@@ -26,6 +27,23 @@ if TYPE_CHECKING:
     from adaptix import Retort
 
 logger = logging.getLogger("dature")
+
+
+def _coerce_flag_fields[T](data: JSONValue, dataclass_: type[T]) -> JSONValue:
+    if not isinstance(data, dict) or not is_dataclass(dataclass_):
+        return data
+
+    type_hints = get_type_hints(dataclass_)
+    coerced = dict(data)
+    for field in fields(cast("type[DataclassInstance]", dataclass_)):
+        hint = type_hints.get(field.name)
+        if hint is None:
+            continue
+        if isinstance(hint, type) and issubclass(hint, Flag):
+            value = coerced.get(field.name)
+            if isinstance(value, str):
+                coerced[field.name] = int(value)
+    return coerced
 
 
 def _resolve_single_mask_secrets(metadata: LoadMetadata) -> bool:
@@ -282,6 +300,7 @@ def load_as_function(  # noqa: C901
 
     validating_retort = loader_instance.create_validating_retort(dataclass_)
     validation_loader = validating_retort.get_loader(dataclass_)
+    raw_data = _coerce_flag_fields(raw_data, dataclass_)
 
     try:
         handle_load_errors(

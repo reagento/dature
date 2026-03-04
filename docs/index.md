@@ -105,7 +105,7 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 | YAML 1.2 | `.yaml`, `.yml` | `Yaml12Loader` | `ruamel.yaml` |
 | JSON | `.json` | `JsonLoader` | — |
 | JSON5 | `.json5` | `Json5Loader` | `json-five` |
-| TOML 1.0 | `.toml` | `Toml10Loader` | — |
+| TOML 1.0 | `.toml` | `Toml10Loader` | `toml-rs` |
 | TOML 1.1 | `.toml` | `Toml11Loader` | `toml-rs` |
 | INI | `.ini`, `.cfg` | `IniLoader` | — |
 | ENV file | `.env` | `EnvFileLoader` | — |

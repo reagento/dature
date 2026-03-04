@@ -178,7 +178,7 @@ All supported types in one dataclass:
 
 ### Coercion by Source
 
-Different formats store values differently. YAML and TOML parse some types natively, while ENV and INI treat everything as strings:
+Different formats store values differently. YAML, JSON and TOML parse some types natively, while ENV and INI treat everything as strings:
 
 === "YAML"
 

@@ -15,17 +15,33 @@ Automatically convert between naming conventions. Maps dataclass field names (sn
 | `lower_kebab` | `my-field` |
 | `upper_kebab` | `MY-FIELD` |
 
-```python
---8<-- "examples/docs/naming_name_style.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/naming_name_style.py"
+    ```
+
+=== "camel_case.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/camel_case.yaml"
+    ```
 
 ## field_mapping
 
 Explicit field renaming using `F` objects. Takes priority over `name_style`:
 
-```python
---8<-- "examples/docs/naming_field_mapping.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/naming_field_mapping.py"
+    ```
+
+=== "mapped.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/mapped.yaml"
+    ```
 
 ### Multiple Aliases
 
@@ -39,13 +55,17 @@ field_mapping={F[Config].name: ("fullName", "userName")}
 
 Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
 
-```python
-field_mapping={
-    F[User].name: "fullName",
-    F[User].address: "location",
-    F[Address].city: "cityName",
-}
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/naming_nested_fields.py"
+    ```
+
+=== "nested.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/nested.yaml"
+    ```
 
 ### Decorator Mode
 
@@ -77,12 +97,3 @@ Delimiter for building nested structures from flat ENV variables and Docker secr
 ```python
 --8<-- "examples/docs/naming_split_symbols.py"
 ```
-
-With environment variables:
-
-```bash
-NS_DB__HOST=localhost
-NS_DB__PORT=5432
-```
-
-The `__` delimiter splits `DB__HOST` into the nested path `db.host`.

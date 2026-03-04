@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from dature import LoadMetadata, load
 from dature.sources_loader.yaml_ import Yaml12Loader
 from examples.all_types_dataclass import (
     EXPECTED_ALL_TYPES,
@@ -16,8 +17,7 @@ class TestYaml12Loader:
 
     def test_comprehensive_type_conversion(self, all_types_yaml12_file: Path):
         """Test loading YAML with full type coercion to dataclass."""
-        loader = Yaml12Loader()
-        result = loader.load(all_types_yaml12_file, AllPythonTypesCompact)
+        result = load(LoadMetadata(file_=str(all_types_yaml12_file), loader=Yaml12Loader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -35,9 +35,11 @@ class TestYaml12Loader:
             debug=False,
             environment="production",
         )
-        loader = Yaml12Loader(prefix="app")
 
-        result = loader.load(prefixed_yaml_file, PrefixedConfig)
+        result = load(
+            LoadMetadata(file_=str(prefixed_yaml_file), loader=Yaml12Loader, prefix="app"),
+            PrefixedConfig,
+        )
 
         assert result == expected_data
 
@@ -59,8 +61,10 @@ class TestYaml12Loader:
             secret_key: str
             services: Services
 
-        loader = Yaml12Loader()
-        result = loader.load(yaml_config_with_env_vars_file, EnvConfig)
+        result = load(
+            LoadMetadata(file_=str(yaml_config_with_env_vars_file), loader=Yaml12Loader),
+            EnvConfig,
+        )
 
         assert result.database_url == "postgresql://localhost/db"
         assert result.secret_key == "my_secret"
@@ -78,8 +82,7 @@ class TestYaml12Loader:
         class Config:
             url: str
 
-        loader = Yaml12Loader()
-        result = loader.load(yaml_file, Config)
+        result = load(LoadMetadata(file_=str(yaml_file), loader=Yaml12Loader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -93,8 +96,7 @@ class TestYaml12Loader:
         class Config:
             value: str
 
-        loader = Yaml12Loader()
-        result = loader.load(yaml_file, Config)
+        result = load(LoadMetadata(file_=str(yaml_file), loader=Yaml12Loader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -108,8 +110,7 @@ class TestYaml12Loader:
         class Config:
             value: str
 
-        loader = Yaml12Loader()
-        result = loader.load(yaml_file, Config)
+        result = load(LoadMetadata(file_=str(yaml_file), loader=Yaml12Loader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 

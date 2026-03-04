@@ -275,16 +275,3 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             sorted(processed.keys()) if isinstance(processed, dict) else "<non-dict>",
         )
         return processed
-
-    def load(self, path: Path, dataclass_: type[T]) -> T:
-        data = self._load(path)
-        pre_processed_data = self._pre_processing(data)
-
-        logger.debug(
-            "[%s] load: path=%s, target=%s, keys=%s",
-            type(self).__name__,
-            path,
-            dataclass_.__name__,
-            sorted(pre_processed_data.keys()) if isinstance(pre_processed_data, dict) else "<non-dict>",
-        )
-        return self.transform_to_dataclass(pre_processed_data, dataclass_)

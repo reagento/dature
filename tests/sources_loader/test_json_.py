@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from dature import LoadMetadata, load
 from dature.sources_loader.json_ import JsonLoader
 from examples.all_types_dataclass import (
     EXPECTED_ALL_TYPES,
@@ -16,8 +17,7 @@ class TestJsonLoader:
 
     def test_comprehensive_type_conversion(self, all_types_json_file: Path):
         """Test loading JSON with full type coercion to dataclass."""
-        loader = JsonLoader()
-        result = loader.load(all_types_json_file, AllPythonTypesCompact)
+        result = load(LoadMetadata(file_=str(all_types_json_file), loader=JsonLoader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -35,9 +35,11 @@ class TestJsonLoader:
             debug=False,
             environment="production",
         )
-        loader = JsonLoader(prefix="app")
 
-        result = loader.load(prefixed_json_file, PrefixedConfig)
+        result = load(
+            LoadMetadata(file_=str(prefixed_json_file), loader=JsonLoader, prefix="app"),
+            PrefixedConfig,
+        )
 
         assert result == expected_data
 
@@ -63,8 +65,7 @@ class TestJsonLoader:
             host: str
             port: int
 
-        loader = JsonLoader()
-        result = loader.load(json_file, DbConfig)
+        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), DbConfig)
 
         assert result.host == "db.example.com"
         assert result.port == 5432
@@ -80,8 +81,7 @@ class TestJsonLoader:
         class Config:
             url: str
 
-        loader = JsonLoader()
-        result = loader.load(json_file, Config)
+        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -95,8 +95,7 @@ class TestJsonLoader:
         class Config:
             value: str
 
-        loader = JsonLoader()
-        result = loader.load(json_file, Config)
+        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -110,7 +109,6 @@ class TestJsonLoader:
         class Config:
             value: str
 
-        loader = JsonLoader()
-        result = loader.load(json_file, Config)
+        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"

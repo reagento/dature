@@ -109,7 +109,7 @@ disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-retur
 
 [[tool.mypy.overrides]]
 module = "examples.*"
-disable_error_code = ["arg-type", "call-overload"]
+disable_error_code = ["arg-type", "call-overload", "dict-item"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
