@@ -22,8 +22,8 @@ class Config:
 
 config = load((DEFAULTS, OVERRIDES), Config)
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
-print(f"debug: {config.debug}")
-print(f"workers: {config.workers}")
-print(f"tags: {config.tags}")
+print(f"host: {config.host}")  # host: 0.0.0.0
+print(f"port: {config.port}")  # port: 8080
+print(f"debug: {config.debug}")  # debug: True
+print(f"workers: {config.workers}")  # workers: 4
+print(f"tags: {config.tags}")  # tags: ['web', 'api']

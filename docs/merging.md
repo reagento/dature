@@ -6,17 +6,45 @@ Load configuration from multiple sources and merge them into one dataclass.
 
 Use `MergeMetadata` to combine sources:
 
-```python
---8<-- "examples/docs/merging_basic.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_basic.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 ## Tuple Shorthand
 
 Pass a tuple of `LoadMetadata` directly — uses `LAST_WINS` by default:
 
-```python
---8<-- "examples/docs/merging_tuple_shorthand.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_tuple_shorthand.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 Works as a decorator too:
 
@@ -33,9 +61,23 @@ class Config:
 
 ## Merge Strategies
 
-```python
---8<-- "examples/docs/merging_strategies.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_strategies.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 | Strategy | Behavior |
 |----------|----------|
@@ -68,9 +110,23 @@ graph TD
 
 Override the global strategy for individual fields using `field_merges`:
 
-```python
---8<-- "examples/docs/merging_field_merges.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_field_merges.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 | Strategy | Behavior |
 |----------|----------|
@@ -91,9 +147,23 @@ For more details, see [Advanced — Per-Field Merge Rules](advanced.md#per-field
 
 Ensure that related fields are always overridden together. If a source changes some fields in a group but not others, `FieldGroupError` is raised:
 
-```python
---8<-- "examples/docs/merging_field_groups.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_field_groups.py"
+    ```
+
+=== "field_groups_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    ```
+
+=== "field_groups_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_overrides.yaml"
+    ```
 
 If `overrides.yaml` changes `host` and `port` together, the group constraint is satisfied. If it changed only `host` but not `port`, loading would fail:
 
@@ -111,9 +181,17 @@ For nested dataclass expansion and multiple groups, see [Advanced — Field Grou
 
 Skip sources that fail to load (missing file, invalid syntax):
 
-```python
---8<-- "examples/docs/merging_skip_broken.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_skip_broken.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
 
 Override per source with `skip_if_broken` on `LoadMetadata` (takes priority over the global flag):
 
@@ -137,9 +215,17 @@ If all sources fail to load, a `ValueError` is raised.
 
 Drop fields with invalid values and let other sources or defaults fill them in:
 
-```python
---8<-- "examples/docs/merging_skip_invalid.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_skip_invalid.py"
+    ```
+
+=== "skip_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/skip_defaults.yaml"
+    ```
 
 Restrict skipping to specific fields:
 

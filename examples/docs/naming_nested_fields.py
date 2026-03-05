@@ -33,6 +33,6 @@ config = load(
     User,
 )
 
-print(f"name: {config.name}")  # Alice
-print(f"address.city: {config.address.city}")  # Paris
-print(f"address.street: {config.address.street}")  # Rue de Rivoli
+print(f"name: {config.name}")  # name: Alice
+print(f"address.city: {config.address.city}")  # address.city: Paris
+print(f"address.street: {config.address.street}")  # address.street: Rue de Rivoli

@@ -26,6 +26,6 @@ class Config:
 
 config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
-print(f"address: {config.address}")
+print(f"host: {config.host}")  # host: localhost
+print(f"port: {config.port}")  # port: 8080
+print(f"address: {config.address}")  # address: localhost:8080

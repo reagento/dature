@@ -25,7 +25,7 @@ config = load(
     Config,
 )
 
-print(f"api_url: {config.api_url}")
-print(f"database_url: {config.database_url}")
-print(f"secret: {config.secret}")
-print(f"price: {config.price}")
+print(f"api_url: {config.api_url}")  # api_url: https://api.example.com/api/v1
+print(f"database_url: {config.database_url}")  # database_url: postgres://localhost:5432/dev
+print(f"secret: {config.secret}")  # secret: super-secret-key-123
+print(f"price: {config.price}")  # price: $100

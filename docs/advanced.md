@@ -13,9 +13,23 @@ Override the global merge strategy for individual fields. All available `FieldMe
 | `PREPEND` | Concatenate lists: `override + base` |
 | `PREPEND_UNIQUE` | Concatenate lists in reverse order, removing duplicates |
 
-```python
---8<-- "examples/docs/advanced_merge_rules.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_merge_rules.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 ### With RAISE_ON_CONFLICT
 
@@ -56,9 +70,23 @@ The callable receives a `list[JSONValue]` (one value per source) and returns the
 
 Ensure related fields are always overridden together:
 
-```python
---8<-- "examples/docs/advanced_field_groups_nested.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_field_groups_nested.py"
+    ```
+
+=== "field_groups_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    ```
+
+=== "field_groups_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_overrides.yaml"
+    ```
 
 ### Nested Dataclass Expansion
 
@@ -96,9 +124,23 @@ Field groups work with all merge strategies and can be combined with `field_merg
 
 Pass `debug=True` to collect a `LoadReport`:
 
-```python
---8<-- "examples/docs/advanced_debug_report.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_debug_report.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 ### Report Structure
 
@@ -171,9 +213,17 @@ Without `debug=True`, `get_load_report()` returns `None` and emits a warning.
 
 String values in all file formats support environment variable expansion:
 
-```python
---8<-- "examples/docs/advanced_env_expansion.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_env_expansion.py"
+    ```
+
+=== "env_expand.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/env_expand.yaml"
+    ```
 
 ### Supported Syntax
 
@@ -296,9 +346,17 @@ class Config:
 
 Full example:
 
-```python
---8<-- "examples/docs/advanced_special_types.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_special_types.py"
+    ```
+
+=== "special_types.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/special_types.yaml"
+    ```
 
 ## Caching
 
@@ -318,6 +376,12 @@ Customize defaults for the entire application — programmatically or via enviro
 
     ```python
     --8<-- "examples/docs/advanced_configure.py"
+    ```
+
+=== "app.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/app.yaml"
     ```
 
 === "Environment Variables"

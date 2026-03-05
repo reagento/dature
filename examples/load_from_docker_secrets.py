@@ -34,7 +34,7 @@ config = load(
     AppConfig,
 )
 
-print(f"name: {config.name}")
-print(f"debug: {config.debug}")
-print(f"db.host: {config.db.host}")
-print(f"db.port: {config.db.port}")
+print(f"name: {config.name}")  # name: MyApp
+print(f"debug: {config.debug}")  # debug: True
+print(f"db.host: {config.db.host}")  # db.host: localhost
+print(f"db.port: {config.db.port}")  # db.port: 5432

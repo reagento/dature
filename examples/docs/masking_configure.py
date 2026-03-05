@@ -20,8 +20,8 @@ class Config:
 
 config = load(LoadMetadata(file_=str(SOURCES_DIR / "secrets.yaml")), Config)
 
-print(f"host: {config.host}")
-print(f"password: {config.password}")
+print(f"host: {config.host}")  # host: api.example.com
+print(f"password: {config.password}")  # password: my_secret_password
 
 # Reset to defaults
 configure(masking=MaskingConfig())

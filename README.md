@@ -63,7 +63,7 @@ See the **[documentation](https://dature.readthedocs.io/)** for detailed guides 
 ```bash
 git clone https://github.com/Niccolum/dature.git
 cd dature
-uv sync --all-extras --dev
+uv sync --all-extras --all-groups
 ```
 
 Run tests:
@@ -81,7 +81,6 @@ uv run prek run --all-files
 Build docs locally:
 
 ```bash
-uv sync --group docs
 uv run mkdocs serve
 ```
 

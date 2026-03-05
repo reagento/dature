@@ -33,6 +33,6 @@ config = load(
     Config,
 )
 
-print(f"host: {config.host}")
-print(f"tags: {config.tags}")
-print(f"workers: {config.workers}")
+print(f"host: {config.host}")  # host: localhost
+print(f"tags: {config.tags}")  # tags: ['default', 'web', 'api']
+print(f"workers: {config.workers}")  # workers: 4

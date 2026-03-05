@@ -28,5 +28,5 @@ config = load(
     Config,
 )
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
+print(f"host: {config.host}")  # host: localhost
+print(f"port: {config.port}")  # port: 8080

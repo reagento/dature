@@ -19,6 +19,6 @@ class Config:
 
 config = load(LoadMetadata(prefix="MYAPP_"), Config)
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
-print(f"debug: {config.debug}")
+print(f"host: {config.host}")  # host: localhost
+print(f"port: {config.port}")  # port: 9090
+print(f"debug: {config.debug}")  # debug: True

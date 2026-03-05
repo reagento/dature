@@ -21,6 +21,6 @@ config = load(
     debug=True,
 )
 
-print(f"host: {config.host}")
-print(f"password: {config.password}")
-print(f"api_key: {config.api_key}")
+print(f"host: {config.host}")  # host: api.example.com
+print(f"password: {config.password}")  # password: my_secret_password
+print(f"api_key: {config.api_key}")  # api_key: sk-proj-abc123xyz

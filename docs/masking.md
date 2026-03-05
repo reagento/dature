@@ -42,17 +42,33 @@ dature uses three methods to identify secrets:
 
 `SecretStr` masks the value in `str()` and `repr()`:
 
-```python
---8<-- "examples/docs/masking_secret_str.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/masking_secret_str.py"
+    ```
+
+=== "secrets.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/secrets.yaml"
+    ```
 
 ## Masking by Name
 
 Fields whose names contain known patterns are automatically masked in logs and error messages:
 
-```python
---8<-- "examples/docs/masking_by_name.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/masking_by_name.py"
+    ```
+
+=== "secrets.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/secrets.yaml"
+    ```
 
 Debug logs show masked data:
 
@@ -112,8 +128,16 @@ config = load(
 
 Use `configure()` to set defaults for the entire application:
 
-```python
---8<-- "examples/docs/masking_configure.py"
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/masking_configure.py"
+    ```
+
+=== "secrets.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/secrets.yaml"
+    ```
 
 See [Advanced — Global configure()](advanced.md#global-configure) for all `MaskingConfig` options.

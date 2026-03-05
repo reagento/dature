@@ -28,8 +28,8 @@ class Config:
 
 config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
+print(f"host: {config.host}")  # host: localhost
+print(f"port: {config.port}")  # port: 8080
 
 # Cleanup
 for key in list(os.environ):

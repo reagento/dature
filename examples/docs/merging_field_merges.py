@@ -32,5 +32,5 @@ config = load(
     Config,
 )
 
-print(f"host: {config.host}")
-print(f"tags: {config.tags}")
+print(f"host: {config.host}")  # host: localhost
+print(f"tags: {config.tags}")  # tags: ['default', 'web', 'api']

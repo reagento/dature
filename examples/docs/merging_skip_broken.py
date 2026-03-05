@@ -25,6 +25,6 @@ config = load(
     Config,
 )
 
-print(f"host: {config.host}")
-print(f"port: {config.port}")
-print(f"debug: {config.debug}")
+print(f"host: {config.host}")  # host: localhost
+print(f"port: {config.port}")  # port: 3000
+print(f"debug: {config.debug}")  # debug: False

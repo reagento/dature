@@ -29,4 +29,6 @@ formats = {
 
 for name, meta in formats.items():
     config = load(meta, Config)
-    print(f"[{name}] host={config.host}, port={config.port}, debug={config.debug}")
+    print(
+        f"[{name}] host={config.host}, port={config.port}, debug={config.debug}",
+    )  # host=localhost, port=8080, debug=False

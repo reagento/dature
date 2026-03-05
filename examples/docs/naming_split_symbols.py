@@ -22,5 +22,5 @@ class Config:
 
 config = load(LoadMetadata(prefix="NS_", split_symbols="__"), Config)
 
-print(f"db.host: {config.db.host}")
-print(f"db.port: {config.db.port}")
+print(f"db.host: {config.db.host}")  # db.host: localhost
+print(f"db.port: {config.db.port}")  # db.port: 5432

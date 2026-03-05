@@ -39,5 +39,5 @@ config = load(
     ServiceConfig,
 )
 
-print(f"workers: {config.workers}")
-print(f"workers divisible by 2: {config.workers % 2 == 0}")
+print(f"workers: {config.workers}")  # workers: 4
+print(f"workers divisible by 2: {config.workers % 2 == 0}")  # workers divisible by 2: True

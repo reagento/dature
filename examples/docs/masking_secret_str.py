@@ -18,7 +18,7 @@ class Config:
 
 config = load(LoadMetadata(file_=str(SOURCES_DIR / "secrets.yaml")), Config)
 
-print(f"api_key (masked): {config.api_key}")
-print(f"api_key (real): {config.api_key.get_secret_value()}")
-print(f"host: {config.host}")
-print(f"password: {config.password}")
+print(f"api_key (masked): {config.api_key}")  # api_key (masked): **********
+print(f"api_key (real): {config.api_key.get_secret_value()}")  # api_key (real): sk-proj-abc123xyz
+print(f"host: {config.host}")  # host: api.example.com
+print(f"password: {config.password}")  # password: my_secret_password

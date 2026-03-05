@@ -39,5 +39,5 @@ first_wins = load(
     Config,
 )
 
-print(f"LAST_WINS  host: {last_wins.host}")
-print(f"FIRST_WINS host: {first_wins.host}")
+print(f"LAST_WINS  host: {last_wins.host}")  # LAST_WINS  host: production.example.com
+print(f"FIRST_WINS host: {first_wins.host}")  # FIRST_WINS host: localhost

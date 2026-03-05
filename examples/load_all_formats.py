@@ -28,5 +28,5 @@ FORMATS = {
 
 for name, meta in FORMATS.items():
     config = load(meta, AllPythonTypesCompact)
-    print(f"[{name}] string_value={config.string_value}, integer_value={config.integer_value}")
-    print(f"[{name}] string_value={config.string_value}, integer_value={config.integer_value}")
+    print(f"[{name}] string_value={config.string_value}, integer_value={config.integer_value}")  # hello world, 42
+    print(f"[{name}] string_value={config.string_value}, integer_value={config.integer_value}")  # hello world, 42

@@ -31,4 +31,6 @@ config = load(
 report = get_load_report(config)
 if report is not None:
     for origin in report.field_origins:
-        print(f"{origin.key} = {origin.value!r}  <-- source {origin.source_index} ({origin.source_file})")
+        print(
+            f"{origin.key} = {origin.value!r}  <-- source {origin.source_index} ({origin.source_file})",
+        )  # host = 'production.example.com'  <-- source 1 (...)
