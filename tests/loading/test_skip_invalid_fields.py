@@ -94,6 +94,8 @@ class TestMergeSkipInvalidFields:
             Config loading errors (1)
 
               [port]  Missing required field (invalid in: json '{source1}', json '{source2}')
+               └── FILE '{source1}', line 1
+                   {{"host": "localhost", "port": "abc"}}
                └── FILE '{source2}', line 1
                    {{"port": "def"}}
             """)

@@ -94,7 +94,7 @@ class LoadedSources:
     source_ctxs: list[tuple[ErrorContext, str | None]]
     source_entries: list[SourceEntry]
     last_loader: LoaderProtocol
-    skipped_fields: dict[str, list[LoadMetadata]]
+    skipped_fields: dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]]
 
 
 def load_sources(  # noqa: C901
@@ -109,7 +109,7 @@ def load_sources(  # noqa: C901
     source_ctxs: list[tuple[ErrorContext, str | None]] = []
     source_entries: list[SourceEntry] = []
     last_loader: LoaderProtocol | None = None
-    skipped_fields: dict[str, list[LoadMetadata]] = {}
+    skipped_fields: dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]] = {}
 
     for i, source_meta in enumerate(merge_meta.sources):
         resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
@@ -163,6 +163,8 @@ def load_sources(  # noqa: C901
             )
             continue
 
+        file_content = read_file_content(error_ctx.file_path)
+
         filter_result = apply_merge_skip_invalid(
             raw=raw,
             source_meta=source_meta,
@@ -173,7 +175,9 @@ def load_sources(  # noqa: C901
         )
 
         for path in filter_result.skipped_paths:
-            skipped_fields.setdefault(path, []).append(source_meta)
+            skipped_fields.setdefault(path, []).append(
+                (source_meta, error_ctx, file_content),
+            )
 
         raw = filter_result.cleaned_dict
         raw_dicts.append(raw)
@@ -209,7 +213,6 @@ def load_sources(  # noqa: C901
             ),
         )
 
-        file_content = read_file_content(error_ctx.file_path)
         source_ctxs.append((error_ctx, file_content))
         last_loader = loader_instance
 

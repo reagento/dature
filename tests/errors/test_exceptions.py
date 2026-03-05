@@ -15,13 +15,15 @@ class TestDatureConfigErrorFormat:
                 field_path=["timeout"],
                 message="Expected int, got str",
                 input_value="30",
-                location=SourceLocation(
-                    source_type="toml",
-                    file_path=Path("config.toml"),
-                    line_range=LineRange(start=2, end=2),
-                    line_content=['timeout = "30"'],
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="toml",
+                        file_path=Path("config.toml"),
+                        line_range=LineRange(start=2, end=2),
+                        line_content=['timeout = "30"'],
+                        env_var_name=None,
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -39,25 +41,29 @@ class TestDatureConfigErrorFormat:
                 field_path=["timeout"],
                 message="Bad string format",
                 input_value="abc",
-                location=SourceLocation(
-                    source_type="json",
-                    file_path=Path("config.json"),
-                    line_range=LineRange(start=2, end=2),
-                    line_content=['"timeout": "abc"'],
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="json",
+                        file_path=Path("config.json"),
+                        line_range=LineRange(start=2, end=2),
+                        line_content=['"timeout": "abc"'],
+                        env_var_name=None,
+                    ),
+                ],
             ),
             FieldLoadError(
                 field_path=["db", "port"],
                 message="Missing required field",
                 input_value=None,
-                location=SourceLocation(
-                    source_type="json",
-                    file_path=Path("config.json"),
-                    line_range=None,
-                    line_content=None,
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="json",
+                        file_path=Path("config.json"),
+                        line_range=None,
+                        line_content=None,
+                        env_var_name=None,
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -78,13 +84,15 @@ class TestDatureConfigErrorFormat:
                 field_path=["database", "port"],
                 message="Bad string format",
                 input_value="abc",
-                location=SourceLocation(
-                    source_type="env",
-                    file_path=None,
-                    line_range=None,
-                    line_content=None,
-                    env_var_name="APP_DATABASE__PORT",
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="env",
+                        file_path=None,
+                        line_range=None,
+                        line_content=None,
+                        env_var_name="APP_DATABASE__PORT",
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -253,8 +261,8 @@ class TestLoadIntegrationErrors:
         assert len(err.exceptions) == 1
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
-        assert first.location is not None
-        assert first.location.line_range == LineRange(start=2, end=2)
+        assert first.locations
+        assert first.locations[0].line_range == LineRange(start=2, end=2)
         assert str(err) == dedent(f"""\
             Config loading errors (1)
 
@@ -280,8 +288,8 @@ class TestLoadIntegrationErrors:
         err = exc_info.value
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
-        assert first.location is not None
-        assert first.location.line_range == LineRange(start=3, end=3)
+        assert first.locations
+        assert first.locations[0].line_range == LineRange(start=3, end=3)
         assert str(err) == dedent(f"""\
             Config loading errors (1)
 
@@ -322,13 +330,15 @@ class TestLineTruncation:
                 field_path=["timeout"],
                 message="Expected int, got str",
                 input_value="30",
-                location=SourceLocation(
-                    source_type="toml",
-                    file_path=Path("config.toml"),
-                    line_range=LineRange(start=2, end=2),
-                    line_content=[line_content],
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="toml",
+                        file_path=Path("config.toml"),
+                        line_range=LineRange(start=2, end=2),
+                        line_content=[line_content],
+                        env_var_name=None,
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -370,13 +380,15 @@ class TestLineTruncation:
                 field_path=["timeout"],
                 message="Bad string format",
                 input_value="abc",
-                location=SourceLocation(
-                    source_type="envfile",
-                    file_path=Path(".env"),
-                    line_range=LineRange(start=2, end=2),
-                    line_content=[line_content],
-                    env_var_name="APP_TIMEOUT",
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="envfile",
+                        file_path=Path(".env"),
+                        line_range=LineRange(start=2, end=2),
+                        line_content=[line_content],
+                        env_var_name="APP_TIMEOUT",
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -396,13 +408,15 @@ class TestLineTruncation:
                 field_path=["db"],
                 message="Expected int, got dict",
                 input_value=None,
-                location=SourceLocation(
-                    source_type="json",
-                    file_path=Path("config.json"),
-                    line_range=LineRange(start=2, end=4),
-                    line_content=[line_long, line_short, line_long],
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="json",
+                        file_path=Path("config.json"),
+                        line_range=LineRange(start=2, end=4),
+                        line_content=[line_long, line_short, line_long],
+                        env_var_name=None,
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -423,13 +437,15 @@ class TestLineTruncation:
                 field_path=["db"],
                 message="Expected int, got dict",
                 input_value=None,
-                location=SourceLocation(
-                    source_type="json",
-                    file_path=Path("config.json"),
-                    line_range=LineRange(start=2, end=5),
-                    line_content=["line1", "line2", "line3", "line4"],
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="json",
+                        file_path=Path("config.json"),
+                        line_range=LineRange(start=2, end=5),
+                        line_content=["line1", "line2", "line3", "line4"],
+                        env_var_name=None,
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)
@@ -449,13 +465,15 @@ class TestLineTruncation:
                 field_path=["db"],
                 message="Expected int, got dict",
                 input_value=None,
-                location=SourceLocation(
-                    source_type="json",
-                    file_path=Path("config.json"),
-                    line_range=LineRange(start=2, end=6),
-                    line_content=["line1", "line2", "line3", "line4", "line5"],
-                    env_var_name=None,
-                ),
+                locations=[
+                    SourceLocation(
+                        source_type="json",
+                        file_path=Path("config.json"),
+                        line_range=LineRange(start=2, end=6),
+                        line_content=["line1", "line2", "line3", "line4", "line5"],
+                        env_var_name=None,
+                    ),
+                ],
             ),
         ]
         exc = DatureConfigError("Config", errors)

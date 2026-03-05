@@ -126,7 +126,7 @@ def handle_load_errors[T](
                     field_path=fe.field_path,
                     message=fe.message,
                     input_value=fe.input_value,
-                    location=location,
+                    locations=[location],
                 ),
             )
         raise DatureConfigError(ctx.dataclass_name, enriched) from exc
@@ -134,7 +134,7 @@ def handle_load_errors[T](
 
 def enrich_skipped_errors(
     err: DatureConfigError,
-    skipped_fields: "dict[str, list[LoadMetadata]]",
+    skipped_fields: "dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]]",
 ) -> DatureConfigError:
     updated: list[DatureError] = []
     for exc in err.exceptions:
@@ -153,13 +153,14 @@ def enrich_skipped_errors(
             updated.append(exc)
             continue
 
-        source_reprs = ", ".join(repr(meta) for meta in sources)
+        source_reprs = ", ".join(repr(meta) for meta, _, _ in sources)
+        locations = [resolve_source_location(exc.field_path, ctx, file_content) for _, ctx, file_content in sources]
         updated.append(
             FieldLoadError(
                 field_path=exc.field_path,
                 message=f"Missing required field (invalid in: {source_reprs})",
                 input_value=exc.input_value,
-                location=exc.location,
+                locations=locations,
             ),
         )
     return DatureConfigError(err.dataclass_name, updated)

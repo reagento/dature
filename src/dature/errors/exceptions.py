@@ -86,12 +86,12 @@ class FieldLoadError(DatureError):
         field_path: list[str],
         message: str,
         input_value: str | float | bool | None = None,
-        location: SourceLocation | None = None,
+        locations: list[SourceLocation] | None = None,
     ) -> None:
         self.field_path = field_path
         self.message = message
         self.input_value = input_value
-        self.location = location
+        self.locations = locations or []
         super().__init__(self._format())
 
     def _format(self) -> str:
@@ -99,8 +99,8 @@ class FieldLoadError(DatureError):
         if not path_str:
             path_str = "<root>"
         lines = [f"  [{path_str}]  {self.message}"]
-        if self.location is not None:
-            lines.extend(_format_location(self.location))
+        for loc in self.locations:
+            lines.extend(_format_location(loc))
         return "\n".join(lines)
 
 
@@ -192,8 +192,8 @@ class DatureConfigError(ExceptionGroup[DatureError]):
                 if not path_str:
                     path_str = "<root>"
                 lines.append(f"  [{path_str}]  {exc.message}")
-                if exc.location is not None:
-                    lines.extend(_format_location(exc.location))
+                for loc in exc.locations:
+                    lines.extend(_format_location(loc))
                 lines.append("")
             elif isinstance(exc, SourceLoadError):
                 lines.append(f"  [<root>]  {exc.message}")

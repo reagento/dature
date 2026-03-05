@@ -48,16 +48,17 @@ Pass a tuple of `LoadMetadata` directly — uses `LAST_WINS` by default:
 
 Works as a decorator too:
 
-```python
-@load((
-    LoadMetadata(file_="defaults.yaml"),
-    LoadMetadata(prefix="APP_"),
-))
-@dataclass
-class Config:
-    host: str
-    port: int
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_tuple_shorthand_decorator.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
 
 ## Merge Strategies
 
@@ -195,19 +196,17 @@ Skip sources that fail to load (missing file, invalid syntax):
 
 Override per source with `skip_if_broken` on `LoadMetadata` (takes priority over the global flag):
 
-```python
-config = load(
-    MergeMetadata(
-        sources=(
-            LoadMetadata(file_="defaults.yaml"),                       # uses global
-            LoadMetadata(file_="optional.yaml", skip_if_broken=True),  # always skip if broken
-            LoadMetadata(prefix="APP_", skip_if_broken=False),         # never skip
-        ),
-        skip_broken_sources=True,  # global default
-    ),
-    Config,
-)
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_skip_broken_per_source.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
 
 If all sources fail to load, a `ValueError` is raised.
 
@@ -229,20 +228,23 @@ Drop fields with invalid values and let other sources or defaults fill them in:
 
 Restrict skipping to specific fields:
 
-```python
-config = load(
-    MergeMetadata(
-        sources=(
-            LoadMetadata(
-                file_="overrides.yaml",
-                skip_if_invalid=(F[Config].port, F[Config].timeout),
-            ),
-            LoadMetadata(file_="defaults.yaml"),
-        ),
-    ),
-    Config,
-)
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/merging_skip_invalid_per_field.py"
+    ```
+
+=== "skip_specific_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/skip_specific_defaults.yaml"
+    ```
+
+=== "skip_specific_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/skip_specific_overrides.yaml"
+    ```
 
 Only `port` and `timeout` will be skipped if invalid; other fields still raise errors.
 
@@ -252,6 +254,8 @@ If a required field is invalid in all sources and has no default:
 Config loading errors (1)
 
   [port]  Missing required field (invalid in: yaml 'defaults.yaml', yaml 'overrides.yaml')
-   └── FILE 'overrides.yaml', line 1
-       {"port": "abc"}
+   └── FILE 'defaults.yaml', line 3
+       port: "not_a_number"
+   └── FILE 'overrides.yaml', line 2
+       port: "not_a_number_too"
 ```

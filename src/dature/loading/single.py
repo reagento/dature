@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from dature.config import config
 from dature.errors.exceptions import DatureConfigError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
+from dature.errors.location import ErrorContext, read_file_content
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry, attach_load_report
 from dature.loading.context import (
     apply_skip_invalid,
@@ -162,9 +163,12 @@ def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
     raw_data = filter_result.cleaned_dict
     raw_data = coerce_flag_fields(raw_data, ctx.cls)
 
-    skipped_fields: dict[str, list[LoadMetadata]] = {}
+    skipped_fields: dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]] = {}
+    file_content = read_file_content(ctx.error_ctx.file_path)
     for path in filter_result.skipped_paths:
-        skipped_fields.setdefault(path, []).append(ctx.metadata)
+        skipped_fields.setdefault(path, []).append(
+            (ctx.metadata, ctx.error_ctx, file_content),
+        )
 
     def _transform(rd: JSONValue = raw_data) -> DataclassInstance:
         return ctx.loader_instance.transform_to_dataclass(rd, ctx.cls)
@@ -260,9 +264,12 @@ def load_as_function(  # noqa: C901
     )
     raw_data = filter_result.cleaned_dict
 
-    skipped_fields: dict[str, list[LoadMetadata]] = {}
+    skipped_fields: dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]] = {}
+    file_content = read_file_content(error_ctx.file_path)
     for path in filter_result.skipped_paths:
-        skipped_fields.setdefault(path, []).append(metadata)
+        skipped_fields.setdefault(path, []).append(
+            (metadata, error_ctx, file_content),
+        )
 
     report: LoadReport | None = None
     if debug:
