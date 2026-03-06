@@ -26,7 +26,7 @@ from dature.errors.location import ErrorContext, read_file_content, resolve_sour
 from dature.masking.masking import mask_value
 
 if TYPE_CHECKING:
-    from dature.metadata import LoadMetadata
+    from dature.loading.source_loading import SkippedFieldSource
 
 
 def _describe_error(exc: BaseException, *, is_secret: bool = False) -> str:
@@ -134,7 +134,7 @@ def handle_load_errors[T](
 
 def enrich_skipped_errors(
     err: DatureConfigError,
-    skipped_fields: "dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]]",
+    skipped_fields: "dict[str, list[SkippedFieldSource]]",
 ) -> DatureConfigError:
     updated: list[DatureError] = []
     for exc in err.exceptions:
@@ -153,8 +153,8 @@ def enrich_skipped_errors(
             updated.append(exc)
             continue
 
-        source_reprs = ", ".join(repr(meta) for meta, _, _ in sources)
-        locations = [resolve_source_location(exc.field_path, ctx, file_content) for _, ctx, file_content in sources]
+        source_reprs = ", ".join(repr(s.metadata) for s in sources)
+        locations = [resolve_source_location(exc.field_path, s.error_ctx, s.file_content) for s in sources]
         updated.append(
             FieldLoadError(
                 field_path=exc.field_path,

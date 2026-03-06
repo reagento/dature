@@ -354,7 +354,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
             secret_paths=secret_paths,
         )
 
-    last_error_ctx = loaded.source_ctxs[-1][0]
+    last_error_ctx = loaded.source_ctxs[-1].error_ctx
     merged = coerce_flag_fields(merged, dataclass_)
     try:
         result = handle_load_errors(

@@ -89,12 +89,25 @@ def apply_merge_skip_invalid(
 
 
 @dataclass(frozen=True, slots=True)
+class SourceContext:
+    error_ctx: ErrorContext
+    file_content: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SkippedFieldSource:
+    metadata: LoadMetadata
+    error_ctx: ErrorContext
+    file_content: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class LoadedSources:
     raw_dicts: list[JSONValue]
-    source_ctxs: list[tuple[ErrorContext, str | None]]
+    source_ctxs: list[SourceContext]
     source_entries: list[SourceEntry]
     last_loader: LoaderProtocol
-    skipped_fields: dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]]
+    skipped_fields: dict[str, list[SkippedFieldSource]]
 
 
 def load_sources(  # noqa: C901
@@ -106,10 +119,10 @@ def load_sources(  # noqa: C901
     secret_paths: frozenset[str] = frozenset(),
 ) -> LoadedSources:
     raw_dicts: list[JSONValue] = []
-    source_ctxs: list[tuple[ErrorContext, str | None]] = []
+    source_ctxs: list[SourceContext] = []
     source_entries: list[SourceEntry] = []
     last_loader: LoaderProtocol | None = None
-    skipped_fields: dict[str, list[tuple[LoadMetadata, ErrorContext, str | None]]] = {}
+    skipped_fields: dict[str, list[SkippedFieldSource]] = {}
 
     for i, source_meta in enumerate(merge_meta.sources):
         resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
@@ -176,7 +189,7 @@ def load_sources(  # noqa: C901
 
         for path in filter_result.skipped_paths:
             skipped_fields.setdefault(path, []).append(
-                (source_meta, error_ctx, file_content),
+                SkippedFieldSource(metadata=source_meta, error_ctx=error_ctx, file_content=file_content),
             )
 
         raw = filter_result.cleaned_dict
@@ -213,7 +226,7 @@ def load_sources(  # noqa: C901
             ),
         )
 
-        source_ctxs.append((error_ctx, file_content))
+        source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
         last_loader = loader_instance
 
     if last_loader is None:

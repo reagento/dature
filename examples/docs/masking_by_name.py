@@ -13,6 +13,7 @@ class Config:
     api_key: str
     password: str
     host: str
+    card_number: str
 
 
 config = load(

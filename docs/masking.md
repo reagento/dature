@@ -38,43 +38,35 @@ dature uses three methods to identify secrets:
 
 `password`, `passwd`, `secret`, `token`, `api_key`, `apikey`, `api_secret`, `access_key`, `private_key`, `auth`, `credential`
 
-## SecretStr
+## Examples
 
-`SecretStr` masks the value in `str()` and `repr()`:
+=== "secrets.yaml"
 
-=== "Python"
+    ```yaml
+    --8<-- "examples/docs/sources/secrets.yaml"
+    ```
+
+=== "By type (SecretStr, PaymentCardNumber)"
+
+    `SecretStr` masks the value in `str()` and `repr()`:
 
     ```python
     --8<-- "examples/docs/masking_secret_str.py"
     ```
 
-=== "secrets.yaml"
+=== "By name"
 
-    ```yaml
-    --8<-- "examples/docs/sources/secrets.yaml"
-    ```
-
-## Masking by Name
-
-Fields whose names contain known patterns are automatically masked in logs and error messages:
-
-=== "Python"
+    Fields whose names contain known patterns are automatically masked in logs and error messages:
 
     ```python
     --8<-- "examples/docs/masking_by_name.py"
     ```
 
-=== "secrets.yaml"
+    Debug logs show masked data:
 
-    ```yaml
-    --8<-- "examples/docs/sources/secrets.yaml"
     ```
-
-Debug logs show masked data:
-
-```
-[Config] Loaded data: {'host': 'api.example.com', 'password': 'my**************rd', 'api_key': 'sk**********56'}
-```
+    [Config] Loaded data: {'host': 'api.example.com', 'password': 'my**************rd', 'api_key': 'sk**********56'}
+    ```
 
 ## Mask Format
 
@@ -113,7 +105,7 @@ config = load(
     MergeMetadata(
         sources=(
             LoadMetadata(file_="defaults.yaml"),
-            LoadMetadata(file_="secrets.yaml", secret_field_names=("custom_key",)),
+            LoadMetadata(file_="secrets.yaml", secret_field_names=("custom_key",)),  # added to MergeMetadata patterns
         ),
         mask_secrets=True,  # enabled by default
         secret_field_names=("my_pattern",),  # extra patterns for all sources
@@ -126,18 +118,4 @@ config = load(
 
 ### Global
 
-Use `configure()` to set defaults for the entire application:
-
-=== "Python"
-
-    ```python
-    --8<-- "examples/docs/masking_configure.py"
-    ```
-
-=== "secrets.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/sources/secrets.yaml"
-    ```
-
-See [Advanced — Global configure()](advanced.md#global-configure) for all `MaskingConfig` options.
+See [Advanced — Global configure()](advanced.md#global-configure) for global masking defaults and all available config options.
