@@ -117,8 +117,8 @@ The format is auto-detected from the file extension. When `file_` is not specifi
 ## What's Next
 
 - [Introduction](introduction.md) — function vs decorator mode, all formats, LoadMetadata reference
-- [Naming](../features/naming.md) — name_style, field_mapping, prefix, split_symbols
-- [Validation](../features/validation.md) — Annotated validators, root validators, custom validators
-- [Merging](../features/merging.md) — multiple sources, strategies, field groups
-- [Masking](../features/masking.md) — SecretStr, auto-detection, configuration
-- [API Reference](../api-reference.md) — full API documentation
+- [Naming](features/naming.md) — name_style, field_mapping, prefix, split_symbols
+- [Validation](features/validation.md) — Annotated validators, root validators, custom validators
+- [Merging](features/merging.md) — multiple sources, strategies, field groups
+- [Masking](features/masking.md) — SecretStr, auto-detection, configuration
+- [API Reference](api-reference.md) — full API documentation

@@ -41,8 +41,8 @@ theme:
 
 nav:
   - Getting Started:
-    - Home: getting_started/index.md
-    - Introduction: getting_started/introduction.md
+    - Home: index.md
+    - Introduction: introduction.md
   - Features:
     - Naming: features/naming.md
     - Validation: features/validation.md
@@ -71,7 +71,7 @@ plugins:
       full_output: llms-full.txt
       sections:
         Getting Started:
-          - getting_started/introduction.md
+          - introduction.md
         Features:
           - features/naming.md
           - features/validation.md

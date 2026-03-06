@@ -63,7 +63,7 @@ class LoadMetadata:
     mask_secrets: bool | None = None
 ```
 
-See [Introduction — LoadMetadata Reference](getting_started/introduction.md#loadmetadata-reference) for parameter descriptions.
+See [Introduction — LoadMetadata Reference](introduction.md#loadmetadata-reference) for parameter descriptions.
 
 ---
 
