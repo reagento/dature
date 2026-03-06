@@ -142,7 +142,7 @@ Nested fields are supported: `F[Config].database.host`.
 
 Per-field strategies work with `RAISE_ON_CONFLICT` — fields with an explicit strategy are excluded from conflict detection.
 
-For more details, see [Advanced — Per-Field Merge Rules](advanced.md#per-field-merge-rules).
+For more details, see [Advanced — Merge Rules](../advanced/merge-rules.md).
 
 ## Field Groups
 
@@ -176,7 +176,7 @@ Config field group errors (1)
     unchanged: port (from source yaml 'defaults.yaml')
 ```
 
-For nested dataclass expansion and multiple groups, see [Advanced — Field Groups](advanced.md#field-groups).
+For nested dataclass expansion and multiple groups, see [Advanced — Field Groups](../advanced/field-groups.md).
 
 ## Skipping Broken Sources
 

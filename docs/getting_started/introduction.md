@@ -156,15 +156,15 @@ class LoadMetadata:
 | `loader` | Explicit loader class. `None` → auto-detect from extension |
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
 | `split_symbols` | Delimiter for flat→nested conversion. Default: `"__"` |
-| `name_style` | Naming convention mapping. See [Naming](naming.md) |
-| `field_mapping` | Explicit field renaming with `F` objects. See [Naming](naming.md) |
-| `root_validators` | Post-load validation of the entire object. See [Validation](validation.md) |
-| `validators` | Per-field validators in metadata. See [Validation](validation.md) |
-| `expand_env_vars` | ENV variable expansion mode. See [Advanced](advanced.md#env-variable-expansion) |
-| `skip_if_broken` | Skip this source if it fails to load. See [Merging — Skipping Broken Sources](merging.md#skipping-broken-sources) |
-| `skip_if_invalid` | Skip invalid fields from this source. See [Merging — Skipping Invalid Fields](merging.md#skipping-invalid-fields) |
-| `secret_field_names` | Extra secret name patterns for masking. See [Masking](masking.md) |
-| `mask_secrets` | Enable/disable secret masking for this source. See [Masking — Configuration](masking.md#configuration) |
+| `name_style` | Naming convention mapping. See [Naming](../features/naming.md) |
+| `field_mapping` | Explicit field renaming with `F` objects. See [Naming](../features/naming.md) |
+| `root_validators` | Post-load validation of the entire object. See [Validation](../features/validation.md) |
+| `validators` | Per-field validators in metadata. See [Validation](../features/validation.md) |
+| `expand_env_vars` | ENV variable expansion mode. See [Advanced — ENV Expansion](../advanced/env-expansion.md) |
+| `skip_if_broken` | Skip this source if it fails to load. See [Merging — Skipping Broken Sources](../features/merging.md#skipping-broken-sources) |
+| `skip_if_invalid` | Skip invalid fields from this source. See [Merging — Skipping Invalid Fields](../features/merging.md#skipping-invalid-fields) |
+| `secret_field_names` | Extra secret name patterns for masking. See [Masking](../features/masking.md) |
+| `mask_secrets` | Enable/disable secret masking for this source. See [Masking — Configuration](../features/masking.md#configuration) |
 
 ## Type Coercion
 

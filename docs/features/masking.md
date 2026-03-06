@@ -118,4 +118,4 @@ config = load(
 
 ### Global
 
-See [Advanced — Global configure()](advanced.md#global-configure) for global masking defaults and all available config options.
+See [Advanced — Configure](../advanced/configure.md#global-configure) for global masking defaults and all available config options.
