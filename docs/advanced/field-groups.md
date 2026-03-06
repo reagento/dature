@@ -24,30 +24,66 @@ Ensure related fields are always overridden together:
 
 Passing a dataclass field expands it into all its leaf fields:
 
-```python
-@dataclass
-class Database:
-    host: str
-    port: int
+=== "Python"
 
-@dataclass
-class Config:
-    database: Database
-    timeout: int
+    ```python
+    --8<-- "examples/docs/advanced_field_groups_expansion.py"
+    ```
 
-# FieldGroup(F[Config].database, F[Config].timeout)
-# expands to (database.host, database.port, timeout)
-```
+=== "field_groups_nested_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_nested_defaults.yaml"
+    ```
+
+=== "field_groups_nested_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_nested_overrides.yaml"
+    ```
 
 ## Multiple Groups
 
 Multiple groups can be defined independently:
 
-```python
-field_groups=(
-    FieldGroup(F[Config].host, F[Config].port),
-    FieldGroup(F[Config].user, F[Config].password),
-)
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_field_groups_multiple.py"
+    ```
+
+=== "field_groups_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    ```
+
+=== "field_groups_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_overrides.yaml"
+    ```
 
 Field groups work with all merge strategies and can be combined with `field_merges`.
+
+## Partial Override Error
+
+If a source changes some fields in a group but not others, `FieldGroupError` is raised:
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_field_groups_error.py"
+    ```
+
+=== "field_groups_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    ```
+
+=== "field_groups_partial_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/field_groups_partial_overrides.yaml"
+    ```

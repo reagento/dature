@@ -33,34 +33,45 @@ Override the global merge strategy for individual fields. All available `FieldMe
 
 Fields with an explicit strategy are excluded from conflict detection:
 
-```python
-config = load(
-    MergeMetadata(
-        sources=(
-            LoadMetadata(file_="a.yaml"),
-            LoadMetadata(file_="b.yaml"),
-        ),
-        strategy=MergeStrategy.RAISE_ON_CONFLICT,
-        field_merges=(
-            MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),
-        ),
-    ),
-    Config,
-)
-# "host" can differ between sources without raising an error,
-# all other fields still raise MergeConflictError on conflict.
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_merge_rules_conflict.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 ## Callable Merge
 
 You can also pass a callable as the strategy:
 
-```python
-MergeRule(
-    F[Config].tags,
-    lambda values: sorted(set(v for lst in values for v in lst)),
-)
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced_merge_rules_callable.py"
+    ```
+
+=== "defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/defaults.yaml"
+    ```
+
+=== "overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/overrides.yaml"
+    ```
 
 The callable receives a `list[JSONValue]` (one value per source) and returns the merged value.
 

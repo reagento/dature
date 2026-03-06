@@ -1,4 +1,4 @@
-"""Per-field merge rules — all FieldMergeStrategy options."""
+"""RAISE_ON_CONFLICT with per-field override."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,18 +23,20 @@ config = load(
             LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),
             LoadMetadata(file_=str(SOURCES_DIR / "overrides.yaml")),
         ),
-        strategy=MergeStrategy.LAST_WINS,
+        strategy=MergeStrategy.RAISE_ON_CONFLICT,
         field_merges=(
-            MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
+            MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),
+            MergeRule(F[Config].port, FieldMergeStrategy.LAST_WINS),
+            MergeRule(F[Config].debug, FieldMergeStrategy.LAST_WINS),
+            MergeRule(F[Config].workers, FieldMergeStrategy.LAST_WINS),
             MergeRule(F[Config].tags, FieldMergeStrategy.APPEND_UNIQUE),
-            MergeRule(F[Config].workers, max),
         ),
     ),
     Config,
 )
 
-print(f"host: {config.host}")  # host: localhost
+print(f"host: {config.host}")  # host: production.example.com
 print(f"port: {config.port}")  # port: 8080
 print(f"debug: {config.debug}")  # debug: True
-print(f"tags: {config.tags}")  # tags: ['default', 'web', 'api']
 print(f"workers: {config.workers}")  # workers: 4
+print(f"tags: {config.tags}")  # tags: ['default', 'web', 'api']

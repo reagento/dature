@@ -85,6 +85,9 @@ ignore = [
     "PLR2004", # magic values in examples
     "SIM103",  # return condition directly
     "S104",    # possible hardcoded password
+    "ERA001",  # commented-out code
+    "S101",    # assert
+    "PT017",   # assertion on exception in except block
 ]
 
 [tool.ruff.lint.pylint]

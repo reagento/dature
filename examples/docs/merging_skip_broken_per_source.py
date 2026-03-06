@@ -23,7 +23,10 @@ config = load(
                 file_=str(SOURCES_DIR / "optional.yaml"),
                 skip_if_broken=True,
             ),  # always skip if broken
-            LoadMetadata(prefix="APP_", skip_if_broken=False),  # never skip
+            LoadMetadata(
+                file_=str(SOURCES_DIR / "overrides.yaml"),
+                skip_if_broken=False,
+            ),  # never skip, even if global is True
         ),
         skip_broken_sources=True,  # global default
     ),

@@ -33,6 +33,10 @@ def resolve_loader_for_source(
 
 def should_skip_broken(source_meta: LoadMetadata, merge_meta: MergeMetadata) -> bool:
     if source_meta.skip_if_broken is not None:
+        if source_meta.file_ is None:
+            logger.warning(
+                "skip_if_broken has no effect on environment variable sources — they cannot be broken",
+            )
         return source_meta.skip_if_broken
     return merge_meta.skip_broken_sources
 
