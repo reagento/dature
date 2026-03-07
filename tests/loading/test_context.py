@@ -128,6 +128,13 @@ class TestCoerceFlagFields:
 
         assert result == {"name": "test"}
 
+    def test_non_numeric_string_left_unchanged(self):
+        data = {"name": "test", "perms": "READ|WRITE"}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result == {"name": "test", "perms": "READ|WRITE"}
+
     def test_flag_object_coerced_to_int(self):
         data = {"name": "test", "perms": self.Permission.READ | self.Permission.WRITE}
 

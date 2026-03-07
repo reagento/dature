@@ -72,7 +72,7 @@ Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
 In decorator mode where the class is not yet defined, use a string:
 
 ```python
-F["Config"].name  # validation is skipped
+F["Config"].name  # autocomplete doesn't work here
 ```
 
 ## prefix

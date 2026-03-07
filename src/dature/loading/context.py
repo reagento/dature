@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from collections.abc import Callable
 from dataclasses import Field, asdict, fields, is_dataclass
@@ -33,7 +34,8 @@ def coerce_flag_fields[T](data: JSONValue, dataclass_: type[T]) -> JSONValue:
         if isinstance(hint, type) and issubclass(hint, Flag):
             value = coerced.get(field.name)
             if isinstance(value, str):
-                coerced[field.name] = int(value)
+                with contextlib.suppress(ValueError):
+                    coerced[field.name] = int(value)
             elif isinstance(value, Flag):
                 coerced[field.name] = value.value
     return coerced

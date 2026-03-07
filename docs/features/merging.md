@@ -88,6 +88,8 @@ Works as a decorator too:
 
 Nested dicts are merged recursively. Lists and scalars are replaced entirely according to the strategy.
 
+For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/merge-rules.md#field-groups).
+
 ## MergeMetadata Reference
 
 ```python
