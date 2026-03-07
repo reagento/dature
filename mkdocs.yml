@@ -54,6 +54,7 @@ nav:
     - ENV Expansion: advanced/env-expansion.md
     - Special Types: advanced/special-types.md
     - Debug & Reports: advanced/debug.md
+    - Caching: advanced/caching.md
     - Configure: advanced/configure.md
   - Reference:
     - API Reference: api-reference.md
@@ -83,6 +84,7 @@ plugins:
           - advanced/env-expansion.md
           - advanced/special-types.md
           - advanced/debug.md
+          - advanced/caching.md
           - advanced/configure.md
         Reference:
           - api-reference.md

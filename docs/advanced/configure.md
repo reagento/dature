@@ -1,23 +1,19 @@
 # Configure
 
-## Caching
-
-In decorator mode, caching is enabled by default:
-
-```python
---8<-- "examples/docs/advanced_caching.py"
-```
-
-Caching can also be configured globally via `configure()`.
-
 ## Global configure()
 
 Customize defaults for the entire application — programmatically or via environment variables:
 
-=== "Python"
+=== "configure()"
 
     ```python
     --8<-- "examples/docs/advanced_configure.py"
+    ```
+
+=== "Environment Variables"
+
+    ```python
+    --8<-- "examples/docs/advanced_configure_env.py"
     ```
 
 === "app.yaml"
@@ -26,54 +22,37 @@ Customize defaults for the entire application — programmatically or via enviro
     --8<-- "examples/docs/sources/app.yaml"
     ```
 
-=== "Environment Variables"
-
-    dature auto-loads its own config from `DATURE_*` environment variables on first use. Nested fields use `__` as delimiter:
-
-    ```bash
-    export DATURE_MASKING__MASK_CHAR="X"
-    export DATURE_MASKING__MIN_VISIBLE_CHARS="1"
-    export DATURE_ERROR_DISPLAY__MAX_VISIBLE_LINES="5"
-    export DATURE_LOADING__DEBUG="false"
-    export DATURE_LOADING__CACHE="true"
-    ```
-
-    ```python
-    --8<-- "examples/docs/advanced_configure_env.py"
-    ```
-
 ### MaskingConfig
 
 ```python
-@dataclass(frozen=True, slots=True)
-class MaskingConfig:
-    mask_char: str = "*"
-    min_visible_chars: int = 2
-    min_length_for_partial_mask: int = 5
-    fixed_mask_length: int = 5
-    min_heuristic_length: int = 8
-    secret_field_names: tuple[str, ...] = (
-        "password", "passwd", "secret", "token",
-        "api_key", "apikey", "api_secret", "access_key",
-        "private_key", "auth", "credential",
-    )
-    mask_secrets: bool = True
+--8<-- "src/dature/config.py:masking-config"
 ```
 
 ### ErrorDisplayConfig
 
 ```python
-@dataclass(frozen=True, slots=True)
-class ErrorDisplayConfig:
-    max_visible_lines: int = 3
-    max_line_length: int = 80
+--8<-- "src/dature/config.py:error-display-config"
 ```
 
 ### LoadingConfig
 
 ```python
-@dataclass(frozen=True, slots=True)
-class LoadingConfig:
-    cache: bool = True
-    debug: bool = False
+--8<-- "src/dature/config.py:loading-config"
 ```
+
+## Environment Variables
+
+dature auto-loads its own config from `DATURE_*` environment variables on first use. Nested fields use `__` as delimiter:
+
+| Variable | Config | Field | Description |
+|---|---|---|---|
+| `DATURE_MASKING__MASK_CHAR` | [MaskingConfig](#maskingconfig) | `mask_char` | Character used to replace secret values |
+| `DATURE_MASKING__MIN_VISIBLE_CHARS` | [MaskingConfig](#maskingconfig) | `min_visible_chars` | Number of characters left unmasked at the start |
+| `DATURE_MASKING__MIN_LENGTH_FOR_PARTIAL_MASK` | [MaskingConfig](#maskingconfig) | `min_length_for_partial_mask` | Minimum value length to apply partial masking; shorter values are fully masked |
+| `DATURE_MASKING__FIXED_MASK_LENGTH` | [MaskingConfig](#maskingconfig) | `fixed_mask_length` | Fixed number of mask characters in the masked part |
+| `DATURE_MASKING__MIN_HEURISTIC_LENGTH` | [MaskingConfig](#maskingconfig) | `min_heuristic_length` | Minimum field value length for auto-detection of secrets by field name |
+| `DATURE_MASKING__MASK_SECRETS` | [MaskingConfig](#maskingconfig) | `mask_secrets` | Enable or disable secret masking globally |
+| `DATURE_ERROR_DISPLAY__MAX_VISIBLE_LINES` | [ErrorDisplayConfig](#errordisplayconfig) | `max_visible_lines` | Max lines shown in error messages for source file previews |
+| `DATURE_ERROR_DISPLAY__MAX_LINE_LENGTH` | [ErrorDisplayConfig](#errordisplayconfig) | `max_line_length` | Max character width per line in error messages |
+| `DATURE_LOADING__CACHE` | [LoadingConfig](#loadingconfig) | `cache` | Enable caching for decorator-mode loads |
+| `DATURE_LOADING__DEBUG` | [LoadingConfig](#loadingconfig) | `debug` | Attach `LoadReport` to every loaded instance |

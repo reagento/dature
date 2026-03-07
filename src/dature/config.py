@@ -5,6 +5,7 @@ from dature.validators.number import Ge
 from dature.validators.string import MaxLength, MinLength
 
 
+# --8<-- [start:masking-config]
 @dataclass(frozen=True, slots=True)
 class MaskingConfig:
     mask_char: Annotated[str, MinLength(value=1), MaxLength(value=1)] = "*"
@@ -28,16 +29,27 @@ class MaskingConfig:
     mask_secrets: bool = True
 
 
+# --8<-- [end:masking-config]
+
+
+# --8<-- [start:error-display-config]
 @dataclass(frozen=True, slots=True)
 class ErrorDisplayConfig:
     max_visible_lines: Annotated[int, Ge(value=1)] = 3
     max_line_length: Annotated[int, Ge(value=1)] = 80
 
 
+# --8<-- [end:error-display-config]
+
+
+# --8<-- [start:loading-config]
 @dataclass(frozen=True, slots=True)
 class LoadingConfig:
     cache: bool = True
     debug: bool = False
+
+
+# --8<-- [end:loading-config]
 
 
 @dataclass(frozen=True, slots=True)

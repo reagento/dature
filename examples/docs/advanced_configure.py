@@ -3,16 +3,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from dature import LoadMetadata, configure, load
-from dature.config import ErrorDisplayConfig, LoadingConfig, MaskingConfig
+from dature import LoadMetadata, configure, get_load_report, load
+from dature.config import LoadingConfig
 
 SOURCES_DIR = Path(__file__).parent / "sources"
-
-configure(
-    masking=MaskingConfig(mask_char="X", min_visible_chars=1),
-    error_display=ErrorDisplayConfig(max_visible_lines=5),
-    loading=LoadingConfig(cache=True, debug=False),
-)
 
 
 @dataclass
@@ -22,14 +16,21 @@ class Config:
     debug: bool = False
 
 
+# 1. Default config — debug is off, no report
 config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+report = get_load_report(config)
+print(f"has report: {report is not None}")  # has report: False
 
-print(f"host: {config.host}")  # host: localhost
-print(f"port: {config.port}")  # port: 8080
+# 2. Enable debug globally via configure()
+configure(loading=LoadingConfig(debug=True))
 
-# Reset to defaults
-configure(
-    masking=MaskingConfig(),
-    error_display=ErrorDisplayConfig(),
-    loading=LoadingConfig(),
-)
+config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+report = get_load_report(config)
+print(f"has report: {report is not None}")  # has report: True
+
+# 3. Reset to defaults — debug is off again
+configure(loading=LoadingConfig())
+
+config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+report = get_load_report(config)
+print(f"has report: {report is not None}")  # has report: False
