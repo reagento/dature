@@ -88,6 +88,7 @@ ignore = [
     "ERA001",  # commented-out code
     "S101",    # assert
     "PT017",   # assertion on exception in except block
+    "E501",    # line too long
 ]
 
 [tool.ruff.lint.pylint]

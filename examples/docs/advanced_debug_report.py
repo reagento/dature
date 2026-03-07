@@ -33,4 +33,11 @@ if report is not None:
     for origin in report.field_origins:
         print(
             f"{origin.key} = {origin.value!r}  <-- source {origin.source_index} ({origin.source_file})",
-        )  # host = 'production.example.com'  <-- source 1 (...)
+        )
+
+# Output:
+# debug = True  <-- source 1 (.../overrides.yaml)
+# host = 'production.example.com'  <-- source 1 (.../overrides.yaml)
+# port = 8080  <-- source 1 (.../overrides.yaml)
+# tags = ['web', 'api']  <-- source 1 (.../overrides.yaml)
+# workers = 4  <-- source 1 (.../overrides.yaml)

@@ -11,6 +11,7 @@ logger = logging.getLogger("dature")
 _REPORT_ATTR = "__dature_load_report__"
 
 
+# --8<-- [start:report-structure]
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SourceEntry:
     index: int
@@ -37,6 +38,7 @@ class LoadReport:
     merged_data: JSONValue
 
 
+# --8<-- [end:report-structure]
 def compute_field_origins(
     *,
     raw_dicts: list[JSONValue],

@@ -1,0 +1,6 @@
+host: "localhost"
+port: "not_a_number"
+debug: false
+workers: 1
+tags:
+  - "default"
