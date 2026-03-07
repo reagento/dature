@@ -77,10 +77,54 @@ For merge mode, set on `MergeMetadata` as default for all sources:
 
 In `"strict"` mode, all missing variables are collected and reported at once:
 
-```
-Missing environment variables (2):
-  - DATABASE_URL (position 0 in '$DATABASE_URL')
-  - SECRET_KEY (position 0 in '${SECRET_KEY}')
-```
+=== "YAML"
+
+    ```
+    Config env expand errors (1)
+
+      [host]  Missing environment variable 'MISSING_HOST'
+       └── FILE 'config.yaml', line 1
+           host: "$MISSING_HOST"
+    ```
+
+=== "JSON"
+
+    ```
+    Config env expand errors (1)
+
+      [host]  Missing environment variable 'MISSING_HOST'
+       └── FILE 'config.json', line 1
+           {"host": "$MISSING_HOST", "port": 8080}
+    ```
+
+=== "TOML"
+
+    ```
+    Config env expand errors (1)
+
+      [host]  Missing environment variable 'MISSING_HOST'
+       └── FILE 'config.toml', line 1
+           host = "$MISSING_HOST"
+    ```
+
+=== "INI"
+
+    ```
+    Config env expand errors (1)
+
+      [host]  Missing environment variable 'MISSING_HOST'
+       └── FILE 'config.ini', line 2
+           host = $MISSING_HOST
+    ```
+
+=== "ENV file"
+
+    ```
+    Config env expand errors (1)
+
+      [host]  Missing environment variable 'MISSING_HOST'
+       └── ENV FILE 'config.env', line 1
+           HOST=$MISSING_HOST
+    ```
 
 The `${VAR:-default}` fallback syntax works in all modes.

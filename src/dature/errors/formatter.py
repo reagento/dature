@@ -113,8 +113,15 @@ def handle_load_errors[T](
     try:
         return func()
     except EnvVarExpandError as exc:
-        missing = [e for e in exc.exceptions if isinstance(e, MissingEnvVarError)]
-        raise EnvVarExpandError(missing, dataclass_name=ctx.dataclass_name) from exc
+        file_content = read_file_content(ctx.file_path)
+        enriched_env: list[MissingEnvVarError] = []
+        for e in exc.exceptions:
+            if not isinstance(e, MissingEnvVarError):
+                continue
+            location = resolve_source_location(e.field_path, ctx, file_content)
+            e.location = location
+            enriched_env.append(e)
+        raise EnvVarExpandError(enriched_env, dataclass_name=ctx.dataclass_name) from exc
     except (AggregateLoadError, LoadError) as exc:
         file_content = read_file_content(ctx.file_path)
         field_errors = extract_field_errors(exc, secret_paths=ctx.secret_paths)

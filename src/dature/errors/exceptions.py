@@ -146,10 +146,14 @@ class MissingEnvVarError(DatureError):
         var_name: str,
         position: int,
         source_text: str,
+        field_path: list[str] | None = None,
+        location: SourceLocation | None = None,
     ) -> None:
         self.var_name = var_name
         self.position = position
         self.source_text = source_text
+        self.field_path = field_path or []
+        self.location = location
         super().__init__(
             f"Environment variable '{var_name}' is not set (position {position} in '{source_text}')",
         )
@@ -231,17 +235,23 @@ class EnvVarExpandError(DatureConfigError):
 
     def __str__(self) -> str:
         if self.dataclass_name:
-            header = f"{self.dataclass_name} env expand errors ({len(self.exceptions)}):"
+            header = f"{self.dataclass_name} env expand errors ({len(self.exceptions)})"
         else:
-            header = f"Missing environment variables ({len(self.exceptions)}):"
-        lines = [
-            header,
-            *(
-                f"  - {err.var_name} (position {err.position} in '{err.source_text}')"
-                for err in self.exceptions
-                if isinstance(err, MissingEnvVarError)
-            ),
-        ]
+            header = f"Missing environment variables ({len(self.exceptions)})"
+        lines: list[str] = [header, ""]
+
+        for err in self.exceptions:
+            if not isinstance(err, MissingEnvVarError):
+                continue
+            if err.field_path:
+                path_str = ".".join(err.field_path)
+            else:
+                path_str = "<root>"
+            lines.append(f"  [{path_str}]  Missing environment variable '{err.var_name}'")
+            if err.location is not None:
+                lines.extend(_format_location(err.location))
+            lines.append("")
+
         return "\n".join(lines)
 
 

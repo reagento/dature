@@ -383,3 +383,51 @@ class TestMergeExpandEnvVars:
         )
 
         assert result.host == ""
+
+
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
+
+
+@dataclass
+class StrictConfig:
+    host: str
+    port: int
+
+
+class TestEnvVarExpandErrorFormat:
+    @pytest.mark.parametrize(
+        ("ext", "prefix", "source_label", "line", "line_content"),
+        [
+            ("yaml", None, "FILE", 1, 'host: "$MISSING_HOST"'),
+            ("json", None, "FILE", 1, '{"host": "$MISSING_HOST", "port": 8080}'),
+            ("toml", None, "FILE", 1, 'host = "$MISSING_HOST"'),
+            ("ini", "section", "FILE", 2, "host = $MISSING_HOST"),
+            ("env", None, "ENV FILE", 1, "HOST=$MISSING_HOST"),
+        ],
+        ids=["yaml", "json", "toml", "ini", "env"],
+    )
+    def test_error_format(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        ext: str,
+        prefix: str | None,
+        source_label: str,
+        line: int,
+        line_content: str,
+    ) -> None:
+        monkeypatch.delenv("MISSING_HOST", raising=False)
+        file = FIXTURES_DIR / f"env_expand_strict.{ext}"
+
+        with pytest.raises(EnvVarExpandError) as exc_info:
+            load(
+                LoadMetadata(file_=str(file), prefix=prefix, expand_env_vars="strict"),
+                StrictConfig,
+            )
+
+        assert str(exc_info.value) == dedent(f"""\
+            StrictConfig env expand errors (1)
+
+              [host]  Missing environment variable 'MISSING_HOST'
+               └── {source_label} '{file}', line {line}
+                   {line_content}
+        """)
