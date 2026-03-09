@@ -17,7 +17,15 @@ from dature.sources_loader.loaders import (
     optional_from_empty_string,
     time_from_string,
 )
-from dature.types import DotSeparatedPath, ExpandEnvVarsMode, FieldMapping, FieldValidators, JSONValue, NameStyle
+from dature.types import (
+    DotSeparatedPath,
+    ExpandEnvVarsMode,
+    FieldMapping,
+    FieldValidators,
+    FileOrStream,
+    JSONValue,
+    NameStyle,
+)
 
 
 def _set_nested(d: dict[str, JSONValue], keys: list[str], value: str) -> None:
@@ -61,7 +69,11 @@ class DockerSecretsLoader(BaseLoader):
             loader(bool, bool_loader),
         ]
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
+        if not isinstance(path, Path):
+            msg = "DockerSecretsLoader does not support file-like objects"
+            raise TypeError(msg)
+
         result: dict[str, JSONValue] = {}
 
         for entry in sorted(path.iterdir()):

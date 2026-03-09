@@ -8,7 +8,7 @@ from dature.errors.exceptions import EnvVarExpandError
 from dature.field_path import F
 from dature.sources_loader.base import BaseLoader
 from dature.sources_loader.json_ import JsonLoader
-from dature.types import ExpandEnvVarsMode, JSONValue
+from dature.types import ExpandEnvVarsMode, FileOrStream, JSONValue
 
 
 class MockLoader(BaseLoader):
@@ -26,7 +26,7 @@ class MockLoader(BaseLoader):
         super().__init__(prefix=prefix, expand_env_vars=expand_env_vars)
         self._test_data = test_data or {}
 
-    def _load(self, path: Path) -> JSONValue:  # noqa: ARG002
+    def _load(self, path: FileOrStream) -> JSONValue:  # noqa: ARG002
         """Return test data."""
         return self._test_data
 
@@ -174,7 +174,7 @@ class TestNameStyleMapping:
         json_file.write_text('{"userName": "John", "userAge": 25, "isActive": true}')
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, name_style="lower_camel"),
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="lower_camel"),
             Config,
         )
 
@@ -192,7 +192,7 @@ class TestNameStyleMapping:
         json_file.write_text('{"user_name": "Alice", "user_age": 30}')
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, name_style="lower_snake"),
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="lower_snake"),
             Config,
         )
 
@@ -209,7 +209,7 @@ class TestNameStyleMapping:
         json_file.write_text('{"UserName": "Bob", "TotalCount": 100}')
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, name_style="upper_camel"),
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="upper_camel"),
             Config,
         )
 
@@ -226,7 +226,7 @@ class TestNameStyleMapping:
         json_file.write_text('{"user-name": "Charlie", "api-key": "secret123"}')
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, name_style="lower_kebab"),
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="lower_kebab"),
             Config,
         )
 
@@ -243,7 +243,7 @@ class TestNameStyleMapping:
         json_file.write_text('{"USER-NAME": "Dave", "API-KEY": "secret456"}')
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, name_style="upper_kebab"),
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="upper_kebab"),
             Config,
         )
 
@@ -260,7 +260,7 @@ class TestNameStyleMapping:
         json_file.write_text('{"USER_NAME": "Eve", "MAX_RETRIES": 3}')
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, name_style="upper_snake"),
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="upper_snake"),
             Config,
         )
 
@@ -286,7 +286,7 @@ class TestFieldMapping:
         }
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             Config,
         )
 
@@ -307,7 +307,7 @@ class TestFieldMapping:
         field_mapping = {F[Config].name: "userName"}
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             Config,
         )
 
@@ -329,7 +329,7 @@ class TestFieldMapping:
 
         result = load(
             LoadMetadata(
-                file_=str(json_file),
+                file_=json_file,
                 loader=JsonLoader,
                 name_style="lower_camel",
                 field_mapping=field_mapping,
@@ -365,7 +365,7 @@ class TestFieldMapping:
         }
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             User,
         )
 
@@ -384,7 +384,7 @@ class TestFieldMapping:
         field_mapping = {F[Config].name: ("fullName", "userName")}
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             Config,
         )
 
@@ -401,7 +401,7 @@ class TestFieldMapping:
         field_mapping = {F[Config].name: ("fullName", "userName")}
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             Config,
         )
 
@@ -422,7 +422,7 @@ class TestFieldMapping:
         field_mapping = {F[User].address.city: "cityName"}
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             User,
         )
 
@@ -439,7 +439,7 @@ class TestFieldMapping:
         field_mapping = {F["Config"].name: "fullName"}
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             Config,
         )
 
@@ -456,7 +456,7 @@ class TestFieldMapping:
         field_mapping = {F[Config].name: "fullName"}
 
         result = load(
-            LoadMetadata(file_=str(json_file), loader=JsonLoader, field_mapping=field_mapping),
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
             Config,
         )
 
@@ -485,7 +485,7 @@ class TestFieldMapping:
 
         result = load(
             LoadMetadata(
-                file_=str(json_file),
+                file_=json_file,
                 loader=JsonLoader,
                 name_style="lower_camel",
                 field_mapping=field_mapping,
@@ -520,7 +520,7 @@ class TestFieldMapping:
 
         result = load(
             LoadMetadata(
-                file_=str(json_file),
+                file_=json_file,
                 loader=JsonLoader,
                 name_style="lower_camel",
                 field_mapping=field_mapping,

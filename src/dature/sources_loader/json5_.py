@@ -1,6 +1,6 @@
+import io
 from datetime import date, datetime, time
-from pathlib import Path
-from typing import cast
+from typing import TextIO, cast
 
 import json5
 from adaptix import loader
@@ -14,7 +14,7 @@ from dature.sources_loader.loaders import (
     datetime_from_string,
     time_from_string,
 )
-from dature.types import JSONValue
+from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 
 class Json5Loader(BaseLoader):
@@ -29,6 +29,10 @@ class Json5Loader(BaseLoader):
             loader(bytearray, bytearray_from_string),
         ]
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
+        if isinstance(path, TEXT_IO_TYPES):
+            return cast("JSONValue", json5.load(cast("TextIO", path)))
+        if isinstance(path, BINARY_IO_TYPES):
+            return cast("JSONValue", json5.load(io.TextIOWrapper(cast("io.BufferedReader", path))))
         with path.open() as file_:
             return cast("JSONValue", json5.load(file_))

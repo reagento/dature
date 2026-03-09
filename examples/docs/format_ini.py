@@ -16,7 +16,7 @@ class Config:
 
 
 config = load(
-    LoadMetadata(file_=str(SOURCES_DIR / "app.ini"), prefix="app"),
+    LoadMetadata(file_=SOURCES_DIR / "app.ini", prefix="app"),
     Config,
 )
 

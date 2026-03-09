@@ -18,7 +18,7 @@ class Config:
 
 
 config = load(
-    LoadMetadata(file_=str(SOURCES_DIR / "secrets.yaml"), mask_secrets=True),
+    LoadMetadata(file_=SOURCES_DIR / "secrets.yaml", mask_secrets=True),
     Config,
     debug=True,
 )

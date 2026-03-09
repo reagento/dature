@@ -22,8 +22,8 @@ try:
     config = load(
         MergeMetadata(
             sources=(
-                LoadMetadata(file_=str(SOURCES_DIR / "overrides.yaml")),
-                LoadMetadata(file_=str(SOURCES_DIR / "invalid_defaults.yaml")),
+                LoadMetadata(file_=SOURCES_DIR / "overrides.yaml"),
+                LoadMetadata(file_=SOURCES_DIR / "invalid_defaults.yaml"),
             ),
         ),
         Config,

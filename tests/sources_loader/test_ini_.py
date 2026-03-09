@@ -21,7 +21,7 @@ class TestIniLoader:
     def test_comprehensive_type_conversion(self, all_types_ini_file: Path):
         """Test loading INI with full type coercion to dataclass."""
         result = load(
-            LoadMetadata(file_=str(all_types_ini_file), loader=IniLoader, prefix="all_types"),
+            LoadMetadata(file_=all_types_ini_file, loader=IniLoader, prefix="all_types"),
             AllPythonTypesCompact,
         )
 
@@ -62,7 +62,7 @@ class TestIniLoader:
         )
 
         result = load(
-            LoadMetadata(file_=str(prefixed_ini_file), loader=IniLoader, prefix="app"),
+            LoadMetadata(file_=prefixed_ini_file, loader=IniLoader, prefix="app"),
             PrefixedConfig,
         )
 
@@ -91,7 +91,7 @@ class TestIniLoader:
             port: int
 
         result = load(
-            LoadMetadata(file_=str(ini_file), loader=IniLoader, prefix="database"),
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="database"),
             DbConfig,
         )
 
@@ -110,7 +110,7 @@ class TestIniLoader:
             url: str
 
         result = load(
-            LoadMetadata(file_=str(ini_file), loader=IniLoader, prefix="section"),
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="section"),
             Config,
         )
 
@@ -127,7 +127,7 @@ class TestIniLoader:
             value: str
 
         result = load(
-            LoadMetadata(file_=str(ini_file), loader=IniLoader, prefix="section"),
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="section"),
             Config,
         )
 
@@ -144,7 +144,7 @@ class TestIniLoader:
             value: str
 
         result = load(
-            LoadMetadata(file_=str(ini_file), loader=IniLoader, prefix="section"),
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="section"),
             Config,
         )
 

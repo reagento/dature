@@ -19,7 +19,7 @@ class Config:
 
 config = load(
     LoadMetadata(
-        file_=str(SOURCES_DIR / "app.yaml"),
+        file_=SOURCES_DIR / "app.yaml",
         validators={
             F[Config].host: MinLength(value=1),
             F[Config].port: (Ge(value=1), Lt(value=65536)),

@@ -1,6 +1,6 @@
 import configparser
+import io
 from datetime import date, datetime, time
-from pathlib import Path
 from typing import cast
 
 from adaptix import loader
@@ -18,7 +18,7 @@ from dature.sources_loader.loaders import (
     optional_from_empty_string,
     time_from_string,
 )
-from dature.types import JSONValue
+from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 
 class IniLoader(BaseLoader):
@@ -41,10 +41,15 @@ class IniLoader(BaseLoader):
         expanded = expand_env_vars(prefixed, mode=self._expand_env_vars_mode)
         return self._parse_string_values(expanded)
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
         config = configparser.ConfigParser(interpolation=None)
-        with path.open() as f:
-            config.read_file(f)
+        if isinstance(path, TEXT_IO_TYPES):
+            config.read_file(path)
+        elif isinstance(path, BINARY_IO_TYPES):
+            config.read_file(io.TextIOWrapper(cast("io.BufferedReader", path)))
+        else:
+            with path.open() as f:
+                config.read_file(f)
         if self._prefix and self._prefix in config:
             result: dict[str, JSONValue] = dict(config[self._prefix])
             child_prefix = self._prefix + "."

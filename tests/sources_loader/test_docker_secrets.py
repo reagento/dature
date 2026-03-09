@@ -10,7 +10,7 @@ from tests.sources_loader.checker import assert_all_types_equal
 class TestDockerSecretsLoader:
     def test_comprehensive_type_conversion(self, all_types_docker_secrets_dir: Path):
         result = load(
-            LoadMetadata(file_=str(all_types_docker_secrets_dir), loader=DockerSecretsLoader),
+            LoadMetadata(file_=all_types_docker_secrets_dir, loader=DockerSecretsLoader),
             AllPythonTypesCompact,
         )
 
@@ -72,7 +72,7 @@ class TestDockerSecretsLoader:
             base: str
 
         result = load(
-            LoadMetadata(file_=str(tmp_path), loader=DockerSecretsLoader),
+            LoadMetadata(file_=tmp_path, loader=DockerSecretsLoader),
             Config,
         )
 

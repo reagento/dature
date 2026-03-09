@@ -3,6 +3,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from dature.loading.resolver import resolve_loader_class
+from dature.types import FILE_LIKE_TYPES
 
 if TYPE_CHECKING:
     from dature.field_path import FieldPath
@@ -13,6 +14,8 @@ if TYPE_CHECKING:
         FieldMapping,
         FieldMergeCallable,
         FieldValidators,
+        FileLike,
+        FilePath,
         NameStyle,
     )
 
@@ -35,7 +38,7 @@ class FieldMergeStrategy(StrEnum):
 # --8<-- [start:load-metadata]
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LoadMetadata:
-    file_: str | None = None
+    file_: "FileLike | FilePath | None" = None
     loader: "type[LoaderProtocol] | None" = None
     prefix: "DotSeparatedPath | None" = None
     split_symbols: str = "__"
@@ -53,6 +56,8 @@ class LoadMetadata:
     def __repr__(self) -> str:
         loader_class = resolve_loader_class(self.loader, self.file_)
         display = loader_class.display_name
+        if isinstance(self.file_, FILE_LIKE_TYPES):
+            return f"{display} '<stream>'"
         if self.file_ is not None:
             return f"{display} '{self.file_}'"
         return display

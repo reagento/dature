@@ -19,7 +19,7 @@ class Config:
     card_number: str
 
 
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "secrets.yaml")), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "secrets.yaml"), Config)
 
 print(f"host: {config.host}")  # host: api.example.com
 print(f"password: {config.password}")  # password: my_secret_password

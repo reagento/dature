@@ -8,7 +8,7 @@ from dature import LoadMetadata, load
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
-@load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")))
+@load(LoadMetadata(file_=SOURCES_DIR / "app.yaml"))
 @dataclass
 class Config:
     host: str

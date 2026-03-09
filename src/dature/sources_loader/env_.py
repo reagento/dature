@@ -1,6 +1,7 @@
+import io
 import os
+from collections.abc import Iterable
 from datetime import date, datetime, time
-from pathlib import Path
 from typing import cast
 
 from adaptix import loader
@@ -18,7 +19,17 @@ from dature.sources_loader.loaders import (
     optional_from_empty_string,
     time_from_string,
 )
-from dature.types import DotSeparatedPath, ExpandEnvVarsMode, FieldMapping, FieldValidators, JSONValue, NameStyle
+from dature.types import (
+    BINARY_IO_TYPES,
+    TEXT_IO_TYPES,
+    DotSeparatedPath,
+    ExpandEnvVarsMode,
+    FieldMapping,
+    FieldValidators,
+    FileOrStream,
+    JSONValue,
+    NameStyle,
+)
 
 
 def _set_nested(d: dict[str, JSONValue], keys: list[str], value: str) -> None:
@@ -62,7 +73,7 @@ class EnvLoader(BaseLoader):
             loader(bool, bool_loader),
         ]
 
-    def _load(self, _: Path) -> JSONValue:
+    def _load(self, _: FileOrStream) -> JSONValue:
         return cast("JSONValue", os.environ)
 
     def _pre_processing(self, data: JSONValue) -> JSONValue:
@@ -92,26 +103,35 @@ class EnvLoader(BaseLoader):
 class EnvFileLoader(EnvLoader):
     display_name = "envfile"
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
         env_vars: dict[str, JSONValue] = {}
 
-        with path.open() as file_:
-            for raw_line in file_:
-                if not (line := raw_line.strip()) or line.startswith("#"):
-                    continue
-
-                if "=" not in line:
-                    continue
-
-                key, value = line.split("=", 1)
-                key = key.strip()
-                value = value.strip()
-                _min_quoted_len = 2
-                if len(value) >= _min_quoted_len and value[0] == value[-1] and value[0] in ('"', "'"):
-                    value = value[1:-1]
-                self._pre_processed_row(key=key, value=value, result=env_vars)
+        if isinstance(path, TEXT_IO_TYPES):
+            self._parse_lines(path, env_vars)
+        elif isinstance(path, BINARY_IO_TYPES):
+            wrapper = io.TextIOWrapper(cast("io.BufferedReader", path))
+            self._parse_lines(wrapper, env_vars)
+        else:
+            with path.open() as f:
+                self._parse_lines(f, env_vars)
 
         return env_vars
+
+    def _parse_lines(self, lines: Iterable[str], env_vars: dict[str, JSONValue]) -> None:
+        for raw_line in lines:
+            if not (line := raw_line.strip()) or line.startswith("#"):
+                continue
+
+            if "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            _min_quoted_len = 2
+            if len(value) >= _min_quoted_len and value[0] == value[-1] and value[0] in ('"', "'"):
+                value = value[1:-1]
+            self._pre_processed_row(key=key, value=value, result=env_vars)
 
     def _pre_processing(self, data: JSONValue) -> JSONValue:
         expanded = expand_env_vars(data, mode=self._expand_env_vars_mode)

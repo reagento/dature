@@ -186,7 +186,7 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        result = load(LoadMetadata(file_=str(json_file)), Cfg, debug=True)
+        result = load(LoadMetadata(file_=json_file), Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -213,8 +213,8 @@ class TestSecretMaskingIntegration:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
             ),
             Cfg,
@@ -241,7 +241,7 @@ class TestSecretMaskingIntegration:
             api_key: SecretStr
             host: str
 
-        result = load(LoadMetadata(file_=str(json_file)), Cfg, debug=True)
+        result = load(LoadMetadata(file_=json_file), Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -262,7 +262,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with caplog.at_level("DEBUG", logger="dature"):
-            load(LoadMetadata(file_=str(json_file)), Cfg, debug=True)
+            load(LoadMetadata(file_=json_file), Cfg, debug=True)
 
         assert _SECRET_VALUE not in caplog.text
 
@@ -282,8 +282,8 @@ class TestSecretMaskingIntegration:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(defaults)),
-                        LoadMetadata(file_=str(overrides)),
+                        LoadMetadata(file_=defaults),
+                        LoadMetadata(file_=overrides),
                     ),
                 ),
                 Cfg,
@@ -302,7 +302,7 @@ class TestSecretMaskingIntegration:
             port: int
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(LoadMetadata(file_=str(json_file)), Cfg)
+            load(LoadMetadata(file_=json_file), Cfg)
 
         assert _SECRET_VALUE not in str(exc_info.value)
 
@@ -311,7 +311,7 @@ class TestSecretMaskingIntegration:
         json_file.write_text('{"password": "allowed", "host": "prod"}')
 
         meta = MergeMetadata(
-            sources=(LoadMetadata(file_=str(json_file)),),
+            sources=(LoadMetadata(file_=json_file),),
         )
 
         @load(meta)

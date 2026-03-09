@@ -17,20 +17,20 @@ class Config:
 
 
 # 1. Default config — debug is off, no report
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "app.yaml"), Config)
 report = get_load_report(config)
 print(f"has report: {report is not None}")  # has report: False
 
 # 2. Enable debug globally via configure()
 configure(loading=LoadingConfig(debug=True))
 
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "app.yaml"), Config)
 report = get_load_report(config)
 print(f"has report: {report is not None}")  # has report: True
 
 # 3. Reset to defaults — debug is off again
 configure(loading=LoadingConfig())
 
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "app.yaml"), Config)
 report = get_load_report(config)
 print(f"has report: {report is not None}")  # has report: False

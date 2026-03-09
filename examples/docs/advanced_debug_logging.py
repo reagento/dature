@@ -23,8 +23,8 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),
-            LoadMetadata(file_=str(SOURCES_DIR / "overrides.yaml")),
+            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "overrides.yaml"),
         ),
     ),
     Config,

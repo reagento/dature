@@ -24,9 +24,9 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=str(SOURCES_DIR / "env_expand_mode_default.yaml")),  # uses global "default"
-            LoadMetadata(file_=str(SOURCES_DIR / "env_expand_mode_empty.yaml"), expand_env_vars="empty"),
-            LoadMetadata(file_=str(SOURCES_DIR / "env_expand_mode_disabled.yaml"), expand_env_vars="disabled"),
+            LoadMetadata(file_=SOURCES_DIR / "env_expand_mode_default.yaml"),  # uses global "default"
+            LoadMetadata(file_=SOURCES_DIR / "env_expand_mode_empty.yaml", expand_env_vars="empty"),
+            LoadMetadata(file_=SOURCES_DIR / "env_expand_mode_disabled.yaml", expand_env_vars="disabled"),
         ),
         expand_env_vars="default",  # global default for all sources
     ),

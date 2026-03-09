@@ -18,13 +18,13 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),  # uses global
+            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),  # uses global
             LoadMetadata(
-                file_=str(SOURCES_DIR / "optional.yaml"),
+                file_=SOURCES_DIR / "optional.yaml",
                 skip_if_broken=True,
             ),  # always skip if broken
             LoadMetadata(
-                file_=str(SOURCES_DIR / "overrides.yaml"),
+                file_=SOURCES_DIR / "overrides.yaml",
                 skip_if_broken=False,
             ),  # never skip, even if global is True
         ),

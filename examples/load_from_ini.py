@@ -18,7 +18,7 @@ class ServerConfig:
 
 
 config = load(
-    LoadMetadata(file_=str(SOURCES_DIR / "server.ini"), loader=IniLoader, prefix="server"),
+    LoadMetadata(file_=SOURCES_DIR / "server.ini", loader=IniLoader, prefix="server"),
     ServerConfig,
 )
 

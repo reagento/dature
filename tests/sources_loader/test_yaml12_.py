@@ -17,7 +17,7 @@ class TestYaml12Loader:
 
     def test_comprehensive_type_conversion(self, all_types_yaml12_file: Path):
         """Test loading YAML with full type coercion to dataclass."""
-        result = load(LoadMetadata(file_=str(all_types_yaml12_file), loader=Yaml12Loader), AllPythonTypesCompact)
+        result = load(LoadMetadata(file_=all_types_yaml12_file, loader=Yaml12Loader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -37,7 +37,7 @@ class TestYaml12Loader:
         )
 
         result = load(
-            LoadMetadata(file_=str(prefixed_yaml_file), loader=Yaml12Loader, prefix="app"),
+            LoadMetadata(file_=prefixed_yaml_file, loader=Yaml12Loader, prefix="app"),
             PrefixedConfig,
         )
 
@@ -62,7 +62,7 @@ class TestYaml12Loader:
             services: Services
 
         result = load(
-            LoadMetadata(file_=str(yaml_config_with_env_vars_file), loader=Yaml12Loader),
+            LoadMetadata(file_=yaml_config_with_env_vars_file, loader=Yaml12Loader),
             EnvConfig,
         )
 
@@ -82,7 +82,7 @@ class TestYaml12Loader:
         class Config:
             url: str
 
-        result = load(LoadMetadata(file_=str(yaml_file), loader=Yaml12Loader), Config)
+        result = load(LoadMetadata(file_=yaml_file, loader=Yaml12Loader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -96,7 +96,7 @@ class TestYaml12Loader:
         class Config:
             value: str
 
-        result = load(LoadMetadata(file_=str(yaml_file), loader=Yaml12Loader), Config)
+        result = load(LoadMetadata(file_=yaml_file, loader=Yaml12Loader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -110,7 +110,7 @@ class TestYaml12Loader:
         class Config:
             value: str
 
-        result = load(LoadMetadata(file_=str(yaml_file), loader=Yaml12Loader), Config)
+        result = load(LoadMetadata(file_=yaml_file, loader=Yaml12Loader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 

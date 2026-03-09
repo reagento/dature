@@ -17,7 +17,7 @@ class ApiConfig:
 
 
 config = load(
-    LoadMetadata(file_=str(SOURCES_DIR / "camel_case.yaml"), name_style="lower_camel"),
+    LoadMetadata(file_=SOURCES_DIR / "camel_case.yaml", name_style="lower_camel"),
     ApiConfig,
 )
 

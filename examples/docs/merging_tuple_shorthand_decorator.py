@@ -13,7 +13,7 @@ os.environ["APP_HOST"] = "env_localhost"
 
 @load(
     (
-        LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),
+        LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
         LoadMetadata(prefix="APP_"),
     ),
 )

@@ -1,12 +1,11 @@
 from collections.abc import Callable
 from dataclasses import Field
-from pathlib import Path
 from typing import Any, ClassVar, Protocol, TypeVar
 
 from adaptix import Retort
 
 from dature.path_finders.base import PathFinder
-from dature.types import JSONValue
+from dature.types import FileOrStream, JSONValue
 
 _T = TypeVar("_T")
 
@@ -26,7 +25,7 @@ class LoaderProtocol(Protocol):
     path_finder_class: type[PathFinder] | None
     retorts: dict[type, Retort]
 
-    def load_raw(self, path: Path) -> JSONValue: ...
+    def load_raw(self, path: FileOrStream) -> JSONValue: ...
 
     def transform_to_dataclass(self, data: JSONValue, dataclass_: type[_T]) -> _T: ...
 

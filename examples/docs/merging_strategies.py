@@ -20,8 +20,8 @@ class Config:
 last_wins = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),
-            LoadMetadata(file_=str(SOURCES_DIR / "overrides.yaml")),
+            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "overrides.yaml"),
         ),
         strategy=MergeStrategy.LAST_WINS,
     ),
@@ -31,8 +31,8 @@ last_wins = load(
 first_wins = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),
-            LoadMetadata(file_=str(SOURCES_DIR / "overrides.yaml")),
+            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "overrides.yaml"),
         ),
         strategy=MergeStrategy.FIRST_WINS,
     ),

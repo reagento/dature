@@ -30,7 +30,7 @@ secrets_dir.mkdir(exist_ok=True)
 (secrets_dir / "db__port").write_text("5432")
 
 config = load(
-    LoadMetadata(file_=str(secrets_dir), loader=DockerSecretsLoader),
+    LoadMetadata(file_=secrets_dir, loader=DockerSecretsLoader),
     AppConfig,
 )
 

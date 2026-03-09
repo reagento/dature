@@ -112,7 +112,7 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 | Environment variables | — | `EnvLoader` | — |
 | Docker secrets | directory | `DockerSecretsLoader` | — |
 
-The format is auto-detected from the file extension. When `file_` is not specified, environment variables are used. When `file_` points to a directory, `DockerSecretsLoader` is used.
+The format is auto-detected from the file extension. When `file_` is not specified, environment variables are used. When `file_` points to a directory, `DockerSecretsLoader` is used. `file_` also accepts `Path` objects and file-like objects (`BytesIO`, `StringIO`) — for file-like objects, the `loader` parameter is required.
 
 ## What's Next
 

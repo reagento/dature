@@ -1,6 +1,8 @@
 import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Annotated, Literal, Self
+from io import BufferedIOBase, RawIOBase, TextIOBase
+from pathlib import Path
+from typing import TYPE_CHECKING, Annotated, Final, Literal, Self
 from urllib.parse import ParseResult
 
 if TYPE_CHECKING:
@@ -65,3 +67,10 @@ type _ValidatorKey = "FieldPath | str | int | float | bool | None"
 type FieldValidators = dict[_ValidatorKey, "ValidatorProtocol | tuple[ValidatorProtocol, ...]"]
 
 type FieldMergeCallable = Callable[[list[JSONValue]], JSONValue]
+
+type FileLike = TextIOBase | BufferedIOBase | RawIOBase
+FILE_LIKE_TYPES: Final = (TextIOBase, BufferedIOBase, RawIOBase)
+TEXT_IO_TYPES: Final = TextIOBase
+BINARY_IO_TYPES: Final = (BufferedIOBase, RawIOBase)
+type FileOrStream = Path | FileLike
+type FilePath = str | Path

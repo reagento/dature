@@ -24,7 +24,7 @@ class Config:
         return f"{self.host}:{self.port}"
 
 
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "app.yaml"), Config)
 
 print(f"host: {config.host}")  # host: localhost
 print(f"port: {config.port}")  # port: 8080

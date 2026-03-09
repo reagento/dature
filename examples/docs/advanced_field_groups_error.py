@@ -21,8 +21,8 @@ try:
     load(
         MergeMetadata(
             sources=(
-                LoadMetadata(file_=str(SOURCES_DIR / "field_groups_defaults.yaml")),
-                LoadMetadata(file_=str(SOURCES_DIR / "field_groups_partial_overrides.yaml")),
+                LoadMetadata(file_=SOURCES_DIR / "field_groups_defaults.yaml"),
+                LoadMetadata(file_=SOURCES_DIR / "field_groups_partial_overrides.yaml"),
             ),
             field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         ),

@@ -1,7 +1,6 @@
 import logging
 from collections.abc import Callable
 from dataclasses import asdict, fields, is_dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from dature.config import config
@@ -23,7 +22,7 @@ from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
 from dature.metadata import LoadMetadata
 from dature.protocols import DataclassInstance, LoaderProtocol
-from dature.types import JSONValue
+from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 if TYPE_CHECKING:
     from adaptix import Retort
@@ -107,7 +106,7 @@ class _PatchContext:
         self,
         *,
         loader_instance: LoaderProtocol,
-        file_path: Path,
+        file_path: FileOrStream,
         cls: type[DataclassInstance],
         metadata: LoadMetadata,
         cache: bool,
@@ -205,7 +204,7 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
             _log_single_source_load(
                 dataclass_name=ctx.cls.__name__,
                 loader_type=ctx.loader_type,
-                file_path=str(ctx.file_path),
+                file_path="<stream>" if isinstance(ctx.file_path, FILE_LIKE_TYPES) else str(ctx.file_path),
                 data=asdict(loaded_data),
                 secret_paths=ctx.secret_paths,
             )
@@ -221,7 +220,9 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
             report = _build_single_source_report(
                 dataclass_name=ctx.cls.__name__,
                 loader_type=ctx.loader_type,
-                file_path=str(ctx.file_path) if ctx.metadata.file_ is not None else None,
+                file_path=str(ctx.file_path)
+                if not isinstance(ctx.metadata.file_, (*FILE_LIKE_TYPES, type(None)))
+                else None,
                 raw_data=result_dict,
                 secret_paths=ctx.secret_paths,
             )
@@ -233,10 +234,10 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
     return new_init
 
 
-def load_as_function(  # noqa: C901
+def load_as_function(  # noqa: C901, PLR0912
     *,
     loader_instance: LoaderProtocol,
-    file_path: Path,
+    file_path: FileOrStream,
     dataclass_: type[DataclassInstance],
     metadata: LoadMetadata,
     debug: bool,
@@ -274,10 +275,16 @@ def load_as_function(  # noqa: C901
 
     report: LoadReport | None = None
     if debug:
+        if isinstance(metadata.file_, FILE_LIKE_TYPES):
+            report_file_path = None
+        elif metadata.file_ is not None:
+            report_file_path = str(metadata.file_)
+        else:
+            report_file_path = None
         report = _build_single_source_report(
             dataclass_name=dataclass_.__name__,
             loader_type=display_name,
-            file_path=metadata.file_,
+            file_path=report_file_path,
             raw_data=raw_data,
             secret_paths=secret_paths,
         )
@@ -285,7 +292,7 @@ def load_as_function(  # noqa: C901
     _log_single_source_load(
         dataclass_name=dataclass_.__name__,
         loader_type=display_name,
-        file_path=str(file_path),
+        file_path="<stream>" if isinstance(file_path, FILE_LIKE_TYPES) else str(file_path),
         data=raw_data if isinstance(raw_data, dict) else {},
         secret_paths=secret_paths,
     )
@@ -327,7 +334,7 @@ def load_as_function(  # noqa: C901
 def make_decorator(
     *,
     loader_instance: LoaderProtocol,
-    file_path: Path,
+    file_path: FileOrStream,
     metadata: LoadMetadata,
     cache: bool,
     debug: bool,

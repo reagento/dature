@@ -23,7 +23,7 @@ class TestMetadataValidatorsSuccess:
         json_file.write_text('{"name": "Alice"}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MinLength(value=3),
             },
@@ -41,7 +41,7 @@ class TestMetadataValidatorsSuccess:
         json_file.write_text('{"port": 8080}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].port: (Gt(value=0), Lt(value=65536)),
             },
@@ -60,7 +60,7 @@ class TestMetadataValidatorsSuccess:
         json_file.write_text('{"name": "Alice", "port": 8080}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MinLength(value=3),
                 F[Config].port: Gt(value=0),
@@ -83,7 +83,7 @@ class TestMetadataValidatorsFailure:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MinLength(value=3),
             },
@@ -112,7 +112,7 @@ class TestMetadataValidatorsFailure:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].port: (Gt(value=0), Lt(value=65536)),
             },
@@ -147,7 +147,7 @@ class TestMetadataValidatorsNested:
         json_file.write_text('{"database": {"host": "localhost", "port": 5432}}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].database.host: MinLength(value=1),
                 F[Config].database.port: Gt(value=0),
@@ -173,7 +173,7 @@ class TestMetadataValidatorsNested:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].database.host: MinLength(value=1),
             },
@@ -204,7 +204,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text('{"name": "Alice", "port": 8080}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MaxLength(value=50),
                 F[Config].port: Gt(value=0),
@@ -225,7 +225,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MaxLength(value=50),
             },
@@ -254,7 +254,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MaxLength(value=10),
             },
@@ -282,7 +282,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text('{"name": "Alice"}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MaxLength(value=10),
             },
@@ -301,7 +301,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MaxLength(value=50),
             },
@@ -329,7 +329,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text('{"port": 8080}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].port: Lt(value=65536),
             },
@@ -348,7 +348,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].port: Lt(value=65536),
             },
@@ -377,7 +377,7 @@ class TestMetadataValidatorsComplement:
         json_file.write_text(content)
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].port: Lt(value=65536),
             },
@@ -406,7 +406,7 @@ class TestMetadataValidatorsNone:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice"}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.name == "Alice"
@@ -428,7 +428,7 @@ class TestMetadataValidatorsWithRootValidators:
         json_file.write_text('{"port": 8080, "user": "admin"}')
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             root_validators=(RootValidator(func=validate_config),),
             validators={
                 F[Config].port: Ge(value=0),
@@ -451,7 +451,7 @@ class TestMetadataValidatorsDecorator:
             age: int
 
         metadata = LoadMetadata(
-            file_=str(json_file),
+            file_=json_file,
             validators={
                 F[Config].name: MinLength(value=2),
                 F[Config].age: Ge(value=0),

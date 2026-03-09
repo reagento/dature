@@ -25,8 +25,8 @@ def merge_tags(values: list[Any]) -> list[str]:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=str(SOURCES_DIR / "defaults.yaml")),
-            LoadMetadata(file_=str(SOURCES_DIR / "overrides.yaml")),
+            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "overrides.yaml"),
         ),
         strategy=MergeStrategy.LAST_WINS,
         field_merges=(MergeRule(F[Config].tags, merge_tags),),

@@ -7,8 +7,8 @@ from dature import LoadMetadata, load
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
-DEFAULTS = LoadMetadata(file_=str(SOURCES_DIR / "defaults.toml"))
-OVERRIDES = LoadMetadata(file_=str(SOURCES_DIR / "overrides.toml"))
+DEFAULTS = LoadMetadata(file_=SOURCES_DIR / "defaults.toml")
+OVERRIDES = LoadMetadata(file_=SOURCES_DIR / "overrides.toml")
 
 
 @dataclass

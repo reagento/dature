@@ -35,7 +35,7 @@ class ServiceConfig:
 
 
 config = load(
-    LoadMetadata(file_=str(SOURCES_DIR / "validated.json5")),
+    LoadMetadata(file_=SOURCES_DIR / "validated.json5"),
     ServiceConfig,
 )
 

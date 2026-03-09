@@ -18,13 +18,13 @@ class Config:
 
 
 formats = {
-    "YAML": LoadMetadata(file_=str(SOURCES_DIR / "app.yaml")),
-    "JSON": LoadMetadata(file_=str(SOURCES_DIR / "app.json")),
-    "JSON5": LoadMetadata(file_=str(SOURCES_DIR / "app.json5")),
-    "TOML": LoadMetadata(file_=str(SOURCES_DIR / "app.toml")),
-    "INI": LoadMetadata(file_=str(SOURCES_DIR / "app.ini"), loader=IniLoader, prefix="app"),
-    "ENV": LoadMetadata(file_=str(SOURCES_DIR / "app.env")),
-    "Docker": LoadMetadata(file_=str(SOURCES_DIR / "app_docker_secrets"), loader=DockerSecretsLoader),
+    "YAML": LoadMetadata(file_=SOURCES_DIR / "app.yaml"),
+    "JSON": LoadMetadata(file_=SOURCES_DIR / "app.json"),
+    "JSON5": LoadMetadata(file_=SOURCES_DIR / "app.json5"),
+    "TOML": LoadMetadata(file_=SOURCES_DIR / "app.toml"),
+    "INI": LoadMetadata(file_=SOURCES_DIR / "app.ini", loader=IniLoader, prefix="app"),
+    "ENV": LoadMetadata(file_=SOURCES_DIR / "app.env"),
+    "Docker": LoadMetadata(file_=SOURCES_DIR / "app_docker_secrets", loader=DockerSecretsLoader),
 }
 
 for name, meta in formats.items():

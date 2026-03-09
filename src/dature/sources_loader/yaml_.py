@@ -1,6 +1,5 @@
 import abc
 from datetime import date, datetime, time
-from pathlib import Path
 from typing import cast
 
 from adaptix import loader
@@ -17,16 +16,18 @@ from dature.sources_loader.loaders import (
     time_from_int,
     time_from_string,
 )
-from dature.types import JSONValue
+from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 
 class BaseYamlLoader(BaseLoader, abc.ABC):
     @abc.abstractmethod
     def _yaml_version(self) -> Version: ...
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
         yaml = YAML(typ="safe")
         yaml.version = self._yaml_version()
+        if isinstance(path, FILE_LIKE_TYPES):
+            return cast("JSONValue", yaml.load(path))
         with path.open() as file_:
             return cast("JSONValue", yaml.load(file_))
 

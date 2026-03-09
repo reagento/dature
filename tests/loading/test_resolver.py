@@ -1,4 +1,6 @@
+from collections.abc import Buffer
 from dataclasses import dataclass
+from io import BytesIO, RawIOBase, StringIO
 from pathlib import Path
 
 import pytest
@@ -13,6 +15,11 @@ from dature.sources_loader.json5_ import Json5Loader
 from dature.sources_loader.json_ import JsonLoader
 from dature.sources_loader.toml_ import Toml11Loader
 from dature.sources_loader.yaml_ import Yaml11Loader, Yaml12Loader
+
+
+class _DummyRawIO(RawIOBase):
+    def readinto(self, b: Buffer) -> int:  # noqa: ARG002
+        return 0
 
 
 class TestResolveLoaderClass:
@@ -65,7 +72,7 @@ class TestResolveLoaderClass:
         assert resolve_loader_class(loader=EnvFileLoader, file_=".env.local") is EnvFileLoader
 
     def test_directory_returns_docker_secrets(self, tmp_path) -> None:
-        assert resolve_loader_class(loader=None, file_=str(tmp_path)) is DockerSecretsLoader
+        assert resolve_loader_class(loader=None, file_=tmp_path) is DockerSecretsLoader
 
 
 class TestMissingOptionalDependency:
@@ -138,8 +145,44 @@ class TestResolveLoader:
     def test_env_with_file_path(self, tmp_path: Path) -> None:
         env_file = tmp_path / ".env"
         env_file.write_text("KEY=VALUE")
-        metadata = LoadMetadata(file_=str(env_file))
+        metadata = LoadMetadata(file_=env_file)
 
         loader = resolve_loader(metadata)
 
         assert isinstance(loader, EnvFileLoader)
+
+
+class TestFilelikeResolverValidation:
+    @pytest.mark.parametrize("stream", [StringIO(), BytesIO(), _DummyRawIO()])
+    def test_file_like_without_loader_raises(self, stream) -> None:
+        with pytest.raises(TypeError) as exc_info:
+            resolve_loader_class(loader=None, file_=stream)
+
+        assert str(exc_info.value) == (
+            "Cannot determine loader type for a file-like object. "
+            "Please specify loader explicitly (e.g. loader=JsonLoader)."
+        )
+
+    @pytest.mark.parametrize("stream", [StringIO(), BytesIO(), _DummyRawIO()])
+    def test_file_like_with_env_loader_raises(self, stream) -> None:
+        with pytest.raises(ValueError, match="EnvLoader does not support file-like objects") as exc_info:
+            resolve_loader_class(loader=EnvLoader, file_=stream)
+
+        assert str(exc_info.value) == (
+            "EnvLoader does not support file-like objects. "
+            "Use a file-based loader (e.g. JsonLoader, TomlLoader) with file-like objects."
+        )
+
+    @pytest.mark.parametrize("stream", [StringIO(), BytesIO(), _DummyRawIO()])
+    def test_file_like_with_docker_secrets_loader_raises(self, stream) -> None:
+        with pytest.raises(ValueError, match="DockerSecretsLoader does not support file-like objects") as exc_info:
+            resolve_loader_class(loader=DockerSecretsLoader, file_=stream)
+
+        assert str(exc_info.value) == (
+            "DockerSecretsLoader does not support file-like objects. "
+            "Use a file-based loader (e.g. JsonLoader, TomlLoader) with file-like objects."
+        )
+
+    @pytest.mark.parametrize("stream", [StringIO(), BytesIO(), _DummyRawIO()])
+    def test_file_like_with_explicit_loader_allowed(self, stream) -> None:
+        assert resolve_loader_class(loader=JsonLoader, file_=stream) is JsonLoader

@@ -19,7 +19,7 @@ class Config:
     metadata: str
 
 
-config = load(LoadMetadata(file_=str(SOURCES_DIR / "secrets.yaml")), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "secrets.yaml"), Config)
 
 print(f"api_key (masked): {config.api_key}")  # api_key (masked): **********
 print(f"api_key (real): {config.api_key.get_secret_value()}")  # api_key (real): sk-proj-abc123def456

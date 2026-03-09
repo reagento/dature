@@ -16,7 +16,7 @@ from dature.merging.predicate import extract_field_path
 from dature.metadata import LoadMetadata
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
-from dature.types import JSONValue
+from dature.types import FILE_LIKE_TYPES, JSONValue
 
 logger = logging.getLogger("dature")
 
@@ -48,7 +48,12 @@ def build_error_ctx(
     secret_paths: frozenset[str] = frozenset(),
 ) -> ErrorContext:
     loader_class = resolve_loader_class(metadata.loader, metadata.file_)
-    error_file_path = Path(metadata.file_) if metadata.file_ else None
+    if isinstance(metadata.file_, FILE_LIKE_TYPES):
+        error_file_path = None
+    elif metadata.file_ is not None:
+        error_file_path = Path(metadata.file_)
+    else:
+        error_file_path = None
     return ErrorContext(
         dataclass_name=dataclass_name,
         loader_type=loader_class.display_name,

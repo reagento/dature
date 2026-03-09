@@ -14,7 +14,7 @@ from dature.masking.masking import mask_json_value
 from dature.metadata import LoadMetadata, MergeMetadata
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.skip_field_provider import FilterResult
-from dature.types import ExpandEnvVarsMode, JSONValue
+from dature.types import FILE_LIKE_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue
 
 logger = logging.getLogger("dature")
 
@@ -114,7 +114,7 @@ class LoadedSources:
     skipped_fields: dict[str, list[SkippedFieldSource]]
 
 
-def load_sources(  # noqa: C901
+def load_sources(  # noqa: C901, PLR0912, PLR0915
     *,
     merge_meta: MergeMetadata,
     dataclass_name: str,
@@ -136,10 +136,19 @@ def load_sources(  # noqa: C901
             source_meta=source_meta,
             expand_env_vars=resolved_expand,
         )
-        file_path = Path(source_meta.file_) if source_meta.file_ else Path()
+        file_or_path: FileOrStream
+        if isinstance(source_meta.file_, FILE_LIKE_TYPES):
+            file_or_path = source_meta.file_
+        elif source_meta.file_ is not None:
+            file_or_path = Path(source_meta.file_)
+        else:
+            file_or_path = Path()
         error_ctx = build_error_ctx(source_meta, dataclass_name, secret_paths=secret_paths)
 
-        def _load_raw(li: LoaderProtocol = loader_instance, fp: Path = file_path) -> JSONValue:
+        def _load_raw(
+            li: LoaderProtocol = loader_instance,
+            fp: FileOrStream = file_or_path,
+        ) -> JSONValue:
             return li.load_raw(fp)
 
         try:
@@ -154,7 +163,9 @@ def load_sources(  # noqa: C901
                 "[%s] Source %d skipped (broken): file=%s",
                 dataclass_name,
                 i,
-                source_meta.file_ or "<env>",
+                source_meta.file_
+                if isinstance(source_meta.file_, (str, Path))
+                else ("<stream>" if source_meta.file_ is not None else "<env>"),
             )
             continue
         except Exception as exc:
@@ -176,7 +187,9 @@ def load_sources(  # noqa: C901
                 "[%s] Source %d skipped (broken): file=%s",
                 dataclass_name,
                 i,
-                source_meta.file_ or "<env>",
+                source_meta.file_
+                if isinstance(source_meta.file_, (str, Path))
+                else ("<stream>" if source_meta.file_ is not None else "<env>"),
             )
             continue
 
@@ -207,7 +220,9 @@ def load_sources(  # noqa: C901
             dataclass_name,
             i,
             display_name,
-            source_meta.file_ or "<env>",
+            source_meta.file_
+            if isinstance(source_meta.file_, (str, Path))
+            else ("<stream>" if source_meta.file_ is not None else "<env>"),
             sorted(raw.keys()) if isinstance(raw, dict) else "<non-dict>",
         )
         if secret_paths:
@@ -224,7 +239,7 @@ def load_sources(  # noqa: C901
         source_entries.append(
             SourceEntry(
                 index=i,
-                file_path=source_meta.file_,
+                file_path=str(source_meta.file_) if isinstance(source_meta.file_, (str, Path)) else None,
                 loader_type=display_name,
                 raw_data=raw,
             ),

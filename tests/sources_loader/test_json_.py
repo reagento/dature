@@ -17,7 +17,7 @@ class TestJsonLoader:
 
     def test_comprehensive_type_conversion(self, all_types_json_file: Path):
         """Test loading JSON with full type coercion to dataclass."""
-        result = load(LoadMetadata(file_=str(all_types_json_file), loader=JsonLoader), AllPythonTypesCompact)
+        result = load(LoadMetadata(file_=all_types_json_file, loader=JsonLoader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -37,7 +37,7 @@ class TestJsonLoader:
         )
 
         result = load(
-            LoadMetadata(file_=str(prefixed_json_file), loader=JsonLoader, prefix="app"),
+            LoadMetadata(file_=prefixed_json_file, loader=JsonLoader, prefix="app"),
             PrefixedConfig,
         )
 
@@ -65,7 +65,7 @@ class TestJsonLoader:
             host: str
             port: int
 
-        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), DbConfig)
+        result = load(LoadMetadata(file_=json_file, loader=JsonLoader), DbConfig)
 
         assert result.host == "db.example.com"
         assert result.port == 5432
@@ -81,7 +81,7 @@ class TestJsonLoader:
         class Config:
             url: str
 
-        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), Config)
+        result = load(LoadMetadata(file_=json_file, loader=JsonLoader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -95,7 +95,7 @@ class TestJsonLoader:
         class Config:
             value: str
 
-        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), Config)
+        result = load(LoadMetadata(file_=json_file, loader=JsonLoader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -109,6 +109,6 @@ class TestJsonLoader:
         class Config:
             value: str
 
-        result = load(LoadMetadata(file_=str(json_file), loader=JsonLoader), Config)
+        result = load(LoadMetadata(file_=json_file, loader=JsonLoader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"

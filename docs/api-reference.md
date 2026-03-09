@@ -48,7 +48,7 @@ class Config:
 ```python
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LoadMetadata:
-    file_: str | None = None
+    file_: FileLike | FilePath | None = None  # str, Path, or file-like object
     loader: type[LoaderProtocol] | None = None
     prefix: DotSeparatedPath | None = None
     split_symbols: str = "__"
@@ -347,6 +347,9 @@ All exceptions are in `dature.errors.exceptions`.
 
 | Alias | Definition | Module |
 |-------|------------|--------|
+| `FileLike` | `TextIOBase \| BufferedIOBase \| RawIOBase` | `dature.types` |
+| `FilePath` | `str \| Path` | `dature.types` |
+| `FileOrStream` | `Path \| FileLike` | `dature.types` |
 | `NameStyle` | `Literal["lower_snake", "upper_snake", "lower_camel", "upper_camel", "lower_kebab", "upper_kebab"]` | `dature.types` |
 | `ExpandEnvVarsMode` | `Literal["disabled", "default", "empty", "strict"]` | `dature.types` |
 | `FieldMapping` | `dict[FieldPath, str \| tuple[str, ...]]` | `dature.types` |

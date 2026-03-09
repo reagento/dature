@@ -8,6 +8,7 @@ from dature.loading.resolver import resolve_loader
 from dature.loading.single import load_as_function, make_decorator
 from dature.metadata import LoadMetadata, MergeMetadata
 from dature.protocols import DataclassInstance
+from dature.types import FILE_LIKE_TYPES, FileOrStream
 
 
 @overload
@@ -56,12 +57,19 @@ def load(
         metadata = LoadMetadata()
 
     loader_instance = resolve_loader(metadata)
-    file_path = Path(metadata.file_) if metadata.file_ else Path()
+
+    file_or_path: FileOrStream
+    if isinstance(metadata.file_, FILE_LIKE_TYPES):
+        file_or_path = metadata.file_
+    elif metadata.file_ is not None:
+        file_or_path = Path(metadata.file_)
+    else:
+        file_or_path = Path()
 
     if dataclass_ is not None:
         return load_as_function(
             loader_instance=loader_instance,
-            file_path=file_path,
+            file_path=file_or_path,
             dataclass_=dataclass_,
             metadata=metadata,
             debug=debug,
@@ -69,7 +77,7 @@ def load(
 
     return make_decorator(
         loader_instance=loader_instance,
-        file_path=file_path,
+        file_path=file_or_path,
         metadata=metadata,
         cache=cache,
         debug=debug,

@@ -3,7 +3,6 @@ import json
 import logging
 from dataclasses import fields, is_dataclass
 from datetime import timedelta
-from pathlib import Path
 from typing import Annotated, ClassVar, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from adaptix import NameStyle as AdaptixNameStyle
@@ -38,6 +37,7 @@ from dature.types import (
     ExpandEnvVarsMode,
     FieldMapping,
     FieldValidators,
+    FileOrStream,
     JSONValue,
     NameStyle,
     TypeAnnotation,
@@ -240,7 +240,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         )
 
     @abc.abstractmethod
-    def _load(self, path: Path) -> JSONValue: ...
+    def _load(self, path: FileOrStream) -> JSONValue: ...
 
     def _apply_prefix(self, data: JSONValue) -> JSONValue:
         if not self._prefix:
@@ -264,7 +264,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             self.retorts[dataclass_] = self.create_retort()
         return self.retorts[dataclass_].load(data, dataclass_)
 
-    def load_raw(self, path: Path) -> JSONValue:
+    def load_raw(self, path: FileOrStream) -> JSONValue:
         data = self._load(path)
         processed = self._pre_processing(data)
         logger.debug(

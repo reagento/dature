@@ -138,7 +138,7 @@ LoadMetadata(file_="config.yaml", loader=Yaml11Loader)
 
 | Parameter | Description |
 |-----------|-------------|
-| `file_` | Path to config file or directory. `None` → environment variables |
+| `file_` | Path to config file (`str`, `Path`), file-like object (`BytesIO`, `StringIO`), or directory. `None` → environment variables. File-like objects require explicit `loader` |
 | `loader` | Explicit loader class. `None` → auto-detect from extension |
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
 | `split_symbols` | Delimiter for flat→nested conversion. Default: `"__"` |
@@ -151,6 +151,17 @@ LoadMetadata(file_="config.yaml", loader=Yaml11Loader)
 | `skip_if_invalid` | Skip invalid fields from this source. See [Advanced — Skipping Invalid Fields](advanced/merge-rules.md#skipping-invalid-fields) |
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](features/masking.md) |
 | `mask_secrets` | Enable/disable secret masking for this source. See [Masking](features/masking.md) |
+
+### File-Like Objects
+
+`file_` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass). The `loader` parameter is required since there is no file extension to auto-detect from:
+
+```python
+--8<-- "examples/docs/intro_file_like.py"
+```
+
+!!! note
+    `EnvLoader` and `DockerSecretsLoader` do not support file-like objects — they read from environment variables and directories respectively.
 
 ## Type Coercion
 

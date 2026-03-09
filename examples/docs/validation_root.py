@@ -24,7 +24,7 @@ def check_debug_not_on_production(obj: Config) -> bool:
 
 config = load(
     LoadMetadata(
-        file_=str(SOURCES_DIR / "app.yaml"),
+        file_=SOURCES_DIR / "app.yaml",
         root_validators=(
             RootValidator(
                 func=check_debug_not_on_production,

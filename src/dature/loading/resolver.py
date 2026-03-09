@@ -5,11 +5,12 @@ from dature.sources_loader.docker_secrets import DockerSecretsLoader
 from dature.sources_loader.env_ import EnvFileLoader, EnvLoader
 from dature.sources_loader.ini_ import IniLoader
 from dature.sources_loader.json_ import JsonLoader
-from dature.types import ExpandEnvVarsMode
+from dature.types import FILE_LIKE_TYPES, ExpandEnvVarsMode
 
 if TYPE_CHECKING:
     from dature.metadata import LoadMetadata
     from dature.protocols import LoaderProtocol
+    from dature.types import FileLike, FilePath
 
 SUPPORTED_EXTENSIONS = (".cfg", ".env", ".ini", ".json", ".json5", ".toml", ".yaml", ".yml")
 
@@ -63,20 +64,34 @@ def _resolve_by_extension_inner(extension: str) -> "type[LoaderProtocol]":
 
 def resolve_loader_class(
     loader: "type[LoaderProtocol] | None",
-    file_: str | None,
+    file_: "FileLike | FilePath | None",
 ) -> "type[LoaderProtocol]":
     if loader is not None:
-        if file_ is not None and loader is EnvLoader:
+        if file_ is not None and not isinstance(file_, FILE_LIKE_TYPES) and loader is EnvLoader:
             msg = (
                 "EnvLoader reads from environment variables and does not use files. "
                 "Remove file_ or use a file-based loader instead (e.g. EnvFileLoader)."
             )
             raise ValueError(msg)
+        if isinstance(file_, FILE_LIKE_TYPES) and loader in (EnvLoader, DockerSecretsLoader):
+            msg = (
+                f"{loader.__name__} does not support file-like objects. "
+                "Use a file-based loader (e.g. JsonLoader, TomlLoader) with file-like objects."
+            )
+            raise ValueError(msg)
         return loader
+
+    if isinstance(file_, FILE_LIKE_TYPES):
+        msg = (
+            "Cannot determine loader type for a file-like object. "
+            "Please specify loader explicitly (e.g. loader=JsonLoader)."
+        )
+        raise TypeError(msg)
 
     if file_ is None:
         return EnvLoader
 
+    # file-like objects are handled above; here file_ is str | Path
     file_path = Path(file_)
 
     if file_path.is_dir():

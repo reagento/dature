@@ -21,7 +21,7 @@ class Config:
 
 
 config = load(
-    LoadMetadata(file_=str(SOURCES_DIR / "env_expand.yaml"), expand_env_vars="default"),
+    LoadMetadata(file_=SOURCES_DIR / "env_expand.yaml", expand_env_vars="default"),
     Config,
 )
 
