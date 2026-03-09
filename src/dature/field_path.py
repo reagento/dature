@@ -36,6 +36,7 @@ def _validate_field(owner: type, parts: tuple[str, ...], name: str) -> None:
         raise AttributeError(msg)
 
 
+# --8<-- [start:field-path]
 @dataclass(frozen=True, slots=True)
 class FieldPath:
     owner: type | str
@@ -51,6 +52,9 @@ class FieldPath:
             msg = "FieldPath must contain at least one field name"
             raise ValueError(msg)
         return ".".join(self.parts)
+
+
+# --8<-- [end:field-path]
 
 
 def _validate_field_path_parts(field_path: FieldPath, dataclass_: type) -> None:
@@ -70,6 +74,7 @@ def validate_field_path_owner(field_path: FieldPath, dataclass_: type[DataclassI
         raise TypeError(msg)
 
 
+# --8<-- [start:field-path-factory]
 class _FieldPathFactory:
     @overload
     def __getitem__(self, owner: type[T]) -> T: ...
@@ -85,3 +90,4 @@ class _FieldPathFactory:
 
 
 F = _FieldPathFactory()
+# --8<-- [end:field-path-factory]

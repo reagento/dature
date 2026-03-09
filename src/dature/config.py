@@ -103,12 +103,14 @@ class _ConfigProxy:
 config: _ConfigProxy = _ConfigProxy()
 
 
+# --8<-- [start:configure]
 def configure(
     *,
     masking: MaskingConfig | None = None,
     error_display: ErrorDisplayConfig | None = None,
     loading: LoadingConfig | None = None,
 ) -> None:
+    # --8<-- [end:configure]
     current = config.ensure_loaded()
     if masking is None:
         masking = current.masking

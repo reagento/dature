@@ -20,12 +20,17 @@ if TYPE_CHECKING:
     )
 
 
+# --8<-- [start:merge-strategy]
 class MergeStrategy(StrEnum):
     LAST_WINS = "last_wins"
     FIRST_WINS = "first_wins"
     RAISE_ON_CONFLICT = "raise_on_conflict"
 
 
+# --8<-- [end:merge-strategy]
+
+
+# --8<-- [start:field-merge-strategy]
 class FieldMergeStrategy(StrEnum):
     FIRST_WINS = "first_wins"
     LAST_WINS = "last_wins"
@@ -33,6 +38,9 @@ class FieldMergeStrategy(StrEnum):
     APPEND_UNIQUE = "append_unique"
     PREPEND = "prepend"
     PREPEND_UNIQUE = "prepend_unique"
+
+
+# --8<-- [end:field-merge-strategy]
 
 
 # --8<-- [start:load-metadata]
@@ -63,18 +71,26 @@ class LoadMetadata:
         return display
 
 
+# --8<-- [start:merge-rule]
 @dataclass(frozen=True, slots=True)
 class MergeRule:
     predicate: "FieldPath"
     strategy: "FieldMergeStrategy | FieldMergeCallable"
 
 
+# --8<-- [end:merge-rule]
+
+
+# --8<-- [start:field-group]
 @dataclass(frozen=True, slots=True)
 class FieldGroup:
     fields: "tuple[FieldPath, ...]"
 
     def __init__(self, *fields: "FieldPath") -> None:
         object.__setattr__(self, "fields", fields)
+
+
+# --8<-- [end:field-group]
 
 
 # --8<-- [start:merge-metadata]

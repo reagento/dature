@@ -32,6 +32,7 @@ def load(
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]: ...
 
 
+# --8<-- [start:load]
 def load(
     metadata: LoadMetadata | MergeMetadata | tuple[LoadMetadata, ...] | None = None,
     /,
@@ -40,6 +41,7 @@ def load(
     cache: bool | None = None,
     debug: bool | None = None,
 ) -> Any:
+    # --8<-- [end:load]
     if cache is None:
         cache = config.loading.cache
     if debug is None:

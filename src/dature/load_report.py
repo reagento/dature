@@ -98,6 +98,7 @@ def _flatten_dict(
     return result
 
 
+# --8<-- [start:get-load-report]
 def get_load_report(instance: Any) -> LoadReport | None:  # noqa: ANN401
     report = getattr(instance, _REPORT_ATTR, None)
     if isinstance(report, LoadReport):
@@ -107,6 +108,9 @@ def get_load_report(instance: Any) -> LoadReport | None:  # noqa: ANN401
         stacklevel=2,
     )
     return None
+
+
+# --8<-- [end:get-load-report]
 
 
 def attach_load_report(target: Any, report: LoadReport) -> None:  # noqa: ANN401

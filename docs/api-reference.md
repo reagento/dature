@@ -5,14 +5,7 @@
 ### `load()`
 
 ```python
-def load(
-    metadata: LoadMetadata | MergeMetadata | tuple[LoadMetadata, ...] | None = None,
-    /,
-    dataclass_: type[T] | None = None,
-    *,
-    cache: bool | None = None,
-    debug: bool | None = None,
-) -> T | Callable[[type], type]
+--8<-- "src/dature/main.py:load"
 ```
 
 Main entry point. Two calling patterns:
@@ -46,21 +39,7 @@ class Config:
 ### `LoadMetadata`
 
 ```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class LoadMetadata:
-    file_: FileLike | FilePath | None = None  # str, Path, or file-like object
-    loader: type[LoaderProtocol] | None = None
-    prefix: DotSeparatedPath | None = None
-    split_symbols: str = "__"
-    name_style: NameStyle | None = None
-    field_mapping: FieldMapping | None = None
-    root_validators: tuple[ValidatorProtocol, ...] | None = None
-    validators: FieldValidators | None = None
-    expand_env_vars: ExpandEnvVarsMode | None = None
-    skip_if_broken: bool | None = None
-    skip_if_invalid: bool | tuple[FieldPath, ...] | None = None
-    secret_field_names: tuple[str, ...] | None = None
-    mask_secrets: bool | None = None
+--8<-- "src/dature/metadata.py:load-metadata"
 ```
 
 See [Introduction — LoadMetadata Reference](introduction.md#loadmetadata-reference) for parameter descriptions.
@@ -70,17 +49,7 @@ See [Introduction — LoadMetadata Reference](introduction.md#loadmetadata-refer
 ### `MergeMetadata`
 
 ```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class MergeMetadata:
-    sources: tuple[LoadMetadata, ...]
-    strategy: MergeStrategy = MergeStrategy.LAST_WINS
-    field_merges: tuple[MergeRule, ...] = ()
-    field_groups: tuple[FieldGroup, ...] = ()
-    skip_broken_sources: bool = False
-    skip_invalid_fields: bool = False
-    expand_env_vars: ExpandEnvVarsMode = "default"
-    secret_field_names: tuple[str, ...] | None = None
-    mask_secrets: bool | None = None
+--8<-- "src/dature/metadata.py:merge-metadata"
 ```
 
 | Parameter | Description |
@@ -100,10 +69,7 @@ class MergeMetadata:
 ### `MergeStrategy`
 
 ```python
-class MergeStrategy(StrEnum):
-    LAST_WINS = "last_wins"
-    FIRST_WINS = "first_wins"
-    RAISE_ON_CONFLICT = "raise_on_conflict"
+--8<-- "src/dature/metadata.py:merge-strategy"
 ```
 
 ---
@@ -111,13 +77,7 @@ class MergeStrategy(StrEnum):
 ### `FieldMergeStrategy`
 
 ```python
-class FieldMergeStrategy(StrEnum):
-    FIRST_WINS = "first_wins"
-    LAST_WINS = "last_wins"
-    APPEND = "append"
-    APPEND_UNIQUE = "append_unique"
-    PREPEND = "prepend"
-    PREPEND_UNIQUE = "prepend_unique"
+--8<-- "src/dature/metadata.py:field-merge-strategy"
 ```
 
 ---
@@ -125,10 +85,7 @@ class FieldMergeStrategy(StrEnum):
 ### `MergeRule`
 
 ```python
-@dataclass(frozen=True, slots=True)
-class MergeRule:
-    predicate: FieldPath
-    strategy: FieldMergeStrategy | FieldMergeCallable
+--8<-- "src/dature/metadata.py:merge-rule"
 ```
 
 ---
@@ -136,11 +93,7 @@ class MergeRule:
 ### `FieldGroup`
 
 ```python
-@dataclass(frozen=True, slots=True)
-class FieldGroup:
-    fields: tuple[FieldPath, ...]
-
-    def __init__(self, *fields: FieldPath) -> None: ...
+--8<-- "src/dature/metadata.py:field-group"
 ```
 
 Usage: `FieldGroup(F[Config].host, F[Config].port)`
@@ -166,44 +119,15 @@ F["Config"].host         # string-based, no validation (for decorator mode)
 ### `get_load_report()`
 
 ```python
-def get_load_report(instance: Any) -> LoadReport | None
+--8<-- "src/dature/load_report.py:get-load-report"
 ```
 
 Returns the `LoadReport` attached to a loaded instance (or type on error). Returns `None` and emits a warning if `debug=True` was not passed.
 
-### `LoadReport`
+### `LoadReport`, `SourceEntry`, `FieldOrigin`
 
 ```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class LoadReport:
-    dataclass_name: str
-    strategy: MergeStrategy | None
-    sources: tuple[SourceEntry, ...]
-    field_origins: tuple[FieldOrigin, ...]
-    merged_data: JSONValue
-```
-
-### `SourceEntry`
-
-```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class SourceEntry:
-    index: int
-    file_path: str | None
-    loader_type: str
-    raw_data: JSONValue
-```
-
-### `FieldOrigin`
-
-```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class FieldOrigin:
-    key: str
-    value: JSONValue
-    source_index: int
-    source_file: str | None
-    source_loader_type: str
+--8<-- "src/dature/load_report.py:report-structure"
 ```
 
 ---
@@ -213,12 +137,7 @@ class FieldOrigin:
 ### `configure()`
 
 ```python
-def configure(
-    *,
-    masking: MaskingConfig | None = None,
-    error_display: ErrorDisplayConfig | None = None,
-    loading: LoadingConfig | None = None,
-) -> None
+--8<-- "src/dature/config.py:configure"
 ```
 
 Set global configuration. `None` parameters keep their current values.
@@ -226,33 +145,19 @@ Set global configuration. `None` parameters keep their current values.
 ### `MaskingConfig`
 
 ```python
-@dataclass(frozen=True, slots=True)
-class MaskingConfig:
-    mask_char: str = "*"
-    min_visible_chars: int = 2
-    min_length_for_partial_mask: int = 5
-    fixed_mask_length: int = 5
-    min_heuristic_length: int = 8
-    secret_field_names: tuple[str, ...] = (...)
-    mask_secrets: bool = True
+--8<-- "src/dature/config.py:masking-config"
 ```
 
 ### `ErrorDisplayConfig`
 
 ```python
-@dataclass(frozen=True, slots=True)
-class ErrorDisplayConfig:
-    max_visible_lines: int = 3
-    max_line_length: int = 80
+--8<-- "src/dature/config.py:error-display-config"
 ```
 
 ### `LoadingConfig`
 
 ```python
-@dataclass(frozen=True, slots=True)
-class LoadingConfig:
-    cache: bool = True
-    debug: bool = False
+--8<-- "src/dature/config.py:loading-config"
 ```
 
 ---
@@ -289,10 +194,7 @@ All validators are frozen dataclasses implementing `get_validator_func()` and `g
 ### Root Validator (`dature.validators.root`)
 
 ```python
-@dataclass(frozen=True, slots=True, kw_only=True)
-class RootValidator:
-    func: Callable[[Any], bool]
-    error_message: str
+--8<-- "src/dature/validators/root.py:root-validator"
 ```
 
 ---

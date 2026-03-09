@@ -85,10 +85,17 @@ Filters keys for ENV, or extracts a nested object from files:
 
 For file-based sources, `prefix` navigates into nested objects using dot notation:
 
-```python
-# config.yaml: { app: { database: { host: localhost, port: 5432 } } }
-db = load(LoadMetadata(file_="config.yaml", prefix="app.database"), Database)
-```
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/naming_prefix_nested.py"
+    ```
+
+=== "prefix_nested.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/prefix_nested.yaml"
+    ```
 
 ## split_symbols
 
