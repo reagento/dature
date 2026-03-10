@@ -21,7 +21,7 @@ Config loading errors (1)
 
   [password]  Expected str, got int
    └── FILE 'config.yaml', line 2
-       password: ****
+       password: my*****rd
 ```
 
 ## Detection Methods
@@ -65,7 +65,7 @@ dature uses three methods to identify secrets:
     Debug logs show masked data:
 
     ```
-    [Config] Loaded data: {'host': 'api.example.com', 'password': 'my**************rd', 'api_key': 'sk**********56'}
+    [Config] Loaded data: {'host': 'api.example.com', 'password': 'my*****rd', 'api_key': 'sk*****56'}
     ```
 
 === "Heuristic"
@@ -79,15 +79,15 @@ dature uses three methods to identify secrets:
     Debug logs show masked data:
 
     ```
-    [Config] Loaded data: {'host': 'api.example.com', 'password': 'my**************rd', 'api_key': 'sk**********56', 'card_number': '41**********11', 'metadata': 'aK********************T6'}
+    [Config] Loaded data: {'host': 'api.example.com', 'password': 'my*****rd', 'api_key': 'sk*****56', 'card_number': '41*****11', 'metadata': 'aK*****T6'}
     ```
 
 ## Mask Format
 
-- Strings longer than 4 characters: first 2 and last 2 characters visible, rest replaced with `*`
-    - `"my_secret_password"` → `"my**************rd"`
-- Strings of 4 characters or fewer: fully masked
-    - `"1234"` → `"****"`
+- Strings of 5+ characters: first 2 and last 2 characters visible, middle replaced with 5 `*`
+    - `"my_secret_password"` → `"my*****rd"`
+- Strings shorter than 5 characters: replaced with 5 `*`
+    - `"1234"` → `"*****"`
 
 ## Configuration
 

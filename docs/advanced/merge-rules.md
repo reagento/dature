@@ -21,25 +21,7 @@ graph TD
 
 ## Per-Field Merge Strategies
 
-Override the global strategy for individual fields using `field_merges`:
-
-=== "Python"
-
-    ```python
-    --8<-- "examples/docs/merging_field_merges.py"
-    ```
-
-=== "defaults.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
-    ```
-
-=== "overrides.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
-    ```
+Override the global strategy for individual fields using `field_merges`.
 
 All available `FieldMergeStrategy` values:
 
@@ -51,6 +33,58 @@ All available `FieldMergeStrategy` values:
 | `APPEND_UNIQUE` | Concatenate lists, removing duplicates |
 | `PREPEND` | Concatenate lists: `override + base` |
 | `PREPEND_UNIQUE` | Concatenate lists in reverse order, removing duplicates |
+
+Given two sources with overlapping `tags`:
+
+=== "merge_base.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/merge_base.yaml"
+    ```
+
+=== "merge_override.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/sources/merge_override.yaml"
+    ```
+
+Each strategy produces a different result:
+
+=== "FIRST_WINS"
+
+    ```python
+    --8<-- "examples/docs/merging_field_first_wins.py"
+    ```
+
+=== "LAST_WINS"
+
+    ```python
+    --8<-- "examples/docs/merging_field_last_wins.py"
+    ```
+
+=== "APPEND"
+
+    ```python
+    --8<-- "examples/docs/merging_field_append.py"
+    ```
+
+=== "APPEND_UNIQUE"
+
+    ```python
+    --8<-- "examples/docs/merging_field_append_unique.py"
+    ```
+
+=== "PREPEND"
+
+    ```python
+    --8<-- "examples/docs/merging_field_prepend.py"
+    ```
+
+=== "PREPEND_UNIQUE"
+
+    ```python
+    --8<-- "examples/docs/merging_field_prepend_unique.py"
+    ```
 
 Nested fields are supported: `F[Config].database.host`.
 
