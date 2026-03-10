@@ -9,7 +9,7 @@ from dature import LoadMetadata, load
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 os.environ["BASE_URL"] = "https://api.example.com"
-os.environ["SECRET_KEY"] = "[Secrets7]"
+os.environ["SECRET_KEY"] = "my-secret-42"
 
 
 @dataclass
