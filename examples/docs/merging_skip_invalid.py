@@ -16,7 +16,7 @@ class Config:
 
 
 config = load(
-    LoadMetadata(file_=SOURCES_DIR / "skip_defaults.yaml", skip_if_invalid=True),
+    LoadMetadata(file_=SOURCES_DIR / "merging_skip_invalid_defaults.yaml", skip_if_invalid=True),
     Config,
 )
 

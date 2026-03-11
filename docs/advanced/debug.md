@@ -8,16 +8,16 @@ Pass `debug=True` to collect a `LoadReport`:
     --8<-- "examples/docs/advanced_debug_report.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 ## Report Structure
@@ -36,16 +36,16 @@ All loading steps are logged at `DEBUG` level under the `"dature"` logger regard
     --8<-- "examples/docs/advanced_debug_logging.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 ## Report on Error
@@ -58,16 +58,16 @@ If loading fails with `DatureConfigError` and `debug=True` was passed, the repor
     --8<-- "examples/docs/advanced_debug_error.py"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
-=== "invalid_defaults.yaml"
+=== "advanced_debug_error_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/invalid_defaults.yaml"
+    --8<-- "examples/docs/sources/advanced_debug_error_defaults.yaml"
     ```
 
 Without `debug=True`, `get_load_report()` returns `None` and emits a warning.

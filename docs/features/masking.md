@@ -40,10 +40,10 @@ dature uses three methods to identify secrets:
 
 ## Examples
 
-=== "secrets.yaml"
+=== "masking_secrets.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/secrets.yaml"
+    --8<-- "examples/docs/sources/masking_secrets.yaml"
     ```
 
 === "By type (SecretStr, PaymentCardNumber)"

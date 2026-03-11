@@ -21,10 +21,10 @@ Automatically convert between naming conventions. Maps dataclass field names (sn
     --8<-- "examples/docs/naming_name_style.py"
     ```
 
-=== "camel_case.yaml"
+=== "naming_name_style.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/camel_case.yaml"
+    --8<-- "examples/docs/sources/naming_name_style.yaml"
     ```
 
 ## field_mapping
@@ -37,10 +37,10 @@ Explicit field renaming using `F` objects. Takes priority over `name_style`:
     --8<-- "examples/docs/naming_field_mapping.py"
     ```
 
-=== "mapped.yaml"
+=== "naming_field_mapping.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/mapped.yaml"
+    --8<-- "examples/docs/sources/naming_field_mapping.yaml"
     ```
 
 ### Multiple Aliases
@@ -61,10 +61,10 @@ Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
     --8<-- "examples/docs/naming_nested_fields.py"
     ```
 
-=== "nested.yaml"
+=== "naming_nested_fields.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/nested.yaml"
+    --8<-- "examples/docs/sources/naming_nested_fields.yaml"
     ```
 
 ### Decorator Mode
@@ -91,10 +91,10 @@ For file-based sources, `prefix` navigates into nested objects using dot notatio
     --8<-- "examples/docs/naming_prefix_nested.py"
     ```
 
-=== "prefix_nested.yaml"
+=== "naming_prefix_nested.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/prefix_nested.yaml"
+    --8<-- "examples/docs/sources/naming_prefix_nested.yaml"
     ```
 
 ## split_symbols

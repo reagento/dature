@@ -27,7 +27,7 @@ def check_debug_not_on_production(obj: Config) -> bool:
 try:
     load(
         LoadMetadata(
-            file_=SOURCES_DIR / "app_root_invalid.yaml",
+            file_=SOURCES_DIR / "validation_root_invalid.yaml",
             root_validators=(
                 RootValidator(
                     func=check_debug_not_on_production,
@@ -38,7 +38,7 @@ try:
         Config,
     )
 except DatureConfigError as exc:
-    source = str(SOURCES_DIR / "app_root_invalid.yaml")
+    source = str(SOURCES_DIR / "validation_root_invalid.yaml")
     assert str(exc) == dedent(f"""\
         Config loading errors (1)
 

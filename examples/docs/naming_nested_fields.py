@@ -22,7 +22,7 @@ class User:
 
 config = load(
     LoadMetadata(
-        file_=SOURCES_DIR / "nested.yaml",
+        file_=SOURCES_DIR / "naming_nested_fields.yaml",
         field_mapping={
             F[User].name: "fullName",
             F[User].address: "location",

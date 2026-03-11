@@ -18,9 +18,9 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "skip_specific_defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "merging_skip_invalid_per_field_defaults.yaml"),
             LoadMetadata(
-                file_=SOURCES_DIR / "skip_specific_overrides.yaml",
+                file_=SOURCES_DIR / "merging_skip_invalid_per_field_overrides.yaml",
                 skip_if_invalid=(F[Config].port, F[Config].timeout),
             ),
         ),

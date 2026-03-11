@@ -16,7 +16,7 @@ class Config:
 
 
 config = load(
-    LoadMetadata(file_=SOURCES_DIR / "app_docker_secrets"),
+    LoadMetadata(file_=SOURCES_DIR / "intro_app_docker_secrets"),
     Config,
 )
 

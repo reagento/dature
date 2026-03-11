@@ -18,7 +18,7 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "common_defaults.yaml"),
             LoadMetadata(file_=SOURCES_DIR / "nonexistent.yaml", skip_if_broken=True),
         ),
     ),

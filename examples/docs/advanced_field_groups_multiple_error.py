@@ -23,8 +23,8 @@ try:
     load(
         MergeMetadata(
             sources=(
-                LoadMetadata(file_=SOURCES_DIR / "field_groups_defaults.yaml"),
-                LoadMetadata(file_=SOURCES_DIR / "field_groups_multiple_partial_overrides.yaml"),
+                LoadMetadata(file_=SOURCES_DIR / "common_field_groups_defaults.yaml"),
+                LoadMetadata(file_=SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml"),
             ),
             field_groups=(
                 FieldGroup(F[Config].host, F[Config].port),
@@ -34,8 +34,8 @@ try:
         Config,
     )
 except FieldGroupError as exc:
-    defaults_path = str(SOURCES_DIR / "field_groups_defaults.yaml")
-    overrides_path = str(SOURCES_DIR / "field_groups_multiple_partial_overrides.yaml")
+    defaults_path = str(SOURCES_DIR / "common_field_groups_defaults.yaml")
+    overrides_path = str(SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml")
     assert str(exc) == dedent(f"""\
         Config field group errors (2)
 

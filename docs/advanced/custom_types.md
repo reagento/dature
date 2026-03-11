@@ -10,8 +10,8 @@ Each `TypeLoader` maps a type to a conversion function:
 --8<-- "examples/docs/custom_type.py"
 ```
 
-```yaml title="custom_type.yaml"
---8<-- "examples/docs/sources/custom_type.yaml"
+```yaml title="custom_type_common.yaml"
+--8<-- "examples/docs/sources/custom_type_common.yaml"
 ```
 
 ### Per-source vs Global

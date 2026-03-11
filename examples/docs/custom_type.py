@@ -28,7 +28,7 @@ class AppConfig:
 
 config = load(
     LoadMetadata(
-        file_=SOURCES_DIR / "custom_type.yaml",
+        file_=SOURCES_DIR / "custom_type_common.yaml",
         type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
     ),
     AppConfig,

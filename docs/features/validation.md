@@ -12,10 +12,10 @@ Declare validators using `typing.Annotated`:
     --8<-- "examples/docs/validation_annotated.py"
     ```
 
-=== "validated_invalid.json5"
+=== "validation_annotated_invalid.json5"
 
     ```json5
-    --8<-- "examples/docs/sources/validated_invalid.json5"
+    --8<-- "examples/docs/sources/validation_annotated_invalid.json5"
     ```
 
 ### Available Validators
@@ -62,10 +62,10 @@ Validate the entire object after loading:
     --8<-- "examples/docs/validation_root.py"
     ```
 
-=== "app_root_invalid.yaml"
+=== "validation_root_invalid.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/app_root_invalid.yaml"
+    --8<-- "examples/docs/sources/validation_root_invalid.yaml"
     ```
 
 Root validators receive the fully constructed dataclass instance and return `True` if valid.
@@ -80,10 +80,10 @@ Field validators can be specified in `LoadMetadata` using the `validators` param
     --8<-- "examples/docs/validation_metadata.py"
     ```
 
-=== "app_metadata_invalid.yaml"
+=== "validation_metadata_invalid.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/app_metadata_invalid.yaml"
+    --8<-- "examples/docs/sources/validation_metadata_invalid.yaml"
     ```
 
 A single validator can be passed directly. Multiple validators require a tuple:
@@ -114,10 +114,10 @@ Create your own validators by implementing `get_validator_func()` and `get_error
     --8<-- "examples/docs/validation_custom.py"
     ```
 
-=== "validated_custom_invalid.json5"
+=== "validation_custom_invalid.json5"
 
     ```json5
-    --8<-- "examples/docs/sources/validated_custom_invalid.json5"
+    --8<-- "examples/docs/sources/validation_custom_invalid.json5"
     ```
 
 Custom validators can be combined with built-in ones in `Annotated`.
@@ -132,10 +132,10 @@ Standard dataclass `__post_init__` and `@property` work as expected — dature p
     --8<-- "examples/docs/validation_post_init.py"
     ```
 
-=== "app_post_init_invalid.yaml"
+=== "validation_post_init_invalid.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/app_post_init_invalid.yaml"
+    --8<-- "examples/docs/sources/validation_post_init_invalid.yaml"
     ```
 
 Both approaches work in function mode and decorator mode.

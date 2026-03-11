@@ -38,11 +38,11 @@ class ServiceConfig:
 
 try:
     load(
-        LoadMetadata(file_=SOURCES_DIR / "validated_custom_invalid.json5"),
+        LoadMetadata(file_=SOURCES_DIR / "validation_custom_invalid.json5"),
         ServiceConfig,
     )
 except DatureConfigError as exc:
-    source = str(SOURCES_DIR / "validated_custom_invalid.json5")
+    source = str(SOURCES_DIR / "validation_custom_invalid.json5")
     assert str(exc) == dedent(f"""\
         ServiceConfig loading errors (1)
 

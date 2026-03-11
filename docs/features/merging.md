@@ -12,16 +12,16 @@ Use `MergeMetadata` to combine sources:
     --8<-- "examples/docs/merging_basic.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 ## Tuple Shorthand
@@ -34,16 +34,16 @@ Pass a tuple of `LoadMetadata` directly — uses `LAST_WINS` by default:
     --8<-- "examples/docs/merging_tuple_shorthand.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 Works as a decorator too:
@@ -54,10 +54,10 @@ Works as a decorator too:
     --8<-- "examples/docs/merging_tuple_shorthand_decorator.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
 ## Merge Strategies
@@ -68,16 +68,16 @@ Works as a decorator too:
     --8<-- "examples/docs/merging_strategies.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 | Strategy | Behavior |

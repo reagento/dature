@@ -16,10 +16,10 @@ Customize defaults for the entire application — programmatically or via enviro
     --8<-- "examples/docs/advanced_configure_env.py"
     ```
 
-=== "app.yaml"
+=== "common_app.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/app.yaml"
+    --8<-- "examples/docs/sources/common_app.yaml"
     ```
 
 ### MaskingConfig

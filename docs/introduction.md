@@ -6,8 +6,8 @@ dature offers two ways to load configuration: **function mode** and **decorator 
 
     Call `load()` with a `LoadMetadata` descriptor and a dataclass type:
 
-    ```yaml title="app.yaml"
-    --8<-- "examples/docs/sources/app.yaml"
+    ```yaml title="common_app.yaml"
+    --8<-- "examples/docs/sources/common_app.yaml"
     ```
 
     ```python
@@ -18,8 +18,8 @@ dature offers two ways to load configuration: **function mode** and **decorator 
 
     Use `@load()` as a decorator. The dataclass auto-loads on every instantiation:
 
-    ```yaml title="app.yaml"
-    --8<-- "examples/docs/sources/app.yaml"
+    ```yaml title="common_app.yaml"
+    --8<-- "examples/docs/sources/common_app.yaml"
     ```
 
     ```python
@@ -38,8 +38,8 @@ dature auto-detects the format from the file extension. Here's the same config l
 
 === "YAML"
 
-    ```yaml title="app.yaml"
-    --8<-- "examples/docs/sources/app.yaml"
+    ```yaml title="common_app.yaml"
+    --8<-- "examples/docs/sources/common_app.yaml"
     ```
 
     ```python
@@ -48,8 +48,8 @@ dature auto-detects the format from the file extension. Here's the same config l
 
 === "JSON"
 
-    ```json title="app.json"
-    --8<-- "examples/docs/sources/app.json"
+    ```json title="intro_app.json"
+    --8<-- "examples/docs/sources/intro_app.json"
     ```
 
     ```python
@@ -58,8 +58,8 @@ dature auto-detects the format from the file extension. Here's the same config l
 
 === "JSON5"
 
-    ```json5 title="app.json5"
-    --8<-- "examples/docs/sources/app.json5"
+    ```json5 title="intro_app.json5"
+    --8<-- "examples/docs/sources/intro_app.json5"
     ```
 
     ```python
@@ -68,8 +68,8 @@ dature auto-detects the format from the file extension. Here's the same config l
 
 === "TOML"
 
-    ```toml title="app.toml"
-    --8<-- "examples/docs/sources/app.toml"
+    ```toml title="intro_app.toml"
+    --8<-- "examples/docs/sources/intro_app.toml"
     ```
 
     ```python
@@ -78,8 +78,8 @@ dature auto-detects the format from the file extension. Here's the same config l
 
 === "INI"
 
-    ```ini title="app.ini"
-    --8<-- "examples/docs/sources/app.ini"
+    ```ini title="intro_app.ini"
+    --8<-- "examples/docs/sources/intro_app.ini"
     ```
 
     ```python
@@ -88,8 +88,8 @@ dature auto-detects the format from the file extension. Here's the same config l
 
 === "ENV"
 
-    ```bash title="app.env"
-    --8<-- "examples/docs/sources/app.env"
+    ```bash title="intro_app.env"
+    --8<-- "examples/docs/sources/intro_app.env"
     ```
 
     ```python

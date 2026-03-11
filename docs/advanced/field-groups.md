@@ -8,10 +8,10 @@ Ensure related fields are always overridden together. If a source partially over
     --8<-- "examples/docs/advanced_field_groups_nested_error.py"
     ```
 
-=== "field_groups_defaults.yaml"
+=== "common_field_groups_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    --8<-- "examples/docs/sources/common_field_groups_defaults.yaml"
     ```
 
 === "field_groups_partial_overrides.yaml"
@@ -36,10 +36,10 @@ Passing a dataclass field expands it into all its leaf fields:
     --8<-- "examples/docs/sources/field_groups_nested_defaults.yaml"
     ```
 
-=== "field_groups_expansion_partial_overrides.yaml"
+=== "advanced_field_groups_expansion_error_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/field_groups_expansion_partial_overrides.yaml"
+    --8<-- "examples/docs/sources/advanced_field_groups_expansion_error_overrides.yaml"
     ```
 
 ## Multiple Groups
@@ -52,16 +52,16 @@ If a source partially overrides multiple groups, all violations are reported:
     --8<-- "examples/docs/advanced_field_groups_multiple_error.py"
     ```
 
-=== "field_groups_defaults.yaml"
+=== "common_field_groups_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    --8<-- "examples/docs/sources/common_field_groups_defaults.yaml"
     ```
 
-=== "field_groups_multiple_partial_overrides.yaml"
+=== "advanced_field_groups_multiple_error_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/field_groups_multiple_partial_overrides.yaml"
+    --8<-- "examples/docs/sources/advanced_field_groups_multiple_error_overrides.yaml"
     ```
 
 Field groups work with all merge strategies and can be combined with `field_merges`.

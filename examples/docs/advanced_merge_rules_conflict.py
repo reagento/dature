@@ -20,8 +20,8 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "defaults.yaml"),
-            LoadMetadata(file_=SOURCES_DIR / "overrides.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "common_defaults.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "common_overrides.yaml"),
         ),
         strategy=MergeStrategy.RAISE_ON_CONFLICT,
         field_merges=(

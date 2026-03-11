@@ -36,16 +36,16 @@ All available `FieldMergeStrategy` values:
 
 Given two sources with overlapping `tags`:
 
-=== "merge_base.yaml"
+=== "merging_field_base.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/merge_base.yaml"
+    --8<-- "examples/docs/sources/merging_field_base.yaml"
     ```
 
-=== "merge_override.yaml"
+=== "merging_field_override.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/merge_override.yaml"
+    --8<-- "examples/docs/sources/merging_field_override.yaml"
     ```
 
 Each strategy produces a different result:
@@ -100,16 +100,16 @@ Fields with an explicit strategy are excluded from conflict detection:
     --8<-- "examples/docs/advanced_merge_rules_conflict.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 ## Callable Merge
@@ -122,16 +122,16 @@ You can also pass a callable as the strategy:
     --8<-- "examples/docs/advanced_merge_rules_callable.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
-=== "overrides.yaml"
+=== "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/overrides.yaml"
+    --8<-- "examples/docs/sources/common_overrides.yaml"
     ```
 
 The callable receives a `list[JSONValue]` (one value per source) and returns the merged value.
@@ -146,16 +146,16 @@ Ensure that related fields are always overridden together. If a source changes s
     --8<-- "examples/docs/merging_field_groups.py"
     ```
 
-=== "field_groups_defaults.yaml"
+=== "common_field_groups_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/field_groups_defaults.yaml"
+    --8<-- "examples/docs/sources/common_field_groups_defaults.yaml"
     ```
 
-=== "field_groups_overrides.yaml"
+=== "common_field_groups_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/field_groups_overrides.yaml"
+    --8<-- "examples/docs/sources/common_field_groups_overrides.yaml"
     ```
 
 If `overrides.yaml` changes `host` and `port` together, the group constraint is satisfied. If it changed only `host` but not `port`, loading would fail:
@@ -180,10 +180,10 @@ Skip sources that fail to load (missing file, invalid syntax):
     --8<-- "examples/docs/merging_skip_broken.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
 Override per source with `skip_if_broken` on `LoadMetadata` (takes priority over the global flag):
@@ -194,10 +194,10 @@ Override per source with `skip_if_broken` on `LoadMetadata` (takes priority over
     --8<-- "examples/docs/merging_skip_broken_per_source.py"
     ```
 
-=== "defaults.yaml"
+=== "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/defaults.yaml"
+    --8<-- "examples/docs/sources/common_defaults.yaml"
     ```
 
 If all sources fail to load, a `ValueError` is raised.
@@ -212,10 +212,10 @@ Drop fields with invalid values and let other sources or defaults fill them in:
     --8<-- "examples/docs/merging_skip_invalid.py"
     ```
 
-=== "skip_defaults.yaml"
+=== "merging_skip_invalid_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/skip_defaults.yaml"
+    --8<-- "examples/docs/sources/merging_skip_invalid_defaults.yaml"
     ```
 
 Restrict skipping to specific fields:
@@ -226,16 +226,16 @@ Restrict skipping to specific fields:
     --8<-- "examples/docs/merging_skip_invalid_per_field.py"
     ```
 
-=== "skip_specific_defaults.yaml"
+=== "merging_skip_invalid_per_field_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/skip_specific_defaults.yaml"
+    --8<-- "examples/docs/sources/merging_skip_invalid_per_field_defaults.yaml"
     ```
 
-=== "skip_specific_overrides.yaml"
+=== "merging_skip_invalid_per_field_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/skip_specific_overrides.yaml"
+    --8<-- "examples/docs/sources/merging_skip_invalid_per_field_overrides.yaml"
     ```
 
 Only `port` and `timeout` will be skipped if invalid; other fields still raise errors.

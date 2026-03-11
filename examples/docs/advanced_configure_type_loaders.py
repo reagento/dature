@@ -29,6 +29,6 @@ class AppConfig:
 # Register Rgb parser globally — no need to pass type_loaders to every load() call
 configure(type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),))
 
-config = load(LoadMetadata(file_=SOURCES_DIR / "custom_type.yaml"), AppConfig)
+config = load(LoadMetadata(file_=SOURCES_DIR / "custom_type_common.yaml"), AppConfig)
 print(config)
 # AppConfig(name='my-app', color=Rgb(r=255, g=128, b=0))

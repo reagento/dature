@@ -8,10 +8,10 @@ String values in all file formats support environment variable expansion:
     --8<-- "examples/docs/advanced_env_expansion.py"
     ```
 
-=== "env_expand.yaml"
+=== "advanced_env_expansion.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/env_expand.yaml"
+    --8<-- "examples/docs/sources/advanced_env_expansion.yaml"
     ```
 
 ## Supported Syntax
@@ -43,10 +43,10 @@ Set the mode on `LoadMetadata`:
     --8<-- "examples/docs/advanced_env_expansion_strict.py"
     ```
 
-=== "env_expand.yaml"
+=== "advanced_env_expansion.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/env_expand.yaml"
+    --8<-- "examples/docs/sources/advanced_env_expansion.yaml"
     ```
 
 For merge mode, set on `MergeMetadata` as default for all sources:
@@ -57,22 +57,22 @@ For merge mode, set on `MergeMetadata` as default for all sources:
     --8<-- "examples/docs/advanced_env_expansion_merge.py"
     ```
 
-=== "env_expand_mode_default.yaml"
+=== "advanced_env_expansion_merge_default.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/env_expand_mode_default.yaml"
+    --8<-- "examples/docs/sources/advanced_env_expansion_merge_default.yaml"
     ```
 
-=== "env_expand_mode_empty.yaml"
+=== "advanced_env_expansion_merge_empty.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/env_expand_mode_empty.yaml"
+    --8<-- "examples/docs/sources/advanced_env_expansion_merge_empty.yaml"
     ```
 
-=== "env_expand_mode_disabled.yaml"
+=== "advanced_env_expansion_merge_disabled.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/env_expand_mode_disabled.yaml"
+    --8<-- "examples/docs/sources/advanced_env_expansion_merge_disabled.yaml"
     ```
 
 In `"strict"` mode, all missing variables are collected and reported at once:

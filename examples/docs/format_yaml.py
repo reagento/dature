@@ -15,7 +15,7 @@ class Config:
     debug: bool = False
 
 
-config = load(LoadMetadata(file_=SOURCES_DIR / "app.yaml"), Config)
+config = load(LoadMetadata(file_=SOURCES_DIR / "common_app.yaml"), Config)
 
 print(f"host: {config.host}")  # host: localhost
 print(f"port: {config.port}")  # port: 8080

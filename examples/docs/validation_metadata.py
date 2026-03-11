@@ -22,7 +22,7 @@ class Config:
 try:
     load(
         LoadMetadata(
-            file_=SOURCES_DIR / "app_metadata_invalid.yaml",
+            file_=SOURCES_DIR / "validation_metadata_invalid.yaml",
             validators={
                 F[Config].host: MinLength(value=1),
                 F[Config].port: (Ge(value=1), Lt(value=65536)),
@@ -31,7 +31,7 @@ try:
         Config,
     )
 except DatureConfigError as exc:
-    source = str(SOURCES_DIR / "app_metadata_invalid.yaml")
+    source = str(SOURCES_DIR / "validation_metadata_invalid.yaml")
     assert str(exc) == dedent(f"""\
         Config loading errors (2)
 

@@ -25,6 +25,6 @@ class Config:
 
 
 try:
-    load(LoadMetadata(file_=SOURCES_DIR / "app_post_init_invalid.yaml"), Config)
+    load(LoadMetadata(file_=SOURCES_DIR / "validation_post_init_invalid.yaml"), Config)
 except ValueError as exc:
     assert str(exc) == "port must be between 1 and 65535, got 99999"

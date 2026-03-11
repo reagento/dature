@@ -16,8 +16,8 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "merge_base.yaml"),
-            LoadMetadata(file_=SOURCES_DIR / "merge_override.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "merging_field_base.yaml"),
+            LoadMetadata(file_=SOURCES_DIR / "merging_field_override.yaml"),
         ),
         field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND_UNIQUE),),
     ),
