@@ -114,6 +114,15 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 
 The format is auto-detected from the file extension. When `file_` is not specified, environment variables are used. When `file_` points to a directory, `DockerSecretsLoader` is used. `file_` also accepts `Path` objects and file-like objects (`BytesIO`, `StringIO`) — for file-like objects, the `loader` parameter is required.
 
+## mypy Plugin
+
+When using `@load()` as a decorator, mypy will report `call-arg` errors because the original dataclass `__init__` still requires all fields. dature ships with a mypy plugin that makes all fields optional in decorated classes:
+
+```toml
+[tool.mypy]
+plugins = ["dature.mypy_plugin"]
+```
+
 ## What's Next
 
 - [Introduction](introduction.md) — function vs decorator mode, all formats, LoadMetadata reference

@@ -24,7 +24,7 @@ class Config:
     debug: bool = False
 
 
-config = Config()  # type: ignore[call-arg]
+config = Config()
 assert config.host == "env_localhost"
 assert config.port == 3000
 assert config.debug is False

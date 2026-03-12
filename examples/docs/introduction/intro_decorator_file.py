@@ -17,7 +17,7 @@ class Config:
     debug: bool = False
 
 
-config = Config()  # type: ignore[call-arg]
+config = Config()
 
 assert config.host == "localhost"
 assert config.port == 8080

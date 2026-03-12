@@ -20,7 +20,7 @@ class AppConfig:
     workers: int
 
 
-config = AppConfig()  # type: ignore[call-arg]
+config = AppConfig()
 
 assert config.host == "0.0.0.0"
 assert config.port == 8080

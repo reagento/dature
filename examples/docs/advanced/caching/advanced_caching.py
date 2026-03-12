@@ -16,10 +16,9 @@ class CachedConfig:
     port: int
 
 
-config1 = CachedConfig()  # type: ignore[call-arg]
+config1 = CachedConfig()
 os.environ["CACHE_PORT"] = "9999"
-config2 = CachedConfig()  # type: ignore[call-arg]
-
+config2 = CachedConfig()
 assert config1.port == 6379
 assert config2.port == 6379
 
@@ -34,9 +33,8 @@ class UncachedConfig:
     port: int
 
 
-config3 = UncachedConfig()  # type: ignore[call-arg]
+config3 = UncachedConfig()
 os.environ["NOCACHE_PORT"] = "9999"
-config4 = UncachedConfig()  # type: ignore[call-arg]
-
+config4 = UncachedConfig()
 assert config3.port == 6379
 assert config4.port == 9999
