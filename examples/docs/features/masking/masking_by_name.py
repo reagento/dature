@@ -29,11 +29,11 @@ config = load(
     debug=True,
 )
 
-assert config.host == "api.example.com"
+assert config.host == "production"
 assert config.password == "my_secret_password"
 assert config.api_key == "sk-proj-abc123def456"
 
 logs = log_stream.getvalue()
 assert "'password': 'my*****rd'" in logs
 assert "'api_key': 'sk*****56'" in logs
-assert "'host': 'api.example.com'" in logs
+assert "'host': 'production'" in logs
