@@ -1,4 +1,4 @@
-"""Decorator mode — auto-load config from a YAML file."""
+"""Load from YAML file."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -6,9 +6,9 @@ from pathlib import Path
 from dature import LoadMetadata, load
 
 SOURCES_DIR = Path(__file__).parent / "sources"
+SHARED_DIR = Path(__file__).parents[1] / "shared"
 
 
-@load(LoadMetadata(file_=SOURCES_DIR / "common_app.yaml"))
 @dataclass
 class Config:
     host: str
@@ -16,7 +16,7 @@ class Config:
     debug: bool = False
 
 
-config = Config()  # type: ignore[call-arg]
+config = load(LoadMetadata(file_=SHARED_DIR / "common_app.yaml"), Config)
 
 print(f"host: {config.host}")  # host: localhost
 print(f"port: {config.port}")  # port: 8080

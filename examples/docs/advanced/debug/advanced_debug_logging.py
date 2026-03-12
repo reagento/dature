@@ -8,7 +8,7 @@ from dature import LoadMetadata, MergeMetadata, load
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
-SOURCES_DIR = Path(__file__).parent / "sources"
+SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -23,8 +23,8 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "common_defaults.yaml"),
-            LoadMetadata(file_=SOURCES_DIR / "common_overrides.yaml"),
+            LoadMetadata(file_=SHARED_DIR / "common_defaults.yaml"),
+            LoadMetadata(file_=SHARED_DIR / "common_overrides.yaml"),
         ),
     ),
     Config,

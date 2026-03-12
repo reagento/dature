@@ -5,13 +5,13 @@ String values in all file formats support environment variable expansion:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced_env_expansion.py"
+    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion.py"
     ```
 
 === "advanced_env_expansion.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/advanced_env_expansion.yaml"
+    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion.yaml"
     ```
 
 ## Supported Syntax
@@ -40,13 +40,13 @@ Set the mode on `LoadMetadata`:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced_env_expansion_strict.py"
+    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_strict.py"
     ```
 
 === "advanced_env_expansion.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/advanced_env_expansion.yaml"
+    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion.yaml"
     ```
 
 For merge mode, set on `MergeMetadata` as default for all sources:
@@ -54,25 +54,25 @@ For merge mode, set on `MergeMetadata` as default for all sources:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced_env_expansion_merge.py"
+    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_merge.py"
     ```
 
 === "advanced_env_expansion_merge_default.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/advanced_env_expansion_merge_default.yaml"
+    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_merge_default.yaml"
     ```
 
 === "advanced_env_expansion_merge_empty.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/advanced_env_expansion_merge_empty.yaml"
+    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_merge_empty.yaml"
     ```
 
 === "advanced_env_expansion_merge_disabled.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/advanced_env_expansion_merge_disabled.yaml"
+    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_merge_disabled.yaml"
     ```
 
 In `"strict"` mode, all missing variables are collected and reported at once:

@@ -6,6 +6,7 @@ from pathlib import Path
 from dature import LoadMetadata, MergeMetadata, load
 
 SOURCES_DIR = Path(__file__).parent / "sources"
+SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -18,13 +19,13 @@ class Config:
 config = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "common_defaults.yaml"),  # uses global
+            LoadMetadata(file_=SHARED_DIR / "common_defaults.yaml"),  # uses global
             LoadMetadata(
                 file_=SOURCES_DIR / "optional.yaml",
                 skip_if_broken=True,
             ),  # always skip if broken
             LoadMetadata(
-                file_=SOURCES_DIR / "common_overrides.yaml",
+                file_=SHARED_DIR / "common_overrides.yaml",
                 skip_if_broken=False,
             ),  # never skip, even if global is True
         ),

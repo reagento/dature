@@ -5,19 +5,19 @@ Pass `debug=True` to collect a `LoadReport`:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced_debug_report.py"
+    --8<-- "examples/docs/advanced/debug/advanced_debug_report.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_defaults.yaml"
+    --8<-- "examples/docs/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_overrides.yaml"
+    --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
 ## Report Structure
@@ -33,19 +33,19 @@ All loading steps are logged at `DEBUG` level under the `"dature"` logger regard
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced_debug_logging.py"
+    --8<-- "examples/docs/advanced/debug/advanced_debug_logging.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_defaults.yaml"
+    --8<-- "examples/docs/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_overrides.yaml"
+    --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
 ## Report on Error
@@ -55,19 +55,19 @@ If loading fails with `DatureConfigError` and `debug=True` was passed, the repor
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced_debug_error.py"
+    --8<-- "examples/docs/advanced/debug/advanced_debug_error.py"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_overrides.yaml"
+    --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
 === "advanced_debug_error_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/advanced_debug_error_defaults.yaml"
+    --8<-- "examples/docs/advanced/debug/sources/advanced_debug_error_defaults.yaml"
     ```
 
 Without `debug=True`, `get_load_report()` returns `None` and emits a warning.

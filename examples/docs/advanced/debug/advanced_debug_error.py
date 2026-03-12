@@ -7,6 +7,7 @@ from dature import LoadMetadata, MergeMetadata, get_load_report, load
 from dature.errors.exceptions import DatureConfigError
 
 SOURCES_DIR = Path(__file__).parent / "sources"
+SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -22,7 +23,7 @@ try:
     config = load(
         MergeMetadata(
             sources=(
-                LoadMetadata(file_=SOURCES_DIR / "common_overrides.yaml"),
+                LoadMetadata(file_=SHARED_DIR / "common_overrides.yaml"),
                 LoadMetadata(file_=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
             ),
         ),

@@ -9,13 +9,13 @@ Declare validators using `typing.Annotated`:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/validation_annotated.py"
+    --8<-- "examples/docs/features/validation/validation_annotated.py"
     ```
 
 === "validation_annotated_invalid.json5"
 
     ```json5
-    --8<-- "examples/docs/sources/validation_annotated_invalid.json5"
+    --8<-- "examples/docs/features/validation/sources/validation_annotated_invalid.json5"
     ```
 
 ### Available Validators
@@ -59,13 +59,13 @@ Validate the entire object after loading:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/validation_root.py"
+    --8<-- "examples/docs/features/validation/validation_root.py"
     ```
 
 === "validation_root_invalid.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/validation_root_invalid.yaml"
+    --8<-- "examples/docs/features/validation/sources/validation_root_invalid.yaml"
     ```
 
 Root validators receive the fully constructed dataclass instance and return `True` if valid.
@@ -77,13 +77,13 @@ Field validators can be specified in `LoadMetadata` using the `validators` param
 === "Python"
 
     ```python
-    --8<-- "examples/docs/validation_metadata.py"
+    --8<-- "examples/docs/features/validation/validation_metadata.py"
     ```
 
 === "validation_metadata_invalid.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/validation_metadata_invalid.yaml"
+    --8<-- "examples/docs/features/validation/sources/validation_metadata_invalid.yaml"
     ```
 
 A single validator can be passed directly. Multiple validators require a tuple:
@@ -111,13 +111,13 @@ Create your own validators by implementing `get_validator_func()` and `get_error
 === "Python"
 
     ```python
-    --8<-- "examples/docs/validation_custom.py"
+    --8<-- "examples/docs/features/validation/validation_custom.py"
     ```
 
 === "validation_custom_invalid.json5"
 
     ```json5
-    --8<-- "examples/docs/sources/validation_custom_invalid.json5"
+    --8<-- "examples/docs/features/validation/sources/validation_custom_invalid.json5"
     ```
 
 Custom validators can be combined with built-in ones in `Annotated`.
@@ -129,13 +129,13 @@ Standard dataclass `__post_init__` and `@property` work as expected — dature p
 === "Python"
 
     ```python
-    --8<-- "examples/docs/validation_post_init.py"
+    --8<-- "examples/docs/features/validation/validation_post_init.py"
     ```
 
 === "validation_post_init_invalid.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/validation_post_init_invalid.yaml"
+    --8<-- "examples/docs/features/validation/sources/validation_post_init_invalid.yaml"
     ```
 
 Both approaches work in function mode and decorator mode.

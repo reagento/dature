@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dature import LoadMetadata, MergeMetadata, MergeStrategy, load
 
-SOURCES_DIR = Path(__file__).parent / "sources"
+SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -20,8 +20,8 @@ class Config:
 last_wins = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "common_defaults.yaml"),
-            LoadMetadata(file_=SOURCES_DIR / "common_overrides.yaml"),
+            LoadMetadata(file_=SHARED_DIR / "common_defaults.yaml"),
+            LoadMetadata(file_=SHARED_DIR / "common_overrides.yaml"),
         ),
         strategy=MergeStrategy.LAST_WINS,
     ),
@@ -31,8 +31,8 @@ last_wins = load(
 first_wins = load(
     MergeMetadata(
         sources=(
-            LoadMetadata(file_=SOURCES_DIR / "common_defaults.yaml"),
-            LoadMetadata(file_=SOURCES_DIR / "common_overrides.yaml"),
+            LoadMetadata(file_=SHARED_DIR / "common_defaults.yaml"),
+            LoadMetadata(file_=SHARED_DIR / "common_overrides.yaml"),
         ),
         strategy=MergeStrategy.FIRST_WINS,
     ),

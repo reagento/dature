@@ -7,11 +7,11 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     Call `load()` with a `LoadMetadata` descriptor and a dataclass type:
 
     ```yaml title="common_app.yaml"
-    --8<-- "examples/docs/sources/common_app.yaml"
+    --8<-- "examples/docs/shared/common_app.yaml"
     ```
 
     ```python
-    --8<-- "examples/docs/format_yaml.py"
+    --8<-- "examples/docs/introduction/format_yaml.py"
     ```
 
 === "Decorator mode"
@@ -19,11 +19,11 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     Use `@load()` as a decorator. The dataclass auto-loads on every instantiation:
 
     ```yaml title="common_app.yaml"
-    --8<-- "examples/docs/sources/common_app.yaml"
+    --8<-- "examples/docs/shared/common_app.yaml"
     ```
 
     ```python
-    --8<-- "examples/docs/intro_decorator_file.py"
+    --8<-- "examples/docs/introduction/intro_decorator_file.py"
     ```
 
     Explicit arguments to `__init__` take priority over loaded values:
@@ -39,61 +39,61 @@ dature auto-detects the format from the file extension. Here's the same config l
 === "YAML"
 
     ```yaml title="common_app.yaml"
-    --8<-- "examples/docs/sources/common_app.yaml"
+    --8<-- "examples/docs/shared/common_app.yaml"
     ```
 
     ```python
-    --8<-- "examples/docs/format_yaml.py"
+    --8<-- "examples/docs/introduction/format_yaml.py"
     ```
 
 === "JSON"
 
     ```json title="intro_app.json"
-    --8<-- "examples/docs/sources/intro_app.json"
+    --8<-- "examples/docs/introduction/sources/intro_app.json"
     ```
 
     ```python
-    --8<-- "examples/docs/format_json.py"
+    --8<-- "examples/docs/introduction/format_json.py"
     ```
 
 === "JSON5"
 
     ```json5 title="intro_app.json5"
-    --8<-- "examples/docs/sources/intro_app.json5"
+    --8<-- "examples/docs/introduction/sources/intro_app.json5"
     ```
 
     ```python
-    --8<-- "examples/docs/format_json5.py"
+    --8<-- "examples/docs/introduction/format_json5.py"
     ```
 
 === "TOML"
 
     ```toml title="intro_app.toml"
-    --8<-- "examples/docs/sources/intro_app.toml"
+    --8<-- "examples/docs/introduction/sources/intro_app.toml"
     ```
 
     ```python
-    --8<-- "examples/docs/format_toml.py"
+    --8<-- "examples/docs/introduction/format_toml.py"
     ```
 
 === "INI"
 
     ```ini title="intro_app.ini"
-    --8<-- "examples/docs/sources/intro_app.ini"
+    --8<-- "examples/docs/introduction/sources/intro_app.ini"
     ```
 
     ```python
-    --8<-- "examples/docs/format_ini.py"
+    --8<-- "examples/docs/introduction/format_ini.py"
     ```
 
 === "ENV"
 
     ```bash title="intro_app.env"
-    --8<-- "examples/docs/sources/intro_app.env"
+    --8<-- "examples/docs/introduction/sources/intro_app.env"
     ```
 
     ```python
-    --8<-- "examples/docs/format_env.py"
+    --8<-- "examples/docs/introduction/format_env.py"
     ```
 
 === "Docker Secrets"
@@ -106,7 +106,7 @@ dature auto-detects the format from the file extension. Here's the same config l
     ```
 
     ```python
-    --8<-- "examples/docs/format_docker.py"
+    --8<-- "examples/docs/introduction/format_docker.py"
     ```
 
 ### Auto-Detection
@@ -158,7 +158,7 @@ LoadMetadata(file_="config.yaml", loader=Yaml11Loader)
 `file_` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass). The `loader` parameter is required since there is no file extension to auto-detect from:
 
 ```python
---8<-- "examples/docs/intro_file_like.py"
+--8<-- "examples/docs/introduction/intro_file_like.py"
 ```
 
 !!! note

@@ -9,19 +9,19 @@ Use `MergeMetadata` to combine sources:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/merging_basic.py"
+    --8<-- "examples/docs/features/merging/merging_basic.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_defaults.yaml"
+    --8<-- "examples/docs/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_overrides.yaml"
+    --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
 ## Tuple Shorthand
@@ -31,19 +31,19 @@ Pass a tuple of `LoadMetadata` directly — uses `LAST_WINS` by default:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/merging_tuple_shorthand.py"
+    --8<-- "examples/docs/features/merging/merging_tuple_shorthand.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_defaults.yaml"
+    --8<-- "examples/docs/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_overrides.yaml"
+    --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
 Works as a decorator too:
@@ -51,13 +51,13 @@ Works as a decorator too:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/merging_tuple_shorthand_decorator.py"
+    --8<-- "examples/docs/features/merging/merging_tuple_shorthand_decorator.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_defaults.yaml"
+    --8<-- "examples/docs/shared/common_defaults.yaml"
     ```
 
 ## Merge Strategies
@@ -65,19 +65,19 @@ Works as a decorator too:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/merging_strategies.py"
+    --8<-- "examples/docs/features/merging/merging_strategies.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_defaults.yaml"
+    --8<-- "examples/docs/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/sources/common_overrides.yaml"
+    --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
 | Strategy | Behavior |
