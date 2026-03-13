@@ -23,11 +23,12 @@ try:
         Config,
     )
 except DatureConfigError as exc:
-    assert str(exc) == dedent("""\
+    source = str(SOURCES_DIR / "masking_heuristic.yaml")
+    assert str(exc) == dedent(f"""\
     Config loading errors (1)
 
       [connection_id]  Invalid variant: 'aK*****T6'
-       └── FILE '/Users/n.vidov/Desktop/не work/dature/examples/docs/features/masking/sources/masking_heuristic.yaml', line 1
+       └── FILE '{source}', line 1
            connection_id: "aK*****T6"
     """)
 else:

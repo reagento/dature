@@ -20,11 +20,12 @@ class Config:
 try:
     load(LoadMetadata(file_=SOURCES_DIR / "masking_by_name.yaml"), Config)
 except DatureConfigError as exc:
-    assert str(exc) == dedent("""\
+    source = str(SOURCES_DIR / "masking_by_name.yaml")
+    assert str(exc) == dedent(f"""\
     Config loading errors (1)
 
       [password]  Invalid variant: 'my*****rd'
-       └── FILE '/Users/n.vidov/Desktop/не work/dature/examples/docs/features/masking/sources/masking_by_name.yaml', line 1
+       └── FILE '{source}', line 1
            password: "my*****rd"
     """)
 else:

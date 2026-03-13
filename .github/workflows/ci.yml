@@ -237,9 +237,11 @@ jobs:
     steps:
       - name: Determine version
         id: version
+        env:
+          TAG_VERSION: ${{ needs.tag.outputs.version }}
         run: |
-          if [ -n "${{ needs.tag.outputs.version }}" ]; then
-            echo "value=${{ needs.tag.outputs.version }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$TAG_VERSION" ]; then
+            echo "value=$TAG_VERSION" >> "$GITHUB_OUTPUT"
           else
             VERSION="${GITHUB_REF_NAME#v}"
             echo "value=$VERSION" >> "$GITHUB_OUTPUT"

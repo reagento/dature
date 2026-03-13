@@ -25,11 +25,12 @@ try:
         Config,
     )
 except DatureConfigError as exc:
-    assert str(exc) == dedent("""\
+    source = str(SOURCES_DIR / "masking_secret_str.yaml")
+    assert str(exc) == dedent(f"""\
     Config loading errors (1)
 
       [card_number]  Card number must contain only digits
-       └── FILE '/Users/n.vidov/Desktop/не work/dature/examples/docs/features/masking/sources/masking_secret_str.yaml', line 2
+       └── FILE '{source}', line 2
            card_number: "no*****er"
     """)
 else:

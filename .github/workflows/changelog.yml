@@ -121,11 +121,14 @@ jobs:
               content = f.read()
 
           # Remove previous entry for this PR (between markers)
-          while marker in content:
+          while content.count(marker) >= 2:
               start = content.index(marker)
               end = content.index(marker, start + len(marker)) + len(marker)
               # Remove the block including trailing newline
               content = content[:start] + content[end:].lstrip("\n")
+
+          # Remove orphaned marker if odd number remained
+          content = content.replace(marker + "\n", "").replace(marker, "")
 
           # Insert new entry after "## Unreleased"
           heading = "## Unreleased"
