@@ -145,5 +145,8 @@ docs = [
     "mkdocs-macros-plugin>=1.0",
     "mkdocs-git-revision-date-localized-plugin>=1.2",
     "mkdocs-llmstxt>=0.5",
+    "mkdocs-minify-plugin>=0.8",
+    "pillow>=10.0",
+    "cairosvg>=2.7; sys_platform == 'linux'",
     "pymdown-extensions>=10.7",
 ]

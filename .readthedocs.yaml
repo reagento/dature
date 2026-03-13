@@ -4,8 +4,10 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.12"
+  apt_packages:
+    - libcairo2-dev
   commands:
     - git fetch --unshallow || true
     - pip install uv
     - uv pip install --system -e ".[yaml,json5,toml,secure]" --group docs
-    - NO_MKDOCS_2_WARNING=1 python -m mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
+    - CI=true NO_MKDOCS_2_WARNING=1 python -m mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html

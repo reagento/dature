@@ -10,31 +10,41 @@ copyright: Copyright &copy; 2026-2026 Niccolum
 
 theme:
   name: material
+  font:
+    text: Inter
+    code: Roboto Mono
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: purple
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: purple
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  favicon: assets/img/logo.svg
   features:
     - navigation.instant
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
+    - navigation.indexes
+    - navigation.tracking
+    - navigation.prune
     - navigation.top
     - navigation.footer
     - content.code.copy
+    - content.code.annotate
     - content.tabs.link
     - search.suggest
     - search.highlight
+  logo: assets/img/logo.svg
   icon:
     repo: fontawesome/brands/github
   custom_dir: docs/overrides
@@ -63,13 +73,25 @@ nav:
     - Changelog: changelog.md
 
 plugins:
-  - search
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
   - macros
   - git-revision-date-localized:
       enable_creation_date: true
       enable_git_follow: false
       fallback_to_build_date: true
       strict: false
+  - social:
+      enabled: !ENV [CI, false]
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+      cache_safe: true
+      css_files:
+        - stylesheets/extra.css
   - llmstxt:
       full_output: llms-full.txt
       sections:
@@ -115,8 +137,11 @@ markdown_extensions:
         - "."
   - pymdownx.mark
   - pymdownx.keys
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - attr_list
   - md_in_html
   - tables
   - toc:
-      permalink: true
+      permalink: "#"
+      toc_depth: 3
