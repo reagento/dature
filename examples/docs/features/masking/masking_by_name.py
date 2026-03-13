@@ -1,39 +1,31 @@
-"""Masking by name — auto-detect secrets by field name patterns."""
+"""Masking by name — secrets are masked in error messages."""
 
-import io
-import logging
 from dataclasses import dataclass
 from pathlib import Path
+from textwrap import dedent
+from typing import Literal
 
 from dature import LoadMetadata, load
-
-log_stream = io.StringIO()
-handler = logging.StreamHandler(log_stream)
-handler.setLevel(logging.DEBUG)
-logging.getLogger("dature").addHandler(handler)
-logging.getLogger("dature").setLevel(logging.DEBUG)
+from dature.errors.exceptions import DatureConfigError
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
 class Config:
-    password: str
-    api_key: str
+    password: Literal["admin", "root"]
     host: str
 
 
-config = load(
-    LoadMetadata(file_=SOURCES_DIR / "masking_by_name.yaml", mask_secrets=True),
-    Config,
-    debug=True,
-)
+try:
+    load(LoadMetadata(file_=SOURCES_DIR / "masking_by_name.yaml"), Config)
+except DatureConfigError as exc:
+    assert str(exc) == dedent("""\
+    Config loading errors (1)
 
-assert config.host == "production"
-assert config.password == "my_secret_password"
-assert config.api_key == "sk-proj-abc123def456"
-
-logs = log_stream.getvalue()
-assert "'password': 'my*****rd'" in logs
-assert "'api_key': 'sk*****56'" in logs
-assert "'host': 'production'" in logs
+      [password]  Invalid variant: 'my*****rd'
+       └── FILE '/Users/n.vidov/Desktop/не work/dature/examples/docs/features/masking/sources/masking_by_name.yaml', line 1
+           password: "my*****rd"
+    """)
+else:
+    raise AssertionError("Expected DatureConfigError")

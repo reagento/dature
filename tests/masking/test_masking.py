@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from textwrap import dedent
 from typing import Literal
 from unittest.mock import patch
 
@@ -324,3 +325,47 @@ class TestSecretMaskingIntegration:
             Cfg(password=_SECRET_VALUE)
 
         assert _SECRET_VALUE not in str(exc_info.value)
+
+    def test_error_message_heuristic_masks_random_value(self, tmp_path: Path):
+        json_file = tmp_path / "config.json"
+        random_token = "aK9mP2xL5vQ8wR3nJ7yB4zT6"
+        content = f'{{"connection_id": "{random_token}", "host": "production"}}'
+        json_file.write_text(content)
+
+        @dataclass
+        class Cfg:
+            connection_id: Literal["conn-1", "conn-2"]
+            host: str
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(LoadMetadata(file_=json_file, mask_secrets=True), Cfg)
+
+        assert str(exc_info.value) == dedent(f"""\
+        Cfg loading errors (1)
+
+          [connection_id]  Invalid variant: 'aK*****T6'
+           └── FILE '{json_file}', line 1
+               {{"connection_id": "aK*****T6", "host": "production"}}
+        """)
+
+    def test_error_message_heuristic_no_mask_without_detector(self, tmp_path: Path):
+        json_file = tmp_path / "config.json"
+        random_token = "aK9mP2xL5vQ8wR3nJ7yB4zT6"
+        content = f'{{"connection_id": "{random_token}", "host": "production"}}'
+        json_file.write_text(content)
+
+        @dataclass
+        class Cfg:
+            connection_id: Literal["conn-1", "conn-2"]
+            host: str
+
+        with patch("dature.masking.masking._heuristic_detector", None), pytest.raises(DatureConfigError) as exc_info:
+            load(LoadMetadata(file_=json_file, mask_secrets=True), Cfg)
+
+        assert str(exc_info.value) == dedent(f"""\
+        Cfg loading errors (1)
+
+          [connection_id]  Invalid variant: '{random_token}'
+           └── FILE '{json_file}', line 1
+               {content}
+        """)

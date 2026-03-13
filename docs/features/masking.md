@@ -42,7 +42,7 @@ dature uses three methods to identify secrets:
 
 === "By type (SecretStr, PaymentCardNumber)"
 
-    `SecretStr` masks the value in `str()` and `repr()`:
+    `SecretStr` and `PaymentCardNumber` mask values in `str()`, `repr()`, and debug logs:
 
     ```python
     --8<-- "examples/docs/features/masking/masking_secret_str.py"
@@ -54,7 +54,7 @@ dature uses three methods to identify secrets:
 
 === "By name"
 
-    Fields whose names contain known patterns are automatically masked in logs and error messages:
+    Fields whose names contain known patterns are automatically masked in error messages:
 
     ```python
     --8<-- "examples/docs/features/masking/masking_by_name.py"
@@ -66,7 +66,7 @@ dature uses three methods to identify secrets:
 
 === "Heuristic"
 
-    With `dature[secure]`, values that look like random tokens are masked even if the field name is neutral:
+    With `dature[secure]`, values that look like random tokens are masked in error messages even if the field name is not a known secret pattern:
 
     ```python
     --8<-- "examples/docs/features/masking/masking_heuristic.py"

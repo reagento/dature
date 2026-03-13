@@ -16,6 +16,7 @@ class MaskingConfig:
     min_length_for_partial_mask: Annotated[int, Ge(value=1)] = 5
     fixed_mask_length: Annotated[int, Ge(value=1)] = 5
     min_heuristic_length: Annotated[int, Ge(value=1)] = 8
+    heuristic_threshold: float = 0.5
     secret_field_names: tuple[str, ...] = (
         "password",
         "passwd",

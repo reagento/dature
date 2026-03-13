@@ -46,6 +46,7 @@ def build_error_ctx(
     dataclass_name: str,
     *,
     secret_paths: frozenset[str] = frozenset(),
+    mask_secrets: bool = False,
 ) -> ErrorContext:
     loader_class = resolve_loader_class(metadata.loader, metadata.file_)
     if isinstance(metadata.file_, FILE_LIKE_TYPES):
@@ -62,6 +63,7 @@ def build_error_ctx(
         split_symbols=metadata.split_symbols,
         path_finder_class=loader_class.path_finder_class,
         secret_paths=secret_paths,
+        mask_secrets=mask_secrets,
     )
 
 

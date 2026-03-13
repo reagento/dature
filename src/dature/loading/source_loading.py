@@ -115,13 +115,14 @@ class LoadedSources:
     skipped_fields: dict[str, list[SkippedFieldSource]]
 
 
-def load_sources(  # noqa: C901, PLR0912, PLR0915
+def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
     *,
     merge_meta: MergeMetadata,
     dataclass_name: str,
     dataclass_: type[DataclassInstance],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     secret_paths: frozenset[str] = frozenset(),
+    mask_secrets: bool = False,
     type_loaders: "tuple[TypeLoader, ...]" = (),
 ) -> LoadedSources:
     raw_dicts: list[JSONValue] = []
@@ -147,7 +148,7 @@ def load_sources(  # noqa: C901, PLR0912, PLR0915
             file_or_path = Path(source_meta.file_)
         else:
             file_or_path = Path()
-        error_ctx = build_error_ctx(source_meta, dataclass_name, secret_paths=secret_paths)
+        error_ctx = build_error_ctx(source_meta, dataclass_name, secret_paths=secret_paths, mask_secrets=mask_secrets)
 
         def _load_raw(
             li: LoaderProtocol = loader_instance,

@@ -132,12 +132,18 @@ class _PatchContext:
         loader_class = resolve_loader_class(metadata.loader, metadata.file_)
         self.loader_type = loader_class.display_name
 
+        mask_secrets = _resolve_single_mask_secrets(metadata)
         self.secret_paths: frozenset[str] = frozenset()
-        if _resolve_single_mask_secrets(metadata):
+        if mask_secrets:
             extra_patterns = metadata.secret_field_names or ()
             self.secret_paths = build_secret_paths(cls, extra_patterns=extra_patterns)
 
-        self.error_ctx = build_error_ctx(metadata, cls.__name__, secret_paths=self.secret_paths)
+        self.error_ctx = build_error_ctx(
+            metadata,
+            cls.__name__,
+            secret_paths=self.secret_paths,
+            mask_secrets=mask_secrets,
+        )
 
         # probe_retort создаётся заранее, чтобы adaptix увидел оригинальную сигнатуру
         self.probe_retort: Retort | None = None
@@ -250,7 +256,8 @@ def load_as_function(  # noqa: C901, PLR0912
         extra_patterns = metadata.secret_field_names or ()
         secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
 
-    error_ctx = build_error_ctx(metadata, dataclass_.__name__, secret_paths=secret_paths)
+    mask_secrets = metadata.mask_secrets is None or metadata.mask_secrets
+    error_ctx = build_error_ctx(metadata, dataclass_.__name__, secret_paths=secret_paths, mask_secrets=mask_secrets)
 
     raw_data = handle_load_errors(
         func=lambda: loader_instance.load_raw(file_path),

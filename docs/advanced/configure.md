@@ -55,6 +55,7 @@ dature auto-loads its own config from `DATURE_*` environment variables on first 
 | `DATURE_MASKING__MIN_LENGTH_FOR_PARTIAL_MASK` | [MaskingConfig](#maskingconfig) | `min_length_for_partial_mask` | Minimum value length to apply partial masking; shorter values are fully masked |
 | `DATURE_MASKING__FIXED_MASK_LENGTH` | [MaskingConfig](#maskingconfig) | `fixed_mask_length` | Fixed number of mask characters in the masked part |
 | `DATURE_MASKING__MIN_HEURISTIC_LENGTH` | [MaskingConfig](#maskingconfig) | `min_heuristic_length` | Minimum field value length for auto-detection of secrets by field name |
+| `DATURE_MASKING__HEURISTIC_THRESHOLD` | [MaskingConfig](#maskingconfig) | `heuristic_threshold` | Uncommon bigram ratio threshold for heuristic secret detection (0.0–1.0) |
 | `DATURE_MASKING__MASK_SECRETS` | [MaskingConfig](#maskingconfig) | `mask_secrets` | Enable or disable secret masking globally |
 | `DATURE_ERROR_DISPLAY__MAX_VISIBLE_LINES` | [ErrorDisplayConfig](#errordisplayconfig) | `max_visible_lines` | Max lines shown in error messages for source file previews |
 | `DATURE_ERROR_DISPLAY__MAX_LINE_LENGTH` | [ErrorDisplayConfig](#errordisplayconfig) | `max_line_length` | Max character width per line in error messages |

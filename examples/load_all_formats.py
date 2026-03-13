@@ -30,5 +30,3 @@ for meta in FORMATS.values():
     config = load(meta, AllPythonTypesCompact)
     assert config.string_value == "hello world"
     assert config.integer_value == 42
-    assert config.integer_value == 42
-    assert config.integer_value == 42

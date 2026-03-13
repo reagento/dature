@@ -284,6 +284,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
         dataclass_=dataclass_,
         loaders=loaders,
         secret_paths=secret_paths,
+        mask_secrets=_resolve_merge_mask_secrets(merge_meta),
         type_loaders=type_loaders,
     )
 
@@ -394,11 +395,17 @@ def merge_load_as_function[T: DataclassInstance](
     validation_loader = validating_retort.get_loader(dataclass_)
 
     last_meta = merge_meta.sources[-1]
+    mask_secrets = _resolve_merge_mask_secrets(merge_meta)
     secret_paths: frozenset[str] = frozenset()
-    if _resolve_merge_mask_secrets(merge_meta):
+    if mask_secrets:
         extra_patterns = _collect_extra_secret_patterns(merge_meta)
         secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
-    last_error_ctx = build_error_ctx(last_meta, dataclass_.__name__, secret_paths=secret_paths)
+    last_error_ctx = build_error_ctx(
+        last_meta,
+        dataclass_.__name__,
+        secret_paths=secret_paths,
+        mask_secrets=mask_secrets,
+    )
     try:
         handle_load_errors(
             func=lambda: validation_loader(data.merged_raw),
@@ -442,13 +449,19 @@ class _MergePatchContext:
         validating_retort = last_loader.create_validating_retort(cls)
         self.validation_loader: Callable[[JSONValue], DataclassInstance] = validating_retort.get_loader(cls)
 
+        mask_secrets = _resolve_merge_mask_secrets(merge_meta)
         self.secret_paths: frozenset[str] = frozenset()
-        if _resolve_merge_mask_secrets(merge_meta):
+        if mask_secrets:
             extra_patterns = _collect_extra_secret_patterns(merge_meta)
             self.secret_paths = build_secret_paths(cls, extra_patterns=extra_patterns)
 
         last_meta = merge_meta.sources[-1]
-        self.error_ctx = build_error_ctx(last_meta, cls.__name__, secret_paths=self.secret_paths)
+        self.error_ctx = build_error_ctx(
+            last_meta,
+            cls.__name__,
+            secret_paths=self.secret_paths,
+            mask_secrets=mask_secrets,
+        )
 
     @staticmethod
     def _prepare_loaders(

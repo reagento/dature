@@ -89,6 +89,8 @@ ignore = [
     "S101",    # assert
     "PT017",   # assertion on exception in except block
     "E501",    # line too long
+    "TRY003",  # raise-vanilla-args
+    "EM101",   # raw-string-in-exception 
 ]
 
 [tool.ruff.lint.pylint]

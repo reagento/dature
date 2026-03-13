@@ -1,5 +1,6 @@
 import types
 from collections.abc import Callable
+from dataclasses import replace
 from typing import TYPE_CHECKING, Union, get_args
 
 from adaptix.load_error import (
@@ -23,7 +24,7 @@ from dature.errors.exceptions import (
     MissingEnvVarError,
 )
 from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
-from dature.masking.masking import mask_value
+from dature.masking.masking import is_random_string, mask_value
 
 if TYPE_CHECKING:
     from dature.loading.source_loading import SkippedFieldSource
@@ -61,13 +62,22 @@ def _walk_exception(
     result: list[FieldLoadError],
     *,
     secret_paths: frozenset[str] = frozenset(),
+    mask_secrets: bool = False,
+    heuristic_secret_paths: set[str] | None = None,
 ) -> None:
     trail = list(get_trail(exc))
     current_path = parent_path + [str(elem) for elem in trail]
 
     if isinstance(exc, LoadExceptionGroup):
         for sub_exc in exc.exceptions:
-            _walk_exception(sub_exc, current_path, result, secret_paths=secret_paths)
+            _walk_exception(
+                sub_exc,
+                current_path,
+                result,
+                secret_paths=secret_paths,
+                mask_secrets=mask_secrets,
+                heuristic_secret_paths=heuristic_secret_paths,
+            )
         return
 
     if isinstance(exc, NoRequiredFieldsLoadError):
@@ -83,6 +93,10 @@ def _walk_exception(
 
     is_secret = ".".join(current_path) in secret_paths
     input_value = getattr(exc, "input_value", None)
+    if not is_secret and mask_secrets and isinstance(input_value, str) and is_random_string(input_value):
+        is_secret = True
+        if heuristic_secret_paths is not None:
+            heuristic_secret_paths.add(".".join(current_path))
     if is_secret and input_value is not None:
         input_value = mask_value(str(input_value))
 
@@ -124,10 +138,22 @@ def handle_load_errors[T](
         raise EnvVarExpandError(enriched_env, dataclass_name=ctx.dataclass_name) from exc
     except (AggregateLoadError, LoadError) as exc:
         file_content = read_file_content(ctx.file_path)
-        field_errors = extract_field_errors(exc, secret_paths=ctx.secret_paths)
+        heuristic_paths: set[str] = set()
+        field_errors: list[FieldLoadError] = []
+        _walk_exception(
+            exc,
+            [],
+            field_errors,
+            secret_paths=ctx.secret_paths,
+            mask_secrets=ctx.mask_secrets,
+            heuristic_secret_paths=heuristic_paths,
+        )
+        location_ctx = ctx
+        if heuristic_paths:
+            location_ctx = replace(ctx, secret_paths=ctx.secret_paths | heuristic_paths)
         enriched: list[FieldLoadError] = []
         for fe in field_errors:
-            location = resolve_source_location(fe.field_path, ctx, file_content)
+            location = resolve_source_location(fe.field_path, location_ctx, file_content)
             enriched.append(
                 FieldLoadError(
                     field_path=fe.field_path,
