@@ -3,7 +3,8 @@
 ## Unreleased
 
 <!-- PR #31 -->
-- Added logging functionality to the dature configuration loader.
-- Improved CI configuration and fixed various issues across multiple workflows.
-- Updated documentation and examples to reflect the new logging features.
+- Added logging functionality to improve debugging and traceability.
+- Updated documentation to reflect new logging features and usage examples.
+- Fixed various issues in CI workflows to enhance reliability and performance.
 <!-- PR #31 -->
+
