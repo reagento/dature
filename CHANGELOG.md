@@ -3,41 +3,8 @@
 ## Unreleased
 
 <!-- PR #31 -->
-### Features
-- Added documentation site (MkDocs + Material) with full coverage: getting started, features, advanced topics, API reference
-- Added `CHANGELOG.md` with AI-generated entries on PR creation
-- Added social cards, minify, 8-bit themed headings, and custom color scheme to docs
-- Added changelog workflow: AI generates changelog entries per PR, release job extracts them for GitHub Releases
-- Added CI support for tag push: `pypi-publish`, `github-release`, and `trigger-rtd` now run on tag events
-- Added `trigger-rtd` job supporting both `latest` (main) and `stable` (tag) RTD builds
-- Added version-bump, dependency-review, scorecard, and docs CI workflows
-- Added dependabot configuration
-- Added CODEOWNERS and SECURITY.md
-- Added Docker Secrets loader
-- Added `SecretStr`, `PaymentCardNumber`, and `ByteSize` special field types
-- Added secret masking in error messages (by field name and heuristic detection)
-- Added ENV variable expansion in config values
-- Added field alias provider for flexible field name mapping
-- Added `configure()` for global masking, error display, and loading settings
-- Added `F` field path objects with field mapping support
-- Added field group support for merge rules
-- Added custom merge functions and merge strategies (`append`, `prepend`, `first_wins`, etc.)
-- Added `skip_invalid` and `skip_broken` merge options (global and per-source)
-- Added mypy plugin
-
-### Improvements
-- Restructured source code into subpackages: `errors/`, `expansion/`, `fields/`, `loading/`, `masking/`, `merging/`
-- Restructured tests to mirror `src/` layout
-- Improved path finders for YAML, TOML, JSON, JSON5, and INI formats
-- Improved error formatting with source location context
-- Improved source loader base with better type safety
-- Improved ENV loader with strip and type handling
-- Skipped lint/test jobs on tag push in CI (already verified on main push)
-
-### Docs
-- Added full documentation site with MkDocs Material theme
-- Added ReadTheDocs integration with PR preview builds
-- Added `llms.txt` generation plugin
-- Added comprehensive examples for all features
-- Slimmed down `README.md` in favor of documentation site
+- Added logging functionality to the dature configuration loader.
+- Improved CI configurations for better stability and reliability.
+- Updated documentation across multiple sections to reflect recent changes and enhancements.
 <!-- PR #31 -->
+
