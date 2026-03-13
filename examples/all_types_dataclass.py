@@ -7,14 +7,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, Flag
 from fractions import Fraction
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-)
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Literal
 from urllib.parse import urlparse
@@ -78,6 +71,7 @@ class AllPythonTypesCompact:
     time_value: time
     timedelta_value_with_day: timedelta
     timedelta_value_without_day: timedelta
+    timedelta_value_without_seconds: timedelta
 
     # Lists
     list_strings: list[str]
@@ -184,6 +178,7 @@ EXPECTED_ALL_TYPES = AllPythonTypesCompact(
     time_value=time(10, 30),
     timedelta_value_with_day=timedelta(days=1, hours=2, minutes=30),
     timedelta_value_without_day=timedelta(hours=2, minutes=30),
+    timedelta_value_without_seconds=timedelta(hours=2, minutes=30),
     # Lists
     list_strings=["item1", "item2", "item3"],
     list_integers=[1, 2, 3, 4, 5],

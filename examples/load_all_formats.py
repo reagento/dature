@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from all_types_dataclass import AllPythonTypesCompact  # type: ignore[import-not-found]
+from all_types_dataclass import (  # type: ignore[import-not-found]
+    AllPythonTypesCompact,
+)
 
 from dature import LoadMetadata, load
 from dature.sources_loader.docker_secrets import DockerSecretsLoader

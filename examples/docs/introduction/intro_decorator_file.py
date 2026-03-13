@@ -5,7 +5,6 @@ from pathlib import Path
 
 from dature import LoadMetadata, load
 
-SOURCES_DIR = Path(__file__).parent / "sources"
 SHARED_DIR = Path(__file__).parents[1] / "shared"
 
 

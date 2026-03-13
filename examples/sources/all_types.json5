@@ -19,6 +19,7 @@
   time_value: "10:30:00",
   timedelta_value_with_day: "1 day, 2:30:00",
   timedelta_value_without_day: "2:30:00",
+  timedelta_value_without_seconds: "2:30",
 
   // Lists
   list_strings: ["item1", "item2", "item3"],

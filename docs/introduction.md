@@ -4,8 +4,6 @@ dature offers two ways to load configuration: **function mode** and **decorator 
 
 === "Function mode"
 
-    Call `load()` with a `LoadMetadata` descriptor and a dataclass type:
-
     ```yaml title="common_app.yaml"
     --8<-- "examples/docs/shared/common_app.yaml"
     ```
@@ -15,8 +13,6 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     ```
 
 === "Decorator mode"
-
-    Use `@load()` as a decorator. The dataclass auto-loads on every instantiation:
 
     ```yaml title="common_app.yaml"
     --8<-- "examples/docs/shared/common_app.yaml"

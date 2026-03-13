@@ -14,6 +14,9 @@ _TIMEDELTA_WITH_DAYS_RE = re.compile(
 _TIMEDELTA_TIME_ONLY_RE = re.compile(
     r"^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$",
 )
+_TIMEDELTA_TIME_ONLY_WITHOUT_SECONDS_RE = re.compile(
+    r"^(\d+):(\d{2})?$",
+)
 
 
 def bytes_from_string(value: str) -> bytes:
@@ -40,6 +43,11 @@ def timedelta_from_string(value: str) -> timedelta:
         seconds = int(match.group(3))
         microseconds = int(match.group(4).ljust(6, "0")) if match.group(4) is not None else 0
         return timedelta(hours=hours, minutes=minutes, seconds=seconds, microseconds=microseconds)
+
+    if match := _TIMEDELTA_TIME_ONLY_WITHOUT_SECONDS_RE.match(value):
+        hours = int(match.group(1))
+        minutes = int(match.group(2))
+        return timedelta(hours=hours, minutes=minutes)
 
     msg = f"Invalid timedelta format: {value!r}"
     raise ValueError(msg)
