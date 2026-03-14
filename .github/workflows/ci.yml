@@ -337,44 +337,31 @@ jobs:
             --title "v${{ steps.version.outputs.value }}" \
             --notes "$RELEASE_NOTES"
 
-  trigger-rtd:
+  trigger-rtd-latest:
     needs: [tag]
     if: >-
       always()
       && !failure()
       && !cancelled()
-      && (
-        github.ref == 'refs/heads/main'
-        || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
-      )
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Determine RTD version
-        id: rtd
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            echo "version=stable" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=latest" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Trigger RTD build
+      - name: Trigger RTD build for latest
         run: |
           curl -X POST \
             -H "Authorization: Token ${{ secrets.RTD_API_TOKEN }}" \
-            "https://readthedocs.org/api/v3/projects/dature/versions/${{ steps.rtd.outputs.version }}/builds/"
+            https://readthedocs.org/api/v3/projects/dature/versions/latest/builds/
 
-  trigger-rtd-pr:
-    needs: [lint, test-result]
-    if: github.event_name == 'pull_request'
+  trigger-rtd-tag:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - name: Activate and build PR branch
+      - name: Sync versions and activate tag
         env:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
-          BRANCH: ${{ github.head_ref }}
         run: |
-          RTD_SLUG="${BRANCH//\//-}"
+          TAG="${GITHUB_REF#refs/tags/}"
 
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
@@ -385,9 +372,13 @@ jobs:
           curl -X PATCH \
             -H "Authorization: Token $RTD_API_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"active": true, "hidden": true}' \
-            "https://readthedocs.org/api/v3/projects/dature/versions/$RTD_SLUG/"
+            -d '{"active": true, "hidden": false}' \
+            "https://readthedocs.org/api/v3/projects/dature/versions/$TAG/"
 
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
-            "https://readthedocs.org/api/v3/projects/dature/versions/$RTD_SLUG/builds/"
+            "https://readthedocs.org/api/v3/projects/dature/versions/$TAG/builds/"
+
+          curl -X POST \
+            -H "Authorization: Token $RTD_API_TOKEN" \
+            https://readthedocs.org/api/v3/projects/dature/versions/stable/builds/
