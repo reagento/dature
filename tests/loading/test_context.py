@@ -1,9 +1,10 @@
 """Tests for loading/context.py."""
 
 from dataclasses import dataclass, fields
+from enum import Flag
 from typing import Any
 
-from dature.loading.context import merge_fields
+from dature.loading.context import coerce_flag_fields, merge_fields
 
 
 class TestMergeFields:
@@ -74,3 +75,69 @@ class TestMergeFields:
         )
 
         assert result == {}
+
+
+class TestCoerceFlagFields:
+    class Permission(Flag):
+        READ = 1
+        WRITE = 2
+        EXECUTE = 4
+
+    @dataclass
+    class FlagConfig:
+        name: str
+        perms: "TestCoerceFlagFields.Permission"
+
+    def test_string_value_coerced_to_int(self):
+        data = {"name": "test", "perms": "3"}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result == {"name": "test", "perms": 3}
+
+    def test_int_value_unchanged(self):
+        data = {"name": "test", "perms": 3}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result == {"name": "test", "perms": 3}
+
+    def test_non_flag_string_fields_unchanged(self):
+        data = {"name": "hello", "perms": "5"}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result["name"] == "hello"
+
+    def test_non_dict_data_returned_as_is(self):
+        result = coerce_flag_fields([1, 2, 3], self.FlagConfig)
+
+        assert result == [1, 2, 3]
+
+    def test_non_dataclass_returns_data_as_is(self):
+        data = {"name": "test", "perms": "3"}
+
+        result = coerce_flag_fields(data, str)
+
+        assert result == {"name": "test", "perms": "3"}
+
+    def test_missing_flag_field_no_error(self):
+        data = {"name": "test"}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result == {"name": "test"}
+
+    def test_non_numeric_string_left_unchanged(self):
+        data = {"name": "test", "perms": "READ|WRITE"}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result == {"name": "test", "perms": "READ|WRITE"}
+
+    def test_flag_object_coerced_to_int(self):
+        data = {"name": "test", "perms": self.Permission.READ | self.Permission.WRITE}
+
+        result = coerce_flag_fields(data, self.FlagConfig)
+
+        assert result == {"name": "test", "perms": 3}

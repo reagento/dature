@@ -91,15 +91,15 @@ class TestExpandStringMissingVarStrict:
         [
             (
                 "$DATURE_MISSING/path",
-                "Missing environment variables (1):\n  - DATURE_MISSING (position 0 in '$DATURE_MISSING/path')",
+                "Missing environment variables (1)\n\n  [<root>]  Missing environment variable 'DATURE_MISSING'\n",
             ),
             (
                 "${DATURE_MISSING}/path",
-                "Missing environment variables (1):\n  - DATURE_MISSING (position 0 in '${DATURE_MISSING}/path')",
+                "Missing environment variables (1)\n\n  [<root>]  Missing environment variable 'DATURE_MISSING'\n",
             ),
             (
                 "%DATURE_MISSING%/path",
-                "Missing environment variables (1):\n  - DATURE_MISSING (position 0 in '%DATURE_MISSING%/path')",
+                "Missing environment variables (1)\n\n  [<root>]  Missing environment variable 'DATURE_MISSING'\n",
             ),
         ],
         ids=["dollar", "braces", "percent"],
@@ -125,9 +125,9 @@ class TestExpandStringMissingVarStrict:
             expand_string("$DATURE_A and ${DATURE_B}", mode="strict")
 
         assert str(exc_info.value) == (
-            "Missing environment variables (2):\n"
-            "  - DATURE_A (position 0 in '$DATURE_A and ${DATURE_B}')\n"
-            "  - DATURE_B (position 14 in '$DATURE_A and ${DATURE_B}')"
+            "Missing environment variables (2)\n\n"
+            "  [<root>]  Missing environment variable 'DATURE_A'\n\n"
+            "  [<root>]  Missing environment variable 'DATURE_B'\n"
         )
 
 
@@ -173,7 +173,7 @@ class TestExpandStringFallback:
             expand_string("${DATURE_MISSING:-$DATURE_ALSO_MISSING}", mode="strict")
 
         assert str(exc_info.value) == (
-            "Missing environment variables (1):\n  - DATURE_ALSO_MISSING (position 0 in '$DATURE_ALSO_MISSING')"
+            "Missing environment variables (1)\n\n  [<root>]  Missing environment variable 'DATURE_ALSO_MISSING'\n"
         )
 
     @pytest.mark.parametrize(

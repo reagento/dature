@@ -348,49 +348,49 @@ EXPECTED_LOAD_MESSAGES["env"] = dedent(f"""\
     LoadErrorConfig loading errors (5)
 
       [port]  Bad string format
-       └── ENV FILE '{_env_path}', var 'PORT'
+       └── ENV FILE '{_env_path}', line 1
            PORT=abc
 
       [host]  Missing required field
-       └── ENV FILE '{_env_path}', var 'HOST'
+       └── ENV FILE '{_env_path}'
 
       [status]  Invalid variant: 'unknown'
-       └── ENV FILE '{_env_path}', var 'STATUS'
+       └── ENV FILE '{_env_path}', line 2
            STATUS=unknown
 
       [address.city]  Value must have at least 2 characters
-       └── ENV FILE '{_env_path}', var 'ADDRESS__CITY'
+       └── ENV FILE '{_env_path}', line 7
            ADDRESS__CITY=N
 
       [address.zip_code]  Value must match pattern '^\\d{{5}}$'
-       └── ENV FILE '{_env_path}', var 'ADDRESS__ZIP_CODE'
+       └── ENV FILE '{_env_path}', line 8
            ADDRESS__ZIP_CODE=ABCDE
     """)
 EXPECTED_VALIDATION_MESSAGES["env"] = dedent(f"""\
     ValidationErrorConfig loading errors (6)
 
       [name]  Value must have at least 3 characters
-       └── ENV FILE '{_env_path}', var 'NAME'
+       └── ENV FILE '{_env_path}', line 3
            NAME=AB
 
       [email]  Value must match pattern '^[\\w.-]+@[\\w.-]+\\.\\w+$'
-       └── ENV FILE '{_env_path}', var 'EMAIL'
+       └── ENV FILE '{_env_path}', line 4
            EMAIL=not-an-email
 
       [age]  Value must be less than or equal to 150
-       └── ENV FILE '{_env_path}', var 'AGE'
+       └── ENV FILE '{_env_path}', line 5
            AGE=200
 
       [tags]  Value must have at least 1 items
-       └── ENV FILE '{_env_path}', var 'TAGS'
+       └── ENV FILE '{_env_path}', line 6
            TAGS=[]
 
       [address.city]  Value must have at least 2 characters
-       └── ENV FILE '{_env_path}', var 'ADDRESS__CITY'
+       └── ENV FILE '{_env_path}', line 7
            ADDRESS__CITY=N
 
       [address.zip_code]  Value must match pattern '^\\d{{5}}$'
-       └── ENV FILE '{_env_path}', var 'ADDRESS__ZIP_CODE'
+       └── ENV FILE '{_env_path}', line 8
            ADDRESS__ZIP_CODE=ABCDE
     """)
 

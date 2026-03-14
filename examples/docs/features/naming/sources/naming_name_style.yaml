@@ -1,0 +1,4 @@
+userName: admin
+maxRetries: 3
+isActive: true
+baseUrl: "https://api.example.com"

@@ -1,0 +1,6 @@
+{
+  // JSON5 supports comments
+  host: "localhost",
+  port: 8080,
+  debug: false,
+}

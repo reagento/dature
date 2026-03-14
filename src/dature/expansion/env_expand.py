@@ -112,6 +112,19 @@ def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
     return result
 
 
+def _expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, list[MissingEnvVarError]]:
+    """Expand string and return (result, errors) without raising."""
+    if mode == "disabled":
+        return text, []
+
+    if mode == "default":
+        return _expand_string_default(text), []
+
+    expander = _EnvExpander(mode=mode, source_text=text)
+    result = _VAR_RE.sub(expander, text)
+    return result, expander.errors
+
+
 def _expand_string_default(text: str) -> str:
     def _replace(match: re.Match[str]) -> str:
         full = match.group(0)
@@ -138,13 +151,50 @@ def expand_env_vars(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
     if mode == "disabled":
         return data
 
+    if mode != "strict":
+        return _expand_recursive(data, mode=mode)
+
+    all_errors: list[MissingEnvVarError] = []
+    result = _expand_recursive_collect(data, mode=mode, path=[], errors=all_errors)
+    if all_errors:
+        raise EnvVarExpandError(all_errors)
+    return result
+
+
+def _expand_recursive(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
     if isinstance(data, str):
         return expand_string(data, mode=mode)
 
     if isinstance(data, dict):
-        return {key: expand_env_vars(value, mode=mode) for key, value in data.items()}
+        return {key: _expand_recursive(value, mode=mode) for key, value in data.items()}
 
     if isinstance(data, list):
-        return [expand_env_vars(item, mode=mode) for item in data]
+        return [_expand_recursive(item, mode=mode) for item in data]
+
+    return data
+
+
+def _expand_recursive_collect(
+    data: JSONValue,
+    *,
+    mode: ExpandEnvVarsMode,
+    path: list[str],
+    errors: list[MissingEnvVarError],
+) -> JSONValue:
+    if isinstance(data, str):
+        result, errs = _expand_string_collect(data, mode=mode)
+        for err in errs:
+            err.field_path = list(path)
+        errors.extend(errs)
+        return result
+
+    if isinstance(data, dict):
+        return {
+            key: _expand_recursive_collect(value, mode=mode, path=[*path, key], errors=errors)
+            for key, value in data.items()
+        }
+
+    if isinstance(data, list):
+        return [_expand_recursive_collect(item, mode=mode, path=path, errors=errors) for item in data]
 
     return data

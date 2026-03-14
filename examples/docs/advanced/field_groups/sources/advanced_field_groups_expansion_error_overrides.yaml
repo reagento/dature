@@ -1,0 +1,4 @@
+host: "production.example.com"
+port: 8080
+database:
+  host: "db.prod"

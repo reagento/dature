@@ -1,6 +1,5 @@
 import json
 from datetime import date, datetime, time
-from pathlib import Path
 from typing import cast
 
 from adaptix import loader
@@ -14,7 +13,7 @@ from dature.sources_loader.loaders import (
     datetime_from_string,
     time_from_string,
 )
-from dature.types import JSONValue
+from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 
 class JsonLoader(BaseLoader):
@@ -29,6 +28,8 @@ class JsonLoader(BaseLoader):
             loader(bytearray, bytearray_from_string),
         ]
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
+        if isinstance(path, FILE_LIKE_TYPES):
+            return cast("JSONValue", json.load(path))
         with path.open() as file_:
             return cast("JSONValue", json.load(file_))

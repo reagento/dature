@@ -3,8 +3,7 @@ import json
 import logging
 from dataclasses import fields, is_dataclass
 from datetime import timedelta
-from pathlib import Path
-from typing import Annotated, ClassVar, TypeVar, cast, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Annotated, ClassVar, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort, loader, name_mapping
@@ -38,6 +37,7 @@ from dature.types import (
     ExpandEnvVarsMode,
     FieldMapping,
     FieldValidators,
+    FileOrStream,
     JSONValue,
     NameStyle,
     TypeAnnotation,
@@ -49,6 +49,9 @@ from dature.validators.base import (
     extract_validators_from_type,
 )
 
+if TYPE_CHECKING:
+    from dature.metadata import TypeLoader
+
 T = TypeVar("T")
 
 logger = logging.getLogger("dature")
@@ -58,7 +61,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
     display_name: ClassVar[str]
     path_finder_class: type[PathFinder] | None = None
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         prefix: DotSeparatedPath | None = None,
@@ -67,6 +70,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         root_validators: tuple[ValidatorProtocol, ...] | None = None,
         validators: FieldValidators | None = None,
         expand_env_vars: ExpandEnvVarsMode = "default",
+        type_loaders: "tuple[TypeLoader, ...]" = (),
     ) -> None:
         self._prefix = prefix
         self._name_style = name_style
@@ -74,6 +78,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         self._root_validators = root_validators or ()
         self._validators = validators or {}
         self._expand_env_vars_mode = expand_env_vars
+        self._type_loaders = type_loaders
         self.retorts: dict[type, Retort] = {}
 
     def _additional_loaders(self) -> list[Provider]:
@@ -192,6 +197,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         return result
 
     def _base_recipe(self) -> list[Provider]:
+        user_loaders: list[Provider] = [loader(tl.type_, tl.func) for tl in self._type_loaders]
         default_loaders: list[Provider] = [
             loader(bytes, bytes_from_string),
             loader(complex, complex_from_string),
@@ -204,6 +210,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             loader(ByteSize, byte_size_from_string),
         ]
         return [
+            *user_loaders,
             *default_loaders,
             *self._additional_loaders(),
             *self._get_name_mapping_provider(),
@@ -240,7 +247,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         )
 
     @abc.abstractmethod
-    def _load(self, path: Path) -> JSONValue: ...
+    def _load(self, path: FileOrStream) -> JSONValue: ...
 
     def _apply_prefix(self, data: JSONValue) -> JSONValue:
         if not self._prefix:
@@ -264,7 +271,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             self.retorts[dataclass_] = self.create_retort()
         return self.retorts[dataclass_].load(data, dataclass_)
 
-    def load_raw(self, path: Path) -> JSONValue:
+    def load_raw(self, path: FileOrStream) -> JSONValue:
         data = self._load(path)
         processed = self._pre_processing(data)
         logger.debug(
@@ -275,16 +282,3 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             sorted(processed.keys()) if isinstance(processed, dict) else "<non-dict>",
         )
         return processed
-
-    def load(self, path: Path, dataclass_: type[T]) -> T:
-        data = self._load(path)
-        pre_processed_data = self._pre_processing(data)
-
-        logger.debug(
-            "[%s] load: path=%s, target=%s, keys=%s",
-            type(self).__name__,
-            path,
-            dataclass_.__name__,
-            sorted(pre_processed_data.keys()) if isinstance(pre_processed_data, dict) else "<non-dict>",
-        )
-        return self.transform_to_dataclass(pre_processed_data, dataclass_)

@@ -19,7 +19,7 @@ class TestGt:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 25}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.age == 25
@@ -33,7 +33,7 @@ class TestGt:
         content = '{"age": 18}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -58,7 +58,7 @@ class TestGe:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 18}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.age == 18
@@ -72,7 +72,7 @@ class TestGe:
         content = '{"age": 17}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -97,7 +97,7 @@ class TestLt:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 99}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.age == 99
@@ -111,7 +111,7 @@ class TestLt:
         content = '{"age": 100}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -136,7 +136,7 @@ class TestLe:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 100}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.age == 100
@@ -150,7 +150,7 @@ class TestLe:
         content = '{"age": 101}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -175,7 +175,7 @@ class TestCombined:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 30}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.age == 30
@@ -189,7 +189,7 @@ class TestCombined:
         content = '{"age": 70}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)

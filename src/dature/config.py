@@ -1,10 +1,14 @@
 from dataclasses import dataclass
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from dature.validators.number import Ge
 from dature.validators.string import MaxLength, MinLength
 
+if TYPE_CHECKING:
+    from dature.metadata import TypeLoader
 
+
+# --8<-- [start:masking-config]
 @dataclass(frozen=True, slots=True)
 class MaskingConfig:
     mask_char: Annotated[str, MinLength(value=1), MaxLength(value=1)] = "*"
@@ -12,6 +16,7 @@ class MaskingConfig:
     min_length_for_partial_mask: Annotated[int, Ge(value=1)] = 5
     fixed_mask_length: Annotated[int, Ge(value=1)] = 5
     min_heuristic_length: Annotated[int, Ge(value=1)] = 8
+    heuristic_threshold: float = 0.5
     secret_field_names: tuple[str, ...] = (
         "password",
         "passwd",
@@ -28,16 +33,27 @@ class MaskingConfig:
     mask_secrets: bool = True
 
 
+# --8<-- [end:masking-config]
+
+
+# --8<-- [start:error-display-config]
 @dataclass(frozen=True, slots=True)
 class ErrorDisplayConfig:
     max_visible_lines: Annotated[int, Ge(value=1)] = 3
     max_line_length: Annotated[int, Ge(value=1)] = 80
 
 
+# --8<-- [end:error-display-config]
+
+
+# --8<-- [start:loading-config]
 @dataclass(frozen=True, slots=True)
 class LoadingConfig:
     cache: bool = True
     debug: bool = False
+
+
+# --8<-- [end:loading-config]
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +73,7 @@ def _load_config() -> DatureConfig:
 class _ConfigProxy:
     _instance: DatureConfig | None = None
     _loading: bool = False
+    _type_loaders: "tuple[TypeLoader, ...]" = ()
 
     @staticmethod
     def ensure_loaded() -> DatureConfig:
@@ -75,6 +92,10 @@ class _ConfigProxy:
     def set_instance(value: DatureConfig | None) -> None:
         _ConfigProxy._instance = value
 
+    @staticmethod
+    def set_type_loaders(value: "tuple[TypeLoader, ...]") -> None:
+        _ConfigProxy._type_loaders = value
+
     @property
     def masking(self) -> MaskingConfig:
         return self.ensure_loaded().masking
@@ -87,16 +108,23 @@ class _ConfigProxy:
     def loading(self) -> LoadingConfig:
         return self.ensure_loaded().loading
 
+    @property
+    def type_loaders(self) -> "tuple[TypeLoader, ...]":
+        return _ConfigProxy._type_loaders
+
 
 config: _ConfigProxy = _ConfigProxy()
 
 
+# --8<-- [start:configure]
 def configure(
     *,
     masking: MaskingConfig | None = None,
     error_display: ErrorDisplayConfig | None = None,
     loading: LoadingConfig | None = None,
+    type_loaders: "tuple[TypeLoader, ...] | None" = None,
 ) -> None:
+    # --8<-- [end:configure]
     current = config.ensure_loaded()
     if masking is None:
         masking = current.masking
@@ -111,3 +139,5 @@ def configure(
             loading=loading,
         ),
     )
+    if type_loaders is not None:
+        config.set_type_loaders(type_loaders)

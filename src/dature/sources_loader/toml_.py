@@ -1,6 +1,5 @@
 import abc
 from datetime import date, datetime, time
-from pathlib import Path
 from typing import Any, cast
 
 import toml_rs
@@ -18,14 +17,19 @@ from dature.sources_loader.loaders import (
     optional_from_empty_string,
     time_passthrough,
 )
-from dature.types import JSONValue
+from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 
 class BaseTomlLoader(BaseLoader, abc.ABC):
     @abc.abstractmethod
     def _toml_version(self) -> TomlVersion: ...
 
-    def _load(self, path: Path) -> JSONValue:
+    def _load(self, path: FileOrStream) -> JSONValue:
+        if isinstance(path, FILE_LIKE_TYPES):
+            content = path.read()
+            if isinstance(content, bytes):
+                content = content.decode()
+            return cast("JSONValue", toml_rs.loads(content, toml_version=self._toml_version()))
         with path.open() as file_:
             return cast("JSONValue", toml_rs.loads(file_.read(), toml_version=self._toml_version()))
 

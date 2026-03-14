@@ -15,7 +15,13 @@ from dature.load_report import (
     compute_field_origins,
     get_load_report,
 )
-from dature.loading.context import build_error_ctx, ensure_retort, make_validating_post_init, merge_fields
+from dature.loading.context import (
+    build_error_ctx,
+    coerce_flag_fields,
+    ensure_retort,
+    make_validating_post_init,
+    merge_fields,
+)
 from dature.loading.resolver import resolve_loader
 from dature.loading.source_loading import load_sources, resolve_expand_env_vars
 from dature.masking.detection import build_secret_paths
@@ -28,7 +34,7 @@ from dature.masking.masking import (
 from dature.merging.deep_merge import deep_merge, deep_merge_last_wins, raise_on_conflict
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
-from dature.metadata import FieldMergeStrategy, MergeMetadata, MergeStrategy
+from dature.metadata import FieldMergeStrategy, MergeMetadata, MergeStrategy, TypeLoader
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.types import FieldMergeCallable, JSONValue
 
@@ -265,6 +271,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     dataclass_: type[T],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     debug: bool = False,
+    type_loaders: tuple[TypeLoader, ...] = (),
 ) -> _MergedData[T]:
     secret_paths: frozenset[str] = frozenset()
     if _resolve_merge_mask_secrets(merge_meta):
@@ -277,6 +284,8 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
         dataclass_=dataclass_,
         loaders=loaders,
         secret_paths=secret_paths,
+        mask_secrets=_resolve_merge_mask_secrets(merge_meta),
+        type_loaders=type_loaders,
     )
 
     merge_maps = build_field_merge_map(merge_meta.field_merges, dataclass_)
@@ -348,7 +357,8 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
             secret_paths=secret_paths,
         )
 
-    last_error_ctx = loaded.source_ctxs[-1][0]
+    last_error_ctx = loaded.source_ctxs[-1].error_ctx
+    merged = coerce_flag_fields(merged, dataclass_)
     try:
         result = handle_load_errors(
             func=lambda: loaded.last_loader.transform_to_dataclass(merged, dataclass_),
@@ -372,22 +382,30 @@ def merge_load_as_function[T: DataclassInstance](
     dataclass_: type[T],
     *,
     debug: bool,
+    type_loaders: tuple[TypeLoader, ...] = (),
 ) -> T:
     data = _load_and_merge(
         merge_meta=merge_meta,
         dataclass_=dataclass_,
         debug=debug,
+        type_loaders=type_loaders,
     )
 
     validating_retort = data.last_loader.create_validating_retort(dataclass_)
     validation_loader = validating_retort.get_loader(dataclass_)
 
     last_meta = merge_meta.sources[-1]
+    mask_secrets = _resolve_merge_mask_secrets(merge_meta)
     secret_paths: frozenset[str] = frozenset()
-    if _resolve_merge_mask_secrets(merge_meta):
+    if mask_secrets:
         extra_patterns = _collect_extra_secret_patterns(merge_meta)
         secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
-    last_error_ctx = build_error_ctx(last_meta, dataclass_.__name__, secret_paths=secret_paths)
+    last_error_ctx = build_error_ctx(
+        last_meta,
+        dataclass_.__name__,
+        secret_paths=secret_paths,
+        mask_secrets=mask_secrets,
+    )
     try:
         handle_load_errors(
             func=lambda: validation_loader(data.merged_raw),
@@ -411,13 +429,15 @@ class _MergePatchContext:
         cls: type[DataclassInstance],
         cache: bool,
         debug: bool,
+        type_loaders: tuple[TypeLoader, ...] = (),
     ) -> None:
-        self.loaders = self._prepare_loaders(merge_meta=merge_meta, cls=cls)
+        self.loaders = self._prepare_loaders(merge_meta=merge_meta, cls=cls, type_loaders=type_loaders)
 
         self.merge_meta = merge_meta
         self.cls = cls
         self.cache = cache
         self.debug = debug
+        self.type_loaders = type_loaders
         self.cached_data: DataclassInstance | None = None
         self.field_list = fields(cls)
         self.original_init = cls.__init__
@@ -429,24 +449,36 @@ class _MergePatchContext:
         validating_retort = last_loader.create_validating_retort(cls)
         self.validation_loader: Callable[[JSONValue], DataclassInstance] = validating_retort.get_loader(cls)
 
+        mask_secrets = _resolve_merge_mask_secrets(merge_meta)
         self.secret_paths: frozenset[str] = frozenset()
-        if _resolve_merge_mask_secrets(merge_meta):
+        if mask_secrets:
             extra_patterns = _collect_extra_secret_patterns(merge_meta)
             self.secret_paths = build_secret_paths(cls, extra_patterns=extra_patterns)
 
         last_meta = merge_meta.sources[-1]
-        self.error_ctx = build_error_ctx(last_meta, cls.__name__, secret_paths=self.secret_paths)
+        self.error_ctx = build_error_ctx(
+            last_meta,
+            cls.__name__,
+            secret_paths=self.secret_paths,
+            mask_secrets=mask_secrets,
+        )
 
     @staticmethod
     def _prepare_loaders(
         *,
         merge_meta: MergeMetadata,
         cls: type[DataclassInstance],
+        type_loaders: tuple[TypeLoader, ...] = (),
     ) -> tuple[LoaderProtocol, ...]:
         loaders: list[LoaderProtocol] = []
         for source_meta in merge_meta.sources:
             resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
-            loader_instance = resolve_loader(source_meta, expand_env_vars=resolved_expand)
+            source_type_loaders = (source_meta.type_loaders or ()) + type_loaders
+            loader_instance = resolve_loader(
+                source_meta,
+                expand_env_vars=resolved_expand,
+                type_loaders=source_type_loaders,
+            )
             ensure_retort(loader_instance, cls)
             loaders.append(loader_instance)
         return tuple(loaders)
@@ -468,6 +500,7 @@ def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
                     dataclass_=ctx.cls,
                     loaders=ctx.loaders,
                     debug=ctx.debug,
+                    type_loaders=ctx.type_loaders,
                 ).result
             finally:
                 ctx.loading = False
@@ -493,6 +526,7 @@ def merge_make_decorator(
     *,
     cache: bool,
     debug: bool,
+    type_loaders: tuple[TypeLoader, ...] = (),
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
     def decorator(cls: type[DataclassInstance]) -> type[DataclassInstance]:
         if not is_dataclass(cls):
@@ -504,6 +538,7 @@ def merge_make_decorator(
             cls=cls,
             cache=cache,
             debug=debug,
+            type_loaders=type_loaders,
         )
         cls.__init__ = _make_merge_new_init(ctx)  # type: ignore[method-assign]
         cls.__post_init__ = make_validating_post_init(ctx)  # type: ignore[attr-defined]

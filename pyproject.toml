@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "dature"
 version = "0.11.0"
@@ -43,6 +47,7 @@ dependencies = [
 Homepage = "https://github.com/Niccolum/dature"
 Repository = "https://github.com/Niccolum/dature"
 Issues = "https://github.com/Niccolum/dature/issues"
+Documentation = "https://dature.readthedocs.io/"
 
 [project.optional-dependencies]
 yaml = ["ruamel.yaml>=0.18"]
@@ -77,6 +82,15 @@ ignore = [
     "T201",    # print
     "S105",    # possible hardcoded password
     "DTZ001",  # datetime without tzinfo
+    "PLR2004", # magic values in examples
+    "SIM103",  # return condition directly
+    "S104",    # possible hardcoded password
+    "ERA001",  # commented-out code
+    "S101",    # assert
+    "PT017",   # assertion on exception in except block
+    "E501",    # line too long
+    "TRY003",  # raise-vanilla-args
+    "EM101",   # raw-string-in-exception 
 ]
 
 [tool.ruff.lint.pylint]
@@ -98,10 +112,15 @@ warn_no_return = true
 strict_equality = true
 explicit_package_bases = true
 mypy_path = "src"
+plugins = ["dature.mypy_plugin"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-returns-value", "call-arg", "attr-defined", "index"]
+
+[[tool.mypy.overrides]]
+module = "examples.*"
+disable_error_code = ["arg-type", "call-overload", "dict-item"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -119,4 +138,15 @@ dev = [
     "ruff>=0.14.14",
     "prek>=0.3.1",
     "tzdata>=2024.1; sys_platform == 'win32'",
+]
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.6",
+    "mkdocs-macros-plugin>=1.0",
+    "mkdocs-git-revision-date-localized-plugin>=1.2",
+    "mkdocs-llmstxt>=0.5",
+    "mkdocs-minify-plugin>=0.8",
+    "pillow>=10.0",
+    "cairosvg>=2.7; sys_platform == 'linux'",
+    "pymdown-extensions>=10.7",
 ]

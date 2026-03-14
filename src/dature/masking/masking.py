@@ -41,7 +41,7 @@ def mask_json_value(
                     masked[key] = mask_value(str(value))
             elif isinstance(value, (dict, list)):
                 masked[key] = mask_json_value(value, secret_paths=secret_paths, _prefix=child_path)
-            elif isinstance(value, str) and _is_random_string(value):
+            elif isinstance(value, str) and is_random_string(value):
                 masked[key] = mask_value(value)
             else:
                 masked[key] = value
@@ -121,16 +121,20 @@ def mask_source_entries(
     return tuple(result)
 
 
-def _is_random_string(value: str) -> bool:
-    if len(value) < config.masking.min_heuristic_length:
+def is_random_string(value: str) -> bool:
+    cfg = config.masking
+    if len(value) < cfg.min_heuristic_length:
         return False
 
     if _heuristic_detector is None:
         return False
 
-    try:
-        result: bool = _heuristic_detector.is_random_word(value)
-    except Exception:  # noqa: BLE001
+    word = value.lower()
+    bigrams = [word[i : i + 2] for i in range(len(word) - 1)]
+    if not bigrams:
         return False
-    else:
-        return result
+
+    uncommon = sum(
+        1 for b in bigrams if _heuristic_detector.bigrams.get(b, 0) <= _heuristic_detector.common_bigrams_threshold
+    )
+    return uncommon / len(bigrams) > cfg.heuristic_threshold

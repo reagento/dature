@@ -1,0 +1,2 @@
+resolved_url: "${APP_HOST}/api/v1"
+fallback_url: "${DATABASE_URL:-postgres://localhost:5432/dev}"

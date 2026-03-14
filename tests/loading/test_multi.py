@@ -1,6 +1,7 @@
 """Tests for loading/multi.py — multi-source config loading."""
 
 from dataclasses import dataclass
+from enum import Flag
 from pathlib import Path
 from textwrap import dedent
 
@@ -26,8 +27,8 @@ class TestMergeLoadAsFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
             ),
             Config,
@@ -51,8 +52,8 @@ class TestMergeLoadAsFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(first)),
-                    LoadMetadata(file_=str(second)),
+                    LoadMetadata(file_=first),
+                    LoadMetadata(file_=second),
                 ),
                 strategy=MergeStrategy.FIRST_WINS,
             ),
@@ -77,8 +78,8 @@ class TestMergeLoadAsFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(file_a)),
-                    LoadMetadata(file_=str(file_b)),
+                    LoadMetadata(file_=file_a),
+                    LoadMetadata(file_=file_b),
                 ),
             ),
             Config,
@@ -106,8 +107,8 @@ class TestMergeLoadAsFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
             ),
             Config,
@@ -135,9 +136,9 @@ class TestMergeLoadAsFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
             ),
             Config,
@@ -161,8 +162,8 @@ class TestMergeLoadAsFunction:
 
         result = load(
             (
-                LoadMetadata(file_=str(defaults)),
-                LoadMetadata(file_=str(overrides)),
+                LoadMetadata(file_=defaults),
+                LoadMetadata(file_=overrides),
             ),
             Config,
         )
@@ -185,7 +186,7 @@ class TestMergeLoadAsFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
+                    LoadMetadata(file_=defaults),
                     LoadMetadata(prefix="APP_"),
                 ),
             ),
@@ -211,7 +212,7 @@ class TestMergeLoadAsFunction:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(defaults)),
+                        LoadMetadata(file_=defaults),
                         LoadMetadata(prefix="APP_"),
                     ),
                 ),
@@ -243,8 +244,8 @@ class TestMergeLoadAsFunction:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                 ),
                 Config,
@@ -268,7 +269,7 @@ class TestMergeLoadAsFunction:
             name: str
             port: int
 
-        result = load(LoadMetadata(file_=str(json_file)), Config)
+        result = load(LoadMetadata(file_=json_file), Config)
 
         assert result.name == "test"
         assert result.port == 8080
@@ -295,8 +296,8 @@ class TestMergeAsDecorator:
 
         meta = MergeMetadata(
             sources=(
-                LoadMetadata(file_=str(defaults)),
-                LoadMetadata(file_=str(overrides)),
+                LoadMetadata(file_=defaults),
+                LoadMetadata(file_=overrides),
             ),
         )
 
@@ -314,7 +315,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        meta = MergeMetadata(sources=(LoadMetadata(file_=str(defaults)),))
+        meta = MergeMetadata(sources=(LoadMetadata(file_=defaults),))
 
         @load(meta)
         @dataclass
@@ -333,7 +334,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        meta = MergeMetadata(sources=(LoadMetadata(file_=str(defaults)),))
+        meta = MergeMetadata(sources=(LoadMetadata(file_=defaults),))
 
         @load(meta, cache=False)
         @dataclass
@@ -357,8 +358,8 @@ class TestMergeAsDecorator:
 
         @load(
             (
-                LoadMetadata(file_=str(defaults)),
-                LoadMetadata(file_=str(overrides)),
+                LoadMetadata(file_=defaults),
+                LoadMetadata(file_=overrides),
             ),
         )
         @dataclass
@@ -374,7 +375,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "localhost", "port": 3000}')
 
-        meta = MergeMetadata(sources=(LoadMetadata(file_=str(defaults)),))
+        meta = MergeMetadata(sources=(LoadMetadata(file_=defaults),))
 
         @load(meta)
         @dataclass
@@ -404,8 +405,8 @@ class TestMergeAsDecorator:
 
         meta = MergeMetadata(
             sources=(
-                LoadMetadata(file_=str(first)),
-                LoadMetadata(file_=str(second)),
+                LoadMetadata(file_=first),
+                LoadMetadata(file_=second),
             ),
             strategy=MergeStrategy.FIRST_WINS,
         )
@@ -438,8 +439,8 @@ class TestRaiseOnConflict:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
@@ -471,8 +472,8 @@ class TestRaiseOnConflict:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
             ),
@@ -497,8 +498,8 @@ class TestRaiseOnConflict:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
             ),
@@ -528,8 +529,8 @@ class TestRaiseOnConflict:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
@@ -561,8 +562,8 @@ class TestRaiseOnConflict:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
@@ -594,7 +595,7 @@ class TestRaiseOnConflict:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
+                        LoadMetadata(file_=a),
                         LoadMetadata(prefix="APP_"),
                     ),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
@@ -627,8 +628,8 @@ class TestRaiseOnConflict:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
@@ -672,8 +673,8 @@ class TestMergeWithYamlAndEnvFile:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(yaml_file)),
-                    LoadMetadata(file_=str(env_file)),
+                    LoadMetadata(file_=yaml_file),
+                    LoadMetadata(file_=env_file),
                 ),
             ),
             Config,
@@ -681,3 +682,110 @@ class TestMergeWithYamlAndEnvFile:
 
         assert result.host == "localhost"
         assert result.port == 9090
+
+
+class _Permission(Flag):
+    READ = 1
+    WRITE = 2
+    EXECUTE = 4
+
+
+class TestCoerceFlagFieldsMergeMode:
+    def test_flag_from_env_file_merge(self, tmp_path: Path):
+        json_file = tmp_path / "defaults.json"
+        json_file.write_text('{"name": "app"}')
+
+        env_file = tmp_path / "overrides.env"
+        env_file.write_text("PERMS=3\n")
+
+        @dataclass
+        class Config:
+            name: str
+            perms: _Permission
+
+        result = load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=json_file),
+                    LoadMetadata(file_=env_file),
+                ),
+            ),
+            Config,
+        )
+
+        assert result.perms == _Permission.READ | _Permission.WRITE
+
+    def test_flag_from_env_vars_merge(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        json_file = tmp_path / "defaults.json"
+        json_file.write_text('{"name": "app"}')
+
+        monkeypatch.setenv("APP_PERMS", "5")
+
+        @dataclass
+        class Config:
+            name: str
+            perms: _Permission
+
+        result = load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=json_file),
+                    LoadMetadata(prefix="APP_"),
+                ),
+            ),
+            Config,
+        )
+
+        assert result.perms == _Permission.READ | _Permission.EXECUTE
+
+    def test_flag_from_json_merge_as_int(self, tmp_path: Path):
+        a = tmp_path / "a.json"
+        a.write_text('{"name": "app"}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"perms": 7}')
+
+        @dataclass
+        class Config:
+            name: str
+            perms: _Permission
+
+        result = load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                ),
+            ),
+            Config,
+        )
+
+        assert result.perms == _Permission.READ | _Permission.WRITE | _Permission.EXECUTE
+
+    def test_flag_decorator_merge_from_env_file(self, tmp_path: Path):
+        json_file = tmp_path / "defaults.json"
+        json_file.write_text('{"name": "app"}')
+
+        env_file = tmp_path / "overrides.env"
+        env_file.write_text("PERMS=6\n")
+
+        @dataclass
+        class Config:
+            name: str
+            perms: _Permission
+
+        meta = MergeMetadata(
+            sources=(
+                LoadMetadata(file_=json_file),
+                LoadMetadata(file_=env_file),
+            ),
+        )
+
+        @load(meta)
+        @dataclass
+        class MergedConfig:
+            name: str
+            perms: _Permission
+
+        config = MergedConfig()
+        assert config.perms == _Permission.WRITE | _Permission.EXECUTE

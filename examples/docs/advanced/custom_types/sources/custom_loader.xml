@@ -1,0 +1,5 @@
+<config>
+    <host>localhost</host>
+    <port>9090</port>
+    <debug>true</debug>
+</config>

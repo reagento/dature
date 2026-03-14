@@ -8,6 +8,7 @@ from dature.loading.resolver import resolve_loader
 from dature.loading.single import load_as_function, make_decorator
 from dature.metadata import LoadMetadata, MergeMetadata
 from dature.protocols import DataclassInstance
+from dature.types import FILE_LIKE_TYPES, FileOrStream
 
 
 @overload
@@ -31,6 +32,7 @@ def load(
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]: ...
 
 
+# --8<-- [start:load]
 def load(
     metadata: LoadMetadata | MergeMetadata | tuple[LoadMetadata, ...] | None = None,
     /,
@@ -39,6 +41,7 @@ def load(
     cache: bool | None = None,
     debug: bool | None = None,
 ) -> Any:
+    # --8<-- [end:load]
     if cache is None:
         cache = config.loading.cache
     if debug is None:
@@ -48,20 +51,29 @@ def load(
         metadata = MergeMetadata(sources=metadata)
 
     if isinstance(metadata, MergeMetadata):
+        merge_type_loaders = (metadata.type_loaders or ()) + config.type_loaders
         if dataclass_ is not None:
-            return merge_load_as_function(metadata, dataclass_, debug=debug)
-        return merge_make_decorator(metadata, cache=cache, debug=debug)
+            return merge_load_as_function(metadata, dataclass_, debug=debug, type_loaders=merge_type_loaders)
+        return merge_make_decorator(metadata, cache=cache, debug=debug, type_loaders=merge_type_loaders)
 
     if metadata is None:
         metadata = LoadMetadata()
 
-    loader_instance = resolve_loader(metadata)
-    file_path = Path(metadata.file_) if metadata.file_ else Path()
+    type_loaders = (metadata.type_loaders or ()) + config.type_loaders
+    loader_instance = resolve_loader(metadata, type_loaders=type_loaders)
+
+    file_or_path: FileOrStream
+    if isinstance(metadata.file_, FILE_LIKE_TYPES):
+        file_or_path = metadata.file_
+    elif metadata.file_ is not None:
+        file_or_path = Path(metadata.file_)
+    else:
+        file_or_path = Path()
 
     if dataclass_ is not None:
         return load_as_function(
             loader_instance=loader_instance,
-            file_path=file_path,
+            file_path=file_or_path,
             dataclass_=dataclass_,
             metadata=metadata,
             debug=debug,
@@ -69,7 +81,7 @@ def load(
 
     return make_decorator(
         loader_instance=loader_instance,
-        file_path=file_path,
+        file_path=file_or_path,
         metadata=metadata,
         cache=cache,
         debug=debug,

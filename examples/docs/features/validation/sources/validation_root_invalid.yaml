@@ -1,0 +1,3 @@
+host: production.example.com
+port: 8080
+debug: true

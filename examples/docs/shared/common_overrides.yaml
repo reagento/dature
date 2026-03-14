@@ -1,0 +1,5 @@
+host: "production.example.com"
+port: 8080
+tags:
+  - "web"
+  - "api"

@@ -25,7 +25,7 @@ class TestSkipBrokenSources:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(valid)),
+                    LoadMetadata(file_=valid),
                     LoadMetadata(file_=missing),
                 ),
                 skip_broken_sources=True,
@@ -51,8 +51,8 @@ class TestSkipBrokenSources:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(valid)),
-                    LoadMetadata(file_=str(broken)),
+                    LoadMetadata(file_=valid),
+                    LoadMetadata(file_=broken),
                 ),
                 skip_broken_sources=True,
             ),
@@ -77,8 +77,8 @@ class TestSkipBrokenSources:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(broken_a)),
-                        LoadMetadata(file_=str(broken_b)),
+                        LoadMetadata(file_=broken_a),
+                        LoadMetadata(file_=broken_b),
                     ),
                     skip_broken_sources=True,
                 ),
@@ -106,8 +106,8 @@ class TestSkipBrokenSources:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(valid)),
-                        LoadMetadata(file_=str(broken)),
+                        LoadMetadata(file_=valid),
+                        LoadMetadata(file_=broken),
                     ),
                 ),
                 Config,
@@ -131,9 +131,9 @@ class TestSkipBrokenSources:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(broken)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=broken),
+                    LoadMetadata(file_=c),
                 ),
                 skip_broken_sources=True,
             ),
@@ -158,8 +158,8 @@ class TestSkipBrokenSources:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(valid)),
-                    LoadMetadata(file_=str(broken), skip_if_broken=True),
+                    LoadMetadata(file_=valid),
+                    LoadMetadata(file_=broken, skip_if_broken=True),
                 ),
                 skip_broken_sources=False,
             ),
@@ -185,8 +185,8 @@ class TestSkipBrokenSources:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(valid)),
-                        LoadMetadata(file_=str(broken), skip_if_broken=False),
+                        LoadMetadata(file_=valid),
+                        LoadMetadata(file_=broken, skip_if_broken=False),
                     ),
                     skip_broken_sources=True,
                 ),
@@ -208,8 +208,8 @@ class TestSkipBrokenSources:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(valid)),
-                    LoadMetadata(file_=str(broken), skip_if_broken=None),
+                    LoadMetadata(file_=valid),
+                    LoadMetadata(file_=broken, skip_if_broken=None),
                 ),
                 skip_broken_sources=True,
             ),
@@ -251,7 +251,7 @@ class TestSkipBrokenSources:
                 MergeMetadata(
                     sources=(
                         LoadMetadata(file_=missing),
-                        LoadMetadata(file_=str(broken)),
+                        LoadMetadata(file_=broken),
                     ),
                     skip_broken_sources=True,
                 ),
@@ -278,7 +278,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             MergeMetadata(
-                sources=(LoadMetadata(file_=str(json_file)),),
+                sources=(LoadMetadata(file_=json_file),),
             ),
             Config,
         )
@@ -297,7 +297,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             MergeMetadata(
-                sources=(LoadMetadata(file_=str(json_file)),),
+                sources=(LoadMetadata(file_=json_file),),
                 expand_env_vars="disabled",
             ),
             Config,
@@ -318,7 +318,7 @@ class TestMergeExpandEnvVars:
         with pytest.raises(EnvVarExpandError):
             load(
                 MergeMetadata(
-                    sources=(LoadMetadata(file_=str(json_file)),),
+                    sources=(LoadMetadata(file_=json_file),),
                     expand_env_vars="strict",
                 ),
                 Config,
@@ -336,7 +336,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             MergeMetadata(
-                sources=(LoadMetadata(file_=str(json_file), expand_env_vars="disabled"),),
+                sources=(LoadMetadata(file_=json_file, expand_env_vars="disabled"),),
                 expand_env_vars="default",
             ),
             Config,
@@ -356,7 +356,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             MergeMetadata(
-                sources=(LoadMetadata(file_=str(json_file), expand_env_vars=None),),
+                sources=(LoadMetadata(file_=json_file, expand_env_vars=None),),
                 expand_env_vars="disabled",
             ),
             Config,
@@ -376,10 +376,58 @@ class TestMergeExpandEnvVars:
 
         result = load(
             MergeMetadata(
-                sources=(LoadMetadata(file_=str(json_file)),),
+                sources=(LoadMetadata(file_=json_file),),
                 expand_env_vars="empty",
             ),
             Config,
         )
 
         assert result.host == ""
+
+
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
+
+
+@dataclass
+class StrictConfig:
+    host: str
+    port: int
+
+
+class TestEnvVarExpandErrorFormat:
+    @pytest.mark.parametrize(
+        ("ext", "prefix", "source_label", "line", "line_content"),
+        [
+            ("yaml", None, "FILE", 1, 'host: "$MISSING_HOST"'),
+            ("json", None, "FILE", 1, '{"host": "$MISSING_HOST", "port": 8080}'),
+            ("toml", None, "FILE", 1, 'host = "$MISSING_HOST"'),
+            ("ini", "section", "FILE", 2, "host = $MISSING_HOST"),
+            ("env", None, "ENV FILE", 1, "HOST=$MISSING_HOST"),
+        ],
+        ids=["yaml", "json", "toml", "ini", "env"],
+    )
+    def test_error_format(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        ext: str,
+        prefix: str | None,
+        source_label: str,
+        line: int,
+        line_content: str,
+    ) -> None:
+        monkeypatch.delenv("MISSING_HOST", raising=False)
+        file = FIXTURES_DIR / f"env_expand_strict.{ext}"
+
+        with pytest.raises(EnvVarExpandError) as exc_info:
+            load(
+                LoadMetadata(file_=file, prefix=prefix, expand_env_vars="strict"),
+                StrictConfig,
+            )
+
+        assert str(exc_info.value) == dedent(f"""\
+            StrictConfig env expand errors (1)
+
+              [host]  Missing environment variable 'MISSING_HOST'
+               └── {source_label} '{file}', line {line}
+                   {line_content}
+        """)

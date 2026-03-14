@@ -1,18 +1,15 @@
 """Comprehensive dataclass with all Python basic types without repetition."""
 
+import re
+from collections import deque
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-)
+from enum import Enum, Flag
+from fractions import Fraction
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -21,6 +18,18 @@ from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.types import URL, Base64UrlBytes, Base64UrlStr
+
+
+class Color(Enum):
+    RED = "red"
+    GREEN = "green"
+    BLUE = "blue"
+
+
+class Permission(Flag):
+    READ = 1
+    WRITE = 2
+    EXECUTE = 4
 
 
 @dataclass
@@ -62,6 +71,7 @@ class AllPythonTypesCompact:
     time_value: time
     timedelta_value_with_day: timedelta
     timedelta_value_without_day: timedelta
+    timedelta_value_without_seconds: timedelta
 
     # Lists
     list_strings: list[str]
@@ -136,6 +146,16 @@ class AllPythonTypesCompact:
     nested_dc_dict: dict[str, NestedAddress]
     nested_dc_tuple: tuple[NestedTag, NestedTag]
 
+    # Enum/Flag/Literal
+    enum_value: Color
+    flag_value: Permission
+    literal_value: Literal["debug", "info", "error"]
+
+    # Additional stdlib types
+    regex_pattern: re.Pattern[str]
+    fraction_value: Fraction
+    deque_value: deque[str]
+
     frozenset_value: frozenset[int] | None = None
 
 
@@ -158,6 +178,7 @@ EXPECTED_ALL_TYPES = AllPythonTypesCompact(
     time_value=time(10, 30),
     timedelta_value_with_day=timedelta(days=1, hours=2, minutes=30),
     timedelta_value_without_day=timedelta(hours=2, minutes=30),
+    timedelta_value_without_seconds=timedelta(hours=2, minutes=30),
     # Lists
     list_strings=["item1", "item2", "item3"],
     list_integers=[1, 2, 3, 4, 5],
@@ -241,5 +262,13 @@ EXPECTED_ALL_TYPES = AllPythonTypesCompact(
         "work": NestedAddress(city="Paris", zip_code="75001"),
     },
     nested_dc_tuple=(NestedTag(name="bug", priority=2), NestedTag(name="feature", priority=3)),
+    # Enum/Flag/Literal
+    enum_value=Color.GREEN,
+    flag_value=Permission.READ | Permission.WRITE,
+    literal_value="info",
+    # Additional stdlib types
+    regex_pattern=re.compile(r"^[a-z]+$"),
+    fraction_value=Fraction(1, 3),
+    deque_value=deque(["first", "second", "third"]),
     frozenset_value=frozenset({1, 2, 3, 4, 5}),
 )

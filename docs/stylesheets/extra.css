@@ -1,0 +1,73 @@
+/* Custom styles for dature documentation */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Custom color scheme from logo palette */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #5D2F2F;
+  --md-primary-fg-color--light: #834641;
+  --md-primary-fg-color--dark: #441E1B;
+  --md-accent-fg-color: #834641;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #834641;
+  --md-primary-fg-color--light: #9A5A54;
+  --md-primary-fg-color--dark: #5D2F2F;
+  --md-accent-fg-color: #9A5A54;
+}
+
+/* 8-bit headings (exclude headings containing <code> like API reference) */
+.md-typeset h1:not(:has(code)):not(.doc-heading),
+.md-typeset h2:not(:has(code)):not(.doc-heading),
+.md-typeset h3:not(:has(code)):not(.doc-heading) {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: -0.5px;
+  line-height: 1.6;
+  transform: scaleY(1.3);
+  transform-origin: left top;
+  margin-bottom: 0.6em;
+  color: #1a1a1a;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1:not(:has(code)):not(.doc-heading),
+[data-md-color-scheme="slate"] .md-typeset h2:not(:has(code)):not(.doc-heading),
+[data-md-color-scheme="slate"] .md-typeset h3:not(:has(code)):not(.doc-heading) {
+  color: #f0f0f0;
+}
+
+.md-typeset h1 {
+  font-size: 1.4rem;
+}
+
+.md-typeset h2 {
+  font-size: 1rem;
+}
+
+.md-typeset h3 {
+  font-size: 0.8rem;
+}
+
+/* 8-bit content tabs */
+.md-typeset .tabbed-labels label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  letter-spacing: -0.5px;
+  transform: scaleY(1.3);
+}
+
+/* Hide site name next to logo in header */
+.md-header__topic .md-ellipsis {
+  display: none;
+}
+
+/* Hide site name in mobile header */
+@media screen and (max-width: 76.1875em) {
+  .md-header__title {
+    display: none;
+  }
+}
+
+.md-typeset table:not([class]) th {
+  min-width: 6rem;
+}

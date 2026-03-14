@@ -16,6 +16,7 @@
   "time_value": "10:30:00",
   "timedelta_value_with_day": "1 day, 2:30:00",
   "timedelta_value_without_day": "2:30:00",
+  "timedelta_value_without_seconds": "2:30",
 
   "list_strings": ["item1", "item2", "item3"],
   "list_integers": [1, 2, 3, 4, 5],
@@ -119,6 +120,14 @@
     {"name": "bug", "priority": 2},
     {"name": "feature", "priority": 3}
   ],
+
+  "enum_value": "green",
+  "flag_value": 3,
+  "literal_value": "info",
+
+  "regex_pattern": "^[a-z]+$",
+  "fraction_value": "1/3",
+  "deque_value": ["first", "second", "third"],
 
   "frozenset_value": [1, 2, 3, 4, 5]
 }
