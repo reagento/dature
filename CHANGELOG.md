@@ -27,6 +27,10 @@
 - Skipped lint/test jobs on tag push in CI (already verified on main push).
 - Improved CI configurations for better stability and reliability.
 
+### Fixes
+- Fixed various issues in the CI configuration.
+- Resolved multiple bugs affecting functionality and stability.
+
 ### Docs
 - Added documentation site (MkDocs + Material) with full coverage: getting started, features, advanced topics, API reference.
 - Added `CHANGELOG.md` with AI-generated entries on PR creation.
