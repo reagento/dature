@@ -248,10 +248,6 @@ jobs:
           fi
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.PAT }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7.3.1
@@ -292,15 +288,25 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"notes<<NOTES_EOF\n{notes}\nNOTES_EOF\n")
 
-      - name: Update CHANGELOG for release
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NOTES: ${{ steps.release-notes.outputs.notes }}
+        run: |
+          gh release create "v${{ steps.version.outputs.value }}" dist/* \
+            --title "v${{ steps.version.outputs.value }}" \
+            --notes "$RELEASE_NOTES"
+
+      - name: Create CHANGELOG PR
         env:
           VERSION: ${{ steps.version.outputs.value }}
           GH_TOKEN: ${{ secrets.PAT }}
         shell: python
         run: |
-          import os, re
+          import os, re, subprocess
 
           version = os.environ["VERSION"]
+          branch = f"chore/changelog-release-v{version}"
 
           with open("CHANGELOG.md") as f:
               content = f.read()
@@ -318,26 +324,20 @@ jobs:
           with open("CHANGELOG.md", "w") as f:
               f.write(content)
 
-      - name: Push CHANGELOG update
-        env:
-          VERSION: ${{ steps.version.outputs.value }}
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git diff --cached --quiet && exit 0
-          git commit -m "changelog: release v$VERSION"
-          git push
+          run = lambda *args: subprocess.run(args, check=True)
 
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_NOTES: ${{ steps.release-notes.outputs.notes }}
-        run: |
-          gh release create "v${{ steps.version.outputs.value }}" dist/* \
-            --title "v${{ steps.version.outputs.value }}" \
-            --notes "$RELEASE_NOTES"
+          run("git", "config", "user.name", "github-actions[bot]")
+          run("git", "config", "user.email", "github-actions[bot]@users.noreply.github.com")
+          run("git", "checkout", "-b", branch)
+          run("git", "add", "CHANGELOG.md")
+          run("git", "commit", "-m", f"changelog: release v{version}")
+          run("git", "push", "-u", "origin", branch)
+          run(
+              "gh", "pr", "create",
+              "--title", f"changelog: release v{version}",
+              "--body", f"Automated CHANGELOG update for v{version} release.",
+              "--label", "chore",
+          )
 
   trigger-rtd-latest:
     needs: [tag]
@@ -356,7 +356,15 @@ jobs:
             https://readthedocs.org/api/v3/projects/dature/versions/latest/builds/
 
   trigger-rtd-tag:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [tag]
+    if: >-
+      always()
+      && !failure()
+      && !cancelled()
+      && (
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+        || needs.tag.outputs.tagged == 'true'
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Sync versions and activate tag
