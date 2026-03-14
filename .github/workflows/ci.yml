@@ -262,23 +262,23 @@ jobs:
 
       - name: Extract release notes from CHANGELOG
         id: release-notes
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
         shell: python
         run: |
           import os, re
 
+          version = os.environ["VERSION"]
+
           with open("CHANGELOG.md") as f:
               content = f.read()
 
-          # Extract everything between "## Unreleased" and the next "## " heading
-          match = re.search(
-              r"^## Unreleased\n(.*?)(?=^## |\Z)",
-              content,
-              re.MULTILINE | re.DOTALL,
-          )
+          # Extract everything under "## X.Y.Z" section
+          pattern = rf"^## {re.escape(version)}\n(.*?)(?=^## |\Z)"
+          match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
           notes = ""
           if match:
               lines = match.group(1).strip().splitlines()
-              # Remove PR markers and blank lines
               lines = [l for l in lines if not l.startswith("<!-- PR #")]
               notes = "\n".join(lines).strip()
 
@@ -325,12 +325,22 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
+      - name: Determine tag
+        id: tag-name
+        env:
+          TAG_VERSION: ${{ needs.tag.outputs.version }}
+        run: |
+          if [ -n "$TAG_VERSION" ]; then
+            echo "value=v$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Sync versions and activate tag
         env:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
+          TAG: ${{ steps.tag-name.outputs.value }}
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
             https://readthedocs.org/api/v3/projects/dature/sync-versions/
