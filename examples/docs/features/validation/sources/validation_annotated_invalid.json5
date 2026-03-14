@@ -1,0 +1,7 @@
+{
+  // Invalid: port=0 violates Ge(1), name too short for MinLength(3), duplicate tags
+  port: 0,
+  name: "ab",
+  tags: ["web", "web"],
+  workers: 0,
+}

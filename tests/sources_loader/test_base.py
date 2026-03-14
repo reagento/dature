@@ -3,11 +3,12 @@ from pathlib import Path
 
 import pytest
 
+from dature import LoadMetadata, load
 from dature.errors.exceptions import EnvVarExpandError
 from dature.field_path import F
 from dature.sources_loader.base import BaseLoader
 from dature.sources_loader.json_ import JsonLoader
-from dature.types import ExpandEnvVarsMode, JSONValue
+from dature.types import ExpandEnvVarsMode, FileOrStream, JSONValue
 
 
 class MockLoader(BaseLoader):
@@ -25,7 +26,7 @@ class MockLoader(BaseLoader):
         super().__init__(prefix=prefix, expand_env_vars=expand_env_vars)
         self._test_data = test_data or {}
 
-    def _load(self, path: Path) -> JSONValue:  # noqa: ARG002
+    def _load(self, path: FileOrStream) -> JSONValue:  # noqa: ARG002
         """Return test data."""
         return self._test_data
 
@@ -132,8 +133,8 @@ class TestBaseLoader:
 
         assert result == expected_data
 
-    def test_load_full_pipeline(self):
-        """Test full load pipeline."""
+    def test_load_raw_and_transform(self):
+        """Test load_raw + transform_to_dataclass pipeline."""
 
         @dataclass
         class Config:
@@ -146,7 +147,8 @@ class TestBaseLoader:
         data = {"app": {"name": "TestApp", "port": 8080, "debug": "true"}}
         loader = MockLoader(prefix="app", test_data=data)
 
-        result = loader.load(Path(), Config)
+        raw = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(raw, Config)
 
         assert result == expected_data
 
@@ -171,8 +173,10 @@ class TestNameStyleMapping:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"userName": "John", "userAge": 25, "isActive": true}')
 
-        loader = JsonLoader(name_style="lower_camel")
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="lower_camel"),
+            Config,
+        )
 
         assert result.user_name == "John"
         assert result.user_age == 25
@@ -187,8 +191,10 @@ class TestNameStyleMapping:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"user_name": "Alice", "user_age": 30}')
 
-        loader = JsonLoader(name_style="lower_snake")
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="lower_snake"),
+            Config,
+        )
 
         assert result.user_name == "Alice"
         assert result.user_age == 30
@@ -202,8 +208,10 @@ class TestNameStyleMapping:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"UserName": "Bob", "TotalCount": 100}')
 
-        loader = JsonLoader(name_style="upper_camel")
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="upper_camel"),
+            Config,
+        )
 
         assert result.user_name == "Bob"
         assert result.total_count == 100
@@ -217,8 +225,10 @@ class TestNameStyleMapping:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"user-name": "Charlie", "api-key": "secret123"}')
 
-        loader = JsonLoader(name_style="lower_kebab")
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="lower_kebab"),
+            Config,
+        )
 
         assert result.user_name == "Charlie"
         assert result.api_key == "secret123"
@@ -232,8 +242,10 @@ class TestNameStyleMapping:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"USER-NAME": "Dave", "API-KEY": "secret456"}')
 
-        loader = JsonLoader(name_style="upper_kebab")
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="upper_kebab"),
+            Config,
+        )
 
         assert result.user_name == "Dave"
         assert result.api_key == "secret456"
@@ -247,8 +259,10 @@ class TestNameStyleMapping:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"USER_NAME": "Eve", "MAX_RETRIES": 3}')
 
-        loader = JsonLoader(name_style="upper_snake")
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, name_style="upper_snake"),
+            Config,
+        )
 
         assert result.user_name == "Eve"
         assert result.max_retries == 3
@@ -271,8 +285,10 @@ class TestFieldMapping:
             F[Config].active: "isActive",
         }
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            Config,
+        )
 
         assert result.name == "John Doe"
         assert result.age == 42
@@ -290,8 +306,10 @@ class TestFieldMapping:
 
         field_mapping = {F[Config].name: "userName"}
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            Config,
+        )
 
         assert result.name == "Alice"
         assert result.age == 28
@@ -309,8 +327,15 @@ class TestFieldMapping:
 
         field_mapping = {F[Config].special_field: "customKey"}
 
-        loader = JsonLoader(name_style="lower_camel", field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(
+                file_=json_file,
+                loader=JsonLoader,
+                name_style="lower_camel",
+                field_mapping=field_mapping,
+            ),
+            Config,
+        )
 
         assert result.user_name == "Bob"
         assert result.user_age == 35
@@ -339,8 +364,10 @@ class TestFieldMapping:
             F[Address].street: "streetName",
         }
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, User)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            User,
+        )
 
         assert result.name == "Charlie"
         assert result.address.city == "LA"
@@ -356,8 +383,10 @@ class TestFieldMapping:
 
         field_mapping = {F[Config].name: ("fullName", "userName")}
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            Config,
+        )
 
         assert result.name == "Alice"
 
@@ -371,8 +400,10 @@ class TestFieldMapping:
 
         field_mapping = {F[Config].name: ("fullName", "userName")}
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            Config,
+        )
 
         assert result.name == "Bob"
 
@@ -390,8 +421,10 @@ class TestFieldMapping:
 
         field_mapping = {F[User].address.city: "cityName"}
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, User)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            User,
+        )
 
         assert result.address.city == "LA"
 
@@ -405,8 +438,10 @@ class TestFieldMapping:
 
         field_mapping = {F["Config"].name: "fullName"}
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            Config,
+        )
 
         assert result.name == "Eve"
 
@@ -420,8 +455,10 @@ class TestFieldMapping:
 
         field_mapping = {F[Config].name: "fullName"}
 
-        loader = JsonLoader(field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(file_=json_file, loader=JsonLoader, field_mapping=field_mapping),
+            Config,
+        )
 
         assert result.name == "Direct"
 
@@ -446,8 +483,15 @@ class TestFieldMapping:
             F[Config].inner.user_name: "inner.inner_user",
         }
 
-        loader = JsonLoader(name_style="lower_camel", field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(
+                file_=json_file,
+                loader=JsonLoader,
+                name_style="lower_camel",
+                field_mapping=field_mapping,
+            ),
+            Config,
+        )
 
         assert result.user_name == "Alice"
         assert result.inner.user_name == "Bob"
@@ -474,8 +518,15 @@ class TestFieldMapping:
             F[Config].inner.user_name: "inner_user",
         }
 
-        loader = JsonLoader(name_style="lower_camel", field_mapping=field_mapping)
-        result = loader.load(json_file, Config)
+        result = load(
+            LoadMetadata(
+                file_=json_file,
+                loader=JsonLoader,
+                name_style="lower_camel",
+                field_mapping=field_mapping,
+            ),
+            Config,
+        )
 
         assert result.user_name == "Alice"
         assert result.inner.user_name == "Bob"
@@ -488,7 +539,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
         loader = MockLoader(test_data=data)
 
-        result = loader.load(Path(), dict)
+        raw = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(raw, dict)
 
         assert result == {"host": "localhost", "port": 8080}
 
@@ -497,7 +549,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_MISSING", "port": 8080}
         loader = MockLoader(test_data=data)
 
-        result = loader.load(Path(), dict)
+        raw = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(raw, dict)
 
         assert result == {"host": "$DATURE_MISSING", "port": 8080}
 
@@ -506,7 +559,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
         loader = MockLoader(test_data=data, expand_env_vars="disabled")
 
-        result = loader.load(Path(), dict)
+        raw = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(raw, dict)
 
         assert result == {"host": "$DATURE_TEST_HOST", "port": 8080}
 
@@ -515,7 +569,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_MISSING", "port": 8080}
         loader = MockLoader(test_data=data, expand_env_vars="empty")
 
-        result = loader.load(Path(), dict)
+        raw = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(raw, dict)
 
         assert result == {"host": "", "port": 8080}
 
@@ -525,13 +580,14 @@ class TestExpandEnvVars:
         loader = MockLoader(test_data=data, expand_env_vars="strict")
 
         with pytest.raises(EnvVarExpandError):
-            loader.load(Path(), dict)
+            loader.load_raw(Path())
 
     def test_strict_expands_existing(self, monkeypatch):
         monkeypatch.setenv("DATURE_TEST_HOST", "localhost")
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
         loader = MockLoader(test_data=data, expand_env_vars="strict")
 
-        result = loader.load(Path(), dict)
+        raw = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(raw, dict)
 
         assert result == {"host": "localhost", "port": 8080}

@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 from dature.errors.exceptions import MergeConflictError, MergeConflictFieldError, SourceLocation
-from dature.errors.location import ErrorContext, resolve_source_location
+from dature.errors.location import resolve_source_location
+from dature.loading.source_loading import SourceContext
 from dature.metadata import FieldMergeStrategy, MergeStrategy
 from dature.types import JSONValue
 
@@ -132,7 +133,7 @@ def deep_merge_first_wins(
 
 def _collect_conflicts(
     dicts: list[JSONValue],
-    source_contexts: list[tuple[ErrorContext, str | None]],
+    source_contexts: list[SourceContext],
     path: list[str],
     conflicts: list[tuple[list[str], list[tuple[int, JSONValue]]]],
     field_merge_map: dict[str, FieldMergeStrategy] | None = None,
@@ -180,7 +181,7 @@ def _collect_conflicts(
 
 def raise_on_conflict(
     dicts: list[JSONValue],
-    source_ctxs: list[tuple[ErrorContext, str | None]],
+    source_ctxs: list[SourceContext],
     dataclass_name: str,
     field_merge_map: dict[str, FieldMergeStrategy] | None = None,
     callable_merge_paths: frozenset[str] | None = None,
@@ -202,8 +203,8 @@ def raise_on_conflict(
     for field_path, sources in conflicts:
         locations: list[SourceLocation] = []
         for source_idx, _ in sources:
-            ctx, file_content = source_ctxs[source_idx]
-            loc = resolve_source_location(field_path, ctx, file_content)
+            source_ctx = source_ctxs[source_idx]
+            loc = resolve_source_location(field_path, source_ctx.error_ctx, source_ctx.file_content)
             locations.append(loc)
         conflict_errors.append(
             MergeConflictFieldError(

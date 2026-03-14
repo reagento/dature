@@ -1,0 +1,147 @@
+site_name: dature
+site_url: https://dature.readthedocs.io/
+site_description: Type-safe configuration loader for Python dataclasses
+site_author: Niccolum
+
+repo_name: Niccolum/dature
+repo_url: https://github.com/Niccolum/dature
+
+copyright: Copyright &copy; 2026-2026 Niccolum
+
+theme:
+  name: material
+  font:
+    text: Inter
+    code: Roboto Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  favicon: assets/img/logo.svg
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.tracking
+    - navigation.prune
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+  logo: assets/img/logo.svg
+  icon:
+    repo: fontawesome/brands/github
+  custom_dir: docs/overrides
+
+nav:
+  - Getting Started:
+    - Home: index.md
+    - Introduction: introduction.md
+    - Supported Types: supported_types.md
+  - Features:
+    - Naming: features/naming.md
+    - Validation: features/validation.md
+    - Merging: features/merging.md
+    - Masking: features/masking.md
+  - Advanced:
+    - Merge Rules: advanced/merge-rules.md
+    - Field Groups: advanced/field-groups.md
+    - ENV Expansion: advanced/env-expansion.md
+    - Special Types: advanced/special-types.md
+    - Debug & Reports: advanced/debug.md
+    - Caching: advanced/caching.md
+    - Configure: advanced/configure.md
+    - Custom Types & Loaders: advanced/custom_types.md
+  - Reference:
+    - API Reference: api-reference.md
+    - Changelog: changelog.md
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - macros
+  - git-revision-date-localized:
+      enable_creation_date: true
+      enable_git_follow: false
+      fallback_to_build_date: true
+      strict: false
+  - social:
+      enabled: !ENV [CI, false]
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+      cache_safe: true
+      css_files:
+        - stylesheets/extra.css
+  - llmstxt:
+      full_output: llms-full.txt
+      sections:
+        Getting Started:
+          - introduction.md
+          - supported_types.md
+        Features:
+          - features/naming.md
+          - features/validation.md
+          - features/merging.md
+          - features/masking.md
+        Advanced:
+          - advanced/merge-rules.md
+          - advanced/field-groups.md
+          - advanced/env-expansion.md
+          - advanced/special-types.md
+          - advanced/debug.md
+          - advanced/caching.md
+          - advanced/configure.md
+          - advanced/custom_types.md
+        Reference:
+          - api-reference.md
+          - changelog.md
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - "."
+  - pymdownx.mark
+  - pymdownx.keys
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: "#"
+      toc_depth: 3

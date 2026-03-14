@@ -8,11 +8,9 @@ from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.types import URL, Base64UrlBytes, Base64UrlStr
 
-_TIMEDELTA_WITH_DAYS_RE = re.compile(
-    r"^(-?\d+)\s+days?,\s*(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$",
-)
-_TIMEDELTA_TIME_ONLY_RE = re.compile(
-    r"^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$",
+_TIMEDELTA_RE = re.compile(
+    r"^(?:(?P<days>-?\d+)\s+days?(?:,\s*|\s+|$))?"
+    r"(?:(?P<hours>\d+):(?P<minutes>\d{2})(?::(?P<seconds>\d{2})(?:\.(?P<microseconds>\d+))?)?)?$",
 )
 
 
@@ -25,24 +23,24 @@ def complex_from_string(value: str) -> complex:
 
 
 def timedelta_from_string(value: str) -> timedelta:
-    """Parse str(timedelta(...)) format: '1 day, 2:30:00', '0:45:00', '-1 day, 23:59:59'."""
-    if match := _TIMEDELTA_WITH_DAYS_RE.match(value):
-        days = int(match.group(1))
-        hours = int(match.group(2))
-        minutes = int(match.group(3))
-        seconds = int(match.group(4))
-        microseconds = int(match.group(5).ljust(6, "0")) if match.group(5) is not None else 0
-        return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, microseconds=microseconds)
+    """Parse str(timedelta(...)) format: '1 day, 2:30:00', '2 days 1:02:03', '0:45:00', '2:30'."""
+    match = _TIMEDELTA_RE.match(value)
+    if match is None or value == "":
+        msg = f"Invalid timedelta format: {value!r}"
+        raise ValueError(msg)
 
-    if match := _TIMEDELTA_TIME_ONLY_RE.match(value):
-        hours = int(match.group(1))
-        minutes = int(match.group(2))
-        seconds = int(match.group(3))
-        microseconds = int(match.group(4).ljust(6, "0")) if match.group(4) is not None else 0
-        return timedelta(hours=hours, minutes=minutes, seconds=seconds, microseconds=microseconds)
+    groups = match.groupdict()
+    microseconds = 0
+    if groups["microseconds"] is not None:
+        microseconds = int(groups["microseconds"].ljust(6, "0"))
 
-    msg = f"Invalid timedelta format: {value!r}"
-    raise ValueError(msg)
+    return timedelta(
+        days=int(groups["days"] or 0),
+        hours=int(groups["hours"] or 0),
+        minutes=int(groups["minutes"] or 0),
+        seconds=int(groups["seconds"] or 0),
+        microseconds=microseconds,
+    )
 
 
 def url_from_string(value: str) -> URL:

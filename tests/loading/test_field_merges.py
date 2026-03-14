@@ -26,8 +26,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 strategy=MergeStrategy.LAST_WINS,
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),),
@@ -53,8 +53,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(first)),
-                    LoadMetadata(file_=str(second)),
+                    LoadMetadata(file_=first),
+                    LoadMetadata(file_=second),
                 ),
                 strategy=MergeStrategy.FIRST_WINS,
                 field_merges=(MergeRule(F[Config].port, FieldMergeStrategy.LAST_WINS),),
@@ -80,8 +80,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
             ),
@@ -105,8 +105,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND_UNIQUE),),
             ),
@@ -129,8 +129,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.PREPEND),),
             ),
@@ -153,8 +153,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.PREPEND_UNIQUE),),
             ),
@@ -182,8 +182,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(MergeRule(F[Config].database.host, FieldMergeStrategy.FIRST_WINS),),
             ),
@@ -208,8 +208,8 @@ class TestFieldMergesFunction:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(defaults)),
-                        LoadMetadata(file_=str(overrides)),
+                        LoadMetadata(file_=defaults),
+                        LoadMetadata(file_=overrides),
                     ),
                     field_merges=(MergeRule(F[Config].value, FieldMergeStrategy.APPEND),),
                 ),
@@ -232,8 +232,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 strategy=MergeStrategy.LAST_WINS,
                 field_merges=(
@@ -263,8 +263,8 @@ class TestFieldMergesFunction:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(),
             ),
@@ -285,8 +285,8 @@ class TestFieldMergesDecorator:
 
         meta = MergeMetadata(
             sources=(
-                LoadMetadata(file_=str(defaults)),
-                LoadMetadata(file_=str(overrides)),
+                LoadMetadata(file_=defaults),
+                LoadMetadata(file_=overrides),
             ),
             field_merges=(
                 MergeRule(F["Config"].host, FieldMergeStrategy.FIRST_WINS),
@@ -323,8 +323,8 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),),
@@ -350,8 +350,8 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),),
@@ -378,8 +378,8 @@ class TestFieldMergesWithRaiseOnConflict:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                     field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),),
@@ -406,8 +406,8 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].database.host, FieldMergeStrategy.LAST_WINS),),
@@ -433,8 +433,8 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(
@@ -495,8 +495,8 @@ class TestFieldMergesErrors:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
@@ -548,8 +548,8 @@ class TestFieldMergesErrors:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
@@ -591,8 +591,8 @@ class TestFieldMergesErrors:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
@@ -625,8 +625,8 @@ class TestFieldMergesErrors:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 field_merges=(MergeRule(F[Config].value, strategy),),
             ),
@@ -662,8 +662,8 @@ class TestFieldMergesErrors:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
@@ -697,8 +697,8 @@ class TestFieldMergesErrors:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(a)),
-                        LoadMetadata(file_=str(b)),
+                        LoadMetadata(file_=a),
+                        LoadMetadata(file_=b),
                     ),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
@@ -720,8 +720,8 @@ class TestFieldMergesErrors:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),),
             ),
@@ -748,9 +748,9 @@ class TestFieldMergesErrors:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
             ),
@@ -776,9 +776,9 @@ class TestFieldMergesErrors:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].priority, max),),
             ),
@@ -804,9 +804,9 @@ class TestFieldMergesErrors:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].priority, min),),
             ),
@@ -836,8 +836,8 @@ class TestFieldMergesSameFieldNameNested:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(
                     MergeRule(F[Config].user_name, FieldMergeStrategy.FIRST_WINS),
@@ -869,8 +869,8 @@ class TestFieldMergesSameFieldNameNested:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(defaults)),
-                    LoadMetadata(file_=str(overrides)),
+                    LoadMetadata(file_=defaults),
+                    LoadMetadata(file_=overrides),
                 ),
                 field_merges=(
                     MergeRule(F[Config].user_name, FieldMergeStrategy.LAST_WINS),
@@ -899,8 +899,8 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
@@ -926,9 +926,9 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
@@ -954,9 +954,9 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].weight, lambda vals: sum(vals) / len(vals)),),
             ),
@@ -982,9 +982,9 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].priority, max),),
             ),
@@ -1014,9 +1014,9 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].database.port, max),),
             ),
@@ -1035,7 +1035,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             MergeMetadata(
-                sources=(LoadMetadata(file_=str(a)),),
+                sources=(LoadMetadata(file_=a),),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
             Config,
@@ -1058,8 +1058,8 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].score, sum),),
@@ -1086,8 +1086,8 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
                 ),
                 field_merges=(
                     MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
@@ -1120,9 +1120,9 @@ class TestCallableMergeStrategy:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(a)),
-                    LoadMetadata(file_=str(b)),
-                    LoadMetadata(file_=str(c)),
+                    LoadMetadata(file_=a),
+                    LoadMetadata(file_=b),
+                    LoadMetadata(file_=c),
                 ),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),

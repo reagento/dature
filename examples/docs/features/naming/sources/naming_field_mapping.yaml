@@ -1,0 +1,3 @@
+db_url: "postgresql://localhost:5432/mydb"
+key: "my-secret-key"
+pool: 10

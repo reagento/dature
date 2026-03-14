@@ -27,8 +27,8 @@ class TestMergeSkipInvalidFields:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(source1)),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source1),
+                    LoadMetadata(file_=source2),
                 ),
                 skip_invalid_fields=True,
             ),
@@ -53,8 +53,8 @@ class TestMergeSkipInvalidFields:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(source1)),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source1),
+                    LoadMetadata(file_=source2),
                 ),
                 skip_invalid_fields=True,
             ),
@@ -80,8 +80,8 @@ class TestMergeSkipInvalidFields:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(source1)),
-                        LoadMetadata(file_=str(source2)),
+                        LoadMetadata(file_=source1),
+                        LoadMetadata(file_=source2),
                     ),
                     skip_invalid_fields=True,
                 ),
@@ -94,6 +94,8 @@ class TestMergeSkipInvalidFields:
             Config loading errors (1)
 
               [port]  Missing required field (invalid in: json '{source1}', json '{source2}')
+               └── FILE '{source1}', line 1
+                   {{"host": "localhost", "port": "abc"}}
                └── FILE '{source2}', line 1
                    {{"port": "def"}}
             """)
@@ -117,8 +119,8 @@ class TestMergeSkipInvalidFields:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(source1)),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source1),
+                    LoadMetadata(file_=source2),
                 ),
                 skip_invalid_fields=True,
             ),
@@ -143,8 +145,8 @@ class TestMergeSkipInvalidFields:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(source1), skip_if_invalid=True),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source1, skip_if_invalid=True),
+                    LoadMetadata(file_=source2),
                 ),
             ),
             Config,
@@ -168,8 +170,8 @@ class TestMergeSkipInvalidFields:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(source1)),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source1),
+                    LoadMetadata(file_=source2),
                 ),
                 skip_invalid_fields=True,
             ),
@@ -191,7 +193,7 @@ class TestMergeSkipInvalidFields:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 MergeMetadata(
-                    sources=(LoadMetadata(file_=str(source1)),),
+                    sources=(LoadMetadata(file_=source1),),
                 ),
                 Config,
             )
@@ -221,8 +223,8 @@ class TestMergeSkipInvalidFields:
         result = load(
             MergeMetadata(
                 sources=(
-                    LoadMetadata(file_=str(source1)),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source1),
+                    LoadMetadata(file_=source2),
                 ),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 skip_invalid_fields=True,
@@ -250,10 +252,10 @@ class TestMergeSkipInvalidFields:
             MergeMetadata(
                 sources=(
                     LoadMetadata(
-                        file_=str(source1),
+                        file_=source1,
                         skip_if_invalid=(F[Config].port, F[Config].timeout),
                     ),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source2),
                 ),
             ),
             Config,
@@ -277,7 +279,7 @@ class TestMergeSkipInvalidFields:
                 MergeMetadata(
                     sources=(
                         LoadMetadata(
-                            file_=str(source1),
+                            file_=source1,
                             skip_if_invalid=(F[Config].port,),
                         ),
                     ),
@@ -311,8 +313,8 @@ class TestMergeSkipInvalidFields:
             load(
                 MergeMetadata(
                     sources=(
-                        LoadMetadata(file_=str(source1)),
-                        LoadMetadata(file_=str(source2)),
+                        LoadMetadata(file_=source1),
+                        LoadMetadata(file_=source2),
                     ),
                     skip_invalid_fields=True,
                 ),
@@ -337,7 +339,7 @@ class TestSingleSourceSkipInvalidFields:
             port: int = 8080
 
         result = load(
-            LoadMetadata(file_=str(json_file), skip_if_invalid=True),
+            LoadMetadata(file_=json_file, skip_if_invalid=True),
             Config,
         )
 
@@ -355,7 +357,7 @@ class TestSingleSourceSkipInvalidFields:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                LoadMetadata(file_=str(json_file), skip_if_invalid=True),
+                LoadMetadata(file_=json_file, skip_if_invalid=True),
                 Config,
             )
 
@@ -373,7 +375,7 @@ class TestSingleSourceSkipInvalidFields:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"host": "localhost", "port": "abc"}')
 
-        @load(LoadMetadata(file_=str(json_file), skip_if_invalid=True))
+        @load(LoadMetadata(file_=json_file, skip_if_invalid=True))
         @dataclass
         class Config:
             host: str
@@ -395,7 +397,7 @@ class TestSingleSourceSkipInvalidFields:
 
         result = load(
             LoadMetadata(
-                file_=str(json_file),
+                file_=json_file,
                 skip_if_invalid=(F[Config].port,),
             ),
             Config,
@@ -416,7 +418,7 @@ class TestSingleSourceSkipInvalidFields:
 
         with caplog.at_level(logging.WARNING, logger="dature"):
             load(
-                LoadMetadata(file_=str(json_file), skip_if_invalid=True),
+                LoadMetadata(file_=json_file, skip_if_invalid=True),
                 Config,
             )
 
@@ -440,7 +442,7 @@ class TestSkipInvalidSameFieldNameNested:
 
         result = load(
             LoadMetadata(
-                file_=str(source),
+                file_=source,
                 skip_if_invalid=(F[Config].port,),
             ),
             Config,
@@ -469,10 +471,10 @@ class TestSkipInvalidSameFieldNameNested:
             MergeMetadata(
                 sources=(
                     LoadMetadata(
-                        file_=str(source1),
+                        file_=source1,
                         skip_if_invalid=(F[Config].inner.port,),
                     ),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source2),
                 ),
             ),
             Config,
@@ -501,10 +503,10 @@ class TestSkipInvalidSameFieldNameNested:
             MergeMetadata(
                 sources=(
                     LoadMetadata(
-                        file_=str(source1),
+                        file_=source1,
                         skip_if_invalid=(F[Config].port, F[Config].inner.port),
                     ),
-                    LoadMetadata(file_=str(source2)),
+                    LoadMetadata(file_=source2),
                 ),
             ),
             Config,

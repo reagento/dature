@@ -44,14 +44,24 @@ def test_complex_from_string(input_value, expected):
 @pytest.mark.parametrize(
     ("input_value", "expected"),
     [
+        ("2:30", timedelta(hours=2, minutes=30)),
         ("2:30:00", timedelta(hours=2, minutes=30)),
         ("0:00:01", timedelta(seconds=1)),
         ("0:45:00", timedelta(minutes=45)),
+        ("2:03:04.500000", timedelta(hours=2, minutes=3, seconds=4, microseconds=500000)),
         ("1 day, 2:30:00", timedelta(days=1, hours=2, minutes=30)),
         ("2 days, 0:00:00", timedelta(days=2)),
         ("1 day, 2:03:04.500000", timedelta(days=1, hours=2, minutes=3, seconds=4, microseconds=500000)),
+        ("2 days 1:02:03.500000", timedelta(days=2, hours=1, minutes=2, seconds=3, microseconds=500000)),
+        ("1 day 2:03:04.500000", timedelta(days=1, hours=2, minutes=3, seconds=4, microseconds=500000)),
+        ("2 days 1:02:03", timedelta(days=2, hours=1, minutes=2, seconds=3)),
+        ("1 day 2:30:00", timedelta(days=1, hours=2, minutes=30)),
+        ("3 days", timedelta(days=3)),
+        ("1 day", timedelta(days=1)),
         ("-1 day, 23:59:59", timedelta(days=-1, hours=23, minutes=59, seconds=59)),
         ("-2 days, 23:59:59", timedelta(days=-2, hours=23, minutes=59, seconds=59)),
+        ("-1 day 23:59:59", timedelta(days=-1, hours=23, minutes=59, seconds=59)),
+        ("-2 days 1:02:03", timedelta(days=-2, hours=1, minutes=2, seconds=3)),
     ],
 )
 def test_timedelta_from_string(input_value: str, expected: timedelta):

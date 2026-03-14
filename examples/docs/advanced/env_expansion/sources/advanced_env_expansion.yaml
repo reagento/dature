@@ -1,0 +1,7 @@
+simple: "$APP_HOST"
+braced: "${APP_HOST}"
+fallback_string: "${DATABASE_URL:-postgres://localhost:5432/dev}"
+fallback_var: "${DATABASE_URL:-$FALLBACK_DB_URL}"
+windows: "%APP_HOST%"
+escape_dollar: "$$100"
+escape_percent: "100%%"

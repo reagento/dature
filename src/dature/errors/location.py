@@ -16,6 +16,7 @@ class ErrorContext:
     split_symbols: str
     path_finder_class: type[PathFinder] | None
     secret_paths: frozenset[str] = frozenset()
+    mask_secrets: bool = False
 
 
 def read_file_content(file_path: Path | None) -> str | None:

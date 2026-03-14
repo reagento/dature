@@ -11,10 +11,10 @@ from dature.load_report import SourceEntry
 from dature.loading.context import apply_skip_invalid, build_error_ctx
 from dature.loading.resolver import resolve_loader, resolve_loader_class
 from dature.masking.masking import mask_json_value
-from dature.metadata import LoadMetadata, MergeMetadata
+from dature.metadata import LoadMetadata, MergeMetadata, TypeLoader
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.skip_field_provider import FilterResult
-from dature.types import ExpandEnvVarsMode, JSONValue
+from dature.types import FILE_LIKE_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue
 
 logger = logging.getLogger("dature")
 
@@ -25,14 +25,19 @@ def resolve_loader_for_source(
     index: int,
     source_meta: LoadMetadata,
     expand_env_vars: ExpandEnvVarsMode | None = None,
+    type_loaders: "tuple[TypeLoader, ...]" = (),
 ) -> LoaderProtocol:
     if loaders is not None:
         return loaders[index]
-    return resolve_loader(source_meta, expand_env_vars=expand_env_vars)
+    return resolve_loader(source_meta, expand_env_vars=expand_env_vars, type_loaders=type_loaders)
 
 
 def should_skip_broken(source_meta: LoadMetadata, merge_meta: MergeMetadata) -> bool:
     if source_meta.skip_if_broken is not None:
+        if source_meta.file_ is None:
+            logger.warning(
+                "skip_if_broken has no effect on environment variable sources — they cannot be broken",
+            )
         return source_meta.skip_if_broken
     return merge_meta.skip_broken_sources
 
@@ -89,40 +94,66 @@ def apply_merge_skip_invalid(
 
 
 @dataclass(frozen=True, slots=True)
+class SourceContext:
+    error_ctx: ErrorContext
+    file_content: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SkippedFieldSource:
+    metadata: LoadMetadata
+    error_ctx: ErrorContext
+    file_content: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class LoadedSources:
     raw_dicts: list[JSONValue]
-    source_ctxs: list[tuple[ErrorContext, str | None]]
+    source_ctxs: list[SourceContext]
     source_entries: list[SourceEntry]
     last_loader: LoaderProtocol
-    skipped_fields: dict[str, list[LoadMetadata]]
+    skipped_fields: dict[str, list[SkippedFieldSource]]
 
 
-def load_sources(  # noqa: C901
+def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
     *,
     merge_meta: MergeMetadata,
     dataclass_name: str,
     dataclass_: type[DataclassInstance],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     secret_paths: frozenset[str] = frozenset(),
+    mask_secrets: bool = False,
+    type_loaders: "tuple[TypeLoader, ...]" = (),
 ) -> LoadedSources:
     raw_dicts: list[JSONValue] = []
-    source_ctxs: list[tuple[ErrorContext, str | None]] = []
+    source_ctxs: list[SourceContext] = []
     source_entries: list[SourceEntry] = []
     last_loader: LoaderProtocol | None = None
-    skipped_fields: dict[str, list[LoadMetadata]] = {}
+    skipped_fields: dict[str, list[SkippedFieldSource]] = {}
 
     for i, source_meta in enumerate(merge_meta.sources):
         resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
+        source_type_loaders = (source_meta.type_loaders or ()) + type_loaders
         loader_instance = resolve_loader_for_source(
             loaders=loaders,
             index=i,
             source_meta=source_meta,
             expand_env_vars=resolved_expand,
+            type_loaders=source_type_loaders,
         )
-        file_path = Path(source_meta.file_) if source_meta.file_ else Path()
-        error_ctx = build_error_ctx(source_meta, dataclass_name, secret_paths=secret_paths)
+        file_or_path: FileOrStream
+        if isinstance(source_meta.file_, FILE_LIKE_TYPES):
+            file_or_path = source_meta.file_
+        elif source_meta.file_ is not None:
+            file_or_path = Path(source_meta.file_)
+        else:
+            file_or_path = Path()
+        error_ctx = build_error_ctx(source_meta, dataclass_name, secret_paths=secret_paths, mask_secrets=mask_secrets)
 
-        def _load_raw(li: LoaderProtocol = loader_instance, fp: Path = file_path) -> JSONValue:
+        def _load_raw(
+            li: LoaderProtocol = loader_instance,
+            fp: FileOrStream = file_or_path,
+        ) -> JSONValue:
             return li.load_raw(fp)
 
         try:
@@ -137,7 +168,9 @@ def load_sources(  # noqa: C901
                 "[%s] Source %d skipped (broken): file=%s",
                 dataclass_name,
                 i,
-                source_meta.file_ or "<env>",
+                source_meta.file_
+                if isinstance(source_meta.file_, (str, Path))
+                else ("<stream>" if source_meta.file_ is not None else "<env>"),
             )
             continue
         except Exception as exc:
@@ -159,9 +192,13 @@ def load_sources(  # noqa: C901
                 "[%s] Source %d skipped (broken): file=%s",
                 dataclass_name,
                 i,
-                source_meta.file_ or "<env>",
+                source_meta.file_
+                if isinstance(source_meta.file_, (str, Path))
+                else ("<stream>" if source_meta.file_ is not None else "<env>"),
             )
             continue
+
+        file_content = read_file_content(error_ctx.file_path)
 
         filter_result = apply_merge_skip_invalid(
             raw=raw,
@@ -173,7 +210,9 @@ def load_sources(  # noqa: C901
         )
 
         for path in filter_result.skipped_paths:
-            skipped_fields.setdefault(path, []).append(source_meta)
+            skipped_fields.setdefault(path, []).append(
+                SkippedFieldSource(metadata=source_meta, error_ctx=error_ctx, file_content=file_content),
+            )
 
         raw = filter_result.cleaned_dict
         raw_dicts.append(raw)
@@ -186,7 +225,9 @@ def load_sources(  # noqa: C901
             dataclass_name,
             i,
             display_name,
-            source_meta.file_ or "<env>",
+            source_meta.file_
+            if isinstance(source_meta.file_, (str, Path))
+            else ("<stream>" if source_meta.file_ is not None else "<env>"),
             sorted(raw.keys()) if isinstance(raw, dict) else "<non-dict>",
         )
         if secret_paths:
@@ -203,14 +244,13 @@ def load_sources(  # noqa: C901
         source_entries.append(
             SourceEntry(
                 index=i,
-                file_path=source_meta.file_,
+                file_path=str(source_meta.file_) if isinstance(source_meta.file_, (str, Path)) else None,
                 loader_type=display_name,
                 raw_data=raw,
             ),
         )
 
-        file_content = read_file_content(error_ctx.file_path)
-        source_ctxs.append((error_ctx, file_content))
+        source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
         last_loader = loader_instance
 
     if last_loader is None:

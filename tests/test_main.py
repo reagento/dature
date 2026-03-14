@@ -23,7 +23,7 @@ class TestLoadAsDecorator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "FromFile", "port": 8080}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         @load(metadata)
         @dataclass
@@ -66,7 +66,7 @@ class TestLoadAsDecorator:
         txt_file = tmp_path / "config.txt"
         txt_file.write_text('{"app_name": "OverrideApp"}')
 
-        metadata = LoadMetadata(file_=str(txt_file), loader=JsonLoader)
+        metadata = LoadMetadata(file_=txt_file, loader=JsonLoader)
 
         @load(metadata)
         @dataclass
@@ -107,7 +107,7 @@ class TestCache:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         @load(metadata)
         @dataclass
@@ -126,7 +126,7 @@ class TestCache:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         @load(metadata, cache=False)
         @dataclass
@@ -152,7 +152,7 @@ class TestLoadAsFunction:
             name: str
             port: int
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.name == "FromFile"

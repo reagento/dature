@@ -21,6 +21,7 @@ datetime_value_with_z_timezone: 2024-01-15T10:30:00Z
 time_value: 10:30:00
 timedelta_value_with_day: "1 day, 2:30:00"
 timedelta_value_without_day: "2:30:00"
+timedelta_value_without_seconds: "2:30"
 
 # LISTS
 list_strings:
@@ -169,3 +170,13 @@ nested_dc_tuple:
 
 # FROZENSET (as list, adaptix will convert)
 frozenset_value: [1, 2, 3, 4, 5]
+
+# ENUM/FLAG/LITERAL
+enum_value: "green"
+flag_value: 3
+literal_value: "info"
+
+# ADDITIONAL STDLIB TYPES
+regex_pattern: "^[a-z]+$"
+fraction_value: "1/3"
+deque_value: [first, second, third]

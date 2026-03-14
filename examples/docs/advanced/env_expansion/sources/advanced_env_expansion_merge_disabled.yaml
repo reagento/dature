@@ -1,0 +1,2 @@
+disabled_set_url: "$KNOWN_HOST/api"
+disabled_unset_url: "$UNSET_VAR/api"

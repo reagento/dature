@@ -47,7 +47,7 @@ class PaymentCardNumber:
         cleaned = card_number.replace(" ", "").replace("-", "")
 
         if not cleaned.isdigit():
-            msg = f"Card number must contain only digits, got: {card_number!r}"
+            msg = "Card number must contain only digits"
             raise ValueError(msg)
 
         if not (self._MIN_LENGTH <= len(cleaned) <= self._MAX_LENGTH):
@@ -55,10 +55,13 @@ class PaymentCardNumber:
             raise ValueError(msg)
 
         if not self._luhn_check(cleaned):
-            msg = f"Card number failed Luhn check: {card_number!r}"
+            msg = "Card number failed Luhn check"
             raise ValueError(msg)
 
         self._number = cleaned
+
+    def get_raw_number(self) -> str:
+        return self._number
 
     @staticmethod
     def _luhn_check(number: str) -> bool:

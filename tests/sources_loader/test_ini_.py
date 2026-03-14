@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from dature import LoadMetadata, load
 from dature.sources_loader.ini_ import IniLoader
 from examples.all_types_dataclass import (
     EXPECTED_ALL_TYPES,
@@ -19,8 +20,10 @@ class TestIniLoader:
 
     def test_comprehensive_type_conversion(self, all_types_ini_file: Path):
         """Test loading INI with full type coercion to dataclass."""
-        loader = IniLoader(prefix="all_types")
-        result = loader.load(all_types_ini_file, AllPythonTypesCompact)
+        result = load(
+            LoadMetadata(file_=all_types_ini_file, loader=IniLoader, prefix="all_types"),
+            AllPythonTypesCompact,
+        )
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -57,8 +60,11 @@ class TestIniLoader:
             debug=False,
             environment="production",
         )
-        loader = IniLoader(prefix="app")
-        result = loader.load(prefixed_ini_file, PrefixedConfig)
+
+        result = load(
+            LoadMetadata(file_=prefixed_ini_file, loader=IniLoader, prefix="app"),
+            PrefixedConfig,
+        )
 
         assert result == expected_data
 
@@ -84,8 +90,10 @@ class TestIniLoader:
             host: str
             port: int
 
-        loader = IniLoader(prefix="database")
-        result = loader.load(ini_file, DbConfig)
+        result = load(
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="database"),
+            DbConfig,
+        )
 
         assert result.host == "db.example.com"
         assert result.port == 5432
@@ -101,8 +109,10 @@ class TestIniLoader:
         class Config:
             url: str
 
-        loader = IniLoader(prefix="section")
-        result = loader.load(ini_file, Config)
+        result = load(
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="section"),
+            Config,
+        )
 
         assert result.url == "http://localhost:8080/api"
 
@@ -116,8 +126,10 @@ class TestIniLoader:
         class Config:
             value: str
 
-        loader = IniLoader(prefix="section")
-        result = loader.load(ini_file, Config)
+        result = load(
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="section"),
+            Config,
+        )
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -131,7 +143,9 @@ class TestIniLoader:
         class Config:
             value: str
 
-        loader = IniLoader(prefix="section")
-        result = loader.load(ini_file, Config)
+        result = load(
+            LoadMetadata(file_=ini_file, loader=IniLoader, prefix="section"),
+            Config,
+        )
 
         assert result.value == "prefix$nonexistent/suffix"

@@ -23,7 +23,7 @@ class TestMultipleFields:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice", "age": 30, "tags": ["python", "coding"]}')
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.name == "Alice"
@@ -41,7 +41,7 @@ class TestMultipleFields:
         content = '{"name": "AB", "age": 200, "tags": []}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -83,7 +83,7 @@ class TestNestedDataclass:
             '{"name": "Alice", "age": 30, "address": {"city": "NYC", "zip_code": "12345"}}',
         )
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, User)
 
         assert result.name == "Alice"
@@ -107,7 +107,7 @@ class TestNestedDataclass:
         content = '{"name": "Al", "age": 15, "address": {"city": "N", "zip_code": "ABCDE"}}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, User)
@@ -145,7 +145,7 @@ class TestCustomErrorMessage:
         content = '{"age": 15}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -172,7 +172,7 @@ class TestDictListDict:
             '{"groups": {"admins": [{"name": "Alice"}]}}',
         )
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.groups == {"admins": [{"name": "Alice"}]}
@@ -186,7 +186,7 @@ class TestDictListDict:
         content = '{"groups": {}}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -216,7 +216,7 @@ class TestDictListDict:
             '{"teams": {"backend": [{"name": "Alice", "role": "admin"}]}}',
         )
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
         result = load(metadata, Config)
 
         assert result.teams["backend"][0].name == "Alice"
@@ -236,7 +236,7 @@ class TestDictListDict:
         content = '{"teams": {"backend": [{"name": "A", "role": "ab"}]}}'
         json_file.write_text(content)
 
-        metadata = LoadMetadata(file_=str(json_file))
+        metadata = LoadMetadata(file_=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
