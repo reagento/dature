@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+<!-- PR #38 -->
+### Fixes
+- Fixed the Read the Docs configuration in the CI workflow to ensure proper documentation generation.
+<!-- PR #38 -->
+
 ## 0.12.1
 
 ### Improvements
