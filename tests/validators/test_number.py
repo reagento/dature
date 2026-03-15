@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated
 
 import pytest
@@ -40,13 +39,10 @@ class TestGt:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [age]  Value must be greater than 18
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [age]  Value must be greater than 18\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestGe:
@@ -79,13 +75,10 @@ class TestGe:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [age]  Value must be greater than or equal to 18
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [age]  Value must be greater than or equal to 18\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestLt:
@@ -118,13 +111,10 @@ class TestLt:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [age]  Value must be less than 100
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [age]  Value must be less than 100\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestLe:
@@ -157,13 +147,10 @@ class TestLe:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [age]  Value must be less than or equal to 100
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [age]  Value must be less than or equal to 100\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestCombined:
@@ -196,10 +183,7 @@ class TestCombined:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [age]  Value must be less than or equal to 65
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [age]  Value must be less than or equal to 65\n   └── FILE '{json_file}', line 1\n       {content}"
+        )

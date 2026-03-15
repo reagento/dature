@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated
 
 import pytest
@@ -70,13 +69,10 @@ class TestCustomFieldValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [count]  Value must be divisible by 5
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [count]  Value must be divisible by 5\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_custom_error_message(self, tmp_path: Path):
         @dataclass
@@ -94,13 +90,10 @@ class TestCustomFieldValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [count]  Must be a multiple of 3
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [count]  Must be a multiple of 3\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestCustomStringValidator:
@@ -133,13 +126,10 @@ class TestCustomStringValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [url]  Value must start with 'https://'
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [url]  Value must start with 'https://'\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestCustomValidatorWithDecorator:
@@ -170,13 +160,10 @@ class TestCustomValidatorWithDecorator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Value must be divisible by 10
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [port]  Value must be divisible by 10\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_direct_instantiation_validates(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -193,13 +180,10 @@ class TestCustomValidatorWithDecorator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Value must be divisible by 10
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [port]  Value must be divisible by 10\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestMultipleCustomValidators:
@@ -235,14 +219,10 @@ class TestMultipleCustomValidators:
 
         e = exc_info.value
         assert len(e.exceptions) == 2
-        assert str(e) == dedent(f"""\
-            Config loading errors (2)
-
-              [count]  Value must be divisible by 5
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [url]  Value must start with 'https://'
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (2)"
+        assert str(e.exceptions[0]) == (
+            f"  [count]  Value must be divisible by 5\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
+        assert str(e.exceptions[1]) == (
+            f"  [url]  Value must start with 'https://'\n   └── FILE '{json_file}', line 1\n       {content}"
+        )

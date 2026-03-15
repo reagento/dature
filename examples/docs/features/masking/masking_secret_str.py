@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 from dature import LoadMetadata, load
 from dature.errors.exceptions import DatureConfigError
@@ -26,12 +25,12 @@ try:
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_secret_str.yaml")
-    assert str(exc) == dedent(f"""\
-    Config loading errors (1)
-
-      [card_number]  Card number must contain only digits
-       └── FILE '{source}', line 2
-           card_number: "no*****er"
-    """)
+    assert str(exc) == "Config loading errors (1)"
+    assert len(exc.exceptions) == 1
+    assert str(exc.exceptions[0]) == (
+        "  [card_number]  Card number must contain only digits\n"
+        f"   └── FILE '{source}', line 2\n"
+        '       card_number: "no*****er"'
+    )
 else:
     raise AssertionError("Expected DatureConfigError")

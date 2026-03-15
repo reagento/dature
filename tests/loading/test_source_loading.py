@@ -85,11 +85,8 @@ class TestSkipBrokenSources:
                 Config,
             )
 
-        assert str(exc_info.value) == dedent("""\
-            Config loading errors (1)
-
-              [<root>]  All 2 source(s) failed to load
-            """)
+        assert str(exc_info.value) == "Config loading errors (1)"
+        assert str(exc_info.value.exceptions[0]) == "All 2 source(s) failed to load"
 
     def test_broken_source_without_flag_raises(self, tmp_path: Path):
         valid = tmp_path / "valid.json"
@@ -230,11 +227,8 @@ class TestSkipBrokenSources:
                 Config,
             )
 
-        assert str(exc_info.value) == dedent("""\
-            Config loading errors (1)
-
-              [<root>]  MergeMetadata.sources must not be empty
-            """)
+        assert str(exc_info.value) == "Config loading errors (1)"
+        assert str(exc_info.value.exceptions[0]) == "MergeMetadata.sources must not be empty"
 
     def test_all_sources_broken_mixed_errors(self, tmp_path: Path):
         missing = str(tmp_path / "does_not_exist.json")
@@ -258,11 +252,8 @@ class TestSkipBrokenSources:
                 Config,
             )
 
-        assert str(exc_info.value) == dedent("""\
-            Config loading errors (1)
-
-              [<root>]  All 2 source(s) failed to load
-            """)
+        assert str(exc_info.value) == "Config loading errors (1)"
+        assert str(exc_info.value.exceptions[0]) == "All 2 source(s) failed to load"
 
 
 class TestMergeExpandEnvVars:

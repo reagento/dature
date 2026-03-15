@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated
 
 import pytest
@@ -40,13 +39,10 @@ class TestMinLength:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [name]  Value must have at least 5 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at least 5 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestMaxLength:
@@ -79,13 +75,10 @@ class TestMaxLength:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [name]  Value must have at most 5 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at most 5 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestRegexPattern:
@@ -118,13 +111,12 @@ class TestRegexPattern:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [email]  Value must match pattern '^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$'
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            "  [email]  Value must match pattern '^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$'\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )
 
 
 class TestCombined:
@@ -157,10 +149,7 @@ class TestCombined:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [username]  Value must have at most 20 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [username]  Value must have at most 20 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )

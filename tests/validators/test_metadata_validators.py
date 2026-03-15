@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated
 
 import pytest
@@ -94,13 +93,10 @@ class TestMetadataValidatorsFailure:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [name]  Value must have at least 3 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at least 3 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_tuple_validator_fails(self, tmp_path: Path):
         @dataclass
@@ -123,13 +119,10 @@ class TestMetadataValidatorsFailure:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Value must be greater than 0
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [port]  Value must be greater than 0\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestMetadataValidatorsNested:
@@ -184,13 +177,12 @@ class TestMetadataValidatorsNested:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [database.host]  Value must have at least 1 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            "  [database.host]  Value must have at least 1 characters\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )
 
 
 class TestMetadataValidatorsComplement:
@@ -236,13 +228,10 @@ class TestMetadataValidatorsComplement:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [name]  Value must have at least 5 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at least 5 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_metadata_validator_fails_with_annotated_present(self, tmp_path: Path):
         @dataclass
@@ -265,13 +254,10 @@ class TestMetadataValidatorsComplement:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [name]  Value must have at most 10 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at most 10 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_both_annotated_and_metadata_on_same_field_pass(self, tmp_path: Path):
         @dataclass
@@ -312,13 +298,10 @@ class TestMetadataValidatorsComplement:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [name]  Value must have at least 5 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at least 5 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_same_validator_type_in_annotated_and_metadata(self, tmp_path: Path):
         @dataclass
@@ -359,13 +342,12 @@ class TestMetadataValidatorsComplement:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Value must be greater than or equal to 1024
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            "  [port]  Value must be greater than or equal to 1024\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )
 
     def test_metadata_fails_while_annotated_passes(self, tmp_path: Path):
         @dataclass
@@ -388,13 +370,10 @@ class TestMetadataValidatorsComplement:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Value must be less than 65536
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [port]  Value must be less than 65536\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestMetadataValidatorsNone:

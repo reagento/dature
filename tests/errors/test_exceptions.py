@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
@@ -27,13 +26,10 @@ class TestDatureConfigErrorFormat:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent("""\
-            Config loading errors (1)
-
-              [timeout]  Expected int, got str
-               └── FILE 'config.toml', line 2
-                   timeout = "30"
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == (
+            "  [timeout]  Expected int, got str\n   └── FILE 'config.toml', line 2\n       timeout = \"30\""
+        )
 
     def test_multiple_errors_message(self):
         errors = [
@@ -67,16 +63,11 @@ class TestDatureConfigErrorFormat:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent("""\
-            Config loading errors (2)
-
-              [timeout]  Bad string format
-               └── FILE 'config.json', line 2
-                   "timeout": "abc"
-
-              [db.port]  Missing required field
-               └── FILE 'config.json'
-            """)
+        assert str(exc) == "Config loading errors (2)"
+        assert str(exc.exceptions[0]) == (
+            '  [timeout]  Bad string format\n   └── FILE \'config.json\', line 2\n       "timeout": "abc"'
+        )
+        assert str(exc.exceptions[1]) == ("  [db.port]  Missing required field\n   └── FILE 'config.json'")
 
     def test_env_error_message(self):
         errors = [
@@ -96,12 +87,8 @@ class TestDatureConfigErrorFormat:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent("""\
-            Config loading errors (1)
-
-              [database.port]  Bad string format
-               └── ENV 'APP_DATABASE__PORT'
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == ("  [database.port]  Bad string format\n   └── ENV 'APP_DATABASE__PORT'")
 
 
 class TestLoadIntegrationErrors:
@@ -125,13 +112,10 @@ class TestLoadIntegrationErrors:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert first.field_path == ["timeout"]
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [timeout]  Bad string format
-               └── FILE '{json_file}', line 1
-                   {json_file.read_text()}
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [timeout]  Bad string format\n   └── FILE '{json_file}', line 1\n       {json_file.read_text()}"
+        )
 
     def test_json_missing_field_function(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -152,12 +136,8 @@ class TestLoadIntegrationErrors:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert first.field_path == ["port"]
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Missing required field
-               └── FILE '{json_file}'
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (f"  [port]  Missing required field\n   └── FILE '{json_file}'")
 
     def test_multiple_errors_at_once(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -177,16 +157,13 @@ class TestLoadIntegrationErrors:
         assert len(err.exceptions) == 2
         paths = sorted(e.field_path for e in err.exceptions if isinstance(e, FieldLoadError))
         assert paths == [["name"], ["timeout"]]
-        assert str(err) == dedent(f"""\
-            Config loading errors (2)
-
-              [timeout]  Bad string format
-               └── FILE '{json_file}', line 1
-                   {json_file.read_text()}
-
-              [name]  Missing required field
-               └── FILE '{json_file}'
-            """)
+        assert str(err) == "Config loading errors (2)"
+        timeout_err = next(e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["timeout"])
+        name_err = next(e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["name"])
+        assert str(timeout_err) == (
+            f"  [timeout]  Bad string format\n   └── FILE '{json_file}', line 1\n       {json_file.read_text()}"
+        )
+        assert str(name_err) == (f"  [name]  Missing required field\n   └── FILE '{json_file}'")
 
     def test_nested_dataclass_error(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -211,13 +188,10 @@ class TestLoadIntegrationErrors:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert first.field_path == ["db", "port"]
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [db.port]  Bad string format
-               └── FILE '{json_file}', line 4
-                   "port": "abc"
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f'  [db.port]  Bad string format\n   └── FILE \'{json_file}\', line 4\n       "port": "abc"'
+        )
 
     def test_env_type_error(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("APP_TIMEOUT", "abc")
@@ -236,12 +210,8 @@ class TestLoadIntegrationErrors:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent("""\
-            Config loading errors (1)
-
-              [timeout]  Bad string format
-               └── ENV 'APP_TIMEOUT'
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == ("  [timeout]  Bad string format\n   └── ENV 'APP_TIMEOUT'")
 
     def test_toml_with_line_number(self, tmp_path: Path):
         toml_file = tmp_path / "config.toml"
@@ -263,13 +233,10 @@ class TestLoadIntegrationErrors:
         assert isinstance(first, FieldLoadError)
         assert first.locations
         assert first.locations[0].line_range == LineRange(start=2, end=2)
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [timeout]  Bad string format
-               └── FILE '{toml_file}', line 2
-                   timeout = "abc"
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [timeout]  Bad string format\n   └── FILE '{toml_file}', line 2\n       timeout = \"abc\""
+        )
 
     def test_json_with_line_number(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -290,13 +257,10 @@ class TestLoadIntegrationErrors:
         assert isinstance(first, FieldLoadError)
         assert first.locations
         assert first.locations[0].line_range == LineRange(start=3, end=3)
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [timeout]  Bad string format
-               └── FILE '{json_file}', line 3
-                   "timeout": "abc"
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f'  [timeout]  Bad string format\n   └── FILE \'{json_file}\', line 3\n       "timeout": "abc"'
+        )
 
 
 class TestLineTruncation:
@@ -342,13 +306,10 @@ class TestLineTruncation:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent(f"""\
-            Config loading errors (1)
-
-              [timeout]  Expected int, got str
-               └── FILE 'config.toml', line 2
-                   {expected_content}
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == (
+            f"  [timeout]  Expected int, got str\n   └── FILE 'config.toml', line 2\n       {expected_content}"
+        )
 
     @pytest.mark.parametrize(
         ("line_content", "expected_content"),
@@ -392,13 +353,10 @@ class TestLineTruncation:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent(f"""\
-            Config loading errors (1)
-
-              [timeout]  Bad string format
-               └── ENV FILE '.env', line 2
-                   {expected_content}
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == (
+            f"  [timeout]  Bad string format\n   └── ENV FILE '.env', line 2\n       {expected_content}"
+        )
 
     def test_multiline_content_each_line_truncated(self) -> None:
         line_short = "short line"
@@ -421,15 +379,14 @@ class TestLineTruncation:
         ]
         exc = DatureConfigError("Config", errors)
         truncated = "x" * 77 + "..."
-        assert str(exc) == dedent(f"""\
-            Config loading errors (1)
-
-              [db]  Expected int, got dict
-               └── FILE 'config.json', line 2-4
-                   {truncated}
-                   {line_short}
-                   {truncated}
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == (
+            "  [db]  Expected int, got dict\n"
+            "   └── FILE 'config.json', line 2-4\n"
+            f"       {truncated}\n"
+            f"       {line_short}\n"
+            f"       {truncated}"
+        )
 
     def test_four_lines_shows_two_and_ellipsis(self) -> None:
         errors = [
@@ -449,15 +406,14 @@ class TestLineTruncation:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent("""\
-            Config loading errors (1)
-
-              [db]  Expected int, got dict
-               └── FILE 'config.json', line 2-5
-                   line1
-                   line2
-                   ...
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == (
+            "  [db]  Expected int, got dict\n"
+            "   └── FILE 'config.json', line 2-5\n"
+            "       line1\n"
+            "       line2\n"
+            "       ..."
+        )
 
     def test_five_lines_shows_two_and_ellipsis(self) -> None:
         errors = [
@@ -477,15 +433,14 @@ class TestLineTruncation:
             ),
         ]
         exc = DatureConfigError("Config", errors)
-        assert str(exc) == dedent("""\
-            Config loading errors (1)
-
-              [db]  Expected int, got dict
-               └── FILE 'config.json', line 2-6
-                   line1
-                   line2
-                   ...
-            """)
+        assert str(exc) == "Config loading errors (1)"
+        assert str(exc.exceptions[0]) == (
+            "  [db]  Expected int, got dict\n"
+            "   └── FILE 'config.json', line 2-6\n"
+            "       line1\n"
+            "       line2\n"
+            "       ..."
+        )
 
 
 class TestMultilineValueDisplay:
@@ -503,15 +458,14 @@ class TestMultilineValueDisplay:
             load(metadata, Config)
 
         err = exc_info.value
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [db]  Expected int | float | str, got dict
-               └── FILE '{json_file}', line 2-5
-                   "db": {{
-                     "host": "localhost",
-                   ...
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            "  [db]  Expected int | float | str, got dict\n"
+            f"   └── FILE '{json_file}', line 2-5\n"
+            '       "db": {\n'
+            '         "host": "localhost",\n'
+            "       ..."
+        )
 
     def test_yaml_multiline_block(self, tmp_path: Path):
         yaml_file = tmp_path / "config.yaml"
@@ -528,15 +482,14 @@ class TestMultilineValueDisplay:
             load(metadata, Config)
 
         err = exc_info.value
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [db]  Expected int | float | str, got dict
-               └── FILE '{yaml_file}', line 1-3
-                   db:
-                     host: localhost
-                     port: abc
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            "  [db]  Expected int | float | str, got dict\n"
+            f"   └── FILE '{yaml_file}', line 1-3\n"
+            "       db:\n"
+            "         host: localhost\n"
+            "         port: abc"
+        )
 
     def test_toml_multiline_array(self, tmp_path: Path):
         toml_file = tmp_path / "config.toml"
@@ -552,15 +505,14 @@ class TestMultilineValueDisplay:
             load(metadata, Config)
 
         err = exc_info.value
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [tags]  Expected int | float | str, got list
-               └── FILE '{toml_file}', line 1-4
-                   tags = [
-                     "a",
-                   ...
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            "  [tags]  Expected int | float | str, got list\n"
+            f"   └── FILE '{toml_file}', line 1-4\n"
+            "       tags = [\n"
+            '         "a",\n'
+            "       ..."
+        )
 
     def test_json_multiline_array(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -576,15 +528,14 @@ class TestMultilineValueDisplay:
             load(metadata, Config)
 
         err = exc_info.value
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [tags]  Expected int | float | str, got list
-               └── FILE '{json_file}', line 2-5
-                   "tags": [
-                     "a",
-                   ...
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            "  [tags]  Expected int | float | str, got list\n"
+            f"   └── FILE '{json_file}', line 2-5\n"
+            '       "tags": [\n'
+            '         "a",\n'
+            "       ..."
+        )
 
     def test_toml_array_of_tables_success(self, array_of_tables_toml_file: Path):
         @dataclass
@@ -624,13 +575,12 @@ class TestMultilineValueDisplay:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [product.0.sku]  Bad string format
-               └── FILE '{array_of_tables_error_first_toml_file}', line 3
-                   sku = "not_a_number"
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            "  [product.0.sku]  Bad string format\n"
+            f"   └── FILE '{array_of_tables_error_first_toml_file}', line 3\n"
+            '       sku = "not_a_number"'
+        )
 
     def test_toml_array_of_tables_error_last_element(self, array_of_tables_error_last_toml_file: Path):
         @dataclass
@@ -649,10 +599,9 @@ class TestMultilineValueDisplay:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [product.1.sku]  Bad string format
-               └── FILE '{array_of_tables_error_last_toml_file}', line 7
-                   sku = "not_a_number"
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            "  [product.1.sku]  Bad string format\n"
+            f"   └── FILE '{array_of_tables_error_last_toml_file}', line 7\n"
+            '       sku = "not_a_number"'
+        )

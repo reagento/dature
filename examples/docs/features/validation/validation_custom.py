@@ -3,7 +3,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated
 
 from dature import LoadMetadata, load
@@ -43,10 +42,8 @@ try:
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "validation_custom_invalid.json5")
-    assert str(exc) == dedent(f"""\
-        ServiceConfig loading errors (1)
-
-          [workers]  Value must be divisible by 2
-           └── FILE '{source}', line 5
-               workers: 3,
-        """)
+    assert str(exc) == "ServiceConfig loading errors (1)"
+    assert len(exc.exceptions) == 1
+    assert str(exc.exceptions[0]) == (
+        f"  [workers]  Value must be divisible by 2\n   └── FILE '{source}', line 5\n       workers: 3,"
+    )

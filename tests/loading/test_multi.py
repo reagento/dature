@@ -221,12 +221,8 @@ class TestMergeLoadAsFunction:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent("""\
-            Config loading errors (1)
-
-              [port]  Missing required field
-               └── ENV 'APP_PORT'
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == ("  [port]  Missing required field\n   └── ENV 'APP_PORT'")
 
     def test_missing_field_in_all_sources(self, tmp_path: Path):
         a = tmp_path / "a.json"
@@ -253,12 +249,8 @@ class TestMergeLoadAsFunction:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Missing required field
-               └── FILE '{b}'
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (f"  [port]  Missing required field\n   └── FILE '{b}'")
 
     def test_backward_compat_single_load_metadata(self, tmp_path: Path):
         json_file = tmp_path / "config.json"

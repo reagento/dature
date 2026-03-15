@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 from dature import LoadMetadata, load
 from dature.errors.exceptions import DatureConfigError
@@ -39,9 +38,8 @@ try:
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "validation_root_invalid.yaml")
-    assert str(exc) == dedent(f"""\
-        Config loading errors (1)
-
-          [<root>]  debug=True is not allowed on non-localhost hosts
-           └── FILE '{source}'
-        """)
+    assert str(exc) == "Config loading errors (1)"
+    assert len(exc.exceptions) == 1
+    assert str(exc.exceptions[0]) == (
+        f"  [<root>]  debug=True is not allowed on non-localhost hosts\n   └── FILE '{source}'"
+    )

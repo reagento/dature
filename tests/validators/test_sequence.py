@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated
 
 import pytest
@@ -40,13 +39,10 @@ class TestMinItems:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [tags]  Value must have at least 3 items
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [tags]  Value must have at least 3 items\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestMaxItems:
@@ -79,13 +75,10 @@ class TestMaxItems:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [tags]  Value must have at most 2 items
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [tags]  Value must have at most 2 items\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestUniqueItems:
@@ -118,13 +111,10 @@ class TestUniqueItems:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [tags]  Value must contain unique items
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [tags]  Value must contain unique items\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestCombined:
@@ -157,10 +147,7 @@ class TestCombined:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [tags]  Value must have at most 5 items
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [tags]  Value must have at most 5 items\n   └── FILE '{json_file}', line 1\n       {content}"
+        )

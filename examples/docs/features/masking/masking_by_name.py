@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Literal
 
 from dature import LoadMetadata, load
@@ -21,12 +20,10 @@ try:
     load(LoadMetadata(file_=SOURCES_DIR / "masking_by_name.yaml"), Config)
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_by_name.yaml")
-    assert str(exc) == dedent(f"""\
-    Config loading errors (1)
-
-      [password]  Invalid variant: 'my*****rd'
-       └── FILE '{source}', line 1
-           password: "my*****rd"
-    """)
+    assert str(exc) == "Config loading errors (1)"
+    assert len(exc.exceptions) == 1
+    assert str(exc.exceptions[0]) == (
+        f"  [password]  Invalid variant: 'my*****rd'\n   └── FILE '{source}', line 1\n       password: \"my*****rd\""
+    )
 else:
     raise AssertionError("Expected DatureConfigError")

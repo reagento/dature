@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
@@ -57,12 +56,8 @@ class TestRootValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [<root>]  Root validation failed
-               └── FILE '{json_file}'
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (f"  [<root>]  Root validation failed\n   └── FILE '{json_file}'")
 
     def test_multiple_root_validators(self, tmp_path: Path):
         @dataclass
@@ -122,12 +117,8 @@ class TestRootValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [<root>]  Root validation failed
-               └── FILE '{json_file}'
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (f"  [<root>]  Root validation failed\n   └── FILE '{json_file}'")
 
     def test_root_validator_privileged_port(self, tmp_path: Path):
         @dataclass
@@ -151,12 +142,8 @@ class TestRootValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [<root>]  Root validation failed
-               └── FILE '{json_file}'
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (f"  [<root>]  Root validation failed\n   └── FILE '{json_file}'")
 
     def test_root_validator_with_decorator(self, tmp_path: Path):
         def validate_credentials(obj) -> bool:
@@ -183,12 +170,8 @@ class TestRootValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Credentials loading errors (1)
-
-              [<root>]  Root validation failed
-               └── FILE '{json_file}'
-            """)
+        assert str(e) == "Credentials loading errors (1)"
+        assert str(e.exceptions[0]) == (f"  [<root>]  Root validation failed\n   └── FILE '{json_file}'")
 
     def test_custom_error_message(self, tmp_path: Path):
         @dataclass
@@ -219,9 +202,5 @@ class TestRootValidator:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [<root>]  Ports below 1024 require root user
-               └── FILE '{json_file}'
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (f"  [<root>]  Ports below 1024 require root user\n   └── FILE '{json_file}'")

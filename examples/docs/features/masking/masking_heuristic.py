@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Literal
 
 from dature import LoadMetadata, load
@@ -24,12 +23,12 @@ try:
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_heuristic.yaml")
-    assert str(exc) == dedent(f"""\
-    Config loading errors (1)
-
-      [connection_id]  Invalid variant: 'aK*****T6'
-       └── FILE '{source}', line 1
-           connection_id: "aK*****T6"
-    """)
+    assert str(exc) == "Config loading errors (1)"
+    assert len(exc.exceptions) == 1
+    assert str(exc.exceptions[0]) == (
+        "  [connection_id]  Invalid variant: 'aK*****T6'\n"
+        f"   └── FILE '{source}', line 1\n"
+        '       connection_id: "aK*****T6"'
+    )
 else:
     raise AssertionError("Expected DatureConfigError")

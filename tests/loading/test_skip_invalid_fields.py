@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
@@ -90,15 +89,14 @@ class TestMergeSkipInvalidFields:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Missing required field (invalid in: json '{source1}', json '{source2}')
-               └── FILE '{source1}', line 1
-                   {{"host": "localhost", "port": "abc"}}
-               └── FILE '{source2}', line 1
-                   {{"port": "def"}}
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Missing required field (invalid in: json '{source1}', json '{source2}')\n"
+            f"   └── FILE '{source1}', line 1\n"
+            f'       {{"host": "localhost", "port": "abc"}}\n'
+            f"   └── FILE '{source2}', line 1\n"
+            f'       {{"port": "def"}}'
+        )
 
     def test_nested_dataclass(self, tmp_path: Path):
         source1 = tmp_path / "s1.json"
@@ -200,13 +198,12 @@ class TestMergeSkipInvalidFields:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Bad string format
-               └── FILE '{source1}', line 1
-                   {{"host": "localhost", "port": "abc"}}
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Bad string format\n"
+            f"   └── FILE '{source1}', line 1\n"
+            f'       {{"host": "localhost", "port": "abc"}}'
+        )
 
     def test_raise_on_conflict_with_skip(self, tmp_path: Path):
         source1 = tmp_path / "s1.json"
@@ -289,13 +286,12 @@ class TestMergeSkipInvalidFields:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Missing required field (invalid in: json '{source1}')
-               └── FILE '{source1}', line 1
-                   {{"host": 123, "port": "abc"}}
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Missing required field (invalid in: json '{source1}')\n"
+            f"   └── FILE '{source1}', line 1\n"
+            f'       {{"host": 123, "port": "abc"}}'
+        )
 
     def test_log_warnings(self, tmp_path: Path, caplog: pytest.LogCaptureFixture):
         source1 = tmp_path / "s1.json"
@@ -363,13 +359,12 @@ class TestSingleSourceSkipInvalidFields:
 
         err = exc_info.value
         assert len(err.exceptions) == 1
-        assert str(err) == dedent(f"""\
-            Config loading errors (1)
-
-              [port]  Missing required field (invalid in: json '{json_file}')
-               └── FILE '{json_file}', line 1
-                   {{"host": "localhost", "port": "abc"}}
-            """)
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Missing required field (invalid in: json '{json_file}')\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f'       {{"host": "localhost", "port": "abc"}}'
+        )
 
     def test_single_source_decorator_skip(self, tmp_path: Path):
         json_file = tmp_path / "config.json"

@@ -186,29 +186,7 @@ class DatureConfigError(ExceptionGroup[DatureError]):
         return self.__class__(self.dataclass_name, list(excs))
 
     def __str__(self) -> str:
-        lines: list[str] = []
-        lines.append(f"{self.dataclass_name} loading errors ({len(self.exceptions)})")
-        lines.append("")
-
-        for exc in self.exceptions:
-            if isinstance(exc, FieldLoadError):
-                path_str = ".".join(exc.field_path)
-                if not path_str:
-                    path_str = "<root>"
-                lines.append(f"  [{path_str}]  {exc.message}")
-                for loc in exc.locations:
-                    lines.extend(_format_location(loc))
-                lines.append("")
-            elif isinstance(exc, SourceLoadError):
-                lines.append(f"  [<root>]  {exc.message}")
-                if exc.location is not None:
-                    lines.extend(_format_location(exc.location))
-                lines.append("")
-            else:
-                lines.append(f"  {exc}")
-                lines.append("")
-
-        return "\n".join(lines)
+        return f"{self.dataclass_name} loading errors ({len(self.exceptions)})"
 
 
 class EnvVarExpandError(DatureConfigError):

@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 from dature import F, LoadMetadata, load
 from dature.errors.exceptions import DatureConfigError
@@ -32,14 +31,11 @@ try:
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "validation_metadata_invalid.yaml")
-    assert str(exc) == dedent(f"""\
-        Config loading errors (2)
-
-          [host]  Value must have at least 1 characters
-           └── FILE '{source}', line 1
-               host: ""
-
-          [port]  Value must be greater than or equal to 1
-           └── FILE '{source}', line 2
-               port: 0
-        """)
+    assert str(exc) == "Config loading errors (2)"
+    assert len(exc.exceptions) == 2
+    assert str(exc.exceptions[0]) == (
+        f"  [host]  Value must have at least 1 characters\n   └── FILE '{source}', line 1\n       host: \"\""
+    )
+    assert str(exc.exceptions[1]) == (
+        f"  [port]  Value must be greater than or equal to 1\n   └── FILE '{source}', line 2\n       port: 0"
+    )

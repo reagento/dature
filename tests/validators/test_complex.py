@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Annotated, Any
 
 import pytest
@@ -48,21 +47,16 @@ class TestMultipleFields:
 
         e = exc_info.value
         assert len(e.exceptions) == 3
-        assert str(e) == dedent(f"""\
-            Config loading errors (3)
-
-              [name]  Value must have at least 3 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [age]  Value must be less than or equal to 150
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [tags]  Value must have at least 1 items
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (3)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at least 3 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
+        assert str(e.exceptions[1]) == (
+            f"  [age]  Value must be less than or equal to 150\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
+        assert str(e.exceptions[2]) == (
+            f"  [tags]  Value must have at least 1 items\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestNestedDataclass:
@@ -114,25 +108,23 @@ class TestNestedDataclass:
 
         e = exc_info.value
         assert len(e.exceptions) == 4
-        assert str(e) == dedent(f"""\
-            User loading errors (4)
-
-              [name]  Value must have at least 3 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [age]  Value must be greater than or equal to 18
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [address.city]  Value must have at least 2 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [address.zip_code]  Value must match pattern '^\\d{{5}}$'
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "User loading errors (4)"
+        assert str(e.exceptions[0]) == (
+            f"  [name]  Value must have at least 3 characters\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
+        assert str(e.exceptions[1]) == (
+            f"  [age]  Value must be greater than or equal to 18\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
+        assert str(e.exceptions[2]) == (
+            "  [address.city]  Value must have at least 2 characters\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )
+        assert str(e.exceptions[3]) == (
+            "  [address.zip_code]  Value must match pattern '^\\d{5}$'\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )
 
 
 class TestCustomErrorMessage:
@@ -152,13 +144,10 @@ class TestCustomErrorMessage:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [age]  Age must be 18 or older
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [age]  Age must be 18 or older\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
 
 class TestDictListDict:
@@ -193,13 +182,10 @@ class TestDictListDict:
 
         e = exc_info.value
         assert len(e.exceptions) == 1
-        assert str(e) == dedent(f"""\
-            Config loading errors (1)
-
-              [groups]  Value must have at least 1 items
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (1)"
+        assert str(e.exceptions[0]) == (
+            f"  [groups]  Value must have at least 1 items\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     def test_nested_dataclass_in_dict_list_success(self, tmp_path: Path):
         @dataclass
@@ -243,14 +229,14 @@ class TestDictListDict:
 
         e = exc_info.value
         assert len(e.exceptions) == 2
-        assert str(e) == dedent(f"""\
-            Config loading errors (2)
-
-              [teams.backend.0.name]  Value must have at least 2 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-
-              [teams.backend.0.role]  Value must have at least 3 characters
-               └── FILE '{json_file}', line 1
-                   {content}
-            """)
+        assert str(e) == "Config loading errors (2)"
+        assert str(e.exceptions[0]) == (
+            "  [teams.backend.0.name]  Value must have at least 2 characters\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )
+        assert str(e.exceptions[1]) == (
+            "  [teams.backend.0.role]  Value must have at least 3 characters\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {content}"
+        )

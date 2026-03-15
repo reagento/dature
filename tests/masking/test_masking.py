@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 from typing import Literal
 from unittest.mock import patch
 
@@ -341,13 +340,12 @@ class TestSecretMaskingIntegration:
         with pytest.raises(DatureConfigError) as exc_info:
             load(LoadMetadata(file_=json_file, mask_secrets=True), Cfg)
 
-        assert str(exc_info.value) == dedent(f"""\
-        Cfg loading errors (1)
-
-          [connection_id]  Invalid variant: 'aK*****T6'
-           └── FILE '{json_file}', line 1
-               {{"connection_id": "aK*****T6", "host": "production"}}
-        """)
+        assert str(exc_info.value) == "Cfg loading errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            "  [connection_id]  Invalid variant: 'aK*****T6'\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f'       {{"connection_id": "aK*****T6", "host": "production"}}'
+        )
 
     def test_error_message_heuristic_no_mask_without_detector(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -363,13 +361,10 @@ class TestSecretMaskingIntegration:
         with patch("dature.masking.masking._heuristic_detector", None), pytest.raises(DatureConfigError) as exc_info:
             load(LoadMetadata(file_=json_file, mask_secrets=True), Cfg)
 
-        assert str(exc_info.value) == dedent(f"""\
-        Cfg loading errors (1)
-
-          [connection_id]  Invalid variant: '{random_token}'
-           └── FILE '{json_file}', line 1
-               {content}
-        """)
+        assert str(exc_info.value) == "Cfg loading errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  [connection_id]  Invalid variant: '{random_token}'\n   └── FILE '{json_file}', line 1\n       {content}"
+        )
 
     @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
@@ -429,10 +424,9 @@ class TestSecretMaskingIntegration:
         with pytest.raises(DatureConfigError) as exc_info:
             load(LoadMetadata(file_=json_file), Cfg)
 
-        assert str(exc_info.value) == dedent(f"""\
-        Cfg loading errors (1)
-
-          [port]  Bad string format
-           └── FILE '{json_file}', line 1
-               {{"password": "{expected_password}", "port": "not_a_number"}}
-        """)
+        assert str(exc_info.value) == "Cfg loading errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            "  [port]  Bad string format\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f'       {{"password": "{expected_password}", "port": "not_a_number"}}'
+        )
