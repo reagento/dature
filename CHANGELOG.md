@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+<!-- PR #39 -->
+### Improvements
+- Removed duplicate error messages for better clarity.
+- Eliminated unnecessary traceback information to streamline error reporting.
+<!-- PR #39 -->
+
 <!-- PR #38 -->
 ### Fixes
 - Fixed the Read the Docs configuration in the CI workflow to ensure proper documentation generation.
