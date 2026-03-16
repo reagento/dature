@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dature"
-version = "0.12.2"
+version = "0.12.3"
 description = "Type-safe configuration loader for Python dataclasses with support for YAML, JSON, TOML, INI, ENV and environment variables"
 readme = "README.md"
 license = "Apache-2.0"
