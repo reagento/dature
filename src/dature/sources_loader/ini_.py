@@ -14,8 +14,10 @@ from dature.sources_loader.loaders import (
     bytearray_from_json_string,
     date_from_string,
     datetime_from_string,
+    float_from_string,
     none_from_empty_string,
     optional_from_empty_string,
+    str_from_scalar,
     time_from_string,
 )
 from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
@@ -27,6 +29,8 @@ class IniLoader(BaseLoader):
 
     def _additional_loaders(self) -> list[Provider]:
         return [
+            loader(str, str_from_scalar),
+            loader(float, float_from_string),
             loader(date, date_from_string),
             loader(datetime, datetime_from_string),
             loader(time, time_from_string),

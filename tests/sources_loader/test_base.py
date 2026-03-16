@@ -144,7 +144,7 @@ class TestBaseLoader:
             default: str = "value"
 
         expected_data = Config(name="TestApp", port=8080, debug=True, default="value")
-        data = {"app": {"name": "TestApp", "port": 8080, "debug": "true"}}
+        data = {"app": {"name": "TestApp", "port": 8080, "debug": True}}
         loader = MockLoader(prefix="app", test_data=data)
 
         raw = loader.load_raw(Path())

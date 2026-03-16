@@ -29,6 +29,7 @@ from dature.sources_loader.loaders.base import (
     timedelta_from_string,
     url_from_string,
 )
+from dature.sources_loader.loaders.common import int_from_string
 from dature.types import (
     URL,
     Base64UrlBytes,
@@ -199,6 +200,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
     def _base_recipe(self) -> list[Provider]:
         user_loaders: list[Provider] = [loader(tl.type_, tl.func) for tl in self._type_loaders]
         default_loaders: list[Provider] = [
+            loader(int, int_from_string),
             loader(bytes, bytes_from_string),
             loader(complex, complex_from_string),
             loader(timedelta, timedelta_from_string),
@@ -218,14 +220,14 @@ class BaseLoader(LoaderProtocol, abc.ABC):
 
     def create_retort(self) -> Retort:
         return Retort(
-            strict_coercion=False,
+            strict_coercion=True,
             recipe=self._base_recipe(),
         )
 
     def create_probe_retort(self) -> Retort:
         return Retort(
-            strict_coercion=False,
-            recipe=[*self._base_recipe(), SkipFieldProvider(), ModelToDictProvider()],
+            strict_coercion=True,
+            recipe=[SkipFieldProvider(), ModelToDictProvider(), *self._base_recipe()],
         )
 
     def create_validating_retort(self, dataclass_: type[T]) -> Retort:
@@ -237,12 +239,12 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             self._validators,
         )
         return Retort(
-            strict_coercion=False,
+            strict_coercion=True,
             recipe=[
-                *self._base_recipe(),
                 *self._get_validator_providers(dataclass_),
                 *metadata_validator_providers,
                 *root_validator_providers,
+                *self._base_recipe(),
             ],
         )
 

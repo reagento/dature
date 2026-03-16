@@ -77,6 +77,9 @@ ignore = [
     "S105",    # possible hardcoded password
     "FBT001",  # boolean argument in function definition
 ]
+"src/dature/sources_loader/loaders/*.py" = [
+    "FBT001",  # loader functions accept bool as scalar value, not as a flag
+]
 "examples/**/*.py" = [
     "INP001",  # implicit namespace package
     "T201",    # print

@@ -29,7 +29,7 @@ class SkipFieldProvider(Provider):
         def chain_handler(data: JSONValue) -> JSONValue | NotLoaded:
             try:
                 return cast("JSONValue", next_handler(data))
-            except LoadError:
+            except (LoadError, ValueError, TypeError):
                 return NOT_LOADED
 
         return chain_handler

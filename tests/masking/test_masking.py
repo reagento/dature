@@ -426,7 +426,7 @@ class TestSecretMaskingIntegration:
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
-            "  [port]  Bad string format\n"
+            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
             f"   └── FILE '{json_file}', line 1\n"
             f'       {{"password": "{expected_password}", "port": "not_a_number"}}'
         )

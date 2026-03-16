@@ -200,7 +200,7 @@ class TestMergeSkipInvalidFields:
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [port]  Bad string format\n"
+            f"  [port]  invalid literal for int() with base 10: 'abc'\n"
             f"   └── FILE '{source1}', line 1\n"
             f'       {{"host": "localhost", "port": "abc"}}'
         )
@@ -285,9 +285,12 @@ class TestMergeSkipInvalidFields:
             )
 
         err = exc_info.value
-        assert len(err.exceptions) == 1
-        assert str(err) == "Config loading errors (1)"
+        assert len(err.exceptions) == 2
+        assert str(err) == "Config loading errors (2)"
         assert str(err.exceptions[0]) == (
+            f'  [host]  Expected str, got int\n   └── FILE \'{source1}\', line 1\n       {{"host": 123, "port": "abc"}}'
+        )
+        assert str(err.exceptions[1]) == (
             f"  [port]  Missing required field (invalid in: json '{source1}')\n"
             f"   └── FILE '{source1}', line 1\n"
             f'       {{"host": 123, "port": "abc"}}'

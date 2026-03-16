@@ -35,7 +35,7 @@ class TestDatureConfigErrorFormat:
         errors = [
             FieldLoadError(
                 field_path=["timeout"],
-                message="Bad string format",
+                message="invalid literal for int() with base 10: 'abc'",
                 input_value="abc",
                 locations=[
                     SourceLocation(
@@ -65,7 +65,9 @@ class TestDatureConfigErrorFormat:
         exc = DatureConfigError("Config", errors)
         assert str(exc) == "Config loading errors (2)"
         assert str(exc.exceptions[0]) == (
-            '  [timeout]  Bad string format\n   └── FILE \'config.json\', line 2\n       "timeout": "abc"'
+            "  [timeout]  invalid literal for int() with base 10: 'abc'\n"
+            "   └── FILE 'config.json', line 2\n"
+            '       "timeout": "abc"'
         )
         assert str(exc.exceptions[1]) == ("  [db.port]  Missing required field\n   └── FILE 'config.json'")
 
@@ -73,7 +75,7 @@ class TestDatureConfigErrorFormat:
         errors = [
             FieldLoadError(
                 field_path=["database", "port"],
-                message="Bad string format",
+                message="invalid literal for int() with base 10: 'abc'",
                 input_value="abc",
                 locations=[
                     SourceLocation(
@@ -88,7 +90,9 @@ class TestDatureConfigErrorFormat:
         ]
         exc = DatureConfigError("Config", errors)
         assert str(exc) == "Config loading errors (1)"
-        assert str(exc.exceptions[0]) == ("  [database.port]  Bad string format\n   └── ENV 'APP_DATABASE__PORT'")
+        assert str(exc.exceptions[0]) == (
+            "  [database.port]  invalid literal for int() with base 10: 'abc'\n   └── ENV 'APP_DATABASE__PORT'"
+        )
 
 
 class TestLoadIntegrationErrors:
@@ -114,7 +118,9 @@ class TestLoadIntegrationErrors:
         assert first.field_path == ["timeout"]
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [timeout]  Bad string format\n   └── FILE '{json_file}', line 1\n       {json_file.read_text()}"
+            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {json_file.read_text()}"
         )
 
     def test_json_missing_field_function(self, tmp_path: Path):
@@ -161,7 +167,9 @@ class TestLoadIntegrationErrors:
         timeout_err = next(e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["timeout"])
         name_err = next(e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["name"])
         assert str(timeout_err) == (
-            f"  [timeout]  Bad string format\n   └── FILE '{json_file}', line 1\n       {json_file.read_text()}"
+            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
+            f"   └── FILE '{json_file}', line 1\n"
+            f"       {json_file.read_text()}"
         )
         assert str(name_err) == (f"  [name]  Missing required field\n   └── FILE '{json_file}'")
 
@@ -190,7 +198,9 @@ class TestLoadIntegrationErrors:
         assert first.field_path == ["db", "port"]
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f'  [db.port]  Bad string format\n   └── FILE \'{json_file}\', line 4\n       "port": "abc"'
+            f"  [db.port]  invalid literal for int() with base 10: 'abc'\n"
+            f"   └── FILE '{json_file}', line 4\n"
+            '       "port": "abc"'
         )
 
     def test_env_type_error(self, monkeypatch: pytest.MonkeyPatch):
@@ -211,7 +221,9 @@ class TestLoadIntegrationErrors:
         err = exc_info.value
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
-        assert str(err.exceptions[0]) == ("  [timeout]  Bad string format\n   └── ENV 'APP_TIMEOUT'")
+        assert str(err.exceptions[0]) == (
+            "  [timeout]  invalid literal for int() with base 10: 'abc'\n   └── ENV 'APP_TIMEOUT'"
+        )
 
     def test_toml_with_line_number(self, tmp_path: Path):
         toml_file = tmp_path / "config.toml"
@@ -235,7 +247,9 @@ class TestLoadIntegrationErrors:
         assert first.locations[0].line_range == LineRange(start=2, end=2)
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [timeout]  Bad string format\n   └── FILE '{toml_file}', line 2\n       timeout = \"abc\""
+            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
+            f"   └── FILE '{toml_file}', line 2\n"
+            '       timeout = "abc"'
         )
 
     def test_json_with_line_number(self, tmp_path: Path):
@@ -259,7 +273,9 @@ class TestLoadIntegrationErrors:
         assert first.locations[0].line_range == LineRange(start=3, end=3)
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f'  [timeout]  Bad string format\n   └── FILE \'{json_file}\', line 3\n       "timeout": "abc"'
+            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
+            f"   └── FILE '{json_file}', line 3\n"
+            '       "timeout": "abc"'
         )
 
 
@@ -339,7 +355,7 @@ class TestLineTruncation:
         errors = [
             FieldLoadError(
                 field_path=["timeout"],
-                message="Bad string format",
+                message="invalid literal for int() with base 10: 'abc'",
                 input_value="abc",
                 locations=[
                     SourceLocation(
@@ -355,7 +371,9 @@ class TestLineTruncation:
         exc = DatureConfigError("Config", errors)
         assert str(exc) == "Config loading errors (1)"
         assert str(exc.exceptions[0]) == (
-            f"  [timeout]  Bad string format\n   └── ENV FILE '.env', line 2\n       {expected_content}"
+            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
+            f"   └── ENV FILE '.env', line 2\n"
+            f"       {expected_content}"
         )
 
     def test_multiline_content_each_line_truncated(self) -> None:
@@ -460,7 +478,7 @@ class TestMultilineValueDisplay:
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [db]  Expected int | float | str, got dict\n"
+            "  [db]  int() argument must be a string, a bytes-like object or a real number, not 'dict'\n"
             f"   └── FILE '{json_file}', line 2-5\n"
             '       "db": {\n'
             '         "host": "localhost",\n'
@@ -484,7 +502,7 @@ class TestMultilineValueDisplay:
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [db]  Expected int | float | str, got dict\n"
+            "  [db]  int() argument must be a string, a bytes-like object or a real number, not 'dict'\n"
             f"   └── FILE '{yaml_file}', line 1-3\n"
             "       db:\n"
             "         host: localhost\n"
@@ -507,7 +525,7 @@ class TestMultilineValueDisplay:
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [tags]  Expected int | float | str, got list\n"
+            "  [tags]  int() argument must be a string, a bytes-like object or a real number, not 'list'\n"
             f"   └── FILE '{toml_file}', line 1-4\n"
             "       tags = [\n"
             '         "a",\n'
@@ -530,7 +548,7 @@ class TestMultilineValueDisplay:
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [tags]  Expected int | float | str, got list\n"
+            "  [tags]  int() argument must be a string, a bytes-like object or a real number, not 'list'\n"
             f"   └── FILE '{json_file}', line 2-5\n"
             '       "tags": [\n'
             '         "a",\n'
@@ -577,7 +595,7 @@ class TestMultilineValueDisplay:
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [product.0.sku]  Bad string format\n"
+            "  [product.0.sku]  invalid literal for int() with base 10: 'not_a_number'\n"
             f"   └── FILE '{array_of_tables_error_first_toml_file}', line 3\n"
             '       sku = "not_a_number"'
         )
@@ -601,7 +619,7 @@ class TestMultilineValueDisplay:
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [product.1.sku]  Bad string format\n"
+            "  [product.1.sku]  invalid literal for int() with base 10: 'not_a_number'\n"
             f"   └── FILE '{array_of_tables_error_last_toml_file}', line 7\n"
             '       sku = "not_a_number"'
         )

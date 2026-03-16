@@ -65,7 +65,7 @@ ALL_SOURCES = [
 ]
 
 EXPECTED_LOAD_ERRORS = [
-    (["port"], "Bad string format"),
+    (["port"], "invalid literal for int() with base 10: 'abc'"),
     (["host"], "Missing required field"),
     (["status"], "Invalid variant: 'unknown'"),
     (["address", "city"], "Value must have at least 2 characters"),

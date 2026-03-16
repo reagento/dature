@@ -12,14 +12,14 @@ class TestExtractFieldErrors:
         class Config:
             timeout: int
 
-        r = Retort(strict_coercion=False)
+        r = Retort(strict_coercion=True)
         try:
             r.load({"timeout": "abc"}, Config)
         except (AggregateLoadError, LoadError) as exc:
             errors = extract_field_errors(exc)
             assert len(errors) == 1
             assert errors[0].field_path == ["timeout"]
-            assert errors[0].message == "Bad string format"
+            assert errors[0].message == "Expected int, got str"
 
     def test_missing_field(self):
         @dataclass
@@ -27,7 +27,7 @@ class TestExtractFieldErrors:
             timeout: int
             name: str
 
-        r = Retort(strict_coercion=False)
+        r = Retort(strict_coercion=True)
         try:
             r.load({"timeout": 123}, Config)
         except (AggregateLoadError, LoadError) as exc:
@@ -47,7 +47,7 @@ class TestExtractFieldErrors:
             timeout: int
             db: DB
 
-        r = Retort(strict_coercion=False)
+        r = Retort(strict_coercion=True)
         try:
             r.load({"timeout": "abc", "db": {"host": "ok", "port": "xyz"}}, Config)
         except (AggregateLoadError, LoadError) as exc:
@@ -63,7 +63,7 @@ class TestExtractFieldErrors:
             b: str
             c: float
 
-        r = Retort(strict_coercion=False)
+        r = Retort(strict_coercion=True)
         try:
             r.load({}, Config)
         except (AggregateLoadError, LoadError) as exc:

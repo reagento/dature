@@ -1,4 +1,5 @@
 import json
+import math
 from datetime import date, datetime, time
 
 # Expected number of time parts in HH:MM:SS format
@@ -61,7 +62,7 @@ def _bool_from_string(value: str) -> bool:
     raise TypeError(msg)
 
 
-def bool_loader(value: str | bool) -> bool:  # noqa: FBT001
+def bool_loader(value: str | bool) -> bool:
     if isinstance(value, bool):
         return value
     return _bool_from_string(value)
@@ -79,3 +80,28 @@ def bytearray_from_json_string(value: str) -> bytearray:
         return bytearray(items)
 
     return bytearray(value.encode("utf-8"))
+
+
+def str_from_scalar(value: str | float | bool) -> str:
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
+def int_from_string(value: str | int) -> int:
+    if isinstance(value, int):
+        return value
+    return int(value)
+
+
+def float_from_string(value: str | float) -> float:
+    if isinstance(value, (float, int)):
+        return float(value)
+    lower = value.strip().lower()
+    if lower in {"inf", "+inf"}:
+        return math.inf
+    if lower == "-inf":
+        return -math.inf
+    if lower == "nan":
+        return math.nan
+    return float(value)
