@@ -13,9 +13,9 @@ from dature.sources_loader.loaders import (
     bytearray_from_string,
     date_passthrough,
     datetime_passthrough,
-    time_from_int,
     time_from_string,
 )
+from dature.sources_loader.loaders.yaml_ import time_from_int
 from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 

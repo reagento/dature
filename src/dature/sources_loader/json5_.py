@@ -13,9 +13,9 @@ from dature.sources_loader.loaders import (
     date_from_string,
     datetime_from_string,
     float_from_string,
-    str_from_json_identifier,
     time_from_string,
 )
+from dature.sources_loader.loaders.json5_ import str_from_json_identifier
 from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 

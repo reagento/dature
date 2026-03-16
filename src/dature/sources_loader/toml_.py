@@ -15,8 +15,8 @@ from dature.sources_loader.loaders import (
     datetime_passthrough,
     none_from_empty_string,
     optional_from_empty_string,
-    time_passthrough,
 )
+from dature.sources_loader.loaders.toml_ import time_passthrough
 from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 
