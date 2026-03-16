@@ -2,11 +2,11 @@
 
 ## Unreleased
 
-<!-- PR #43 -->
+## 0.12.4
+
 ### Fixes
 - Ensured JSON5 support is now correctly required in the configuration loader.
 - Resolved issues related to loading configurations from JSON5 files.
-<!-- PR #43 -->
 
 ## 0.12.3
 
