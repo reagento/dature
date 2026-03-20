@@ -12,6 +12,7 @@ from dature.sources_loader.loaders.common import (
     date_passthrough,
     datetime_from_string,
     datetime_passthrough,
+    int_from_string,
     none_from_empty_string,
     optional_from_empty_string,
     time_from_string,
@@ -128,6 +129,31 @@ def test_optional_from_empty_string(input_value, expected):
 )
 def test_bool_loader(input_value, expected):
     assert bool_loader(input_value) is expected
+
+
+# === Int converter ===
+
+
+@pytest.mark.parametrize(
+    ("input_value", "expected"),
+    [
+        (42, 42),
+        ("42", 42),
+        ("-1", -1),
+        ("0", 0),
+    ],
+)
+def test_int_from_string(input_value, expected):
+    assert int_from_string(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    "input_value",
+    [True, False],
+)
+def test_int_from_string_rejects_bool(input_value):
+    with pytest.raises(TypeError, match="Expected int, got bool"):
+        int_from_string(input_value)
 
 
 # === JSON string converters ===
