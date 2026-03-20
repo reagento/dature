@@ -18,7 +18,7 @@
 [![Last release date]("https://img.shields.io/github/release-date/Niccolum/dature?logo=github&label=Release%20Date")](https://github.com/Niccolum/dature/releases)
 </div>
 
-**[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/changelog/)**
+**[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/en/latest/changelog/)**
 
 Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, and Docker secrets — with automatic type conversion, validation, and human-readable error messages.
 
