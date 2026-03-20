@@ -62,31 +62,88 @@ Works as a decorator too:
 
 ## Merge Strategies
 
-=== "Python"
-
-    ```python
-    --8<-- "examples/docs/features/merging/merging_strategies.py"
-    ```
-
-=== "common_defaults.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
-    ```
-
-=== "common_overrides.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/shared/common_overrides.yaml"
-    ```
-
 | Strategy | Behavior |
 |----------|----------|
 | `LAST_WINS` | Last source overrides (default) |
 | `FIRST_WINS` | First source wins |
+| `FIRST_FOUND` | Uses the first source that loads successfully, skips broken sources automatically |
 | `RAISE_ON_CONFLICT` | Raises `MergeConflictError` if the same key appears in multiple sources with different values |
 
 Nested dicts are merged recursively. Lists and scalars are replaced entirely according to the strategy.
+
+=== "LAST_WINS"
+
+    Last source overrides earlier ones. This is the default strategy.
+
+    ```python
+    --8<-- "examples/docs/features/merging/merging_strategy_last_wins.py"
+    ```
+
+    === "common_defaults.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_defaults.yaml"
+        ```
+
+    === "common_overrides.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_overrides.yaml"
+        ```
+
+=== "FIRST_WINS"
+
+    First source wins on conflict. Later sources only fill in missing keys.
+
+    ```python
+    --8<-- "examples/docs/features/merging/merging_strategy_first_wins.py"
+    ```
+
+    === "common_defaults.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_defaults.yaml"
+        ```
+
+    === "common_overrides.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_overrides.yaml"
+        ```
+
+=== "FIRST_FOUND"
+
+    Uses the first source that loads successfully and ignores the rest. Broken sources (missing file, parse error) are skipped automatically — no `skip_if_broken` needed. Type errors (wrong type, missing field) are **not** skipped.
+
+    ```python
+    --8<-- "examples/docs/features/merging/merging_strategy_first_found.py"
+    ```
+
+    === "common_defaults.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_defaults.yaml"
+        ```
+
+=== "RAISE_ON_CONFLICT"
+
+    Raises `MergeConflictError` if the same key appears in multiple sources with different values. Works best when sources have disjoint keys.
+
+    ```python
+    --8<-- "examples/docs/features/merging/merging_strategy_raise_on_conflict.py"
+    ```
+
+    === "common_raise_on_conflict_a.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_raise_on_conflict_a.yaml"
+        ```
+
+    === "common_raise_on_conflict_b.yaml"
+
+        ```yaml
+        --8<-- "examples/docs/shared/common_raise_on_conflict_b.yaml"
+        ```
 
 For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/merge-rules.md#field-groups).
 

@@ -11,7 +11,7 @@ from dature.load_report import SourceEntry
 from dature.loading.context import apply_skip_invalid, build_error_ctx
 from dature.loading.resolver import resolve_loader, resolve_loader_class
 from dature.masking.masking import mask_json_value
-from dature.metadata import LoadMetadata, MergeMetadata, TypeLoader
+from dature.metadata import LoadMetadata, MergeMetadata, MergeStrategy, TypeLoader
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.skip_field_provider import FilterResult
 from dature.types import FILE_LIKE_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue, LoadRawResult
@@ -162,7 +162,7 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 ctx=error_ctx,
             )
         except (DatureConfigError, FileNotFoundError):
-            if not should_skip_broken(source_meta, merge_meta):
+            if merge_meta.strategy != MergeStrategy.FIRST_FOUND and not should_skip_broken(source_meta, merge_meta):
                 raise
             logger.warning(
                 "[%s] Source %d skipped (broken): file=%s",
@@ -174,7 +174,7 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
             )
             continue
         except Exception as exc:
-            if not should_skip_broken(source_meta, merge_meta):
+            if merge_meta.strategy != MergeStrategy.FIRST_FOUND and not should_skip_broken(source_meta, merge_meta):
                 loader_class = resolve_loader_class(source_meta.loader, source_meta.file_)
                 location = SourceLocation(
                     display_label=loader_class.display_label,
@@ -262,6 +262,9 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
         source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
         last_loader = loader_instance
+
+        if merge_meta.strategy == MergeStrategy.FIRST_FOUND:
+            break
 
     if last_loader is None:
         if merge_meta.sources:

@@ -226,7 +226,7 @@ def deep_merge(
 ) -> JSONValue:
     if strategy == MergeStrategy.LAST_WINS:
         return deep_merge_last_wins(base, override, field_merge_map=field_merge_map)
-    if strategy == MergeStrategy.FIRST_WINS:
+    if strategy in (MergeStrategy.FIRST_WINS, MergeStrategy.FIRST_FOUND):
         return deep_merge_first_wins(base, override, field_merge_map=field_merge_map)
     msg = "Use merge_sources for RAISE_ON_CONFLICT strategy"
     raise ValueError(msg)
