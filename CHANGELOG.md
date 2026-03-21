@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-<!-- PR #48 -->
+## 0.13.0
+
 ### Features
 - Introduced a new strategy for configuration loading.
 
@@ -13,7 +14,6 @@
 ### Fixes
 - Updated the README to reflect recent changes and improvements.
 - Addressed comments from Devin regarding code clarity and documentation.
-<!-- PR #48 -->
 
 ## 0.12.4
 
