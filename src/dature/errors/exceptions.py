@@ -19,11 +19,13 @@ class LineRange:
 
 @dataclass(frozen=True, slots=True)
 class SourceLocation:
-    source_type: str
+    display_label: str
     file_path: Path | None
     line_range: LineRange | None
     line_content: list[str] | None
     env_var_name: str | None
+    annotation: str | None = None
+    env_var_value: str | None = None
 
 
 def _truncate_line(line: str) -> str:
@@ -44,33 +46,22 @@ def _format_content_lines(content: list[str]) -> list[str]:
     return [f"       {_truncate_line(line)}" for line in content]
 
 
-def _format_location(loc: SourceLocation) -> list[str]:
+def _format_location(loc: SourceLocation, *, connector: str = "└──") -> list[str]:
     lines: list[str] = []
+    suffix = f" ({loc.annotation})" if loc.annotation is not None else ""
 
-    if loc.source_type == "env":
-        if loc.env_var_name is not None:
-            lines.append(f"   └── ENV '{loc.env_var_name}'")
-        return lines
-
-    if loc.source_type == "envfile":
-        location_str = f"   └── ENV FILE '{loc.file_path}'"
+    if loc.env_var_name is not None and loc.file_path is None:
+        main = f"   {connector} {loc.display_label} '{loc.env_var_name}'"
+        if loc.env_var_value is not None:
+            main += f" = '{loc.env_var_value}'"
+        lines.append(main + suffix)
+    elif loc.file_path is not None:
+        main = f"   {connector} {loc.display_label} '{loc.file_path}'"
         if loc.line_range is not None:
-            location_str += f", {loc.line_range!r}"
-        lines.append(location_str)
+            main += f", {loc.line_range!r}"
+        lines.append(main + suffix)
         if loc.line_content is not None:
             lines.extend(_format_content_lines(loc.line_content))
-        return lines
-
-    if loc.source_type == "docker_secrets":
-        lines.append(f"   └── SECRET FILE '{loc.file_path}'")
-        return lines
-
-    location_str = f"   └── FILE '{loc.file_path}'"
-    if loc.line_range is not None:
-        location_str += f", {loc.line_range!r}"
-    lines.append(location_str)
-    if loc.line_content is not None:
-        lines.extend(_format_content_lines(loc.line_content))
 
     return lines
 
@@ -99,8 +90,9 @@ class FieldLoadError(DatureError):
         if not path_str:
             path_str = "<root>"
         lines = [f"  [{path_str}]  {self.message}"]
-        for loc in self.locations:
-            lines.extend(_format_location(loc))
+        for i, loc in enumerate(self.locations):
+            connector = "└──" if i == len(self.locations) - 1 else "├──"
+            lines.extend(_format_location(loc, connector=connector))
         return "\n".join(lines)
 
 

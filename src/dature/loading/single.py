@@ -153,10 +153,20 @@ class _PatchContext:
 
 
 def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
-    raw_data = handle_load_errors(
+    load_result = handle_load_errors(
         func=lambda: ctx.loader_instance.load_raw(ctx.file_path),
         ctx=ctx.error_ctx,
     )
+    raw_data = load_result.data
+
+    if load_result.nested_conflicts:
+        ctx.error_ctx = build_error_ctx(
+            ctx.metadata,
+            ctx.cls.__name__,
+            secret_paths=ctx.secret_paths,
+            mask_secrets=ctx.error_ctx.mask_secrets,
+            nested_conflicts=load_result.nested_conflicts,
+        )
 
     filter_result = apply_skip_invalid(
         raw=raw_data,
@@ -258,10 +268,20 @@ def load_as_function(  # noqa: C901, PLR0912
         secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
     error_ctx = build_error_ctx(metadata, dataclass_.__name__, secret_paths=secret_paths, mask_secrets=mask_secrets)
 
-    raw_data = handle_load_errors(
+    load_result = handle_load_errors(
         func=lambda: loader_instance.load_raw(file_path),
         ctx=error_ctx,
     )
+    raw_data = load_result.data
+
+    if load_result.nested_conflicts:
+        error_ctx = build_error_ctx(
+            metadata,
+            dataclass_.__name__,
+            secret_paths=secret_paths,
+            mask_secrets=mask_secrets,
+            nested_conflicts=load_result.nested_conflicts,
+        )
 
     filter_result = apply_skip_invalid(
         raw=raw_data,

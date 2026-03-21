@@ -5,7 +5,7 @@ from dature.sources_loader.docker_secrets import DockerSecretsLoader
 from dature.sources_loader.env_ import EnvFileLoader, EnvLoader
 from dature.sources_loader.ini_ import IniLoader
 from dature.sources_loader.json_ import JsonLoader
-from dature.types import FILE_LIKE_TYPES, ExpandEnvVarsMode
+from dature.types import FILE_LIKE_TYPES, ExpandEnvVarsMode, NestedResolve, NestedResolveStrategy
 
 if TYPE_CHECKING:
     from dature.metadata import LoadMetadata, TypeLoader
@@ -108,6 +108,8 @@ def resolve_loader(
     *,
     expand_env_vars: ExpandEnvVarsMode | None = None,
     type_loaders: "tuple[TypeLoader, ...]" = (),
+    nested_resolve_strategy: NestedResolveStrategy = "flat",
+    nested_resolve: NestedResolve | None = None,
 ) -> "LoaderProtocol":
     loader_class = resolve_loader_class(metadata.loader, metadata.file_)
 
@@ -125,5 +127,10 @@ def resolve_loader(
 
     if issubclass(loader_class, (EnvLoader, DockerSecretsLoader)):
         kwargs["split_symbols"] = metadata.split_symbols
+        resolved_strategy = metadata.nested_resolve_strategy or nested_resolve_strategy
+        kwargs["nested_resolve_strategy"] = resolved_strategy
+        resolved_resolve = metadata.nested_resolve or nested_resolve
+        if resolved_resolve is not None:
+            kwargs["nested_resolve"] = resolved_resolve
 
     return loader_class(**kwargs)

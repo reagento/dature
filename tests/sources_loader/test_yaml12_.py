@@ -3,7 +3,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import pytest
+
 from dature import LoadMetadata, load
+from dature.errors.exceptions import DatureConfigError, FieldLoadError
 from dature.sources_loader.yaml_ import Yaml12Loader
 from examples.all_types_dataclass import (
     EXPECTED_ALL_TYPES,
@@ -123,3 +126,41 @@ class TestYaml12Loader:
         data = loader._load(yaml_file)
 
         assert data is None
+
+    def test_bool_in_int_field_raises_error(self, tmp_path: Path):
+        yaml_file = tmp_path / "config.yaml"
+        yaml_file.write_text("count: true")
+
+        @dataclass
+        class Config:
+            count: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(LoadMetadata(file_=yaml_file, loader=Yaml12Loader), Config)
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        first = err.exceptions[0]
+        assert isinstance(first, FieldLoadError)
+        assert first.field_path == ["count"]
+        assert str(first) == (
+            f"  [count]  Expected int, got bool: True\n   └── FILE '{yaml_file}', line 1\n       count: true"
+        )
+
+    def test_int_in_bool_field_raises_error(self, tmp_path: Path):
+        yaml_file = tmp_path / "config.yaml"
+        yaml_file.write_text("flag: 1")
+
+        @dataclass
+        class Config:
+            flag: bool
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(LoadMetadata(file_=yaml_file, loader=Yaml12Loader), Config)
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        first = err.exceptions[0]
+        assert isinstance(first, FieldLoadError)
+        assert first.field_path == ["flag"]
+        assert str(first) == (f"  [flag]  Expected bool, got int\n   └── FILE '{yaml_file}', line 1\n       flag: 1")

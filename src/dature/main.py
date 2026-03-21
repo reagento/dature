@@ -60,7 +60,11 @@ def load(
         metadata = LoadMetadata()
 
     type_loaders = (metadata.type_loaders or ()) + config.type_loaders
-    loader_instance = resolve_loader(metadata, type_loaders=type_loaders)
+    loader_instance = resolve_loader(
+        metadata,
+        type_loaders=type_loaders,
+        nested_resolve_strategy=config.loading.nested_resolve_strategy,
+    )
 
     file_or_path: FileOrStream
     if isinstance(metadata.file_, FILE_LIKE_TYPES):

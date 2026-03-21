@@ -1,101 +1,62 @@
 import io
 import os
 from collections.abc import Iterable
-from datetime import date, datetime, time
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
+from typing import ClassVar, cast
 
-from adaptix import loader
-from adaptix.provider import Provider
-
-from dature.expansion.env_expand import expand_env_vars
-from dature.protocols import ValidatorProtocol
-from dature.sources_loader.base import BaseLoader
-from dature.sources_loader.loaders import (
-    bool_loader,
-    bytearray_from_json_string,
-    date_from_string,
-    datetime_from_string,
-    float_from_string,
-    none_from_empty_string,
-    optional_from_empty_string,
-    str_from_scalar,
-    time_from_string,
-)
+from dature.errors.exceptions import LineRange, SourceLocation
+from dature.sources_loader.flat_key import FlatKeyLoader
 from dature.types import (
     BINARY_IO_TYPES,
     TEXT_IO_TYPES,
-    DotSeparatedPath,
-    ExpandEnvVarsMode,
-    FieldMapping,
-    FieldValidators,
     FileOrStream,
     JSONValue,
-    NameStyle,
+    NestedConflict,
+    NestedConflicts,
 )
 
-if TYPE_CHECKING:
-    from dature.metadata import TypeLoader
 
-
-def _set_nested(d: dict[str, JSONValue], keys: list[str], value: str) -> None:
-    for key in keys[:-1]:
-        d = cast("dict[str, JSONValue]", d.setdefault(key, {}))
-    d[keys[-1]] = value
-
-
-class EnvLoader(BaseLoader):
+class EnvLoader(FlatKeyLoader):
     display_name = "env"
-
-    def __init__(  # noqa: PLR0913
-        self,
-        *,
-        prefix: DotSeparatedPath | None = None,
-        split_symbols: str = "__",
-        name_style: NameStyle | None = None,
-        field_mapping: FieldMapping | None = None,
-        root_validators: tuple[ValidatorProtocol, ...] | None = None,
-        validators: FieldValidators | None = None,
-        expand_env_vars: ExpandEnvVarsMode = "default",
-        type_loaders: "tuple[TypeLoader, ...]" = (),
-    ) -> None:
-        self._split_symbols = split_symbols
-        super().__init__(
-            prefix=prefix,
-            name_style=name_style,
-            field_mapping=field_mapping,
-            root_validators=root_validators,
-            validators=validators,
-            expand_env_vars=expand_env_vars,
-            type_loaders=type_loaders,
-        )
-
-    def _additional_loaders(self) -> list[Provider]:
-        return [
-            loader(str, str_from_scalar),
-            loader(float, float_from_string),
-            loader(date, date_from_string),
-            loader(datetime, datetime_from_string),
-            loader(time, time_from_string),
-            loader(bytearray, bytearray_from_json_string),
-            loader(type(None), none_from_empty_string),
-            loader(str | None, optional_from_empty_string),
-            loader(bool, bool_loader),
-        ]
+    display_label: ClassVar[str] = "ENV"
 
     def _load(self, _: FileOrStream) -> JSONValue:
         return cast("JSONValue", os.environ)
 
-    def _pre_processing(self, data: JSONValue) -> JSONValue:
-        data_dict = cast("dict[str, str]", data)
-        result: dict[str, JSONValue] = {}
+    @classmethod
+    def resolve_location(
+        cls,
+        field_path: list[str],
+        file_path: Path | None,  # noqa: ARG003
+        file_content: str | None,  # noqa: ARG003
+        prefix: str | None,
+        split_symbols: str,
+        nested_conflict: NestedConflict | None,
+    ) -> list[SourceLocation]:
+        var_name = cls._resolve_var_name(field_path, prefix, split_symbols, nested_conflict)
+        env_var_value: str | None = None
+        if nested_conflict is not None:
+            json_var = cls._resolve_var_name(field_path[:1], prefix, split_symbols, None)
+            if nested_conflict.used_var == json_var:
+                env_var_value = nested_conflict.json_raw_value
+        return [
+            SourceLocation(
+                display_label=cls.display_label,
+                file_path=None,
+                line_range=None,
+                line_content=None,
+                env_var_name=var_name,
+                env_var_value=env_var_value,
+            ),
+        ]
 
-        for key, value in data_dict.items():
-            self._pre_processed_row(key=key, value=value, result=result)
-
-        expanded = expand_env_vars(result, mode=self._expand_env_vars_mode)
-        return self._parse_string_values(expanded)
-
-    def _pre_processed_row(self, key: str, value: str, result: dict[str, JSONValue]) -> None:
+    def _pre_process_row(
+        self,
+        key: str,
+        value: str,
+        result: dict[str, JSONValue],
+        conflicts: NestedConflicts,
+    ) -> None:
         if self._prefix and not key.startswith(self._prefix):
             return
 
@@ -103,30 +64,58 @@ class EnvLoader(BaseLoader):
         processed_key = processed_key.lower()
 
         parts = processed_key.split(self._split_symbols)
-        if len(parts) > 1:
-            _set_nested(result, parts, value)
-        else:
-            result[processed_key] = value
+        self._process_key_value(parts=parts, value=value, result=result, conflicts=conflicts)
 
 
 class EnvFileLoader(EnvLoader):
     display_name = "envfile"
+    display_label: ClassVar[str] = "ENV FILE"
+
+    @classmethod
+    def resolve_location(
+        cls,
+        field_path: list[str],
+        file_path: Path | None,
+        file_content: str | None,
+        prefix: str | None,
+        split_symbols: str,
+        nested_conflict: NestedConflict | None,
+    ) -> list[SourceLocation]:
+        var_name = cls._resolve_var_name(field_path, prefix, split_symbols, nested_conflict)
+        line_range: LineRange | None = None
+        line_content: list[str] | None = None
+        if file_content is not None:
+            line_range, line_content = _find_env_line(file_content, var_name)
+        return [
+            SourceLocation(
+                display_label=cls.display_label,
+                file_path=file_path,
+                line_range=line_range,
+                line_content=line_content,
+                env_var_name=var_name,
+            ),
+        ]
 
     def _load(self, path: FileOrStream) -> JSONValue:
-        env_vars: dict[str, JSONValue] = {}
+        """Parse .env file into a flat key=value dict (before nesting/expand/parse)."""
+        raw_pairs: dict[str, JSONValue] = {}
 
         if isinstance(path, TEXT_IO_TYPES):
-            self._parse_lines(path, env_vars)
+            self._collect_pairs(path, raw_pairs)
         elif isinstance(path, BINARY_IO_TYPES):
             wrapper = io.TextIOWrapper(cast("io.BufferedReader", path))
-            self._parse_lines(wrapper, env_vars)
+            self._collect_pairs(wrapper, raw_pairs)
         else:
             with path.open() as f:
-                self._parse_lines(f, env_vars)
+                self._collect_pairs(f, raw_pairs)
 
-        return env_vars
+        return raw_pairs
 
-    def _parse_lines(self, lines: Iterable[str], env_vars: dict[str, JSONValue]) -> None:
+    @staticmethod
+    def _collect_pairs(
+        lines: Iterable[str],
+        pairs: dict[str, JSONValue],
+    ) -> None:
         for raw_line in lines:
             if not (line := raw_line.strip()) or line.startswith("#"):
                 continue
@@ -140,8 +129,17 @@ class EnvFileLoader(EnvLoader):
             _min_quoted_len = 2
             if len(value) >= _min_quoted_len and value[0] == value[-1] and value[0] in ('"', "'"):
                 value = value[1:-1]
-            self._pre_processed_row(key=key, value=value, result=env_vars)
+            pairs[key] = value
 
-    def _pre_processing(self, data: JSONValue) -> JSONValue:
-        expanded = expand_env_vars(data, mode=self._expand_env_vars_mode)
-        return self._parse_string_values(expanded)
+
+def _find_env_line(content: str, var_name: str) -> tuple[LineRange | None, list[str] | None]:
+    for i, line in enumerate(content.splitlines(), 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if "=" not in stripped:
+            continue
+        key = stripped.split("=", 1)[0].strip()
+        if key == var_name:
+            return LineRange(start=i, end=i), [stripped]
+    return None, None

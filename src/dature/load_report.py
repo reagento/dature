@@ -60,7 +60,7 @@ def compute_field_origins(
 
     origins: list[FieldOrigin] = []
     for key in sorted(last_source):
-        if strategy == MergeStrategy.FIRST_WINS:
+        if strategy in (MergeStrategy.FIRST_WINS, MergeStrategy.FIRST_FOUND):
             winner_idx = first_source[key]
         else:
             winner_idx = last_source[key]

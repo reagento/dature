@@ -34,7 +34,7 @@ from dature.masking.masking import (
 from dature.merging.deep_merge import deep_merge, deep_merge_last_wins, raise_on_conflict
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
-from dature.metadata import FieldMergeStrategy, MergeMetadata, MergeStrategy, TypeLoader
+from dature.metadata import FieldMergeStrategy, LoadMetadata, MergeMetadata, MergeStrategy, TypeLoader
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.types import FieldMergeCallable, JSONValue
 
@@ -263,6 +263,7 @@ class _MergedData[T: DataclassInstance]:
     result: T
     merged_raw: JSONValue
     last_loader: LoaderProtocol
+    last_source_meta: LoadMetadata
 
 
 def _load_and_merge[T: DataclassInstance](  # noqa: C901
@@ -374,7 +375,13 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     if report is not None:
         attach_load_report(result, report)
 
-    return _MergedData(result=result, merged_raw=merged, last_loader=loaded.last_loader)
+    last_source_idx = loaded.source_entries[-1].index
+    return _MergedData(
+        result=result,
+        merged_raw=merged,
+        last_loader=loaded.last_loader,
+        last_source_meta=merge_meta.sources[last_source_idx],
+    )
 
 
 def merge_load_as_function[T: DataclassInstance](
@@ -394,7 +401,7 @@ def merge_load_as_function[T: DataclassInstance](
     validating_retort = data.last_loader.create_validating_retort(dataclass_)
     validation_loader = validating_retort.get_loader(dataclass_)
 
-    last_meta = merge_meta.sources[-1]
+    last_meta = data.last_source_meta
     mask_secrets = _resolve_merge_mask_secrets(merge_meta)
     secret_paths: frozenset[str] = frozenset()
     if mask_secrets:
@@ -474,10 +481,22 @@ class _MergePatchContext:
         for source_meta in merge_meta.sources:
             resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
             source_type_loaders = (source_meta.type_loaders or ()) + type_loaders
+            resolved_strategy = (
+                source_meta.nested_resolve_strategy
+                or merge_meta.nested_resolve_strategy
+                or config.loading.nested_resolve_strategy
+            )
+            resolve_kwargs: dict[str, Any] = {
+                "expand_env_vars": resolved_expand,
+                "type_loaders": source_type_loaders,
+                "nested_resolve_strategy": resolved_strategy,
+            }
+            resolved_resolve = source_meta.nested_resolve or merge_meta.nested_resolve
+            if resolved_resolve is not None:
+                resolve_kwargs["nested_resolve"] = resolved_resolve
             loader_instance = resolve_loader(
                 source_meta,
-                expand_env_vars=resolved_expand,
-                type_loaders=source_type_loaders,
+                **resolve_kwargs,
             )
             ensure_retort(loader_instance, cls)
             loaders.append(loader_instance)
@@ -495,15 +514,22 @@ def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
         else:
             ctx.loading = True
             try:
-                loaded_data = _load_and_merge(
+                merged_data = _load_and_merge(
                     merge_meta=ctx.merge_meta,
                     dataclass_=ctx.cls,
                     loaders=ctx.loaders,
                     debug=ctx.debug,
                     type_loaders=ctx.type_loaders,
-                ).result
+                )
             finally:
                 ctx.loading = False
+            loaded_data = merged_data.result
+            ctx.error_ctx = build_error_ctx(
+                merged_data.last_source_meta,
+                ctx.cls.__name__,
+                secret_paths=ctx.secret_paths,
+                mask_secrets=ctx.error_ctx.mask_secrets,
+            )
             if ctx.cache:
                 ctx.cached_data = loaded_data
 

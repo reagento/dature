@@ -3,7 +3,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import pytest
+
 from dature import LoadMetadata, load
+from dature.errors.exceptions import DatureConfigError, FieldLoadError
 from dature.sources_loader.json5_ import Json5Loader
 from examples.all_types_dataclass import (
     EXPECTED_ALL_TYPES,
@@ -112,3 +115,45 @@ class TestJson5Loader:
         result = load(LoadMetadata(file_=json5_file, loader=Json5Loader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"
+
+    def test_bool_in_int_field_raises_error(self, tmp_path: Path):
+        json5_file = tmp_path / "config.json5"
+        json5_file.write_text("{count: true}")
+
+        @dataclass
+        class Config:
+            count: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(LoadMetadata(file_=json5_file, loader=Json5Loader), Config)
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        first = err.exceptions[0]
+        assert isinstance(first, FieldLoadError)
+        assert first.field_path == ["count"]
+        assert str(first) == (
+            "  [count]  Expected int, got bool: True\n"
+            f"   └── FILE '{json5_file}', line 1\n"
+            f"       {json5_file.read_text()}"
+        )
+
+    def test_int_in_bool_field_raises_error(self, tmp_path: Path):
+        json5_file = tmp_path / "config.json5"
+        json5_file.write_text("{flag: 1}")
+
+        @dataclass
+        class Config:
+            flag: bool
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(LoadMetadata(file_=json5_file, loader=Json5Loader), Config)
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        first = err.exceptions[0]
+        assert isinstance(first, FieldLoadError)
+        assert first.field_path == ["flag"]
+        assert str(first) == (
+            f"  [flag]  Expected bool, got int\n   └── FILE '{json5_file}', line 1\n       {json5_file.read_text()}"
+        )

@@ -89,6 +89,9 @@ def str_from_scalar(value: str | float | bool) -> str:
 
 
 def int_from_string(value: str | int) -> int:
+    if isinstance(value, bool):
+        msg = f"Expected int, got {type(value).__name__}: {value!r}"
+        raise TypeError(msg)
     if isinstance(value, int):
         return value
     return int(value)

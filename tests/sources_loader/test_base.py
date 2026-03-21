@@ -147,8 +147,8 @@ class TestBaseLoader:
         data = {"app": {"name": "TestApp", "port": 8080, "debug": True}}
         loader = MockLoader(prefix="app", test_data=data)
 
-        raw = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(raw, Config)
+        load_result = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(load_result.data, Config)
 
         assert result == expected_data
 
@@ -539,8 +539,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
         loader = MockLoader(test_data=data)
 
-        raw = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(raw, dict)
+        load_result = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(load_result.data, dict)
 
         assert result == {"host": "localhost", "port": 8080}
 
@@ -549,8 +549,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_MISSING", "port": 8080}
         loader = MockLoader(test_data=data)
 
-        raw = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(raw, dict)
+        load_result = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(load_result.data, dict)
 
         assert result == {"host": "$DATURE_MISSING", "port": 8080}
 
@@ -559,8 +559,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
         loader = MockLoader(test_data=data, expand_env_vars="disabled")
 
-        raw = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(raw, dict)
+        load_result = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(load_result.data, dict)
 
         assert result == {"host": "$DATURE_TEST_HOST", "port": 8080}
 
@@ -569,8 +569,8 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_MISSING", "port": 8080}
         loader = MockLoader(test_data=data, expand_env_vars="empty")
 
-        raw = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(raw, dict)
+        load_result = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(load_result.data, dict)
 
         assert result == {"host": "", "port": 8080}
 
@@ -587,7 +587,7 @@ class TestExpandEnvVars:
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
         loader = MockLoader(test_data=data, expand_env_vars="strict")
 
-        raw = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(raw, dict)
+        load_result = loader.load_raw(Path())
+        result = loader.transform_to_dataclass(load_result.data, dict)
 
         assert result == {"host": "localhost", "port": 8080}

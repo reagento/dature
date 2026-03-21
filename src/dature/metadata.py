@@ -18,6 +18,8 @@ if TYPE_CHECKING:
         FileLike,
         FilePath,
         NameStyle,
+        NestedResolve,
+        NestedResolveStrategy,
     )
 
 
@@ -35,6 +37,7 @@ class TypeLoader:
 class MergeStrategy(StrEnum):
     LAST_WINS = "last_wins"
     FIRST_WINS = "first_wins"
+    FIRST_FOUND = "first_found"
     RAISE_ON_CONFLICT = "raise_on_conflict"
 
 
@@ -71,6 +74,8 @@ class LoadMetadata:
     secret_field_names: tuple[str, ...] | None = None
     mask_secrets: bool | None = None
     type_loaders: "tuple[TypeLoader, ...] | None" = None
+    nested_resolve_strategy: "NestedResolveStrategy | None" = None
+    nested_resolve: "NestedResolve | None" = None
     # --8<-- [end:load-metadata]
 
     def __repr__(self) -> str:
@@ -118,6 +123,8 @@ class MergeMetadata:
     secret_field_names: tuple[str, ...] | None = None
     mask_secrets: bool | None = None
     type_loaders: "tuple[TypeLoader, ...] | None" = None
+    nested_resolve_strategy: "NestedResolveStrategy | None" = None
+    nested_resolve: "NestedResolve | None" = None
 
 
 # --8<-- [end:merge-metadata]

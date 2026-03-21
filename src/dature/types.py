@@ -1,8 +1,9 @@
 import types
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from io import BufferedIOBase, RawIOBase, TextIOBase
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Final, Literal, Self
+from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, Self
 from urllib.parse import ParseResult
 
 if TYPE_CHECKING:
@@ -63,6 +64,12 @@ type Base64UrlStr = str
 
 type ExpandEnvVarsMode = Literal["disabled", "default", "empty", "strict"]
 
+type NestedResolveStrategy = Literal["flat", "json"]
+# Values are FieldPath at runtime, but F[Type] returns the dataclass type itself
+# due to the overload trick for IDE autocompletion, so we accept Any here.
+type _NestedResolveValue = "tuple[FieldPath | Any, ...]"
+type NestedResolve = dict[NestedResolveStrategy, _NestedResolveValue]
+
 type _ValidatorKey = "FieldPath | str | int | float | bool | None"
 type FieldValidators = dict[_ValidatorKey, "ValidatorProtocol | tuple[ValidatorProtocol, ...]"]
 
@@ -74,3 +81,19 @@ TEXT_IO_TYPES: Final = TextIOBase
 BINARY_IO_TYPES: Final = (BufferedIOBase, RawIOBase)
 type FileOrStream = Path | FileLike
 type FilePath = str | Path
+
+
+@dataclass(frozen=True, slots=True)
+class NestedConflict:
+    used_var: str
+    ignored_var: str
+    json_raw_value: str
+
+
+type NestedConflicts = dict[str, NestedConflict]
+
+
+@dataclass(frozen=True, slots=True)
+class LoadRawResult:
+    data: JSONValue
+    nested_conflicts: NestedConflicts = field(default_factory=dict)

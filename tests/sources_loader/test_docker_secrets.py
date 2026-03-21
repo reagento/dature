@@ -21,9 +21,9 @@ class TestDockerSecretsLoader:
         (tmp_path / "db.port").write_text("5432")
 
         loader = DockerSecretsLoader(split_symbols=".")
-        data = loader._load(tmp_path)
+        result = loader.load_raw(tmp_path)
 
-        assert data == {"db": {"host": "localhost", "port": "5432"}}
+        assert result.data == {"db": {"host": "localhost", "port": 5432}}
 
     def test_prefix_filtering(self, tmp_path: Path):
         (tmp_path / "APP_name").write_text("myapp")

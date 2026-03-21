@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from enum import Flag
 from pathlib import Path
 from textwrap import dedent
+from typing import Annotated
 
 import pytest
 
 from dature import LoadMetadata, MergeMetadata, MergeStrategy, load
 from dature.errors.exceptions import DatureConfigError, MergeConflictError
+from dature.validators.number import Ge
 
 
 class TestMergeLoadAsFunction:
@@ -781,3 +783,232 @@ class TestCoerceFlagFieldsMergeMode:
 
         config = MergedConfig()
         assert config.perms == _Permission.WRITE | _Permission.EXECUTE
+
+
+class TestFirstFound:
+    def test_uses_first_source(self, tmp_path: Path):
+        first = tmp_path / "first.yaml"
+        first.write_text("host: first-host\nport: 1000\n")
+
+        second = tmp_path / "second.yaml"
+        second.write_text("host: second-host\nport: 2000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=first),
+                    LoadMetadata(file_=second),
+                ),
+                strategy=MergeStrategy.FIRST_FOUND,
+            ),
+            Config,
+        )
+
+        assert result.host == "first-host"
+        assert result.port == 1000
+
+    def test_skips_missing_file(self, tmp_path: Path):
+        missing = tmp_path / "missing.yaml"
+        fallback = tmp_path / "fallback.yaml"
+        fallback.write_text("host: fallback-host\nport: 3000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=missing),
+                    LoadMetadata(file_=fallback),
+                ),
+                strategy=MergeStrategy.FIRST_FOUND,
+            ),
+            Config,
+        )
+
+        assert result.host == "fallback-host"
+        assert result.port == 3000
+
+    def test_skips_broken_file(self, tmp_path: Path):
+        broken = tmp_path / "broken.yaml"
+        broken.write_text(": invalid: yaml: [")
+
+        fallback = tmp_path / "fallback.yaml"
+        fallback.write_text("host: fallback-host\nport: 4000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=broken),
+                    LoadMetadata(file_=fallback),
+                ),
+                strategy=MergeStrategy.FIRST_FOUND,
+            ),
+            Config,
+        )
+
+        assert result.host == "fallback-host"
+        assert result.port == 4000
+
+    def test_all_broken_raises(self, tmp_path: Path):
+        missing1 = tmp_path / "missing1.yaml"
+        missing2 = tmp_path / "missing2.yaml"
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                MergeMetadata(
+                    sources=(
+                        LoadMetadata(file_=missing1),
+                        LoadMetadata(file_=missing2),
+                    ),
+                    strategy=MergeStrategy.FIRST_FOUND,
+                ),
+                Config,
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == "All 2 source(s) failed to load"
+
+    def test_does_not_merge(self, tmp_path: Path):
+        partial = tmp_path / "partial.yaml"
+        partial.write_text("host: partial-host\n")
+
+        full = tmp_path / "full.yaml"
+        full.write_text("host: full-host\nport: 5000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                MergeMetadata(
+                    sources=(
+                        LoadMetadata(file_=partial),
+                        LoadMetadata(file_=full),
+                    ),
+                    strategy=MergeStrategy.FIRST_FOUND,
+                ),
+                Config,
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (f"  [port]  Missing required field\n   └── FILE '{partial}'")
+
+    def test_type_error_not_skipped(self, tmp_path: Path):
+        bad_type = tmp_path / "bad_type.yaml"
+        bad_type.write_text("host: valid-host\nport: not_a_number\n")
+
+        fallback = tmp_path / "fallback.yaml"
+        fallback.write_text("host: fallback-host\nport: 6000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                MergeMetadata(
+                    sources=(
+                        LoadMetadata(file_=bad_type),
+                        LoadMetadata(file_=fallback),
+                    ),
+                    strategy=MergeStrategy.FIRST_FOUND,
+                ),
+                Config,
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
+            f"   └── FILE '{bad_type}', line 2\n"
+            f"       port: not_a_number"
+        )
+
+    def test_validation_error_references_correct_source(self, tmp_path: Path):
+        first = tmp_path / "first.yaml"
+        first.write_text("host: first-host\nport: 0\n")
+
+        second = tmp_path / "second.yaml"
+        second.write_text("host: second-host\nport: 5000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: Annotated[int, Ge(value=1)]
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                MergeMetadata(
+                    sources=(
+                        LoadMetadata(file_=first),
+                        LoadMetadata(file_=second),
+                    ),
+                    strategy=MergeStrategy.FIRST_FOUND,
+                ),
+                Config,
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Value must be greater than or equal to 1\n   └── FILE '{first}', line 2\n       port: 0"
+        )
+
+    def test_validation_error_references_correct_source_decorator(self, tmp_path: Path):
+        first = tmp_path / "first.yaml"
+        first.write_text("host: first-host\nport: 0\n")
+
+        second = tmp_path / "second.yaml"
+        second.write_text("host: second-host\nport: 5000\n")
+
+        @load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=first),
+                    LoadMetadata(file_=second),
+                ),
+                strategy=MergeStrategy.FIRST_FOUND,
+            ),
+            cache=False,
+        )
+        @dataclass
+        class Config:
+            host: str
+            port: Annotated[int, Ge(value=1)]
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            Config()
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Value must be greater than or equal to 1\n   └── FILE '{first}', line 2\n       port: 0"
+        )

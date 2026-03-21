@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated
 
+from dature.types import NestedResolveStrategy
 from dature.validators.number import Ge
 from dature.validators.string import MaxLength, MinLength
 
@@ -51,6 +52,7 @@ class ErrorDisplayConfig:
 class LoadingConfig:
     cache: bool = True
     debug: bool = False
+    nested_resolve_strategy: NestedResolveStrategy = "flat"
 
 
 # --8<-- [end:loading-config]
