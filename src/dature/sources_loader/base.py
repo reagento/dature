@@ -3,12 +3,14 @@ import json
 import logging
 from dataclasses import fields, is_dataclass
 from datetime import timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, ClassVar, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort, loader, name_mapping
 from adaptix.provider import Provider
 
+from dature.errors.exceptions import SourceLocation
 from dature.expansion.alias_provider import AliasProvider, resolve_nested_owner
 from dature.expansion.env_expand import expand_env_vars
 from dature.field_path import FieldPath
@@ -40,7 +42,9 @@ from dature.types import (
     FieldValidators,
     FileOrStream,
     JSONValue,
+    LoadRawResult,
     NameStyle,
+    NestedConflict,
     TypeAnnotation,
 )
 from dature.validators.base import (
@@ -60,6 +64,7 @@ logger = logging.getLogger("dature")
 
 class BaseLoader(LoaderProtocol, abc.ABC):
     display_name: ClassVar[str]
+    display_label: ClassVar[str] = "FILE"
     path_finder_class: type[PathFinder] | None = None
 
     def __init__(  # noqa: PLR0913
@@ -273,7 +278,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             self.retorts[dataclass_] = self.create_retort()
         return self.retorts[dataclass_].load(data, dataclass_)
 
-    def load_raw(self, path: FileOrStream) -> JSONValue:
+    def load_raw(self, path: FileOrStream) -> LoadRawResult:
         data = self._load(path)
         processed = self._pre_processing(data)
         logger.debug(
@@ -283,4 +288,68 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             sorted(data.keys()) if isinstance(data, dict) else "<non-dict>",
             sorted(processed.keys()) if isinstance(processed, dict) else "<non-dict>",
         )
-        return processed
+        return LoadRawResult(data=processed)
+
+    @classmethod
+    def resolve_location(
+        cls,
+        field_path: list[str],
+        file_path: Path | None,
+        file_content: str | None,
+        prefix: str | None,
+        split_symbols: str,  # noqa: ARG003
+        nested_conflict: NestedConflict | None,  # noqa: ARG003
+    ) -> list[SourceLocation]:
+        if file_content is None or not field_path:
+            return [_empty_file_location(cls.display_label, file_path)]
+
+        if cls.path_finder_class is None:
+            return [_empty_file_location(cls.display_label, file_path)]
+
+        search_path = _build_search_path(field_path, prefix)
+        finder = cls.path_finder_class(file_content)
+        line_range = finder.find_line_range(search_path)
+        if line_range is None:
+            return [_empty_file_location(cls.display_label, file_path)]
+
+        lines = file_content.splitlines()
+        content_lines: list[str] | None = None
+        if 0 < line_range.start <= len(lines):
+            end = min(line_range.end, len(lines))
+            raw = lines[line_range.start - 1 : end]
+            content_lines = _strip_common_indent(raw)
+
+        return [
+            SourceLocation(
+                display_label=cls.display_label,
+                file_path=file_path,
+                line_range=line_range,
+                line_content=content_lines,
+                env_var_name=None,
+            ),
+        ]
+
+
+def _build_search_path(field_path: list[str], prefix: str | None) -> list[str]:
+    if not prefix:
+        return field_path
+    prefix_parts = prefix.split(".")
+    return prefix_parts + field_path
+
+
+def _strip_common_indent(raw_lines: list[str]) -> list[str]:
+    indents = [len(line) - len(line.lstrip()) for line in raw_lines if line.strip()]
+    if not indents:
+        return raw_lines
+    min_indent = min(indents)
+    return [line[min_indent:] for line in raw_lines]
+
+
+def _empty_file_location(display_label: str, file_path: Path | None) -> SourceLocation:
+    return SourceLocation(
+        display_label=display_label,
+        file_path=file_path,
+        line_range=None,
+        line_content=None,
+        env_var_name=None,
+    )

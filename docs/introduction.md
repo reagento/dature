@@ -148,6 +148,8 @@ LoadMetadata(file_="config.yaml", loader=Yaml11Loader)
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](features/masking.md) |
 | `mask_secrets` | Enable/disable secret masking for this source. See [Masking](features/masking.md) |
 | `type_loaders` | Custom type converters for this source. See [Custom Types & Loaders](advanced/custom_types.md#custom-types) |
+| `nested_resolve_strategy` | Priority when both JSON and flat keys exist for a nested field: `"flat"` (default) or `"json"`. See [Nested Resolve](advanced/nested-resolve.md) |
+| `nested_resolve` | Per-field strategy overrides using `F` objects. Takes priority over `nested_resolve_strategy`. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
 
 ### File-Like Objects
 

@@ -132,8 +132,8 @@ def handle_load_errors[T](
         for e in exc.exceptions:
             if not isinstance(e, MissingEnvVarError):
                 continue
-            location = resolve_source_location(e.field_path, ctx, file_content)
-            e.location = location
+            locations = resolve_source_location(e.field_path, ctx, file_content)
+            e.location = locations[0] if locations else None
             enriched_env.append(e)
         raise EnvVarExpandError(enriched_env, dataclass_name=ctx.dataclass_name) from exc
     except (AggregateLoadError, LoadError) as exc:
@@ -153,13 +153,13 @@ def handle_load_errors[T](
             location_ctx = replace(ctx, secret_paths=ctx.secret_paths | heuristic_paths)
         enriched: list[FieldLoadError] = []
         for fe in field_errors:
-            location = resolve_source_location(fe.field_path, location_ctx, file_content)
+            locations = resolve_source_location(fe.field_path, location_ctx, file_content)
             enriched.append(
                 FieldLoadError(
                     field_path=fe.field_path,
                     message=fe.message,
                     input_value=fe.input_value,
-                    locations=[location],
+                    locations=locations,
                 ),
             )
         raise DatureConfigError(ctx.dataclass_name, enriched) from None
@@ -187,7 +187,9 @@ def enrich_skipped_errors(
             continue
 
         source_reprs = ", ".join(repr(s.metadata) for s in sources)
-        locations = [resolve_source_location(exc.field_path, s.error_ctx, s.file_content) for s in sources]
+        locations = [
+            loc for s in sources for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content)
+        ]
         updated.append(
             FieldLoadError(
                 field_path=exc.field_path,

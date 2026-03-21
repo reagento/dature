@@ -1,81 +1,48 @@
-from datetime import date, datetime, time
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import ClassVar
 
-from adaptix import loader
-from adaptix.provider import Provider
-
-from dature.expansion.env_expand import expand_env_vars
-from dature.protocols import ValidatorProtocol
-from dature.sources_loader.base import BaseLoader
-from dature.sources_loader.loaders import (
-    bool_loader,
-    bytearray_from_json_string,
-    date_from_string,
-    datetime_from_string,
-    float_from_string,
-    none_from_empty_string,
-    optional_from_empty_string,
-    str_from_scalar,
-    time_from_string,
-)
+from dature.errors.exceptions import SourceLocation
+from dature.sources_loader.flat_key import FlatKeyLoader
 from dature.types import (
-    DotSeparatedPath,
-    ExpandEnvVarsMode,
-    FieldMapping,
-    FieldValidators,
     FileOrStream,
     JSONValue,
-    NameStyle,
+    NestedConflict,
 )
 
-if TYPE_CHECKING:
-    from dature.metadata import TypeLoader
 
-
-def _set_nested(d: dict[str, JSONValue], keys: list[str], value: str) -> None:
-    for key in keys[:-1]:
-        d = cast("dict[str, JSONValue]", d.setdefault(key, {}))
-    d[keys[-1]] = value
-
-
-class DockerSecretsLoader(BaseLoader):
+class DockerSecretsLoader(FlatKeyLoader):
     display_name = "docker_secrets"
+    display_label: ClassVar[str] = "SECRET FILE"
 
-    def __init__(  # noqa: PLR0913
-        self,
-        *,
-        prefix: DotSeparatedPath | None = None,
-        split_symbols: str = "__",
-        name_style: NameStyle | None = None,
-        field_mapping: FieldMapping | None = None,
-        root_validators: tuple[ValidatorProtocol, ...] | None = None,
-        validators: FieldValidators | None = None,
-        expand_env_vars: ExpandEnvVarsMode = "default",
-        type_loaders: "tuple[TypeLoader, ...]" = (),
-    ) -> None:
-        self._split_symbols = split_symbols
-        super().__init__(
-            prefix=prefix,
-            name_style=name_style,
-            field_mapping=field_mapping,
-            root_validators=root_validators,
-            validators=validators,
-            expand_env_vars=expand_env_vars,
-            type_loaders=type_loaders,
-        )
-
-    def _additional_loaders(self) -> list[Provider]:
+    @classmethod
+    def resolve_location(
+        cls,
+        field_path: list[str],
+        file_path: Path | None,
+        file_content: str | None,  # noqa: ARG003
+        prefix: str | None,
+        split_symbols: str,
+        nested_conflict: NestedConflict | None,
+    ) -> list[SourceLocation]:
+        if nested_conflict is not None:
+            json_var = cls._resolve_var_name(field_path[:1], prefix, split_symbols, None)
+            if nested_conflict.used_var == json_var:
+                secret_name = field_path[0]
+            else:
+                secret_name = split_symbols.join(field_path)
+        else:
+            secret_name = split_symbols.join(field_path)
+        if prefix is not None:
+            secret_name = prefix + secret_name
+        secret_file = file_path / secret_name if file_path is not None else None
         return [
-            loader(str, str_from_scalar),
-            loader(float, float_from_string),
-            loader(date, date_from_string),
-            loader(datetime, datetime_from_string),
-            loader(time, time_from_string),
-            loader(bytearray, bytearray_from_json_string),
-            loader(type(None), none_from_empty_string),
-            loader(str | None, optional_from_empty_string),
-            loader(bool, bool_loader),
+            SourceLocation(
+                display_label=cls.display_label,
+                file_path=secret_file,
+                line_range=None,
+                line_content=None,
+                env_var_name=None,
+            ),
         ]
 
     def _load(self, path: FileOrStream) -> JSONValue:
@@ -84,7 +51,6 @@ class DockerSecretsLoader(BaseLoader):
             raise TypeError(msg)
 
         result: dict[str, JSONValue] = {}
-
         for entry in sorted(path.iterdir()):
             if not entry.is_file():
                 continue
@@ -98,14 +64,6 @@ class DockerSecretsLoader(BaseLoader):
             if self._prefix:
                 key = key[len(self._prefix) :]
 
-            parts = key.split(self._split_symbols)
-            if len(parts) > 1:
-                _set_nested(result, parts, value)
-            else:
-                result[key] = value
+            result[key] = value
 
         return result
-
-    def _pre_processing(self, data: JSONValue) -> JSONValue:
-        expanded = expand_env_vars(data, mode=self._expand_env_vars_mode)
-        return self._parse_string_values(expanded)

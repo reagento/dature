@@ -305,35 +305,6 @@ jobs:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
           TAG: v${{ needs.tag.outputs.version }}
         run: |
-          has_active_build() {
-            local version=$1
-            local response
-            response=$(curl -s \
-              -H "Authorization: Token $RTD_API_TOKEN" \
-              "https://readthedocs.org/api/v3/projects/dature/versions/$version/builds/?limit=1")
-            echo "$response" | grep -q '"code": "building"\|"code": "triggered"\|"code": "cloning"'
-          }
-
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
             https://readthedocs.org/api/v3/projects/dature/sync-versions/
-
-          sleep 15
-
-          curl -X PATCH \
-            -H "Authorization: Token $RTD_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"active": true, "hidden": false}' \
-            "https://readthedocs.org/api/v3/projects/dature/versions/$TAG/"
-
-          if ! has_active_build "$TAG"; then
-            curl -X POST \
-              -H "Authorization: Token $RTD_API_TOKEN" \
-              "https://readthedocs.org/api/v3/projects/dature/versions/$TAG/builds/"
-          fi
-
-          if ! has_active_build "stable"; then
-            curl -X POST \
-              -H "Authorization: Token $RTD_API_TOKEN" \
-              https://readthedocs.org/api/v3/projects/dature/versions/stable/builds/
-          fi

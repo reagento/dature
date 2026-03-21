@@ -17,28 +17,28 @@ class TestEnvFileLoader:
     def test_prefix_filtering(self, prefixed_env_file: Path):
         """Test prefix filtering with nested structures."""
         loader = EnvFileLoader(prefix="APP_")
-        data = loader._load(prefixed_env_file)
+        result = loader.load_raw(prefixed_env_file)
 
-        assert data == {
+        assert result.data == {
             "name": "PrefixedApp",
             "environment": "production",
             "database": {
                 "host": "prod.db.com",
-                "port": "5432",
+                "port": 5432,
             },
         }
 
     def test_custom_split_symbols(self, custom_separator_env_file: Path):
         """Test custom separator for nested keys."""
         loader = EnvFileLoader(prefix="APP_", split_symbols=".")
-        data = loader._load(custom_separator_env_file)
+        result = loader.load_raw(custom_separator_env_file)
 
-        assert data == {
+        assert result.data == {
             "name": "CustomApp",
             "environment": "development",
             "db": {
                 "host": "dev.db.com",
-                "port": "5432",
+                "port": 5432,
             },
         }
 

@@ -204,8 +204,8 @@ def raise_on_conflict(
         locations: list[SourceLocation] = []
         for source_idx, _ in sources:
             source_ctx = source_ctxs[source_idx]
-            loc = resolve_source_location(field_path, source_ctx.error_ctx, source_ctx.file_content)
-            locations.append(loc)
+            locs = resolve_source_location(field_path, source_ctx.error_ctx, source_ctx.file_content)
+            locations.extend(locs)
         conflict_errors.append(
             MergeConflictFieldError(
                 field_path=field_path,
@@ -226,7 +226,7 @@ def deep_merge(
 ) -> JSONValue:
     if strategy == MergeStrategy.LAST_WINS:
         return deep_merge_last_wins(base, override, field_merge_map=field_merge_map)
-    if strategy == MergeStrategy.FIRST_WINS:
+    if strategy in (MergeStrategy.FIRST_WINS, MergeStrategy.FIRST_FOUND):
         return deep_merge_first_wins(base, override, field_merge_map=field_merge_map)
     msg = "Use merge_sources for RAISE_ON_CONFLICT strategy"
     raise ValueError(msg)

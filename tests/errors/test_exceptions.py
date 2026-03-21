@@ -16,7 +16,7 @@ class TestDatureConfigErrorFormat:
                 input_value="30",
                 locations=[
                     SourceLocation(
-                        source_type="toml",
+                        display_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=2, end=2),
                         line_content=['timeout = "30"'],
@@ -39,7 +39,7 @@ class TestDatureConfigErrorFormat:
                 input_value="abc",
                 locations=[
                     SourceLocation(
-                        source_type="json",
+                        display_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=2),
                         line_content=['"timeout": "abc"'],
@@ -53,7 +53,7 @@ class TestDatureConfigErrorFormat:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        source_type="json",
+                        display_label="FILE",
                         file_path=Path("config.json"),
                         line_range=None,
                         line_content=None,
@@ -79,7 +79,7 @@ class TestDatureConfigErrorFormat:
                 input_value="abc",
                 locations=[
                     SourceLocation(
-                        source_type="env",
+                        display_label="ENV",
                         file_path=None,
                         line_range=None,
                         line_content=None,
@@ -312,7 +312,7 @@ class TestLineTruncation:
                 input_value="30",
                 locations=[
                     SourceLocation(
-                        source_type="toml",
+                        display_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=2, end=2),
                         line_content=[line_content],
@@ -359,7 +359,7 @@ class TestLineTruncation:
                 input_value="abc",
                 locations=[
                     SourceLocation(
-                        source_type="envfile",
+                        display_label="ENV FILE",
                         file_path=Path(".env"),
                         line_range=LineRange(start=2, end=2),
                         line_content=[line_content],
@@ -386,7 +386,7 @@ class TestLineTruncation:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        source_type="json",
+                        display_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=4),
                         line_content=[line_long, line_short, line_long],
@@ -414,7 +414,7 @@ class TestLineTruncation:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        source_type="json",
+                        display_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=5),
                         line_content=["line1", "line2", "line3", "line4"],
@@ -441,7 +441,7 @@ class TestLineTruncation:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        source_type="json",
+                        display_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=6),
                         line_content=["line1", "line2", "line3", "line4", "line5"],

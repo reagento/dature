@@ -1,11 +1,24 @@
 # dature
 
-[![CI](https://github.com/Niccolum/dature/actions/workflows/ci.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/ci.yml)
-[![Documentation](https://readthedocs.org/projects/dature/badge/?version=latest)](https://dature.readthedocs.io/)
-[![PyPI](https://img.shields.io/pypi/v/dature)](https://pypi.org/project/dature/)
-[![Python](https://img.shields.io/pypi/pyversions/dature)](https://pypi.org/project/dature/)
+---
 
-**[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/changelog/)**
+<div align="center">
+[![PyPI](https://img.shields.io/pypi/v/dature)](https://pypi.org/project/dature/)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/dature)](https://pypi.org/project/dature/)
+[![Documentation](https://readthedocs.org/projects/dature/badge/?version=latest)](https://dature.readthedocs.io/)
+[![License](https://img.shields.io/github/license/Niccolum/dature.svg)](https://github.com/Niccolum/dature/blob/main/LICENSE)
+\
+[![CI](https://github.com/Niccolum/dature/actions/workflows/ci.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Niccolum/dature/actions/workflows/scorecard.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/scorecard.yml)
+[![Dependency Review](https://github.com/Niccolum/dature/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/dependency-review.yml)
+\
+[![Monthly downloads](https://static.pepy.tech/badge/dature/month)](https://pypi.org/project/dature/)
+[![Commits since latest release](https://img.shields.io/github/commits-since/Niccolum/dature/latest?logo=github)](https://github.com/Niccolum/dature/commits)
+[![Last commit date](https://img.shields.io/github/last-commit/Niccolum/dature?logo=github&label=Last%20Commit)](https://github.com/Niccolum/dature/commits)
+[![Last release date](https://img.shields.io/github/release-date/Niccolum/dature?logo=github&label=Release%20Date)](https://github.com/Niccolum/dature/releases)
+</div>
+
+**[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/en/latest/changelog/)**
 
 Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, and Docker secrets — with automatic type conversion, validation, and human-readable error messages.
 

@@ -63,6 +63,8 @@ See [Introduction — LoadMetadata Reference](introduction.md#loadmetadata-refer
 | `expand_env_vars` | Default env expansion mode for all sources |
 | `secret_field_names` | Extra secret patterns for all sources |
 | `mask_secrets` | Enable/disable masking globally |
+| `nested_resolve_strategy` | Default priority for JSON vs flat keys across all sources. See [Nested Resolve](advanced/nested-resolve.md) |
+| `nested_resolve` | Default per-field strategy overrides for all sources. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
 
 ---
 
