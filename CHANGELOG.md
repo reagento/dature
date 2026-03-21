@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+<!-- PR #48 -->
+### Features
+- Introduced a new strategy for configuration loading.
+  
+### Improvements
+- Enhanced the `int_from_string` function to correctly cast boolean values to integers.
+  
+### Fixes
+- Updated the README to reflect recent changes and improvements.
+<!-- PR #48 -->
+
 ## 0.12.4
 
 ### Fixes
