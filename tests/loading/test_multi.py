@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from enum import Flag
 from pathlib import Path
 from textwrap import dedent
+from typing import Annotated
 
 import pytest
 
 from dature import LoadMetadata, MergeMetadata, MergeStrategy, load
 from dature.errors.exceptions import DatureConfigError, MergeConflictError
+from dature.validators.number import Ge
 
 
 class TestMergeLoadAsFunction:
@@ -946,4 +948,67 @@ class TestFirstFound:
             f"  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
             f"   └── FILE '{bad_type}', line 2\n"
             f"       port: not_a_number"
+        )
+
+    def test_validation_error_references_correct_source(self, tmp_path: Path):
+        first = tmp_path / "first.yaml"
+        first.write_text("host: first-host\nport: 0\n")
+
+        second = tmp_path / "second.yaml"
+        second.write_text("host: second-host\nport: 5000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: Annotated[int, Ge(value=1)]
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                MergeMetadata(
+                    sources=(
+                        LoadMetadata(file_=first),
+                        LoadMetadata(file_=second),
+                    ),
+                    strategy=MergeStrategy.FIRST_FOUND,
+                ),
+                Config,
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Value must be greater than or equal to 1\n   └── FILE '{first}', line 2\n       port: 0"
+        )
+
+    def test_validation_error_references_correct_source_decorator(self, tmp_path: Path):
+        first = tmp_path / "first.yaml"
+        first.write_text("host: first-host\nport: 0\n")
+
+        second = tmp_path / "second.yaml"
+        second.write_text("host: second-host\nport: 5000\n")
+
+        @load(
+            MergeMetadata(
+                sources=(
+                    LoadMetadata(file_=first),
+                    LoadMetadata(file_=second),
+                ),
+                strategy=MergeStrategy.FIRST_FOUND,
+            ),
+            cache=False,
+        )
+        @dataclass
+        class Config:
+            host: str
+            port: Annotated[int, Ge(value=1)]
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            Config()
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Value must be greater than or equal to 1\n   └── FILE '{first}', line 2\n       port: 0"
         )

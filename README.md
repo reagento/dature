@@ -12,10 +12,10 @@
 [![CodeQL](https://github.com/Niccolum/dature/actions/workflows/scorecard.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/scorecard.yml)
 [![Dependency Review](https://github.com/Niccolum/dature/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/dependency-review.yml)
 \
-[![Monthly downloads]("https://static.pepy.tech/badge/dature/month")](https://pypi.org/project/dature/)
-[![Commits since latest release]("https://img.shields.io/github/commits-since/Niccolum/dature/latest?logo=github")](https://github.com/Niccolum/dature/commits)
-[![Last commit date]("https://img.shields.io/github/last-commit/Niccolum/dature?logo=github&label=Last%20Commit")](https://github.com/Niccolum/dature/commits)
-[![Last release date]("https://img.shields.io/github/release-date/Niccolum/dature?logo=github&label=Release%20Date")](https://github.com/Niccolum/dature/releases)
+[![Monthly downloads](https://static.pepy.tech/badge/dature/month)](https://pypi.org/project/dature/)
+[![Commits since latest release](https://img.shields.io/github/commits-since/Niccolum/dature/latest?logo=github)](https://github.com/Niccolum/dature/commits)
+[![Last commit date](https://img.shields.io/github/last-commit/Niccolum/dature?logo=github&label=Last%20Commit)](https://github.com/Niccolum/dature/commits)
+[![Last release date](https://img.shields.io/github/release-date/Niccolum/dature?logo=github&label=Release%20Date)](https://github.com/Niccolum/dature/releases)
 </div>
 
 **[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/en/latest/changelog/)**
