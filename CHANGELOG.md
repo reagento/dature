@@ -5,12 +5,14 @@
 <!-- PR #48 -->
 ### Features
 - Introduced a new strategy for configuration loading.
-  
+
 ### Improvements
 - Enhanced the `int_from_string` function to correctly cast boolean values to integers.
-  
+- Improved documentation for advanced configuration options.
+
 ### Fixes
 - Updated the README to reflect recent changes and improvements.
+- Addressed comments from Devin regarding code clarity and documentation.
 <!-- PR #48 -->
 
 ## 0.12.4
