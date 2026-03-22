@@ -7,6 +7,7 @@
 - Updated documentation for clarity and consistency.
 - Improved the CI workflow for better integration with documentation generation.
 - Enhanced stylesheets for improved readability in documentation.
+- Refactored documentation generation scripts for better maintainability.
 <!-- PR #52 -->
 
 ## 0.14.0
