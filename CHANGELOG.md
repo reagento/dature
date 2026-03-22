@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-<!-- PR #50 -->
+## 0.14.0
+
 ### Improvements
 - Refactored error handling in the exceptions module to provide clearer messages.
 - Enhanced the sources loader to improve performance and reliability.
@@ -15,7 +16,6 @@
 - Corrected various test cases to improve coverage and reliability.
 - Addressed errors in the source loading process to enhance stability.
 - Fixed errors related to loading configurations from different sources.
-<!-- PR #50 -->
 
 ## 0.13.0
 
