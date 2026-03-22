@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block site_meta %}
+  {{ super() }}
+  <meta name="readthedocs-addons-api-version" content="1" />
+{% endblock %}
+
 {# AI Chat widget — uncomment when self-hosted solution is deployed
 
 {% block scripts %}
