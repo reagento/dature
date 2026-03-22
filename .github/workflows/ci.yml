@@ -306,6 +306,9 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"active": true, "hidden": true}' \
             https://readthedocs.org/api/v3/projects/dature/versions/$RTD_VERSION/
+          curl -sf -X POST \
+            -H "Authorization: Token $RTD_API_TOKEN" \
+            https://readthedocs.org/api/v3/projects/dature/versions/$RTD_VERSION/builds/
 
   trigger-rtd-tag:
     needs: [tag]
