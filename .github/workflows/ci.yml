@@ -296,18 +296,22 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Activate and trigger RTD build for fix-docs
+      - name: Sync, activate and trigger RTD build
         env:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
         run: |
+          curl -X POST \
+            -H "Authorization: Token $RTD_API_TOKEN" \
+            https://readthedocs.org/api/v3/projects/dature/sync-versions/
+          sleep 5
           curl -X PATCH \
             -H "Authorization: Token $RTD_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"active": true, "hidden": true}' \
-            https://readthedocs.org/api/v3/projects/dature/versions/fix-docs/
+            https://readthedocs.org/api/v3/projects/dature/versions/refactor-fix-docs/
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
-            https://readthedocs.org/api/v3/projects/dature/versions/fix-docs/builds/
+            https://readthedocs.org/api/v3/projects/dature/versions/refactor-fix-docs/builds/
 
   trigger-rtd-tag:
     needs: [tag]
