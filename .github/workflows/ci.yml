@@ -301,11 +301,6 @@ jobs:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
           RTD_VERSION: refactor-fix_docs
         run: |
-          curl -sf -X PATCH \
-            -H "Authorization: Token $RTD_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"active": true, "hidden": true}' \
-            https://readthedocs.org/api/v3/projects/dature/versions/$RTD_VERSION/
           curl -sf -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \
             https://readthedocs.org/api/v3/projects/dature/versions/$RTD_VERSION/builds/
