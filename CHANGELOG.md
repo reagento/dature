@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+<!-- PR #56 -->
+### Docs
+- Fixed issues in the documentation for improved clarity and accuracy.
+- Updated the configuration for Read the Docs integration in the documentation.
+<!-- PR #56 -->
+
 ## 0.14.2
 
 ### Fixes
