@@ -122,7 +122,7 @@ document.addEventListener("readthedocs-addons-data-ready", function (event) {
 
 // Re-inject after Material instant navigation replaces the DOM
 document.addEventListener("DOMContentLoaded", function () {
-  if (typeof document.body.dataset.mdComponent === "undefined") {
+  if (typeof document.body.dataset.mdColorScheme === "undefined") {
     return;
   }
   new MutationObserver(function () {
