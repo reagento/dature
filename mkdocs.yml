@@ -53,7 +53,6 @@ nav:
   - Getting Started:
     - Home: index.md
     - Introduction: introduction.md
-    - Why Not pydantic-settings?: why-not-pydantic-settings.md
     - Supported Types: supported_types.md
   - Features:
     - Naming: features/naming.md
@@ -70,6 +69,10 @@ nav:
     - Caching: advanced/caching.md
     - Configure: advanced/configure.md
     - Custom Types & Loaders: advanced/custom_types.md
+  - Comparison:
+    - vs pydantic-settings: why-not-pydantic-settings.md
+    - vs Hydra: why-not-hydra.md
+    - vs Dynaconf: why-not-dynaconf.md
   - Reference:
     - API Reference: api-reference.md
     - Changelog: changelog.md
@@ -115,6 +118,10 @@ plugins:
           - advanced/caching.md
           - advanced/configure.md
           - advanced/custom_types.md
+        Comparison:
+          - why-not-pydantic-settings.md
+          - why-not-hydra.md
+          - why-not-dynaconf.md
         Reference:
           - api-reference.md
           - changelog.md
