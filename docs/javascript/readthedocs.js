@@ -1,6 +1,4 @@
-// Replace Material for MkDocs version selector data with RTD versions.
-// Material creates the .md-version component (via extra.version.provider: mike),
-// but can't load versions.json on RTD. This script fills in the actual data.
+// Build a version selector from RTD API data and inject it into the Material header.
 // HTML structure matches Material's native renderVersionSelector output.
 
 const MAX_VISIBLE = 10;
@@ -53,31 +51,62 @@ function renderVersionItem(version) {
     </li>`;
 }
 
-document.addEventListener(
-  "readthedocs-addons-data-ready",
-  function (event) {
-    const config = event.detail.data();
-    const versions = latestPatchOnly(
-      config.versions.active.filter((v) => !v.hidden)
-    );
-    const current = config.versions.current;
+// Cached HTML fragments, built once from RTD data
+let versioningHtml = "";
+let olderItemsHtml = "";
 
-    const visible = versions.slice(0, MAX_VISIBLE);
-    const older = versions.slice(MAX_VISIBLE);
+function injectVersionSelector() {
+  if (versioningHtml === "") {
+    return;
+  }
 
-    let olderToggle = "";
-    const olderItems = older.map(renderVersionItem).join("\n");
+  const topic = document.querySelector(".md-header__topic");
+  if (topic === null) {
+    return;
+  }
 
-    if (older.length > 0) {
-      olderToggle = `
+  // Remove existing selector (previous from instant loading)
+  const existing = topic.querySelector(".md-version");
+  if (existing !== null) {
+    existing.remove();
+  }
+  topic.insertAdjacentHTML("beforeend", versioningHtml);
+
+  // "older versions…" expands the list inline
+  const toggle = topic.querySelector(".md-version__show-older");
+  if (toggle !== null) {
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const li = toggle.closest(".md-version__item");
+      li.insertAdjacentHTML("afterend", olderItemsHtml);
+      li.remove();
+    });
+  }
+}
+
+document.addEventListener("readthedocs-addons-data-ready", function (event) {
+  const config = event.detail.data();
+  const versions = latestPatchOnly(
+    config.versions.active.filter((v) => !v.hidden)
+  );
+  const current = config.versions.current;
+
+  const visible = versions.slice(0, MAX_VISIBLE);
+  const older = versions.slice(MAX_VISIBLE);
+
+  let olderToggle = "";
+  olderItemsHtml = older.map(renderVersionItem).join("\n");
+
+  if (older.length > 0) {
+    olderToggle = `
         <li class="md-version__item">
           <span class="md-version__link md-version__show-older">
             older versions…
           </span>
         </li>`;
-    }
+  }
 
-    const versioning = `
+  versioningHtml = `
       <div class="md-version">
         <button class="md-version__current" aria-label="Select version">
           ${escapeHtml(current.slug)}
@@ -88,27 +117,21 @@ document.addEventListener(
         </ul>
       </div>`;
 
-    const topic = document.querySelector(".md-header__topic");
-    if (topic === null) {
-      return;
-    }
+  injectVersionSelector();
+});
 
-    // Remove existing selector (Material's empty one or previous from instant loading)
-    const existing = topic.querySelector(".md-version");
-    if (existing !== null) {
-      existing.remove();
-    }
-    topic.insertAdjacentHTML("beforeend", versioning);
-
-    // "older versions…" expands the list inline
-    const toggle = document.querySelector(".md-version__show-older");
-    if (toggle) {
-      toggle.addEventListener("click", function (e) {
-        e.stopPropagation();
-        const li = toggle.closest(".md-version__item");
-        li.insertAdjacentHTML("afterend", olderItems);
-        li.remove();
-      });
-    }
+// Re-inject after Material instant navigation replaces the DOM
+document.addEventListener("DOMContentLoaded", function () {
+  if (typeof document.body.dataset.mdComponent === "undefined") {
+    return;
   }
-);
+  new MutationObserver(function () {
+    const topic = document.querySelector(".md-header__topic");
+    if (topic !== null && topic.querySelector(".md-version") === null) {
+      injectVersionSelector();
+    }
+  }).observe(document.querySelector(".md-header__topic") || document.body, {
+    childList: true,
+    subtree: true,
+  });
+});
