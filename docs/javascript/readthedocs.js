@@ -88,14 +88,15 @@ document.addEventListener(
         </ul>
       </div>`;
 
-    // Remove existing selector (Material's empty one or previous from instant loading)
-    const existing = document.querySelector(".md-version");
-    if (existing !== null) {
-      existing.remove();
-    }
     const topic = document.querySelector(".md-header__topic");
     if (topic === null) {
       return;
+    }
+
+    // Remove existing selector (Material's empty one or previous from instant loading)
+    const existing = topic.querySelector(".md-version");
+    if (existing !== null) {
+      existing.remove();
     }
     topic.insertAdjacentHTML("beforeend", versioning);
 
