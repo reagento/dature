@@ -61,12 +61,6 @@
   display: none;
 }
 
-/* Hide site name in mobile header */
-@media screen and (max-width: 76.1875em) {
-  .md-header__title {
-    display: none;
-  }
-}
 
 .md-typeset table:not([class]) th {
   min-width: 6rem;
@@ -100,6 +94,7 @@ readthedocs-flyout {
 
 .md-version__list {
   z-index: 4;
+  min-width: 100%;
 }
 
 .md-version__show-older {
