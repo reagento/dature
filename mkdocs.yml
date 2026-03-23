@@ -53,6 +53,7 @@ nav:
   - Getting Started:
     - Home: index.md
     - Introduction: introduction.md
+    - Why Not pydantic-settings?: why-not-pydantic-settings.md
     - Supported Types: supported_types.md
   - Features:
     - Naming: features/naming.md
