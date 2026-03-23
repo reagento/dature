@@ -93,6 +93,15 @@ readthedocs-flyout {
   font-size: 0.7rem;
 }
 
+.md-version {
+  position: relative;
+  z-index: 4;
+}
+
+.md-version__list {
+  z-index: 4;
+}
+
 .md-version__show-older {
   cursor: pointer;
   opacity: 0.6;
