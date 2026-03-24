@@ -17,8 +17,8 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          if [[ ! "$BRANCH" =~ ^(fix|bug|feat|feature|chore|docs|refactor|test|ci|dependabot)/ ]]; then
-            echo "::error::Branch name '$BRANCH' must start with one of: feat/, fix/, bug/, chore/, docs/, refactor/, test/, ci/, dependabot/"
+          if [[ ! "$BRANCH" =~ ^(fix|bug|feat|feature|chore|docs|refactor|test|ci|dependabot|removal)/ ]]; then
+            echo "::error::Branch name '$BRANCH' must start with one of: feat/, fix/, bug/, chore/, docs/, refactor/, test/, ci/, dependabot/, removal/"
             exit 1
           fi
 
@@ -145,46 +145,76 @@ jobs:
             exit 1
           fi
 
-  tag:
-    needs: [lint, test-result]
+  changelog-check:
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor != 'dependabot[bot]'
+      && !startsWith(github.head_ref, 'chore/release-')
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    outputs:
-      tagged: ${{ steps.create-tag.outputs.tagged }}
-      version: ${{ steps.create-tag.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - name: Check version change and create tag
-        id: create-tag
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          VERSION=$(grep -Po '(?<=^version = ")[^"]+' pyproject.toml)
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          enable-cache: true
 
-          if ! git tag -l "v$VERSION" | grep -q .; then
-            echo "Tag v$VERSION does not exist, creating"
-            gh api "repos/${{ github.repository }}/git/refs" \
-              -f "ref=refs/tags/v$VERSION" \
-              -f "sha=${{ github.sha }}"
-            echo "tagged=true" >> "$GITHUB_OUTPUT"
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.12'
+
+      - name: Check changelog fragment
+        run: |
+          uv run towncrier check --compare-with origin/main
+
+  auto-tag:
+    needs: [lint, test-result]
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    outputs:
+      tagged: ${{ steps.tag.outputs.tagged }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect release commit and create tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MERGE_MSG=$(git log -1 --format='%s')
+
+          # Match squash-merge of release PR: "chore: release X.Y.Z (#N)"
+          if [[ "$MERGE_MSG" =~ ^chore:\ release\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+
+            if git tag -l "v$VERSION" | grep -q .; then
+              echo "Tag v$VERSION already exists"
+              echo "tagged=false" >> "$GITHUB_OUTPUT"
+            else
+              git tag "v$VERSION"
+              git push origin "v$VERSION"
+              echo "tagged=true" >> "$GITHUB_OUTPUT"
+              echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "Tag v$VERSION already exists"
+            echo "Not a release commit"
             echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
 
   pypi-publish:
-    needs: [tag]
+    needs: [auto-tag]
     runs-on: ubuntu-latest
-    if: >-
-      !failure()
-      && !cancelled()
-      && needs.tag.outputs.tagged == 'true'
+    if: needs.auto-tag.outputs.tagged == 'true'
     environment:
       name: pypi
       url: https://pypi.org/p/dature
@@ -193,6 +223,8 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: v${{ needs.auto-tag.outputs.version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
@@ -214,20 +246,19 @@ jobs:
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
 
   github-release:
-    needs: [tag]
+    needs: [auto-tag]
     runs-on: ubuntu-latest
-    if: >-
-      !failure()
-      && !cancelled()
-      && needs.tag.outputs.tagged == 'true'
+    if: needs.auto-tag.outputs.tagged == 'true'
     permissions:
       contents: write
     steps:
       - name: Determine version
         id: version
-        run: echo "value=${{ needs.tag.outputs.version }}" >> "$GITHUB_OUTPUT"
+        run: echo "value=${{ needs.auto-tag.outputs.version }}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: v${{ needs.auto-tag.outputs.version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
@@ -278,11 +309,9 @@ jobs:
             --notes "$RELEASE_NOTES"
 
   trigger-rtd-latest:
-    needs: [tag]
+    needs: [lint, test-result]
     if: >-
-      !failure()
-      && !cancelled()
-      && github.event_name == 'push'
+      github.event_name == 'push'
       && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -293,17 +322,14 @@ jobs:
             https://readthedocs.org/api/v3/projects/dature/versions/latest/builds/
 
   trigger-rtd-tag:
-    needs: [tag]
-    if: >-
-      !failure()
-      && !cancelled()
-      && needs.tag.outputs.tagged == 'true'
+    needs: [auto-tag]
+    if: needs.auto-tag.outputs.tagged == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Sync versions and activate tag
         env:
           RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
-          TAG: v${{ needs.tag.outputs.version }}
+          TAG: v${{ needs.auto-tag.outputs.version }}
         run: |
           curl -X POST \
             -H "Authorization: Token $RTD_API_TOKEN" \

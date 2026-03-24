@@ -99,6 +99,28 @@ Build docs locally:
 uv run mkdocs serve
 ```
 
+## Changelog
+
+Each PR must include a [towncrier](https://towncrier.readthedocs.io/) fragment in the `changes/` directory:
+
+```bash
+# Format: changes/<issue-or-pr-number>.<type>
+# Types: feature, bugfix, doc, removal, misc
+echo "Added support for YAML anchors." > changes/42.feature
+```
+
+Use `+<description>` instead of an issue number for changes without a linked issue:
+
+```bash
+echo "Fixed typo in error message." > changes/+fix-typo.bugfix
+```
+
+## Releasing
+
+1. Run the [Release workflow](https://github.com/reagento/dature/actions/workflows/release.yml) with the desired version (e.g. `0.16.0`).
+2. The workflow builds the changelog from fragments and creates a PR.
+3. Merge the PR — CI automatically creates the tag, publishes to PyPI, creates a GitHub Release, and updates docs.
+
 ## License
 
 Apache License 2.0
