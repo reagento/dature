@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Generated version file (hatch-vcs)
+src/dature/_version.py
+
 # Virtual environments
 .venv/
 venv/

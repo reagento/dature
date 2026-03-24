@@ -12,3 +12,5 @@ test:
   - head-branch: ['^test/.*']
 ci:
   - head-branch: ['^ci/.*']
+removal:
+  - head-branch: ['^removal/.*']
