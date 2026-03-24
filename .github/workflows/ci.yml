@@ -242,10 +242,12 @@ jobs:
           # Trim notes to fit GitHub URL limit (~8000 chars, ~7000 for body)
           max_len = 7000
           trimmed = notes
-          while len(urllib.parse.quote(trimmed, safe="")) > max_len:
+          while "\n" in trimmed and len(urllib.parse.quote(trimmed, safe="")) > max_len:
               trimmed = trimmed.rsplit("\n", 1)[0]
 
           encoded = urllib.parse.quote(trimmed, safe="")
+          if len(encoded) > max_len:
+              encoded = ""
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"encoded={encoded}\n")
