@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -64,9 +63,8 @@ jobs:
         run: |
           uv run towncrier build --yes --version "$VERSION"
 
-      - name: Create release PR
+      - name: Push release branch
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.value }}
         run: |
           BRANCH="chore/release-$VERSION"
@@ -80,8 +78,17 @@ jobs:
           git commit -m "chore: release $VERSION"
           git push origin "$BRANCH"
 
-          gh pr create \
-            --title "chore: release $VERSION" \
-            --body "Automated **${{ inputs.bump_type }}** release: → **$VERSION**" \
-            --base main \
-            --head "$BRANCH"
+      - name: Add PR link to summary
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          BRANCH="chore/release-$VERSION"
+          TITLE="chore: release $VERSION"
+          BODY="Automated **${{ inputs.bump_type }}** release: → **$VERSION**"
+
+          PR_URL="$REPO_URL/compare/main...$BRANCH?expand=1&title=$(printf '%s' "$TITLE" | jq -sRr @uri)&body=$(printf '%s' "$BODY" | jq -sRr @uri)"
+
+          echo "## Release $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch \`$BRANCH\` pushed. [Create PR]($PR_URL)" >> "$GITHUB_STEP_SUMMARY"
