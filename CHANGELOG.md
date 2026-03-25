@@ -1,3 +1,10 @@
+## 0.15.3
+
+### Features
+
+- `Merge` now accepts `sources` as a positional argument: `Merge(Source(...), Source(...))`. ([#merge-positional-sources](https://github.com/reagento/dature/issues/merge-positional-sources))
+
+
 ## 0.15.2
 
 ### Bugfixes
