@@ -44,9 +44,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Niccolum/dature"
-Repository = "https://github.com/Niccolum/dature"
-Issues = "https://github.com/Niccolum/dature/issues"
+Homepage = "https://github.com/reagento/dature"
+Repository = "https://github.com/reagento/dature"
+Issues = "https://github.com/reagento/dature/issues"
 Documentation = "https://dature.readthedocs.io/"
 
 [project.optional-dependencies]

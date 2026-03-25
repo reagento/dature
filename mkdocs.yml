@@ -3,8 +3,8 @@ site_url: https://dature.readthedocs.io/
 site_description: Type-safe configuration loader for Python dataclasses
 site_author: Niccolum
 
-repo_name: Niccolum/dature
-repo_url: https://github.com/Niccolum/dature
+repo_name: reagento/dature
+repo_url: https://github.com/reagento/dature
 
 copyright: Copyright &copy; 2026-2026 Niccolum
 

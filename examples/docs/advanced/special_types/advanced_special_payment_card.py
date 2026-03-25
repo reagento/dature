@@ -10,10 +10,10 @@ class Config:
     card: PaymentCardNumber
 
 
-config = Config(card=PaymentCardNumber("4111111111111111"))
+config = Config(card=PaymentCardNumber("42424242424242"))
 
-assert str(config.card) == "************1111"
-assert repr(config.card) == "PaymentCardNumber('************1111')"
-assert config.card.masked == "************1111"
+assert str(config.card) == "**********4242"
+assert repr(config.card) == "PaymentCardNumber('**********4242')"
+assert config.card.masked == "**********4242"
 assert config.card.brand == "Visa"
-assert config.card.get_raw_number() == "4111111111111111"
+assert config.card.get_raw_number() == "42424242424242"

@@ -7,16 +7,16 @@
 [![PyPI](https://img.shields.io/pypi/v/dature)](https://pypi.org/project/dature/)
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/dature)](https://pypi.org/project/dature/)
 [![Documentation](https://readthedocs.org/projects/dature/badge/?version=latest)](https://dature.readthedocs.io/)
-[![License](https://img.shields.io/github/license/Niccolum/dature.svg)](https://github.com/Niccolum/dature/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/reagento/dature.svg)](https://github.com/reagento/dature/blob/main/LICENSE)
 \
-[![CI](https://github.com/Niccolum/dature/actions/workflows/ci.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Niccolum/dature/actions/workflows/scorecard.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/scorecard.yml)
-[![Dependency Review](https://github.com/Niccolum/dature/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/Niccolum/dature/actions/workflows/dependency-review.yml)
+[![CI](https://github.com/reagento/dature/actions/workflows/ci.yml/badge.svg)](https://github.com/reagento/dature/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/reagento/dature/actions/workflows/scorecard.yml/badge.svg)](https://github.com/reagento/dature/actions/workflows/scorecard.yml)
+[![Dependency Review](https://github.com/reagento/dature/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/reagento/dature/actions/workflows/dependency-review.yml)
 \
 [![Monthly downloads](https://static.pepy.tech/badge/dature/month)](https://pypi.org/project/dature/)
-[![Commits since latest release](https://img.shields.io/github/commits-since/Niccolum/dature/latest?logo=github)](https://github.com/Niccolum/dature/commits)
-[![Last commit date](https://img.shields.io/github/last-commit/Niccolum/dature?logo=github&label=Last%20Commit)](https://github.com/Niccolum/dature/commits)
-[![Last release date](https://img.shields.io/github/release-date/Niccolum/dature?logo=github&label=Release%20Date)](https://github.com/Niccolum/dature/releases)
+[![Commits since latest release](https://img.shields.io/github/commits-since/reagento/dature/latest?logo=github)](https://github.com/reagento/dature/commits)
+[![Last commit date](https://img.shields.io/github/last-commit/reagento/dature?logo=github&label=Last%20Commit)](https://github.com/reagento/dature/commits)
+[![Last release date](https://img.shields.io/github/release-date/reagento/dature?logo=github&label=Release%20Date)](https://github.com/reagento/dature/releases)
 
 </div>
 
@@ -76,7 +76,7 @@ See the **[documentation](https://dature.readthedocs.io/)** for detailed guides 
 ## Development
 
 ```bash
-git clone https://github.com/Niccolum/dature.git
+git clone https://github.com/reagento/dature.git
 cd dature
 uv sync --all-extras --all-groups
 ```

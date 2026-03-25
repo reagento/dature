@@ -42,7 +42,7 @@ class Config:
 --8<-- "src/dature/metadata.py:load-metadata"
 ```
 
-See [Introduction — Source Reference](introduction.md#Source-reference) for parameter descriptions.
+See [Introduction — Source Reference](introduction.md#source-reference) for parameter descriptions.
 
 ---
 

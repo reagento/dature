@@ -57,9 +57,11 @@ from dature import load, Merge, Source
 
 config = load(
     Merge(
-        Source(file_="defaults.yaml"),
-        Source(file_="local.yaml", skip_if_broken=True),
-        Source(prefix="APP_"),
+        sources=(
+            Source(file_="defaults.yaml"),
+            Source(file_="local.yaml", skip_if_broken=True),
+            Source(prefix="APP_"),
+        ),
     ),
     Config,
 )
@@ -115,17 +117,18 @@ port
     [type=int_parsing, input_value='abc', input_type=str]
 ```
 
-dature tells you **where** the problem is:
+dature tells you **where** the problem is and underlines the exact value:
 
 ```
 Config loading errors (1)
 
   [port]  Bad string format
+   ├── port: "abc"
+   │         ^^^
    └── FILE 'config.yaml', line 2
-       port: "abc"
 ```
 
-Source file, line number, the actual line from your config. No guessing.
+Source file, line number, the actual config line, and caret underline pointing at the problematic value. No guessing.
 
 ## What's Coming
 

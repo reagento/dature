@@ -1,0 +1,1 @@
+Fixed incorrect code examples in comparison docs (``Merge`` keyword args, ``MergeStrategy`` enum values, validator import paths). Replaced ``docs/changelog.md`` with a symlink to root ``CHANGELOG.md``.

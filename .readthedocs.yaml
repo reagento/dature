@@ -10,5 +10,4 @@ build:
     - git fetch --unshallow || true
     - pip install uv
     - uv pip install --system -e ".[yaml,json5,toml,secure]" --group docs
-    - python docs/generate_changelog.py
     - CI=true NO_MKDOCS_2_WARNING=1 python -m mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html

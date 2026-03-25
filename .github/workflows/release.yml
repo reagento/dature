@@ -72,8 +72,7 @@ jobs:
         run: |
           FRAGMENTS=$(find changes/ -type f ! -name '.gitkeep' | head -1)
           if [ -z "$FRAGMENTS" ]; then
-            mkdir -p changes/misc
-            echo "Do something better. Probably in CI" > "changes/misc/+placeholder.md"
+            echo "Do something better. Probably in CI" > "changes/+placeholder.misc.md"
           fi
           uv run towncrier build --yes --version "$VERSION"
 

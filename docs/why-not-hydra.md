@@ -43,10 +43,12 @@ from dature import load, Merge, Source
 
 config = load(
     Merge(
-        Source(file_="defaults.yaml"),
-        Source(file_="config.toml", skip_if_broken=True),
-        Source(file_=".env", skip_if_broken=True),
-        Source(prefix="APP_"),  # env vars
+        sources=(
+            Source(file_="defaults.yaml"),
+            Source(file_="config.toml", skip_if_broken=True),
+            Source(file_=".env", skip_if_broken=True),
+            Source(prefix="APP_"),  # env vars
+        ),
     ),
     Config,
 )
@@ -105,7 +107,7 @@ dature uses `Annotated` validators:
 from dataclasses import dataclass
 from typing import Annotated
 from dature import load, Source
-from dature.validators import Gt, Lt
+from dature.validators.number import Gt, Lt
 
 @dataclass
 class Config:
@@ -113,6 +115,28 @@ class Config:
 ```
 
 Plus root validators for cross-field checks, custom validators, and standard `__post_init__`.
+
+And when validation fails, dature underlines the exact problematic value:
+
+```
+Config loading errors (1)
+
+  [port]  Must be greater than 0
+   ├── port: -1
+   │         ^^
+   └── FILE 'config.yaml', line 2
+```
+
+Compare with OmegaConf's error for a wrong type:
+
+```
+omegaconf.errors.ValidationError: Value 'abc' of type 'str'
+could not be converted to Integer
+    full_key: port
+    object_type=Config
+```
+
+No file, no line number, no context.
 
 ## What Hydra Does Better
 
