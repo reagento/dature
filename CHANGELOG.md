@@ -1,3 +1,14 @@
+## 0.15.2
+
+### Bugfixes
+
+- Fixed placeholder values in ``ByteSize`` and ``PaymentCardNumber`` examples that prevented them from running.
+
+### Docs
+
+- Fixed incorrect code examples in comparison docs (``Merge`` keyword args, ``MergeStrategy`` enum values, validator import paths). Replaced ``docs/changelog.md`` with a symlink to root ``CHANGELOG.md``.
+
+
 ## 0.15.1
 
 ### Features
