@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions: {}
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: version
+        env:
+          BUMP_TYPE: ${{ inputs.bump_type }}
+        run: |
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "::error::No existing version tags found"
+            exit 1
+          fi
+
+          VERSION="${LATEST_TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          case "$BUMP_TYPE" in
+            patch) NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))" ;;
+            minor) NEW_VERSION="$MAJOR.$((MINOR + 1)).0" ;;
+            major) NEW_VERSION="$((MAJOR + 1)).0.0" ;;
+          esac
+
+          if grep -q "^## $NEW_VERSION" CHANGELOG.md; then
+            echo "value=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+            echo "changelog_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+            echo "changelog_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install uv
+        if: steps.version.outputs.changelog_exists != 'true'
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        if: steps.version.outputs.changelog_exists != 'true'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.12'
+
+      - name: Build changelog
+        if: steps.version.outputs.changelog_exists != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          FRAGMENTS=$(find changes/ -type f ! -name '.gitkeep' | head -1)
+          if [ -z "$FRAGMENTS" ]; then
+            mkdir -p changes/misc
+            echo "Do something better. Probably in CI" > "changes/misc/+placeholder.md"
+          fi
+          uv run towncrier build --yes --version "$VERSION"
+
+      - name: Push release branch
+        if: steps.version.outputs.changelog_exists != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          BRANCH="chore/release-$VERSION"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+          git checkout -b "$BRANCH"
+          git add CHANGELOG.md changes/
+          git commit -m "chore: release $VERSION"
+          git push origin "$BRANCH"
+
+      - name: Add PR link to summary
+        if: steps.version.outputs.changelog_exists != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          BRANCH="chore/release-$VERSION"
+          TITLE="chore: release $VERSION"
+          BODY="Automated **${{ inputs.bump_type }}** release: → **$VERSION**"
+
+          PR_URL="$REPO_URL/compare/main...$BRANCH?expand=1&title=$(printf '%s' "$TITLE" | jq -sRr @uri)&body=$(printf '%s' "$BODY" | jq -sRr @uri)"
+
+          echo "## Release $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch \`$BRANCH\` pushed. [Create PR]($PR_URL)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add release link to summary
+        if: steps.version.outputs.changelog_exists == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          TAG="v$VERSION"
+
+          RELEASE_URL="$REPO_URL/releases/new?tag=$TAG&title=$TAG"
+
+          echo "## Release $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Changelog already exists. [Create GitHub Release]($RELEASE_URL)" >> "$GITHUB_STEP_SUMMARY"

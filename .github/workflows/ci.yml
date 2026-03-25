@@ -17,8 +17,8 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          if [[ ! "$BRANCH" =~ ^(fix|bug|feat|feature|chore|docs|refactor|test|ci|dependabot)/ ]]; then
-            echo "::error::Branch name '$BRANCH' must start with one of: feat/, fix/, bug/, chore/, docs/, refactor/, test/, ci/, dependabot/"
+          if [[ ! "$BRANCH" =~ ^(fix|bug|feat|feature|chore|docs|refactor|test|ci|dependabot|removal)/ ]]; then
+            echo "::error::Branch name '$BRANCH' must start with one of: feat/, fix/, bug/, chore/, docs/, refactor/, test/, ci/, dependabot/, removal/"
             exit 1
           fi
 
@@ -145,115 +145,89 @@ jobs:
             exit 1
           fi
 
-  tag:
-    needs: [lint, test-result]
+  changelog-check:
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor != 'dependabot[bot]'
+      && !startsWith(github.head_ref, 'chore/release-')
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    outputs:
-      tagged: ${{ steps.create-tag.outputs.tagged }}
-      version: ${{ steps.create-tag.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - name: Check version change and create tag
-        id: create-tag
+      - name: Check for changes requiring changelog
+        id: changes
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          IGNORED_PATHS: |
+            .github/
         run: |
-          VERSION=$(grep -Po '(?<=^version = ")[^"]+' pyproject.toml)
-
-          if ! git tag -l "v$VERSION" | grep -q .; then
-            echo "Tag v$VERSION does not exist, creating"
-            gh api "repos/${{ github.repository }}/git/refs" \
-              -f "ref=refs/tags/v$VERSION" \
-              -f "sha=${{ github.sha }}"
-            echo "tagged=true" >> "$GITHUB_OUTPUT"
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          FILES=$(git diff --name-only origin/main...HEAD)
+          FILTER=$(echo "$IGNORED_PATHS" | sed '/^$/d' | sed 's|^|^|' | paste -sd'|' -)
+          RELEVANT=$(echo "$FILES" | grep -vE "$FILTER" || true)
+          if [ -z "$RELEVANT" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Tag v$VERSION already exists"
-            echo "tagged=false" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-  pypi-publish:
-    needs: [tag]
-    runs-on: ubuntu-latest
-    if: >-
-      !failure()
-      && !cancelled()
-      && needs.tag.outputs.tagged == 'true'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/dature
-    permissions:
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
       - name: Install uv
+        if: steps.changes.outputs.skip != 'true'
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          enable-cache: true
 
       - name: Set up Python
+        if: steps.changes.outputs.skip != 'true'
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.12'
 
-      - name: Build package
-        run: uv build
+      - name: Check changelog fragment
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          uv run towncrier check --compare-with origin/main
 
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
-        with:
-          subject-path: dist/*
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
-
-  github-release:
-    needs: [tag]
+  release-link:
+    needs: [lint, test-result]
     runs-on: ubuntu-latest
     if: >-
-      !failure()
-      && !cancelled()
-      && needs.tag.outputs.tagged == 'true'
-    permissions:
-      contents: write
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
     steps:
-      - name: Determine version
-        id: version
-        run: echo "value=${{ needs.tag.outputs.version }}" >> "$GITHUB_OUTPUT"
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - name: Detect release commit
+        id: detect
+        run: |
+          MERGE_MSG=$(git log -1 --format='%s')
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.12'
+          # Squash merge: "chore: release X.Y.Z (#N)"
+          # Regular merge: "Merge pull request #N from org/chore/release-X.Y.Z"
+          if [[ "$MERGE_MSG" =~ ^chore:\ release\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$MERGE_MSG" =~ chore/release-([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Build package
-        run: uv build
-
-      - name: Extract release notes from CHANGELOG
-        id: release-notes
+      - name: Extract release notes
+        if: steps.detect.outputs.is_release == 'true'
+        id: notes
         env:
-          VERSION: ${{ steps.version.outputs.value }}
+          VERSION: ${{ steps.detect.outputs.version }}
         shell: python
         run: |
-          import os, re
+          import os, re, urllib.parse
 
           version = os.environ["VERSION"]
 
           with open("CHANGELOG.md") as f:
               content = f.read()
 
-          # Extract everything under "## X.Y.Z" section
           pattern = rf"^## {re.escape(version)}\n(.*?)(?=^## |\Z)"
           match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
           notes = ""
@@ -265,24 +239,51 @@ jobs:
           if not notes:
               notes = "No changes documented."
 
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"notes<<NOTES_EOF\n{notes}\nNOTES_EOF\n")
+          # Trim notes to fit GitHub URL limit (~8000 chars, ~7000 for body)
+          max_len = 7000
+          trimmed = notes
+          while "\n" in trimmed and len(urllib.parse.quote(trimmed, safe="")) > max_len:
+              trimmed = trimmed.rsplit("\n", 1)[0]
 
-      - name: Create GitHub Release
+          encoded = urllib.parse.quote(trimmed, safe="")
+          if len(encoded) > max_len:
+              encoded = ""
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"encoded={encoded}\n")
+              f.write(f"raw<<NOTES_EOF\n{notes}\nNOTES_EOF\n")
+
+      - name: Add release link to summary
+        if: steps.detect.outputs.is_release == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_NOTES: ${{ steps.release-notes.outputs.notes }}
+          VERSION: ${{ steps.detect.outputs.version }}
+          NOTES_ENCODED: ${{ steps.notes.outputs.encoded }}
+          NOTES_RAW: ${{ steps.notes.outputs.raw }}
         run: |
-          gh release create "v${{ steps.version.outputs.value }}" dist/* \
-            --title "v${{ steps.version.outputs.value }}" \
-            --notes "$RELEASE_NOTES"
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          TAG="v$VERSION"
+
+          RELEASE_URL="$REPO_URL/releases/new?tag=$TAG&title=$TAG"
+          if [ -n "$NOTES_ENCODED" ]; then
+            RELEASE_URL="$RELEASE_URL&body=$NOTES_ENCODED"
+          fi
+
+          {
+            echo "## Release $VERSION"
+            echo ""
+            echo "CI passed. [Create GitHub Release]($RELEASE_URL)"
+            echo ""
+            echo "<details><summary>Release notes</summary>"
+            echo ""
+            echo "$NOTES_RAW"
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   trigger-rtd-latest:
-    needs: [tag]
+    needs: [lint, test-result]
     if: >-
-      !failure()
-      && !cancelled()
-      && github.event_name == 'push'
+      github.event_name == 'push'
       && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -291,20 +292,3 @@ jobs:
           curl -X POST \
             -H "Authorization: Token ${{ secrets.RTD_API_TOKEN }}" \
             https://readthedocs.org/api/v3/projects/dature/versions/latest/builds/
-
-  trigger-rtd-tag:
-    needs: [tag]
-    if: >-
-      !failure()
-      && !cancelled()
-      && needs.tag.outputs.tagged == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Sync versions and activate tag
-        env:
-          RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
-          TAG: v${{ needs.tag.outputs.version }}
-        run: |
-          curl -X POST \
-            -H "Authorization: Token $RTD_API_TOKEN" \
-            https://readthedocs.org/api/v3/projects/dature/sync-versions/

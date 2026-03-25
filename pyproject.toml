@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "dature"
-version = "0.15.0"
+dynamic = ["version"]
 description = "Type-safe configuration loader for Python dataclasses with support for YAML, JSON, TOML, INI, ENV and environment variables"
 readme = "README.md"
 license = "Apache-2.0"
@@ -54,6 +54,12 @@ yaml = ["ruamel.yaml>=0.18"]
 json5 = ["json-five>=1.1.2"]
 toml = ["toml-rs>=0.3.4"]
 secure = ["random-string-detector>=1.1.1"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/dature/_version.py"
 
 [tool.ruff]
 line-length = 120
@@ -140,12 +146,47 @@ pythonpath = [
     "src",
 ]
 
+[tool.towncrier]
+package = "dature"
+package_dir = "src"
+directory = "changes"
+filename = "CHANGELOG.md"
+title_format = "## {version}"
+underlines = ["", "", ""]
+issue_format = "[#{issue}](https://github.com/reagento/dature/issues/{issue})"
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bugfixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "doc"
+name = "Docs"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removal"
+name = "Removals"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = false
+
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
     "pytest>=8.3.5",
     "ruff>=0.14.14",
     "prek>=0.3.1",
+    "towncrier>=24.8",
     "tzdata>=2024.1; sys_platform == 'win32'",
 ]
 docs = [
