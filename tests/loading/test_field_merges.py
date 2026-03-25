@@ -25,7 +25,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -52,7 +52,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=first),
                     Source(file_=second),
                 ),
@@ -79,7 +79,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -104,7 +104,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -128,7 +128,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -152,7 +152,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -181,7 +181,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -207,7 +207,7 @@ class TestFieldMergesFunction:
         with pytest.raises(TypeError, match="APPEND strategy requires both values to be lists"):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=defaults),
                         Source(file_=overrides),
                     ),
@@ -231,7 +231,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -262,7 +262,7 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -284,7 +284,7 @@ class TestFieldMergesDecorator:
         overrides.write_text('{"host": "override-host", "port": 9090, "tags": ["b"]}')
 
         meta = Merge(
-            sources=(
+            (
                 Source(file_=defaults),
                 Source(file_=overrides),
             ),
@@ -322,7 +322,7 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -349,7 +349,7 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -377,7 +377,7 @@ class TestFieldMergesWithRaiseOnConflict:
         with pytest.raises(MergeConflictError):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -405,7 +405,7 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -432,7 +432,7 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -494,7 +494,7 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -547,7 +547,7 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -590,7 +590,7 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -624,7 +624,7 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -661,7 +661,7 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -696,7 +696,7 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -719,7 +719,7 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -747,7 +747,7 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -775,7 +775,7 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -803,7 +803,7 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -835,7 +835,7 @@ class TestFieldMergesSameFieldNameNested:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -868,7 +868,7 @@ class TestFieldMergesSameFieldNameNested:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -898,7 +898,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -925,7 +925,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -953,7 +953,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -981,7 +981,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -1013,7 +1013,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -1035,7 +1035,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(Source(file_=a),),
+                (Source(file_=a),),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
             Config,
@@ -1057,7 +1057,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -1085,7 +1085,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                 ),
@@ -1119,7 +1119,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),

@@ -94,7 +94,7 @@ class TestTypeLoadersInMerge:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=base),
                     Source(file_=override),
                 ),

@@ -23,7 +23,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SOURCES_DIR / "advanced_env_expansion_merge_default.yaml"),  # uses global "default"
             Source(file_=SOURCES_DIR / "advanced_env_expansion_merge_empty.yaml", expand_env_vars="empty"),
             Source(file_=SOURCES_DIR / "advanced_env_expansion_merge_disabled.yaml", expand_env_vars="disabled"),

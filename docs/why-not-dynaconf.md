@@ -148,7 +148,7 @@ from dature import load, Merge, Source
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_="defaults.yaml"),
             Source(file_="local.yaml", skip_if_broken=True),
         ),

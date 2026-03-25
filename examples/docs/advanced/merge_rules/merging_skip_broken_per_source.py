@@ -18,7 +18,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SHARED_DIR / "common_defaults.yaml"),  # uses global
             Source(
                 file_=SOURCES_DIR / "optional.yaml",

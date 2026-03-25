@@ -20,7 +20,7 @@ class Config:
 try:
     config = load(
         Merge(
-            sources=(
+            (
                 Source(file_=SHARED_DIR / "common_overrides.yaml"),
                 Source(file_=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
             ),

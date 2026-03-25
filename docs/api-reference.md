@@ -29,7 +29,7 @@ class Config:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `metadata` | `Source \| Merge \| tuple[Source, ...] \| None` | Source descriptor. Tuple is shorthand for `Merge(sources=...)` with `LAST_WINS`. `None` → `Source()` (env vars). |
+| `metadata` | `Source \| Merge \| tuple[Source, ...] \| None` | Source descriptor. Tuple is shorthand for `Merge(...)` with `LAST_WINS`. `None` → `Source()` (env vars). |
 | `dataclass_` | `type[T] \| None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
 | `cache` | `bool \| None` | Enable caching in decorator mode. Default from `configure()`. |
 | `debug` | `bool \| None` | Collect `LoadReport`. Default from `configure()`. |

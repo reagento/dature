@@ -19,7 +19,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SHARED_DIR / "common_field_groups_defaults.yaml"),
             Source(file_=SHARED_DIR / "common_field_groups_overrides.yaml"),
         ),

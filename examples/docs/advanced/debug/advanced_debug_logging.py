@@ -25,7 +25,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SHARED_DIR / "common_defaults.yaml"),
             Source(file_=SHARED_DIR / "common_overrides.yaml"),
         ),

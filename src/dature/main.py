@@ -48,7 +48,7 @@ def load(
         debug = config.loading.debug
 
     if isinstance(metadata, tuple):
-        metadata = Merge(sources=metadata)
+        metadata = Merge(metadata)
 
     if isinstance(metadata, Merge):
         merge_type_loaders = (metadata.type_loaders or ()) + config.type_loaders

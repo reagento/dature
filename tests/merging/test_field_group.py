@@ -26,7 +26,7 @@ class TestFieldGroupAllChanged:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -53,7 +53,7 @@ class TestFieldGroupAllChanged:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=first),
                     Source(file_=second),
                 ),
@@ -82,7 +82,7 @@ class TestFieldGroupNoneChanged:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -109,7 +109,7 @@ class TestFieldGroupNoneChanged:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -142,7 +142,7 @@ class TestFieldGroupPartialChange:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].host, F[Config].port),),
                 ),
                 Config,
@@ -174,7 +174,7 @@ class TestFieldGroupPartialChange:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].host, F[Config].port),),
                 ),
                 Config,
@@ -203,7 +203,7 @@ class TestFieldGroupPartialChange:
         with pytest.raises(FieldGroupError):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=defaults),
                         Source(file_=overrides),
                     ),
@@ -228,7 +228,7 @@ class TestFieldGroupPartialChange:
         with pytest.raises(FieldGroupError):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=defaults),
                         Source(file_=overrides),
                     ),
@@ -262,7 +262,7 @@ class TestFieldGroupAutoExpand:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].database),),
                 ),
                 Config,
@@ -294,7 +294,7 @@ class TestFieldGroupAutoExpand:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -330,7 +330,7 @@ class TestFieldGroupThreeSources:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(a_meta, b_meta, c_meta),
+                    (a_meta, b_meta, c_meta),
                     field_groups=(FieldGroup(F[Config].host, F[Config].port),),
                 ),
                 Config,
@@ -361,7 +361,7 @@ class TestFieldGroupThreeSources:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=a),
                     Source(file_=b),
                     Source(file_=c),
@@ -396,7 +396,7 @@ class TestFieldGroupMultipleGroups:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(
                         FieldGroup(F[Config].host, F[Config].port),
                         FieldGroup(F[Config].user, F[Config].password),
@@ -430,7 +430,7 @@ class TestFieldGroupWithFieldMerges:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -454,7 +454,7 @@ class TestFieldGroupDecorator:
         overrides.write_text('{"host": "remote", "port": 9090}')
 
         meta = Merge(
-            sources=(
+            (
                 Source(file_=defaults),
                 Source(file_=overrides),
             ),
@@ -479,7 +479,7 @@ class TestFieldGroupDecorator:
         overrides.write_text('{"host": "remote"}')
 
         meta = Merge(
-            sources=(
+            (
                 Source(file_=defaults),
                 Source(file_=overrides),
             ),
@@ -516,7 +516,7 @@ class TestFieldGroupErrorFormat:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].host, F[Config].port),),
                 ),
                 Config,
@@ -550,7 +550,7 @@ class TestFieldGroupErrorFormat:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(
                         FieldGroup(F[Config].host, F[Config].port),
                         FieldGroup(F[Config].user, F[Config].password),
@@ -596,7 +596,7 @@ class TestFieldGroupMixedExpandAndFlat:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -632,7 +632,7 @@ class TestFieldGroupMixedExpandAndFlat:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -670,7 +670,7 @@ class TestFieldGroupMixedExpandAndFlat:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
                 ),
                 Config,
@@ -709,7 +709,7 @@ class TestFieldGroupMixedExpandAndFlat:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
                 ),
                 Config,
@@ -750,7 +750,7 @@ class TestFieldGroupMixedExpandAndFlat:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
                 ),
                 Config,
@@ -788,7 +788,7 @@ class TestFieldGroupSameFieldNameNested:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -824,7 +824,7 @@ class TestFieldGroupSameFieldNameNested:
         with pytest.raises(FieldGroupError) as exc_info:
             load(
                 Merge(
-                    sources=(defaults_meta, overrides_meta),
+                    (defaults_meta, overrides_meta),
                     field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
                 ),
                 Config,

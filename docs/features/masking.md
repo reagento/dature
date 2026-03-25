@@ -111,7 +111,7 @@ config = load(
 ```python
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_="defaults.yaml"),
             Source(file_="secrets.yaml", secret_field_names=("custom_key",)),  # added to Merge patterns
         ),

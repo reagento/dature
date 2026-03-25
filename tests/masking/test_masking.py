@@ -207,7 +207,7 @@ class TestSecretMaskingIntegration:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -276,7 +276,7 @@ class TestSecretMaskingIntegration:
         with caplog.at_level("DEBUG", logger="dature"):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=defaults),
                         Source(file_=overrides),
                     ),
@@ -306,7 +306,7 @@ class TestSecretMaskingIntegration:
         json_file.write_text('{"password": "allowed", "host": "prod"}')
 
         meta = Merge(
-            sources=(Source(file_=json_file),),
+            (Source(file_=json_file),),
         )
 
         @load(meta)

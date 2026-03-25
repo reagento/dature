@@ -111,7 +111,7 @@ class FieldGroup:
 
 
 # --8<-- [start:merge-metadata]
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class Merge:
     sources: tuple[Source, ...]
     strategy: MergeStrategy = MergeStrategy.LAST_WINS

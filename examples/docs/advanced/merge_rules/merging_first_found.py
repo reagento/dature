@@ -16,7 +16,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SOURCES_DIR / "merging_first_found_primary.yaml"),
             Source(file_=SOURCES_DIR / "merging_first_found_fallback.yaml"),
         ),

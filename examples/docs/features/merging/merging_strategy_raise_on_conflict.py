@@ -17,7 +17,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SHARED_DIR / "common_raise_on_conflict_a.yaml"),
             Source(file_=SHARED_DIR / "common_raise_on_conflict_b.yaml"),
         ),

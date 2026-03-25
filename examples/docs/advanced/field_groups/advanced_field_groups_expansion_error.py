@@ -28,7 +28,7 @@ class Config:
 try:
     load(
         Merge(
-            sources=(
+            (
                 Source(file_=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
                 Source(file_=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml"),
             ),

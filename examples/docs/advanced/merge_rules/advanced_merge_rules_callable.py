@@ -22,7 +22,7 @@ def merge_tags(values: list[Any]) -> list[str]:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SHARED_DIR / "common_defaults.yaml"),
             Source(file_=SHARED_DIR / "common_overrides.yaml"),
         ),

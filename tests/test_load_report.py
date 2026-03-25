@@ -29,7 +29,7 @@ class TestGetLoadReportMergeFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -91,7 +91,7 @@ class TestGetLoadReportMergeFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=first),
                     Source(file_=second),
                 ),
@@ -158,7 +158,7 @@ class TestGetLoadReportMergeFunction:
 
         result = load(
             Merge(
-                sources=(
+                (
                     Source(file_=defaults),
                     Source(file_=overrides),
                 ),
@@ -244,7 +244,7 @@ class TestGetLoadReportDecorator:
         overrides.write_text('{"port": 9090}')
 
         meta = Merge(
-            sources=(
+            (
                 Source(file_=defaults),
                 Source(file_=overrides),
             ),
@@ -325,7 +325,7 @@ class TestDebugLogging:
         with caplog.at_level(logging.DEBUG, logger="dature"):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=defaults),
                         Source(file_=overrides),
                     ),
@@ -392,7 +392,7 @@ class TestLoadReportOnError:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),
@@ -436,7 +436,7 @@ class TestLoadReportOnError:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    sources=(
+                    (
                         Source(file_=a),
                         Source(file_=b),
                     ),

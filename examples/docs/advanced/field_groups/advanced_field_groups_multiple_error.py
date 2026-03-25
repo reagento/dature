@@ -23,7 +23,7 @@ class Config:
 try:
     load(
         Merge(
-            sources=(
+            (
                 Source(file_=SHARED_DIR / "common_field_groups_defaults.yaml"),
                 Source(file_=SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml"),
             ),

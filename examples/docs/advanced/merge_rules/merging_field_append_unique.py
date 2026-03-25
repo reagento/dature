@@ -15,7 +15,7 @@ class Config:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SOURCES_DIR / "merging_field_base.yaml"),
             Source(file_=SOURCES_DIR / "merging_field_override.yaml"),
         ),

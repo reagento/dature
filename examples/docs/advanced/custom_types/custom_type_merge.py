@@ -28,7 +28,7 @@ class AppConfig:
 
 config = load(
     Merge(
-        sources=(
+        (
             Source(file_=SOURCES_DIR / "custom_type_common.yaml"),
             Source(file_=SOURCES_DIR / "custom_type_merge_override.yaml"),
         ),
