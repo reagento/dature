@@ -18,17 +18,15 @@ class Config:
 
 config = load(
     Merge(
-        (
-            Source(file_=SHARED_DIR / "common_defaults.yaml"),  # uses global
-            Source(
-                file_=SOURCES_DIR / "optional.yaml",
-                skip_if_broken=True,
-            ),  # always skip if broken
-            Source(
-                file_=SHARED_DIR / "common_overrides.yaml",
-                skip_if_broken=False,
-            ),  # never skip, even if global is True
-        ),
+        Source(file_=SHARED_DIR / "common_defaults.yaml"),  # uses global
+        Source(
+            file_=SOURCES_DIR / "optional.yaml",
+            skip_if_broken=True,
+        ),  # always skip if broken
+        Source(
+            file_=SHARED_DIR / "common_overrides.yaml",
+            skip_if_broken=False,
+        ),  # never skip, even if global is True
         skip_broken_sources=True,  # global default
     ),
     Config,

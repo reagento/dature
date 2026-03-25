@@ -17,12 +17,10 @@ class Config:
 
 config = load(
     Merge(
-        (
-            Source(file_=SOURCES_DIR / "merging_skip_invalid_per_field_defaults.yaml"),
-            Source(
-                file_=SOURCES_DIR / "merging_skip_invalid_per_field_overrides.yaml",
-                skip_if_invalid=(F[Config].port, F[Config].timeout),
-            ),
+        Source(file_=SOURCES_DIR / "merging_skip_invalid_per_field_defaults.yaml"),
+        Source(
+            file_=SOURCES_DIR / "merging_skip_invalid_per_field_overrides.yaml",
+            skip_if_invalid=(F[Config].port, F[Config].timeout),
         ),
     ),
     Config,

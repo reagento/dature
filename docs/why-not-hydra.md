@@ -43,12 +43,10 @@ from dature import load, Merge, Source
 
 config = load(
     Merge(
-        (
-            Source(file_="defaults.yaml"),
-            Source(file_="config.toml", skip_if_broken=True),
-            Source(file_=".env", skip_if_broken=True),
-            Source(prefix="APP_"),  # env vars
-        ),
+        Source(file_="defaults.yaml"),
+        Source(file_="config.toml", skip_if_broken=True),
+        Source(file_=".env", skip_if_broken=True),
+        Source(prefix="APP_"),  # env vars
     ),
     Config,
 )

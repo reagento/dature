@@ -15,10 +15,8 @@ class Config:
 
 config = load(
     Merge(
-        (
-            Source(file_=SOURCES_DIR / "merging_field_base.yaml"),
-            Source(file_=SOURCES_DIR / "merging_field_override.yaml"),
-        ),
+        Source(file_=SOURCES_DIR / "merging_field_base.yaml"),
+        Source(file_=SOURCES_DIR / "merging_field_override.yaml"),
         field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND_UNIQUE),),
     ),
     Config,

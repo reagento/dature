@@ -25,10 +25,8 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(file_=source1),
-                    Source(file_=source2),
-                ),
+                Source(file_=source1),
+                Source(file_=source2),
                 skip_invalid_fields=True,
             ),
             Config,
@@ -51,10 +49,8 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(file_=source1),
-                    Source(file_=source2),
-                ),
+                Source(file_=source1),
+                Source(file_=source2),
                 skip_invalid_fields=True,
             ),
             Config,
@@ -78,10 +74,8 @@ class TestMergeSkipInvalidFields:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    (
-                        Source(file_=source1),
-                        Source(file_=source2),
-                    ),
+                    Source(file_=source1),
+                    Source(file_=source2),
                     skip_invalid_fields=True,
                 ),
                 Config,
@@ -116,10 +110,8 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(file_=source1),
-                    Source(file_=source2),
-                ),
+                Source(file_=source1),
+                Source(file_=source2),
                 skip_invalid_fields=True,
             ),
             Config,
@@ -142,10 +134,8 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(file_=source1, skip_if_invalid=True),
-                    Source(file_=source2),
-                ),
+                Source(file_=source1, skip_if_invalid=True),
+                Source(file_=source2),
             ),
             Config,
         )
@@ -167,10 +157,8 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(file_=source1),
-                    Source(file_=source2),
-                ),
+                Source(file_=source1),
+                Source(file_=source2),
                 skip_invalid_fields=True,
             ),
             Config,
@@ -191,7 +179,7 @@ class TestMergeSkipInvalidFields:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    (Source(file_=source1),),
+                    Source(file_=source1),
                 ),
                 Config,
             )
@@ -220,10 +208,8 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(file_=source1),
-                    Source(file_=source2),
-                ),
+                Source(file_=source1),
+                Source(file_=source2),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 skip_invalid_fields=True,
             ),
@@ -248,13 +234,11 @@ class TestMergeSkipInvalidFields:
 
         result = load(
             Merge(
-                (
-                    Source(
-                        file_=source1,
-                        skip_if_invalid=(F[Config].port, F[Config].timeout),
-                    ),
-                    Source(file_=source2),
+                Source(
+                    file_=source1,
+                    skip_if_invalid=(F[Config].port, F[Config].timeout),
                 ),
+                Source(file_=source2),
             ),
             Config,
         )
@@ -275,11 +259,9 @@ class TestMergeSkipInvalidFields:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    (
-                        Source(
-                            file_=source1,
-                            skip_if_invalid=(F[Config].port,),
-                        ),
+                    Source(
+                        file_=source1,
+                        skip_if_invalid=(F[Config].port,),
                     ),
                 ),
                 Config,
@@ -315,10 +297,8 @@ class TestMergeSkipInvalidFields:
         with caplog.at_level(logging.WARNING, logger="dature"):
             load(
                 Merge(
-                    (
-                        Source(file_=source1),
-                        Source(file_=source2),
-                    ),
+                    Source(file_=source1),
+                    Source(file_=source2),
                     skip_invalid_fields=True,
                 ),
                 Config,
@@ -471,13 +451,11 @@ class TestSkipInvalidSameFieldNameNested:
 
         result = load(
             Merge(
-                (
-                    Source(
-                        file_=source1,
-                        skip_if_invalid=(F[Config].inner.port,),
-                    ),
-                    Source(file_=source2),
+                Source(
+                    file_=source1,
+                    skip_if_invalid=(F[Config].inner.port,),
                 ),
+                Source(file_=source2),
             ),
             Config,
         )
@@ -503,13 +481,11 @@ class TestSkipInvalidSameFieldNameNested:
 
         result = load(
             Merge(
-                (
-                    Source(
-                        file_=source1,
-                        skip_if_invalid=(F[Config].port, F[Config].inner.port),
-                    ),
-                    Source(file_=source2),
+                Source(
+                    file_=source1,
+                    skip_if_invalid=(F[Config].port, F[Config].inner.port),
                 ),
+                Source(file_=source2),
             ),
             Config,
         )

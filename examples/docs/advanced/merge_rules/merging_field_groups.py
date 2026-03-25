@@ -19,10 +19,8 @@ class Config:
 
 config = load(
     Merge(
-        (
-            Source(file_=SHARED_DIR / "common_field_groups_defaults.yaml"),
-            Source(file_=SHARED_DIR / "common_field_groups_overrides.yaml"),
-        ),
+        Source(file_=SHARED_DIR / "common_field_groups_defaults.yaml"),
+        Source(file_=SHARED_DIR / "common_field_groups_overrides.yaml"),
         field_groups=(FieldGroup(F[Config].host, F[Config].port),),
     ),
     Config,

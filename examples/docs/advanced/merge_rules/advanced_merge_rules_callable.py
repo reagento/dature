@@ -22,10 +22,8 @@ def merge_tags(values: list[Any]) -> list[str]:
 
 config = load(
     Merge(
-        (
-            Source(file_=SHARED_DIR / "common_defaults.yaml"),
-            Source(file_=SHARED_DIR / "common_overrides.yaml"),
-        ),
+        Source(file_=SHARED_DIR / "common_defaults.yaml"),
+        Source(file_=SHARED_DIR / "common_overrides.yaml"),
         strategy=MergeStrategy.LAST_WINS,
         field_merges=(MergeRule(F[Config].tags, merge_tags),),
     ),

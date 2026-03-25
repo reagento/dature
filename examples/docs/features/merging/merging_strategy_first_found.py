@@ -17,11 +17,9 @@ class Config:
 
 config = load(
     Merge(
-        (
-            Source(file_=SHARED_DIR / "nonexistent.yaml"),
-            Source(file_=SHARED_DIR / "common_defaults.yaml"),
-            Source(file_=SHARED_DIR / "common_overrides.yaml"),
-        ),
+        Source(file_=SHARED_DIR / "nonexistent.yaml"),
+        Source(file_=SHARED_DIR / "common_defaults.yaml"),
+        Source(file_=SHARED_DIR / "common_overrides.yaml"),
         strategy=MergeStrategy.FIRST_FOUND,
     ),
     Config,

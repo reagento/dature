@@ -28,10 +28,8 @@ class AppConfig:
 
 config = load(
     Merge(
-        (
-            Source(file_=SOURCES_DIR / "custom_type_common.yaml"),
-            Source(file_=SOURCES_DIR / "custom_type_merge_override.yaml"),
-        ),
+        Source(file_=SOURCES_DIR / "custom_type_common.yaml"),
+        Source(file_=SOURCES_DIR / "custom_type_merge_override.yaml"),
         type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
     ),
     AppConfig,

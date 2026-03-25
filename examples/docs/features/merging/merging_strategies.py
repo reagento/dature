@@ -17,10 +17,8 @@ class Config:
 
 last_wins = load(
     Merge(
-        (
-            Source(file_=SHARED_DIR / "common_defaults.yaml"),
-            Source(file_=SHARED_DIR / "common_overrides.yaml"),
-        ),
+        Source(file_=SHARED_DIR / "common_defaults.yaml"),
+        Source(file_=SHARED_DIR / "common_overrides.yaml"),
         strategy=MergeStrategy.LAST_WINS,
     ),
     Config,
@@ -28,10 +26,8 @@ last_wins = load(
 
 first_wins = load(
     Merge(
-        (
-            Source(file_=SHARED_DIR / "common_defaults.yaml"),
-            Source(file_=SHARED_DIR / "common_overrides.yaml"),
-        ),
+        Source(file_=SHARED_DIR / "common_defaults.yaml"),
+        Source(file_=SHARED_DIR / "common_overrides.yaml"),
         strategy=MergeStrategy.FIRST_WINS,
     ),
     Config,

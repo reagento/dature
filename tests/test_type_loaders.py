@@ -94,10 +94,8 @@ class TestTypeLoadersInMerge:
 
         result = load(
             Merge(
-                (
-                    Source(file_=base),
-                    Source(file_=override),
-                ),
+                Source(file_=base),
+                Source(file_=override),
                 type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
             ),
             ConfigWithRgb,

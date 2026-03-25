@@ -28,10 +28,8 @@ class Config:
 try:
     load(
         Merge(
-            (
-                Source(file_=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
-                Source(file_=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml"),
-            ),
+            Source(file_=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
+            Source(file_=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml"),
             field_groups=(FieldGroup(F[Config].database, F[Config].port),),
         ),
         Config,

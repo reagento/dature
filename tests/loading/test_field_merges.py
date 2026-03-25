@@ -25,10 +25,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 strategy=MergeStrategy.LAST_WINS,
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),),
             ),
@@ -52,10 +50,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=first),
-                    Source(file_=second),
-                ),
+                Source(file_=first),
+                Source(file_=second),
                 strategy=MergeStrategy.FIRST_WINS,
                 field_merges=(MergeRule(F[Config].port, FieldMergeStrategy.LAST_WINS),),
             ),
@@ -79,10 +75,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
             ),
             Config,
@@ -104,10 +98,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND_UNIQUE),),
             ),
             Config,
@@ -128,10 +120,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.PREPEND),),
             ),
             Config,
@@ -152,10 +142,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.PREPEND_UNIQUE),),
             ),
             Config,
@@ -181,10 +169,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(MergeRule(F[Config].database.host, FieldMergeStrategy.FIRST_WINS),),
             ),
             Config,
@@ -207,10 +193,8 @@ class TestFieldMergesFunction:
         with pytest.raises(TypeError, match="APPEND strategy requires both values to be lists"):
             load(
                 Merge(
-                    (
-                        Source(file_=defaults),
-                        Source(file_=overrides),
-                    ),
+                    Source(file_=defaults),
+                    Source(file_=overrides),
                     field_merges=(MergeRule(F[Config].value, FieldMergeStrategy.APPEND),),
                 ),
                 Config,
@@ -231,10 +215,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 strategy=MergeStrategy.LAST_WINS,
                 field_merges=(
                     MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
@@ -262,10 +244,8 @@ class TestFieldMergesFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(),
             ),
             Config,
@@ -284,10 +264,8 @@ class TestFieldMergesDecorator:
         overrides.write_text('{"host": "override-host", "port": 9090, "tags": ["b"]}')
 
         meta = Merge(
-            (
-                Source(file_=defaults),
-                Source(file_=overrides),
-            ),
+            Source(file_=defaults),
+            Source(file_=overrides),
             field_merges=(
                 MergeRule(F["Config"].host, FieldMergeStrategy.FIRST_WINS),
                 MergeRule(F["Config"].tags, FieldMergeStrategy.APPEND),
@@ -322,10 +300,8 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),),
             ),
@@ -349,10 +325,8 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),),
             ),
@@ -377,10 +351,8 @@ class TestFieldMergesWithRaiseOnConflict:
         with pytest.raises(MergeConflictError):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                     field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),),
                 ),
@@ -405,10 +377,8 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].database.host, FieldMergeStrategy.LAST_WINS),),
             ),
@@ -432,10 +402,8 @@ class TestFieldMergesWithRaiseOnConflict:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(
                     MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
@@ -494,10 +462,8 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
                 Config,
@@ -547,10 +513,8 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
                 Config,
@@ -590,10 +554,8 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
                 Config,
@@ -624,10 +586,8 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 field_merges=(MergeRule(F[Config].value, strategy),),
             ),
             Config,
@@ -661,10 +621,8 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
                 Config,
@@ -696,10 +654,8 @@ class TestFieldMergesErrors:
         with pytest.raises(TypeError, match=match):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                     field_merges=(MergeRule(F[Config].value, strategy),),
                 ),
                 Config,
@@ -719,10 +675,8 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 field_merges=(MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),),
             ),
             Config,
@@ -747,11 +701,9 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
             ),
             Config,
@@ -775,11 +727,9 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].priority, max),),
             ),
             Config,
@@ -803,11 +753,9 @@ class TestFieldMergesErrors:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].priority, min),),
             ),
             Config,
@@ -835,10 +783,8 @@ class TestFieldMergesSameFieldNameNested:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(
                     MergeRule(F[Config].user_name, FieldMergeStrategy.FIRST_WINS),
                     MergeRule(F[Config].inner.user_name, FieldMergeStrategy.LAST_WINS),
@@ -868,10 +814,8 @@ class TestFieldMergesSameFieldNameNested:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
                 field_merges=(
                     MergeRule(F[Config].user_name, FieldMergeStrategy.LAST_WINS),
                     MergeRule(F[Config].inner.user_name, FieldMergeStrategy.FIRST_WINS),
@@ -898,10 +842,8 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
             Config,
@@ -925,11 +867,9 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
             Config,
@@ -953,11 +893,9 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].weight, lambda vals: sum(vals) / len(vals)),),
             ),
             Config,
@@ -981,11 +919,9 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].priority, max),),
             ),
             Config,
@@ -1013,11 +949,9 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].database.port, max),),
             ),
             Config,
@@ -1035,7 +969,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (Source(file_=a),),
+                Source(file_=a),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
             Config,
@@ -1057,10 +991,8 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
@@ -1085,10 +1017,8 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                ),
+                Source(file_=a),
+                Source(file_=b),
                 field_merges=(
                     MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
                     MergeRule(F[Config].score, sum),
@@ -1119,11 +1049,9 @@ class TestCallableMergeStrategy:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=b),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=b),
+                Source(file_=c),
                 field_merges=(MergeRule(F[Config].score, sum),),
             ),
             Config,

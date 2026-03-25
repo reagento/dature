@@ -29,10 +29,8 @@ class TestGetLoadReportMergeFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
             ),
             Config,
             debug=True,
@@ -91,10 +89,8 @@ class TestGetLoadReportMergeFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=first),
-                    Source(file_=second),
-                ),
+                Source(file_=first),
+                Source(file_=second),
                 strategy=MergeStrategy.FIRST_WINS,
             ),
             Config,
@@ -158,10 +154,8 @@ class TestGetLoadReportMergeFunction:
 
         result = load(
             Merge(
-                (
-                    Source(file_=defaults),
-                    Source(file_=overrides),
-                ),
+                Source(file_=defaults),
+                Source(file_=overrides),
             ),
             Config,
             debug=True,
@@ -244,10 +238,8 @@ class TestGetLoadReportDecorator:
         overrides.write_text('{"port": 9090}')
 
         meta = Merge(
-            (
-                Source(file_=defaults),
-                Source(file_=overrides),
-            ),
+            Source(file_=defaults),
+            Source(file_=overrides),
         )
 
         @load(meta, debug=True)
@@ -325,10 +317,8 @@ class TestDebugLogging:
         with caplog.at_level(logging.DEBUG, logger="dature"):
             load(
                 Merge(
-                    (
-                        Source(file_=defaults),
-                        Source(file_=overrides),
-                    ),
+                    Source(file_=defaults),
+                    Source(file_=overrides),
                 ),
                 Config,
             )
@@ -392,10 +382,8 @@ class TestLoadReportOnError:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                 ),
                 Config,
                 debug=True,
@@ -436,10 +424,8 @@ class TestLoadReportOnError:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    (
-                        Source(file_=a),
-                        Source(file_=b),
-                    ),
+                    Source(file_=a),
+                    Source(file_=b),
                 ),
                 Config,
                 debug=True,

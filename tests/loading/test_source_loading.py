@@ -24,10 +24,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                (
-                    Source(file_=valid),
-                    Source(file_=missing),
-                ),
+                Source(file_=valid),
+                Source(file_=missing),
                 skip_broken_sources=True,
             ),
             Config,
@@ -50,10 +48,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                (
-                    Source(file_=valid),
-                    Source(file_=broken),
-                ),
+                Source(file_=valid),
+                Source(file_=broken),
                 skip_broken_sources=True,
             ),
             Config,
@@ -76,10 +72,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    (
-                        Source(file_=broken_a),
-                        Source(file_=broken_b),
-                    ),
+                    Source(file_=broken_a),
+                    Source(file_=broken_b),
                     skip_broken_sources=True,
                 ),
                 Config,
@@ -102,10 +96,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    (
-                        Source(file_=valid),
-                        Source(file_=broken),
-                    ),
+                    Source(file_=valid),
+                    Source(file_=broken),
                 ),
                 Config,
             )
@@ -127,11 +119,9 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                (
-                    Source(file_=a),
-                    Source(file_=broken),
-                    Source(file_=c),
-                ),
+                Source(file_=a),
+                Source(file_=broken),
+                Source(file_=c),
                 skip_broken_sources=True,
             ),
             Config,
@@ -154,10 +144,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                (
-                    Source(file_=valid),
-                    Source(file_=broken, skip_if_broken=True),
-                ),
+                Source(file_=valid),
+                Source(file_=broken, skip_if_broken=True),
                 skip_broken_sources=False,
             ),
             Config,
@@ -181,10 +169,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    (
-                        Source(file_=valid),
-                        Source(file_=broken, skip_if_broken=False),
-                    ),
+                    Source(file_=valid),
+                    Source(file_=broken, skip_if_broken=False),
                     skip_broken_sources=True,
                 ),
                 Config,
@@ -204,10 +190,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                (
-                    Source(file_=valid),
-                    Source(file_=broken, skip_if_broken=None),
-                ),
+                Source(file_=valid),
+                Source(file_=broken, skip_if_broken=None),
                 skip_broken_sources=True,
             ),
             Config,
@@ -217,18 +201,8 @@ class TestSkipBrokenSources:
         assert result.port == 3000
 
     def test_empty_sources_raises(self):
-        @dataclass
-        class Config:
-            host: str
-
-        with pytest.raises(DatureConfigError) as exc_info:
-            load(
-                Merge(()),
-                Config,
-            )
-
-        assert str(exc_info.value) == "Config loading errors (1)"
-        assert str(exc_info.value.exceptions[0]) == "Merge.sources must not be empty"
+        with pytest.raises(TypeError, match="Merge\\(\\) requires at least one Source"):
+            Merge()
 
     def test_all_sources_broken_mixed_errors(self, tmp_path: Path):
         missing = str(tmp_path / "does_not_exist.json")
@@ -243,10 +217,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    (
-                        Source(file_=missing),
-                        Source(file_=broken),
-                    ),
+                    Source(file_=missing),
+                    Source(file_=broken),
                     skip_broken_sources=True,
                 ),
                 Config,
@@ -269,7 +241,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                (Source(file_=json_file),),
+                Source(file_=json_file),
             ),
             Config,
         )
@@ -288,7 +260,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                (Source(file_=json_file),),
+                Source(file_=json_file),
                 expand_env_vars="disabled",
             ),
             Config,
@@ -309,7 +281,7 @@ class TestMergeExpandEnvVars:
         with pytest.raises(EnvVarExpandError):
             load(
                 Merge(
-                    (Source(file_=json_file),),
+                    Source(file_=json_file),
                     expand_env_vars="strict",
                 ),
                 Config,
@@ -327,7 +299,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                (Source(file_=json_file, expand_env_vars="disabled"),),
+                Source(file_=json_file, expand_env_vars="disabled"),
                 expand_env_vars="default",
             ),
             Config,
@@ -347,7 +319,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                (Source(file_=json_file, expand_env_vars=None),),
+                Source(file_=json_file, expand_env_vars=None),
                 expand_env_vars="disabled",
             ),
             Config,
@@ -367,7 +339,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                (Source(file_=json_file),),
+                Source(file_=json_file),
                 expand_env_vars="empty",
             ),
             Config,
