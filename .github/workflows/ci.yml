@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: [main]
 
-permissions: {}
+permissions:
+  pull-requests: write
 
 jobs:
   branch-name:
@@ -160,12 +161,48 @@ jobs:
           TOTAL=$(uv run coverage report --format=total)
           echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
 
+      - name: Fetch baseline coverage from gist
+        if: github.event_name == 'pull_request'
+        id: baseline
+        env:
+          GIST_ID: ${{ vars.GIST_ID }}
+        run: |
+          BASELINE=$(curl -s "https://gist.githubusercontent.com/Niccolum/${GIST_ID}/raw/coverage.json" \
+            | jq -r '.message // empty' | tr -d '%' || echo "")
+          echo "total=$BASELINE" >> "$GITHUB_OUTPUT"
+
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT: ${{ steps.cov.outputs.total }}
+          BASELINE: ${{ steps.baseline.outputs.total }}
+        run: |
+          BODY="**Coverage:** ${CURRENT}%"
+          if [ -n "$BASELINE" ]; then
+            DIFF=$(python3 -c "print(f'{float($CURRENT) - float($BASELINE):+.0f}')")
+            if [ "$DIFF" = "+0" ]; then
+              BODY="$BODY (no change)"
+            else
+              BODY="$BODY (${DIFF}% vs main)"
+            fi
+          fi
+
+          # Delete previous coverage comment if exists
+          COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '.[] | select(.body | startswith("**Coverage:**")) | .id' | head -1)
+          if [ -n "$COMMENT_ID" ]; then
+            gh api -X DELETE "repos/${{ github.repository }}/issues/comments/$COMMENT_ID"
+          fi
+
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
+
       - name: Update coverage badge
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483 # v1.7.0
         with:
           auth: ${{ secrets.GIST_TOKEN }}
-          gistID: 57394cf935e48a8a746787f16a1791fc
+          gistID: ${{ vars.GIST_ID }}
           filename: coverage.json
           label: coverage
           message: ${{ steps.cov.outputs.total }}%
