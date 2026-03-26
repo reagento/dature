@@ -34,16 +34,7 @@ pydantic-settings requires your config to inherit from `BaseSettings`, which is 
 dature uses **stdlib `@dataclass`** — no vendor lock-in, no magic metaclasses, no performance overhead on instantiation. Your config classes are plain Python that works with any library.
 
 ```python
-from dataclasses import dataclass
-from dature import load, Source
-
-@dataclass
-class Config:
-    host: str
-    port: int
-    debug: bool = False
-
-config = load(Source(file_="config.yaml"), Config)
+--8<-- "examples/docs/why-not-pydantic-settings/pydantic_settings_basic.py:basic"
 ```
 
 ## Multi-Source Merging That Actually Works
@@ -53,16 +44,7 @@ pydantic-settings merges sources by simple priority: env vars override `.env` fi
 dature gives you **real merge control**:
 
 ```python
-from dature import load, Merge, Source
-
-config = load(
-    Merge(
-        Source(file_="defaults.yaml"),
-        Source(file_="local.yaml", skip_if_broken=True),
-        Source(prefix="APP_"),
-    ),
-    Config,
-)
+--8<-- "examples/docs/why-not-pydantic-settings/pydantic_settings_merge.py:merge"
 ```
 
 - Broken or missing `local.yaml`? Silently skipped.
@@ -94,10 +76,7 @@ class Settings(BaseSettings):
 dature **auto-detects** the format from the file extension — no boilerplate:
 
 ```python
-# Just change the file — dature picks the right loader
-Source(file_="config.yaml")
-Source(file_="config.toml")
-Source(file_="config.json5")
+--8<-- "examples/docs/why-not-pydantic-settings/pydantic_settings_auto_detect.py:auto-detect"
 ```
 
 dature also supports INI, JSON5, and YAML 1.1/1.2 + TOML 1.0/1.1 version variants — formats that pydantic-settings doesn't cover.

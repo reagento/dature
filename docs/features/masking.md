@@ -90,46 +90,31 @@ If `visible_prefix + visible_suffix >= len(value)`, the value is shown as-is.
 Classic `ab*****cd` style:
 
 ```python
-configure(masking=MaskingConfig(mask="*****", visible_prefix=2, visible_suffix=2))
-# "my_secret_password" → "my*****rd"
-# "ab"                 → "ab"  (too short — shown as-is)
+--8<-- "examples/docs/features/masking/masking_classic_style.py:classic-style"
 ```
 
 ## Configuration
 
 ### Per-source
 
-Control masking via `Source` and `Merge`:
+Control masking via `Source`:
 
-```python
-# Add custom secret patterns (added to defaults)
-config = load(
-    Source(
-        file_="config.yaml",
-        secret_field_names=("connection_string", "dsn"),
-    ),
-    Config,
-)
+=== "secret_field_names"
 
-# Disable masking entirely
-config = load(
-    Source(file_="config.yaml", mask_secrets=False),
-    Config,
-)
-```
+    ```python
+    --8<-- "examples/docs/features/masking/masking_per_source.py:per-source"
+    ```
+
+=== "mask_secrets=False"
+
+    ```python
+    --8<-- "examples/docs/features/masking/masking_no_mask.py:no-mask"
+    ```
 
 ### In merge mode
 
 ```python
-config = load(
-    Merge(
-        Source(file_="defaults.yaml"),
-        Source(file_="secrets.yaml", secret_field_names=("custom_key",)),  # added to Merge patterns
-        mask_secrets=True,  # enabled by default
-        secret_field_names=("my_pattern",),  # extra patterns for all sources
-    ),
-    Config,
-)
+--8<-- "examples/docs/features/masking/masking_merge_mode.py:merge-mode"
 ```
 
 `Source.mask_secrets` overrides `Merge.mask_secrets` when not `None`. `secret_field_names` from both are combined.

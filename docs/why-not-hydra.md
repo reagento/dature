@@ -39,17 +39,7 @@ Hydra reads YAML exclusively. You can reference env vars via OmegaConf's `${oc.e
 dature handles all of these out of the box, with auto-detection from file extension:
 
 ```python
-from dature import load, Merge, Source
-
-config = load(
-    Merge(
-        Source(file_="defaults.yaml"),
-        Source(file_="config.toml", skip_if_broken=True),
-        Source(file_=".env", skip_if_broken=True),
-        Source(prefix="APP_"),  # env vars
-    ),
-    Config,
-)
+--8<-- "examples/docs/why-not-hydra/hydra_merge.py:merge"
 ```
 
 ## OmegaConf Is Not a Dataclass
@@ -70,10 +60,7 @@ def app(cfg: DictConfig) -> None:
 dature returns **your actual dataclass**:
 
 ```python
-# dature
-config = load(Source(file_="config.yaml"), Config)
-# isinstance(config, Config) → True
-# Full IDE support, type safety, __post_init__ works
+--8<-- "examples/docs/why-not-hydra/hydra_dataclass.py:dataclass"
 ```
 
 ## The `@hydra.main` Problem
@@ -102,14 +89,7 @@ class Config:
 dature uses `Annotated` validators:
 
 ```python
-from dataclasses import dataclass
-from typing import Annotated
-from dature import load, Source
-from dature.validators.number import Gt, Lt
-
-@dataclass
-class Config:
-    port: Annotated[int, Gt(0), Lt(65536)] = 8080
+--8<-- "examples/docs/why-not-hydra/hydra_validators.py:validators"
 ```
 
 Plus root validators for cross-field checks, custom validators, and standard `__post_init__`.
@@ -119,7 +99,7 @@ And when validation fails, dature underlines the exact problematic value:
 ```
 Config loading errors (1)
 
-  [port]  Must be greater than 0
+  [port]  Value must be greater than 0
    ├── port: -1
    │         ^^
    └── FILE 'config.yaml', line 2

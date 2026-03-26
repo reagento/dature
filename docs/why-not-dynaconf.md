@@ -47,18 +47,7 @@ There's no schema in your code that says "these fields exist, with these types."
 dature makes your config a **typed dataclass**:
 
 ```python
-from dataclasses import dataclass
-from dature import load, Source
-
-@dataclass
-class Config:
-    host: str
-    port: int
-    debug: bool = False
-
-config = load(Source(file_="config.toml"), Config)
-# config.hostt → AttributeError immediately
-# config.port is always int — guaranteed
+--8<-- "examples/docs/why-not-dynaconf/dynaconf_basic.py:basic"
 ```
 
 Missing fields, wrong types, invalid values — all caught at load time with clear error messages pointing to the exact source file and line.
@@ -87,33 +76,13 @@ This gives flexibility — validators can be defined in a different module, reus
 dature supports **both approaches**. Inline validators live with the type:
 
 ```python
-from dataclasses import dataclass
-from typing import Annotated
-from dature import load, Source
-from dature.validators.number import Gt, Lt
-
-@dataclass
-class Config:
-    host: str
-    port: Annotated[int, Gt(0), Lt(65536)]
-    debug: bool = False
-
-config = load(Source(file_="config.toml"), Config)
+--8<-- "examples/docs/why-not-dynaconf/dynaconf_validators.py:validators"
 ```
 
 And separate validators when you need cross-field checks or decoupled validation logic:
 
 ```python
-from dature import load, Source
-
-def check_debug_port(config: Config) -> None:
-    if config.debug and config.port == 80:
-        raise ValueError("debug mode should not use port 80")
-
-config = load(
-    Source(file_="config.toml", root_validators=[check_debug_port]),
-    Config,
-)
+--8<-- "examples/docs/why-not-dynaconf/dynaconf_root_validators.py:root-validators"
 ```
 
 You choose the style that fits — or mix them.
@@ -144,16 +113,7 @@ This leaks infrastructure concerns into your config files. Every team member nee
 dature uses **explicit strategies in code**:
 
 ```python
-from dature import load, Merge, Source
-
-config = load(
-    Merge(
-        Source(file_="defaults.yaml"),
-        Source(file_="local.yaml", skip_if_broken=True),
-        strategy="last_wins",  # or first_wins, first_found, raise_on_conflict
-    ),
-    Config,
-)
+--8<-- "examples/docs/why-not-dynaconf/dynaconf_merge.py:merge"
 ```
 
 No magic keys in config files. Merge behavior is defined in code, visible in one place.
