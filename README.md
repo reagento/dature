@@ -105,8 +105,9 @@ uv run mkdocs serve
 Each PR must include a [towncrier](https://towncrier.readthedocs.io/) fragment in the `changes/` directory:
 
 ```bash
-# Format: changes/<issue-or-pr-number>.<type>.md
-echo "Added support for YAML anchors." > changes/42.feature.md
+# Format: changes/<issue-or-pr-number>.<type>
+echo "Added support for YAML anchors." > changes/42.feature
+
 ```
 
 Available `<type>` values:
