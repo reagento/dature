@@ -1,3 +1,18 @@
+## 0.16.0
+
+### Features
+
+- Reworked masking configuration: replaced `mask_char`, `min_visible_chars`, `min_length_for_partial_mask`, and `fixed_mask_length` with `mask`, `visible_prefix`, and `visible_suffix`. Default masking now fully redacts values as `<REDACTED>` instead of showing partial content.
+
+### Docs
+
+- Extracted all inline Python code blocks from docs into executable example files with assertions. Affected pages: `masking.md`, `why-not-pydantic-settings.md`, `why-not-dynaconf.md`, `why-not-hydra.md`.
+
+### Misc
+
+- Added coverage for test coverage tracking in CI.
+
+
 ## 0.15.3
 
 ### Features
