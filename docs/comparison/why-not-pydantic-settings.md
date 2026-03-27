@@ -16,7 +16,7 @@ The trade-off is coupling: your config must be a Pydantic model, custom types ne
 | **Naming conventions** | `alias` / `alias_generator` (`to_camel`, `to_pascal`, `to_snake`) | Built-in `name_style` (6 conventions) + explicit `field_mapping` with multiple aliases |
 | **CLI** | Built-in `CliSettingsSource` with subcommands, async support | No CLI |
 | **Secrets** | `SecretStr`, `secrets_dir`, nested secrets directories | `SecretStr`, auto-masking in errors/logs (by type, name pattern, or heuristic) |
-| **ENV expansion** | No | `${VAR:-default}` syntax in all file formats |
+| **ENV expansion** | No | `${VAR:-default}` syntax in all file formats + file paths (`Source(file_="$DIR/config.toml")`) |
 | **Error messages** | Pydantic `ValidationError` | Human-readable: source file, line number, context snippet |
 | **Debug / audit** | No | `debug=True` — which source provided each value |
 | **Validation** | Pydantic `field_validator`, `model_validator` (pre/post), constraints | `Annotated` validators, root validators, custom validators, `__post_init__` |
@@ -34,7 +34,7 @@ pydantic-settings requires your config to inherit from `BaseSettings`, which is 
 dature uses **stdlib `@dataclass`** — no vendor lock-in, no magic metaclasses, no performance overhead on instantiation. Your config classes are plain Python that works with any library.
 
 ```python
---8<-- "examples/docs/why-not-pydantic-settings/pydantic_settings_basic.py:basic"
+--8<-- "examples/docs/comparison/why-not-pydantic-settings/pydantic_settings_basic.py:basic"
 ```
 
 ## Multi-Source Merging That Actually Works
@@ -44,7 +44,7 @@ pydantic-settings merges sources by simple priority: env vars override `.env` fi
 dature gives you **real merge control**:
 
 ```python
---8<-- "examples/docs/why-not-pydantic-settings/pydantic_settings_merge.py:merge"
+--8<-- "examples/docs/comparison/why-not-pydantic-settings/pydantic_settings_merge.py:merge"
 ```
 
 - Broken or missing `local.yaml`? Silently skipped.
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
 dature **auto-detects** the format from the file extension — no boilerplate:
 
 ```python
---8<-- "examples/docs/why-not-pydantic-settings/pydantic_settings_auto_detect.py:auto-detect"
+--8<-- "examples/docs/comparison/why-not-pydantic-settings/pydantic_settings_auto_detect.py:auto-detect"
 ```
 
 dature also supports INI, JSON5, and YAML 1.1/1.2 + TOML 1.0/1.1 version variants — formats that pydantic-settings doesn't cover.

@@ -11,12 +11,12 @@ The trade-off is scope: Hydra is a **framework** that takes over your entry poin
 | **Approach** | Framework — takes over entry point, working dir, logging | Library — loads config, returns a dataclass |
 | **Config definition** | YAML files + `@dataclass` structured configs | stdlib `@dataclass` — single source of truth |
 | **Formats** | YAML only | YAML (1.1/1.2), JSON, JSON5, TOML (1.0/1.1), INI, `.env`, env vars, Docker secrets |
-| **Env variables** | `oc.env` resolver; no `.env` support | First-class: env vars, `.env` files, `${VAR:-default}` expansion in all formats |
+| **Env variables** | `oc.env` resolver; no `.env` support | First-class: env vars, `.env` files, `${VAR:-default}` expansion in all formats + file paths |
 | **CLI overrides** | Built-in: `python app.py db.port=3306` + tab completion | No CLI |
 | **Composition** | Config groups, defaults list, package overrides | Multi-source `Merge` with explicit strategies |
 | **Parameter sweeps** | Built-in multirun + sweeper plugins (Ax, Optuna, etc.) | No — not a use case |
 | **Object instantiation** | `instantiate()` — creates objects from config with DI | No — config loading only |
-| **Variable interpolation** | OmegaConf `${path.to.key}` + custom resolvers | `${VAR:-default}` env expansion in all formats |
+| **Variable interpolation** | OmegaConf `${path.to.key}` + custom resolvers | `${VAR:-default}` env expansion in all formats + file paths |
 | **Validation** | Basic type checking via OmegaConf | `Annotated` validators, root validators, custom validators |
 | **Type support** | Primitives, enums, basic containers. No Union types | Primitives, `datetime`, `IPv4Address`, `Enum`, `SecretStr`, `ByteSize`, Union types, and more |
 | **Error messages** | OmegaConf exceptions | Human-readable: source file, line number, context snippet |
@@ -39,7 +39,7 @@ Hydra reads YAML exclusively. You can reference env vars via OmegaConf's `${oc.e
 dature handles all of these out of the box, with auto-detection from file extension:
 
 ```python
---8<-- "examples/docs/why-not-hydra/hydra_merge.py:merge"
+--8<-- "examples/docs/comparison/why-not-hydra/hydra_merge.py:merge"
 ```
 
 ## OmegaConf Is Not a Dataclass
@@ -60,7 +60,7 @@ def app(cfg: DictConfig) -> None:
 dature returns **your actual dataclass**:
 
 ```python
---8<-- "examples/docs/why-not-hydra/hydra_dataclass.py:dataclass"
+--8<-- "examples/docs/comparison/why-not-hydra/hydra_dataclass.py:dataclass"
 ```
 
 ## The `@hydra.main` Problem
@@ -89,7 +89,7 @@ class Config:
 dature uses `Annotated` validators:
 
 ```python
---8<-- "examples/docs/why-not-hydra/hydra_validators.py:validators"
+--8<-- "examples/docs/comparison/why-not-hydra/hydra_validators.py:validators"
 ```
 
 Plus root validators for cross-field checks, custom validators, and standard `__post_init__`.
