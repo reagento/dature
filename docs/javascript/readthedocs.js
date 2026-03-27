@@ -125,12 +125,16 @@ document.addEventListener("DOMContentLoaded", function () {
   if (typeof document.body.dataset.mdColorScheme === "undefined") {
     return;
   }
+  let injecting = false;
   new MutationObserver(function () {
+    if (injecting) return;
     const topic = document.querySelector(".md-header__topic");
     if (topic !== null && topic.querySelector(".md-version") === null) {
+      injecting = true;
       injectVersionSelector();
+      injecting = false;
     }
-  }).observe(document.querySelector(".md-header__topic") || document.body, {
+  }).observe(document.querySelector(".md-header") || document.body, {
     childList: true,
     subtree: true,
   });
