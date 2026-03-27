@@ -128,3 +128,34 @@ In `"strict"` mode, all missing variables are collected and reported at once:
     ```
 
 The `${VAR:-default}` fallback syntax works in all modes.
+
+## File Path Expansion
+
+Environment variables in `Source(file_=...)` are expanded automatically in `"strict"` mode — if a variable is missing, `EnvVarExpandError` is raised immediately at `Source` creation time.
+
+This works for both directory paths and file names:
+
+=== "Variable in directory path"
+
+    ```python
+    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_file_path_dir.py"
+    ```
+
+=== "Variable in file name"
+
+    ```python
+    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_file_path_name.py"
+    ```
+
+=== "Both"
+
+    ```python
+    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_file_path_combined.py"
+    ```
+
+All [supported syntax](#supported-syntax) (`$VAR`, `${VAR}`, `${VAR:-default}`, `%VAR%`) works in file paths.
+
+`str` and `Path` values are both expanded. File-like objects and `None` are passed through unchanged.
+
+!!! note
+    File path expansion is always `"strict"`, independent of the `expand_env_vars` setting. The `expand_env_vars` parameter controls expansion of values **inside** config files, while file paths are expanded at `Source` creation time. A missing variable in a file path would lead to a confusing `FileNotFoundError`, so strict validation is enforced.
