@@ -6,8 +6,7 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  pull-requests: write
+permissions: {}
 
 jobs:
   branch-name:
@@ -135,6 +134,9 @@ jobs:
         run: uv run pytest -v
 
   coverage:
+    permissions:
+      pull-requests: write
+    needs: [lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -212,13 +214,17 @@ jobs:
 
   test-result:
     if: always()
-    needs: [test]
+    needs: [test, coverage]
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
         run: |
           if [[ "${{ needs.test.result }}" != "success" ]]; then
             echo "::error::Tests failed or were cancelled: ${{ needs.test.result }}"
+            exit 1
+          fi
+          if [[ "${{ needs.coverage.result }}" != "success" ]]; then
+            echo "::error::Coverage failed or was cancelled: ${{ needs.coverage.result }}"
             exit 1
           fi
 
