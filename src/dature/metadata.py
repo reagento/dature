@@ -1,8 +1,10 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dature.expansion.env_expand import expand_file_path
 from dature.loading.resolver import resolve_loader_class
 from dature.types import FILE_LIKE_TYPES
 
@@ -58,7 +60,7 @@ class FieldMergeStrategy(StrEnum):
 
 
 # --8<-- [start:load-metadata]
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class Source:
     file_: "FileLike | FilePath | None" = None
     loader: "type[LoaderProtocol] | None" = None
@@ -77,6 +79,10 @@ class Source:
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: "NestedResolve | None" = None
     # --8<-- [end:load-metadata]
+
+    def __post_init__(self) -> None:
+        if isinstance(self.file_, (str, Path)):
+            self.file_ = expand_file_path(str(self.file_), mode="strict")
 
     def __repr__(self) -> str:
         loader_class = resolve_loader_class(self.loader, self.file_)
@@ -99,12 +105,12 @@ class MergeRule:
 
 
 # --8<-- [start:field-group]
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class FieldGroup:
     fields: "tuple[FieldPath, ...]"
 
     def __init__(self, *fields: "FieldPath") -> None:
-        object.__setattr__(self, "fields", fields)
+        self.fields = fields
 
 
 # --8<-- [end:field-group]

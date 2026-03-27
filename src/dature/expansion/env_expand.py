@@ -2,7 +2,7 @@ import os
 import re
 
 from dature.errors.exceptions import EnvVarExpandError, MissingEnvVarError
-from dature.types import ExpandEnvVarsMode, JSONValue
+from dature.types import ExpandEnvVarsMode, FilePath, JSONValue
 
 # $VAR, ${VAR}, ${VAR:-default}, %VAR%, $$, %%
 _VAR_RE = re.compile(
@@ -145,6 +145,10 @@ def _expand_string_default(text: str) -> str:
         return full
 
     return _VAR_RE.sub(_replace, text)
+
+
+def expand_file_path(file_path: FilePath, *, mode: ExpandEnvVarsMode) -> str:
+    return expand_string(str(file_path), mode=mode)
 
 
 def expand_env_vars(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
