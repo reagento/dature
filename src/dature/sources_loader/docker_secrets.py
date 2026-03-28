@@ -3,11 +3,7 @@ from typing import ClassVar
 
 from dature.errors.exceptions import SourceLocation
 from dature.sources_loader.flat_key import FlatKeyLoader
-from dature.types import (
-    FileOrStream,
-    JSONValue,
-    NestedConflict,
-)
+from dature.types import FileOrStream, JSONValue, NestedConflict
 
 
 class DockerSecretsLoader(FlatKeyLoader):
@@ -19,7 +15,7 @@ class DockerSecretsLoader(FlatKeyLoader):
         cls,
         field_path: list[str],
         file_path: Path | None,
-        file_content: str | None,  # noqa: ARG003
+        filecontent: str | None,  # noqa: ARG003
         prefix: str | None,
         split_symbols: str,
         nested_conflict: NestedConflict | None,

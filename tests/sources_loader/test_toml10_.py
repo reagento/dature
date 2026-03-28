@@ -17,7 +17,7 @@ class TestToml10Loader:
 
     def test_comprehensive_type_conversion(self, all_types_toml10_file: Path):
         """Test loading TOML with full type coercion to dataclass."""
-        result = load(Source(file_=all_types_toml10_file, loader=Toml10Loader), AllPythonTypesCompact)
+        result = load(Source(file=all_types_toml10_file, loader=Toml10Loader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -37,7 +37,7 @@ class TestToml10Loader:
         )
 
         result = load(
-            Source(file_=prefixed_toml_file, loader=Toml10Loader, prefix="app"),
+            Source(file=prefixed_toml_file, loader=Toml10Loader, prefix="app"),
             PrefixedConfig,
         )
 
@@ -65,7 +65,7 @@ class TestToml10Loader:
             name: str
             port: int
 
-        result = load(Source(file_=toml_file, loader=Toml10Loader), Config)
+        result = load(Source(file=toml_file, loader=Toml10Loader), Config)
 
         assert result.name == "MyApp"
         assert result.port == 9090
@@ -81,7 +81,7 @@ class TestToml10Loader:
         class Config:
             url: str
 
-        result = load(Source(file_=toml_file, loader=Toml10Loader), Config)
+        result = load(Source(file=toml_file, loader=Toml10Loader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -95,7 +95,7 @@ class TestToml10Loader:
         class Config:
             value: str
 
-        result = load(Source(file_=toml_file, loader=Toml10Loader), Config)
+        result = load(Source(file=toml_file, loader=Toml10Loader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -109,7 +109,7 @@ class TestToml10Loader:
         class Config:
             value: str
 
-        result = load(Source(file_=toml_file, loader=Toml10Loader), Config)
+        result = load(Source(file=toml_file, loader=Toml10Loader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 
@@ -122,7 +122,7 @@ class TestToml10Loader:
             count: int
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=toml_file, loader=Toml10Loader), Config)
+            load(Source(file=toml_file, loader=Toml10Loader), Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -145,7 +145,7 @@ class TestToml10Loader:
             flag: bool
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=toml_file, loader=Toml10Loader), Config)
+            load(Source(file=toml_file, loader=Toml10Loader), Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1

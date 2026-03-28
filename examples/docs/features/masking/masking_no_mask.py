@@ -21,7 +21,7 @@ class Config:
 try:
     load(
         Source(
-            file_=SOURCES_DIR / "masking_per_source.yaml",
+            file=SOURCES_DIR / "masking_per_source.yaml",
             mask_secrets=False,
         ),
         Config,

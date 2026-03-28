@@ -16,7 +16,7 @@ The trade-off is coupling: your config must be a Pydantic model, custom types ne
 | **Naming conventions** | `alias` / `alias_generator` (`to_camel`, `to_pascal`, `to_snake`) | Built-in `name_style` (6 conventions) + explicit `field_mapping` with multiple aliases |
 | **CLI** | Built-in `CliSettingsSource` with subcommands, async support | No CLI |
 | **Secrets** | `SecretStr`, `secrets_dir`, nested secrets directories | `SecretStr`, auto-masking in errors/logs (by type, name pattern, or heuristic) |
-| **ENV expansion** | No | `${VAR:-default}` syntax in all file formats + file paths (`Source(file_="$DIR/config.toml")`) |
+| **ENV expansion** | No | `${VAR:-default}` syntax in all file formats + file paths (`Source(file="$DIR/config.toml")`) |
 | **Error messages** | Pydantic `ValidationError` | Human-readable: source file, line number, context snippet |
 | **Debug / audit** | No | `debug=True` — which source provided each value |
 | **Validation** | Pydantic `field_validator`, `model_validator` (pre/post), constraints | `Annotated` validators, root validators, custom validators, `__post_init__` |

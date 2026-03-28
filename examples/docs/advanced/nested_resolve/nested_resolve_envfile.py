@@ -22,7 +22,7 @@ class Config:
 
 config = load(
     Source(
-        file_=SOURCES_DIR / "nested_resolve.env",
+        file=SOURCES_DIR / "nested_resolve.env",
         loader=EnvFileLoader,
         prefix="APP__",
         nested_resolve_strategy="json",

@@ -24,7 +24,7 @@ class Config:
 
 
 config = load(
-    Source(file_=SOURCES_DIR / "advanced_env_expansion.yaml", expand_env_vars="default"),
+    Source(file=SOURCES_DIR / "advanced_env_expansion.yaml", expand_env_vars="default"),
     Config,
 )
 

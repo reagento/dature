@@ -20,7 +20,7 @@ class Config:
 
 try:
     config = load(
-        Source(file_=SOURCES_DIR / "masking_secret_str.yaml"),
+        Source(file=SOURCES_DIR / "masking_secret_str.yaml"),
         Config,
     )
 except DatureConfigError as exc:

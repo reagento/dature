@@ -105,23 +105,23 @@ def _format_location(
                 return [
                     *_format_content_lines(loc.line_content, prefix="   ├── "),
                     f"   │   {' ' * found.pos}{'^' * caret_len}",
-                    *_format_file_line(loc, connector="└──" if is_last else "├──", suffix=suffix),
+                    *_format_fileline(loc, connector="└──" if is_last else "├──", suffix=suffix),
                 ]
 
     if loc.line_content is not None:
         return [
             *_format_content_lines(loc.line_content, prefix="   ├── "),
-            *_format_file_line(loc, connector="└──" if is_last else "├──", suffix=suffix),
+            *_format_fileline(loc, connector="└──" if is_last else "├──", suffix=suffix),
         ]
 
-    return _format_file_line(loc, connector="└──" if is_last else "├──", suffix=suffix)
+    return _format_fileline(loc, connector="└──" if is_last else "├──", suffix=suffix)
 
 
-def _format_file_line(loc: SourceLocation, *, connector: str, suffix: str = "") -> list[str]:
-    file_main = f"   {connector} {loc.display_label} '{loc.file_path}'"
+def _format_fileline(loc: SourceLocation, *, connector: str, suffix: str = "") -> list[str]:
+    filemain = f"   {connector} {loc.display_label} '{loc.file_path}'"
     if loc.line_range is not None:
-        file_main += f", {loc.line_range!r}"
-    return [file_main + suffix]
+        filemain += f", {loc.line_range!r}"
+    return [filemain + suffix]
 
 
 def _format_path(field_path: list[str]) -> str:

@@ -28,8 +28,8 @@ class TestMergeLoadAsFunction:
 
         result = load(
             Merge(
-                Source(file_=defaults),
-                Source(file_=overrides),
+                Source(file=defaults),
+                Source(file=overrides),
             ),
             Config,
         )
@@ -51,8 +51,8 @@ class TestMergeLoadAsFunction:
 
         result = load(
             Merge(
-                Source(file_=first),
-                Source(file_=second),
+                Source(file=first),
+                Source(file=second),
                 strategy=MergeStrategy.FIRST_WINS,
             ),
             Config,
@@ -62,11 +62,11 @@ class TestMergeLoadAsFunction:
         assert result.port == 3000
 
     def test_partial_sources(self, tmp_path: Path):
-        file_a = tmp_path / "a.json"
-        file_a.write_text('{"host": "myhost"}')
+        filea = tmp_path / "a.json"
+        filea.write_text('{"host": "myhost"}')
 
-        file_b = tmp_path / "b.json"
-        file_b.write_text('{"port": 9090}')
+        fileb = tmp_path / "b.json"
+        fileb.write_text('{"port": 9090}')
 
         @dataclass
         class Config:
@@ -75,8 +75,8 @@ class TestMergeLoadAsFunction:
 
         result = load(
             Merge(
-                Source(file_=file_a),
-                Source(file_=file_b),
+                Source(file=filea),
+                Source(file=fileb),
             ),
             Config,
         )
@@ -102,8 +102,8 @@ class TestMergeLoadAsFunction:
 
         result = load(
             Merge(
-                Source(file_=defaults),
-                Source(file_=overrides),
+                Source(file=defaults),
+                Source(file=overrides),
             ),
             Config,
         )
@@ -129,9 +129,9 @@ class TestMergeLoadAsFunction:
 
         result = load(
             Merge(
-                Source(file_=a),
-                Source(file_=b),
-                Source(file_=c),
+                Source(file=a),
+                Source(file=b),
+                Source(file=c),
             ),
             Config,
         )
@@ -154,8 +154,8 @@ class TestMergeLoadAsFunction:
 
         result = load(
             (
-                Source(file_=defaults),
-                Source(file_=overrides),
+                Source(file=defaults),
+                Source(file=overrides),
             ),
             Config,
         )
@@ -177,7 +177,7 @@ class TestMergeLoadAsFunction:
 
         result = load(
             Merge(
-                Source(file_=defaults),
+                Source(file=defaults),
                 Source(prefix="APP_"),
             ),
             Config,
@@ -201,7 +201,7 @@ class TestMergeLoadAsFunction:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=defaults),
+                    Source(file=defaults),
                     Source(prefix="APP_"),
                 ),
                 Config,
@@ -227,8 +227,8 @@ class TestMergeLoadAsFunction:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=a),
-                    Source(file_=b),
+                    Source(file=a),
+                    Source(file=b),
                 ),
                 Config,
             )
@@ -247,7 +247,7 @@ class TestMergeLoadAsFunction:
             name: str
             port: int
 
-        result = load(Source(file_=json_file), Config)
+        result = load(Source(file=json_file), Config)
 
         assert result.name == "test"
         assert result.port == 8080
@@ -273,8 +273,8 @@ class TestMergeAsDecorator:
         overrides.write_text('{"port": 9090}')
 
         meta = Merge(
-            Source(file_=defaults),
-            Source(file_=overrides),
+            Source(file=defaults),
+            Source(file=overrides),
         )
 
         @load(meta)
@@ -291,7 +291,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        meta = Merge(Source(file_=defaults))
+        meta = Merge(Source(file=defaults))
 
         @load(meta)
         @dataclass
@@ -310,7 +310,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        meta = Merge(Source(file_=defaults))
+        meta = Merge(Source(file=defaults))
 
         @load(meta, cache=False)
         @dataclass
@@ -334,8 +334,8 @@ class TestMergeAsDecorator:
 
         @load(
             (
-                Source(file_=defaults),
-                Source(file_=overrides),
+                Source(file=defaults),
+                Source(file=overrides),
             ),
         )
         @dataclass
@@ -351,7 +351,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "localhost", "port": 3000}')
 
-        meta = Merge(Source(file_=defaults))
+        meta = Merge(Source(file=defaults))
 
         @load(meta)
         @dataclass
@@ -380,8 +380,8 @@ class TestMergeAsDecorator:
         second.write_text('{"host": "second-host", "port": 2000}')
 
         meta = Merge(
-            Source(file_=first),
-            Source(file_=second),
+            Source(file=first),
+            Source(file=second),
             strategy=MergeStrategy.FIRST_WINS,
         )
 
@@ -412,8 +412,8 @@ class TestRaiseOnConflict:
         with pytest.raises(MergeConflictError) as exc_info:
             load(
                 Merge(
-                    Source(file_=a),
-                    Source(file_=b),
+                    Source(file=a),
+                    Source(file=b),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
                 Config,
@@ -443,8 +443,8 @@ class TestRaiseOnConflict:
 
         result = load(
             Merge(
-                Source(file_=a),
-                Source(file_=b),
+                Source(file=a),
+                Source(file=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
             ),
             Config,
@@ -467,8 +467,8 @@ class TestRaiseOnConflict:
 
         result = load(
             Merge(
-                Source(file_=a),
-                Source(file_=b),
+                Source(file=a),
+                Source(file=b),
                 strategy=MergeStrategy.RAISE_ON_CONFLICT,
             ),
             Config,
@@ -496,8 +496,8 @@ class TestRaiseOnConflict:
         with pytest.raises(MergeConflictError) as exc_info:
             load(
                 Merge(
-                    Source(file_=a),
-                    Source(file_=b),
+                    Source(file=a),
+                    Source(file=b),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
                 Config,
@@ -527,8 +527,8 @@ class TestRaiseOnConflict:
         with pytest.raises(MergeConflictError) as exc_info:
             load(
                 Merge(
-                    Source(file_=a),
-                    Source(file_=b),
+                    Source(file=a),
+                    Source(file=b),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
                 Config,
@@ -558,7 +558,7 @@ class TestRaiseOnConflict:
         with pytest.raises(MergeConflictError) as exc_info:
             load(
                 Merge(
-                    Source(file_=a),
+                    Source(file=a),
                     Source(prefix="APP_"),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
@@ -589,8 +589,8 @@ class TestRaiseOnConflict:
         with pytest.raises(MergeConflictError) as exc_info:
             load(
                 Merge(
-                    Source(file_=a),
-                    Source(file_=b),
+                    Source(file=a),
+                    Source(file=b),
                     strategy=MergeStrategy.RAISE_ON_CONFLICT,
                 ),
                 Config,
@@ -632,8 +632,8 @@ class TestMergeWithYamlAndEnvFile:
 
         result = load(
             Merge(
-                Source(file_=yaml_file),
-                Source(file_=env_file),
+                Source(file=yaml_file),
+                Source(file=env_file),
             ),
             Config,
         )
@@ -649,7 +649,7 @@ class _Permission(Flag):
 
 
 class TestCoerceFlagFieldsMergeMode:
-    def test_flag_from_env_file_merge(self, tmp_path: Path):
+    def test_flag_from_env_filemerge(self, tmp_path: Path):
         json_file = tmp_path / "defaults.json"
         json_file.write_text('{"name": "app"}')
 
@@ -663,8 +663,8 @@ class TestCoerceFlagFieldsMergeMode:
 
         result = load(
             Merge(
-                Source(file_=json_file),
-                Source(file_=env_file),
+                Source(file=json_file),
+                Source(file=env_file),
             ),
             Config,
         )
@@ -684,7 +684,7 @@ class TestCoerceFlagFieldsMergeMode:
 
         result = load(
             Merge(
-                Source(file_=json_file),
+                Source(file=json_file),
                 Source(prefix="APP_"),
             ),
             Config,
@@ -706,8 +706,8 @@ class TestCoerceFlagFieldsMergeMode:
 
         result = load(
             Merge(
-                Source(file_=a),
-                Source(file_=b),
+                Source(file=a),
+                Source(file=b),
             ),
             Config,
         )
@@ -727,8 +727,8 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         meta = Merge(
-            Source(file_=json_file),
-            Source(file_=env_file),
+            Source(file=json_file),
+            Source(file=env_file),
         )
 
         @load(meta)
@@ -756,8 +756,8 @@ class TestFirstFound:
 
         result = load(
             Merge(
-                Source(file_=first),
-                Source(file_=second),
+                Source(file=first),
+                Source(file=second),
                 strategy=MergeStrategy.FIRST_FOUND,
             ),
             Config,
@@ -778,8 +778,8 @@ class TestFirstFound:
 
         result = load(
             Merge(
-                Source(file_=missing),
-                Source(file_=fallback),
+                Source(file=missing),
+                Source(file=fallback),
                 strategy=MergeStrategy.FIRST_FOUND,
             ),
             Config,
@@ -802,8 +802,8 @@ class TestFirstFound:
 
         result = load(
             Merge(
-                Source(file_=broken),
-                Source(file_=fallback),
+                Source(file=broken),
+                Source(file=fallback),
                 strategy=MergeStrategy.FIRST_FOUND,
             ),
             Config,
@@ -824,8 +824,8 @@ class TestFirstFound:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=missing1),
-                    Source(file_=missing2),
+                    Source(file=missing1),
+                    Source(file=missing2),
                     strategy=MergeStrategy.FIRST_FOUND,
                 ),
                 Config,
@@ -851,8 +851,8 @@ class TestFirstFound:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=partial),
-                    Source(file_=full),
+                    Source(file=partial),
+                    Source(file=full),
                     strategy=MergeStrategy.FIRST_FOUND,
                 ),
                 Config,
@@ -878,8 +878,8 @@ class TestFirstFound:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=bad_type),
-                    Source(file_=fallback),
+                    Source(file=bad_type),
+                    Source(file=fallback),
                     strategy=MergeStrategy.FIRST_FOUND,
                 ),
                 Config,
@@ -910,8 +910,8 @@ class TestFirstFound:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=first),
-                    Source(file_=second),
+                    Source(file=first),
+                    Source(file=second),
                     strategy=MergeStrategy.FIRST_FOUND,
                 ),
                 Config,
@@ -936,8 +936,8 @@ class TestFirstFound:
 
         @load(
             Merge(
-                Source(file_=first),
-                Source(file_=second),
+                Source(file=first),
+                Source(file=second),
                 strategy=MergeStrategy.FIRST_FOUND,
             ),
             cache=False,

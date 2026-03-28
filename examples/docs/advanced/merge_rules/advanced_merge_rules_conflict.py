@@ -17,8 +17,8 @@ class Config:
 
 config = load(
     Merge(
-        Source(file_=SHARED_DIR / "common_defaults.yaml"),
-        Source(file_=SHARED_DIR / "common_overrides.yaml"),
+        Source(file=SHARED_DIR / "common_defaults.yaml"),
+        Source(file=SHARED_DIR / "common_overrides.yaml"),
         strategy=MergeStrategy.RAISE_ON_CONFLICT,
         field_merges=(
             MergeRule(F[Config].host, FieldMergeStrategy.LAST_WINS),

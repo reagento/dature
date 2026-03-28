@@ -17,7 +17,7 @@ class TestJson5Loader:
 
     def test_comprehensive_type_conversion(self, all_types_json5_file: Path):
         """Test loading JSON5 with full type coercion to dataclass."""
-        result = load(Source(file_=all_types_json5_file, loader=Json5Loader), AllPythonTypesCompact)
+        result = load(Source(file=all_types_json5_file, loader=Json5Loader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -37,7 +37,7 @@ class TestJson5Loader:
         )
 
         result = load(
-            Source(file_=prefixed_json5_file, loader=Json5Loader, prefix="app"),
+            Source(file=prefixed_json5_file, loader=Json5Loader, prefix="app"),
             PrefixedConfig,
         )
 
@@ -65,7 +65,7 @@ class TestJson5Loader:
             host: str
             port: int
 
-        result = load(Source(file_=json5_file, loader=Json5Loader), DbConfig)
+        result = load(Source(file=json5_file, loader=Json5Loader), DbConfig)
 
         assert result.host == "db.example.com"
         assert result.port == 5432
@@ -81,7 +81,7 @@ class TestJson5Loader:
         class Config:
             url: str
 
-        result = load(Source(file_=json5_file, loader=Json5Loader), Config)
+        result = load(Source(file=json5_file, loader=Json5Loader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -95,7 +95,7 @@ class TestJson5Loader:
         class Config:
             value: str
 
-        result = load(Source(file_=json5_file, loader=Json5Loader), Config)
+        result = load(Source(file=json5_file, loader=Json5Loader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -109,7 +109,7 @@ class TestJson5Loader:
         class Config:
             value: str
 
-        result = load(Source(file_=json5_file, loader=Json5Loader), Config)
+        result = load(Source(file=json5_file, loader=Json5Loader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 
@@ -122,7 +122,7 @@ class TestJson5Loader:
             count: int
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=json5_file, loader=Json5Loader), Config)
+            load(Source(file=json5_file, loader=Json5Loader), Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -145,7 +145,7 @@ class TestJson5Loader:
             flag: bool
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=json5_file, loader=Json5Loader), Config)
+            load(Source(file=json5_file, loader=Json5Loader), Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1

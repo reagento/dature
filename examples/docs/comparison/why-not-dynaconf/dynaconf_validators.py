@@ -20,7 +20,7 @@ class Config:
 
 
 try:
-    load(Source(file_=SOURCES_DIR / "dynaconf_validators_invalid.toml"), Config)
+    load(Source(file=SOURCES_DIR / "dynaconf_validators_invalid.toml"), Config)
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "dynaconf_validators_invalid.toml")
     assert str(exc) == "Config loading errors (1)"

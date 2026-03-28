@@ -22,7 +22,7 @@ class User:
 
 config = load(
     Source(
-        file_=SOURCES_DIR / "naming_nested_fields.yaml",
+        file=SOURCES_DIR / "naming_nested_fields.yaml",
         field_mapping={
             F[User].name: "fullName",
             F[User].address: "location",

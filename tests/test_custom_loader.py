@@ -46,7 +46,7 @@ class TestCustomLoader:
         )
 
         result = load(
-            Source(file_=xml_file, loader=XmlLoader),
+            Source(file=xml_file, loader=XmlLoader),
             XmlConfig,
         )
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from dature.config import config
 from dature.errors.exceptions import DatureConfigError, SourceLoadError, SourceLocation
 from dature.errors.formatter import handle_load_errors
-from dature.errors.location import ErrorContext, read_file_content
+from dature.errors.location import ErrorContext, read_filecontent
 from dature.field_path import FieldPath
 from dature.load_report import SourceEntry
 from dature.loading.context import apply_skip_invalid, build_error_ctx
@@ -34,7 +34,7 @@ def resolve_loader_for_source(
 
 def should_skip_broken(source_meta: Source, merge_meta: Merge) -> bool:
     if source_meta.skip_if_broken is not None:
-        if source_meta.file_ is None:
+        if source_meta.file is None:
             logger.warning(
                 "skip_if_broken has no effect on environment variable sources — they cannot be broken",
             )
@@ -96,14 +96,14 @@ def apply_merge_skip_invalid(
 @dataclass(frozen=True, slots=True)
 class SourceContext:
     error_ctx: ErrorContext
-    file_content: str | None
+    filecontent: str | None
 
 
 @dataclass(frozen=True, slots=True)
 class SkippedFieldSource:
     metadata: Source
     error_ctx: ErrorContext
-    file_content: str | None
+    filecontent: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,18 +141,18 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
             expand_env_vars=resolved_expand,
             type_loaders=source_type_loaders,
         )
-        file_or_path: FileOrStream
-        if isinstance(source_meta.file_, FILE_LIKE_TYPES):
-            file_or_path = source_meta.file_
-        elif source_meta.file_ is not None:
-            file_or_path = Path(source_meta.file_)
+        fileor_path: FileOrStream
+        if isinstance(source_meta.file, FILE_LIKE_TYPES):
+            fileor_path = source_meta.file
+        elif source_meta.file is not None:
+            fileor_path = Path(source_meta.file)
         else:
-            file_or_path = Path()
+            fileor_path = Path()
         error_ctx = build_error_ctx(source_meta, dataclass_name, secret_paths=secret_paths, mask_secrets=mask_secrets)
 
         def _load_raw(
             li: LoaderProtocol = loader_instance,
-            fp: FileOrStream = file_or_path,
+            fp: FileOrStream = fileor_path,
         ) -> LoadRawResult:
             return li.load_raw(fp)
 
@@ -168,14 +168,14 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 "[%s] Source %d skipped (broken): file=%s",
                 dataclass_name,
                 i,
-                source_meta.file_
-                if isinstance(source_meta.file_, (str, Path))
-                else ("<stream>" if source_meta.file_ is not None else "<env>"),
+                source_meta.file
+                if isinstance(source_meta.file, (str, Path))
+                else ("<stream>" if source_meta.file is not None else "<env>"),
             )
             continue
         except Exception as exc:
             if merge_meta.strategy != MergeStrategy.FIRST_FOUND and not should_skip_broken(source_meta, merge_meta):
-                loader_class = resolve_loader_class(source_meta.loader, source_meta.file_)
+                loader_class = resolve_loader_class(source_meta.loader, source_meta.file)
                 location = SourceLocation(
                     display_label=loader_class.display_label,
                     file_path=error_ctx.file_path,
@@ -192,9 +192,9 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 "[%s] Source %d skipped (broken): file=%s",
                 dataclass_name,
                 i,
-                source_meta.file_
-                if isinstance(source_meta.file_, (str, Path))
-                else ("<stream>" if source_meta.file_ is not None else "<env>"),
+                source_meta.file
+                if isinstance(source_meta.file, (str, Path))
+                else ("<stream>" if source_meta.file is not None else "<env>"),
             )
             continue
 
@@ -208,7 +208,7 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 nested_conflicts=load_result.nested_conflicts,
             )
 
-        file_content = read_file_content(error_ctx.file_path)
+        filecontent = read_filecontent(error_ctx.file_path)
 
         filter_result = apply_merge_skip_invalid(
             raw=raw,
@@ -221,13 +221,13 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
         for path in filter_result.skipped_paths:
             skipped_fields.setdefault(path, []).append(
-                SkippedFieldSource(metadata=source_meta, error_ctx=error_ctx, file_content=file_content),
+                SkippedFieldSource(metadata=source_meta, error_ctx=error_ctx, filecontent=filecontent),
             )
 
         raw = filter_result.cleaned_dict
         raw_dicts.append(raw)
 
-        loader_class = resolve_loader_class(source_meta.loader, source_meta.file_)
+        loader_class = resolve_loader_class(source_meta.loader, source_meta.file)
         display_name = loader_class.display_name
 
         logger.debug(
@@ -235,9 +235,9 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
             dataclass_name,
             i,
             display_name,
-            source_meta.file_
-            if isinstance(source_meta.file_, (str, Path))
-            else ("<stream>" if source_meta.file_ is not None else "<env>"),
+            source_meta.file
+            if isinstance(source_meta.file, (str, Path))
+            else ("<stream>" if source_meta.file is not None else "<env>"),
             sorted(raw.keys()) if isinstance(raw, dict) else "<non-dict>",
         )
         if secret_paths:
@@ -254,13 +254,13 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
         source_entries.append(
             SourceEntry(
                 index=i,
-                file_path=str(source_meta.file_) if isinstance(source_meta.file_, (str, Path)) else None,
+                file_path=str(source_meta.file) if isinstance(source_meta.file, (str, Path)) else None,
                 loader_type=display_name,
                 raw_data=raw,
             ),
         )
 
-        source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
+        source_ctxs.append(SourceContext(error_ctx=error_ctx, filecontent=filecontent))
         last_loader = loader_instance
 
         if merge_meta.strategy == MergeStrategy.FIRST_FOUND:

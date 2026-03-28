@@ -98,7 +98,7 @@ def test_load_error_types(
     fixture_file: str,
     metadata_kwargs: dict[str, str],
 ) -> None:
-    metadata = Source(file_=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
+    metadata = Source(file=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
 
     with pytest.raises(DatureConfigError) as exc_info:
         load(metadata, LoadErrorConfig)
@@ -113,7 +113,7 @@ def test_validation_error_types(
     fixture_file: str,
     metadata_kwargs: dict[str, str],
 ) -> None:
-    metadata = Source(file_=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
+    metadata = Source(file=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
 
     with pytest.raises(DatureConfigError) as exc_info:
         load(metadata, ValidationErrorConfig)

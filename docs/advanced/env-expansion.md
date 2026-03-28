@@ -131,7 +131,7 @@ The `${VAR:-default}` fallback syntax works in all modes.
 
 ## File Path Expansion
 
-Environment variables in `Source(file_=...)` are expanded automatically in `"strict"` mode — if a variable is missing, `EnvVarExpandError` is raised immediately at `Source` creation time.
+Environment variables in `Source(file=...)` are expanded automatically in `"strict"` mode — if a variable is missing, `EnvVarExpandError` is raised immediately at `Source` creation time.
 
 This works for both directory paths and file names:
 

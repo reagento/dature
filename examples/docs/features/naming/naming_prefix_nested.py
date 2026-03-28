@@ -14,7 +14,7 @@ class Database:
     port: int
 
 
-db = load(Source(file_=SOURCES_DIR / "naming_prefix_nested.yaml", prefix="app.database"), Database)
+db = load(Source(file=SOURCES_DIR / "naming_prefix_nested.yaml", prefix="app.database"), Database)
 
 assert db.host == "localhost"
 assert db.port == 5432

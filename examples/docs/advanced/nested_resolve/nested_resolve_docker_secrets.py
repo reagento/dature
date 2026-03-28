@@ -27,7 +27,7 @@ with TemporaryDirectory() as secrets_dir:
 
     config = load(
         Source(
-            file_=secrets_path,
+            file=secrets_path,
             loader=DockerSecretsLoader,
             nested_resolve_strategy="json",
         ),

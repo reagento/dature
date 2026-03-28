@@ -66,18 +66,18 @@ def load(
         nested_resolve_strategy=config.loading.nested_resolve_strategy,
     )
 
-    file_or_path: FileOrStream
-    if isinstance(metadata.file_, FILE_LIKE_TYPES):
-        file_or_path = metadata.file_
-    elif metadata.file_ is not None:
-        file_or_path = Path(metadata.file_)
+    fileor_path: FileOrStream
+    if isinstance(metadata.file, FILE_LIKE_TYPES):
+        fileor_path = metadata.file
+    elif metadata.file is not None:
+        fileor_path = Path(metadata.file)
     else:
-        file_or_path = Path()
+        fileor_path = Path()
 
     if dataclass_ is not None:
         return load_as_function(
             loader_instance=loader_instance,
-            file_path=file_or_path,
+            file_path=fileor_path,
             dataclass_=dataclass_,
             metadata=metadata,
             debug=debug,
@@ -85,7 +85,7 @@ def load(
 
     return make_decorator(
         loader_instance=loader_instance,
-        file_path=file_or_path,
+        file_path=fileor_path,
         metadata=metadata,
         cache=cache,
         debug=debug,

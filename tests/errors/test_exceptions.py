@@ -157,7 +157,7 @@ class TestLoadIntegrationErrors:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"timeout": "abc", "name": "test"}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @load(metadata)
         @dataclass
@@ -192,7 +192,7 @@ class TestLoadIntegrationErrors:
             name: str
             port: int
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -214,7 +214,7 @@ class TestLoadIntegrationErrors:
             timeout: int
             name: str
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -249,7 +249,7 @@ class TestLoadIntegrationErrors:
         class Config:
             db: DB
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -298,7 +298,7 @@ class TestLoadIntegrationErrors:
             name: str
             timeout: int
 
-        metadata = Source(file_=toml_file)
+        metadata = Source(file=toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -326,7 +326,7 @@ class TestLoadIntegrationErrors:
             name: str
             timeout: int
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -366,7 +366,7 @@ class TestLineTruncation:
             ),
         ],
     )
-    def test_file_source_truncation(
+    def test_filesource_truncation(
         self,
         line_content: str,
         expected_content: str,
@@ -413,7 +413,7 @@ class TestLineTruncation:
             ),
         ],
     )
-    def test_envfile_source_truncation(
+    def test_envfilesource_truncation(
         self,
         line_content: str,
         expected_content: str,
@@ -619,7 +619,7 @@ class TestMultilineValueDisplay:
         class Config:
             db: int
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -643,7 +643,7 @@ class TestMultilineValueDisplay:
             db: int
             name: str
 
-        metadata = Source(file_=yaml_file)
+        metadata = Source(file=yaml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -666,7 +666,7 @@ class TestMultilineValueDisplay:
         class Config:
             tags: int
 
-        metadata = Source(file_=toml_file)
+        metadata = Source(file=toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -689,7 +689,7 @@ class TestMultilineValueDisplay:
         class Config:
             tags: int
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -714,7 +714,7 @@ class TestMultilineValueDisplay:
         class Config:
             product: list[Product]
 
-        metadata = Source(file_=array_of_tables_toml_file)
+        metadata = Source(file=array_of_tables_toml_file)
         result = load(metadata, Config)
 
         assert result == Config(
@@ -735,7 +735,7 @@ class TestMultilineValueDisplay:
         class Config:
             product: list[Product]
 
-        metadata = Source(file_=array_of_tables_error_first_toml_file)
+        metadata = Source(file=array_of_tables_error_first_toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -760,7 +760,7 @@ class TestMultilineValueDisplay:
         class Config:
             product: list[Product]
 
-        metadata = Source(file_=array_of_tables_error_last_toml_file)
+        metadata = Source(file=array_of_tables_error_last_toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)

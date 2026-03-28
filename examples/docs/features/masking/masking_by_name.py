@@ -17,7 +17,7 @@ class Config:
 
 
 try:
-    load(Source(file_=SOURCES_DIR / "masking_by_name.yaml"), Config)
+    load(Source(file=SOURCES_DIR / "masking_by_name.yaml"), Config)
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_by_name.yaml")
     assert str(exc) == "Config loading errors (1)"

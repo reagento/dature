@@ -18,7 +18,7 @@ class Config:
 
 try:
     load(
-        Source(file_=SOURCES_DIR / "masking_heuristic.yaml", mask_secrets=True),
+        Source(file=SOURCES_DIR / "masking_heuristic.yaml", mask_secrets=True),
         Config,
     )
 except DatureConfigError as exc:

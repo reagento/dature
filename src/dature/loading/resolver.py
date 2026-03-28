@@ -64,16 +64,16 @@ def _resolve_by_extension_inner(extension: str) -> "type[LoaderProtocol]":
 
 def resolve_loader_class(
     loader: "type[LoaderProtocol] | None",
-    file_: "FileLike | FilePath | None",
+    file: "FileLike | FilePath | None",
 ) -> "type[LoaderProtocol]":
     if loader is not None:
-        if file_ is not None and not isinstance(file_, FILE_LIKE_TYPES) and loader is EnvLoader:
+        if file is not None and not isinstance(file, FILE_LIKE_TYPES) and loader is EnvLoader:
             msg = (
                 "EnvLoader reads from environment variables and does not use files. "
-                "Remove file_ or use a file-based loader instead (e.g. EnvFileLoader)."
+                "Remove file or use a file-based loader instead (e.g. EnvFileLoader)."
             )
             raise ValueError(msg)
-        if isinstance(file_, FILE_LIKE_TYPES) and loader in (EnvLoader, DockerSecretsLoader):
+        if isinstance(file, FILE_LIKE_TYPES) and loader in (EnvLoader, DockerSecretsLoader):
             msg = (
                 f"{loader.__name__} does not support file-like objects. "
                 "Use a file-based loader (e.g. JsonLoader, TomlLoader) with file-like objects."
@@ -81,18 +81,18 @@ def resolve_loader_class(
             raise ValueError(msg)
         return loader
 
-    if isinstance(file_, FILE_LIKE_TYPES):
+    if isinstance(file, FILE_LIKE_TYPES):
         msg = (
             "Cannot determine loader type for a file-like object. "
             "Please specify loader explicitly (e.g. loader=JsonLoader)."
         )
         raise TypeError(msg)
 
-    if file_ is None:
+    if file is None:
         return EnvLoader
 
-    # file-like objects are handled above; here file_ is str | Path
-    file_path = Path(file_)
+    # file-like objects are handled above; here file is str | Path
+    file_path = Path(file)
 
     if file_path.is_dir():
         return DockerSecretsLoader
@@ -111,7 +111,7 @@ def resolve_loader(
     nested_resolve_strategy: NestedResolveStrategy = "flat",
     nested_resolve: NestedResolve | None = None,
 ) -> "LoaderProtocol":
-    loader_class = resolve_loader_class(metadata.loader, metadata.file_)
+    loader_class = resolve_loader_class(metadata.loader, metadata.file)
 
     resolved_expand = expand_env_vars or metadata.expand_env_vars or "default"
 

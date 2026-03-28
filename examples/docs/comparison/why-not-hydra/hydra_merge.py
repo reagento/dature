@@ -17,8 +17,8 @@ class Config:
 # --8<-- [start:merge]
 config = load(
     Merge(
-        Source(file_=SOURCES_DIR / "hydra_defaults.yaml"),
-        Source(file_=SOURCES_DIR / "hydra_config.toml", skip_if_broken=True),
+        Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
+        Source(file=SOURCES_DIR / "hydra_config.toml", skip_if_broken=True),
         Source(prefix="APP_"),
     ),
     Config,

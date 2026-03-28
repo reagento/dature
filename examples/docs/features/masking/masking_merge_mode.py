@@ -22,9 +22,9 @@ class Config:
 try:
     load(
         Merge(
-            Source(file_=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
+            Source(file=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
             Source(
-                file_=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
+                file=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
                 secret_field_names=("api_key",),
             ),
         ),

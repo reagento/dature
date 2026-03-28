@@ -14,7 +14,7 @@ from dature.sources_loader.toml_ import Toml10Loader, Toml11Loader
 from dature.sources_loader.yaml_ import Yaml11Loader, Yaml12Loader
 
 
-def _all_file_loaders() -> list[type]:
+def _all_fileloaders() -> list[type]:
     return [EnvFileLoader, Yaml11Loader, Yaml12Loader, JsonLoader, Json5Loader, Toml10Loader, Toml11Loader, IniLoader]
 
 
@@ -23,7 +23,7 @@ class TestLoadAsDecorator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "FromFile", "port": 8080}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @load(metadata)
         @dataclass
@@ -66,7 +66,7 @@ class TestLoadAsDecorator:
         txt_file = tmp_path / "config.txt"
         txt_file.write_text('{"app_name": "OverrideApp"}')
 
-        metadata = Source(file_=txt_file, loader=JsonLoader)
+        metadata = Source(file=txt_file, loader=JsonLoader)
 
         @load(metadata)
         @dataclass
@@ -107,7 +107,7 @@ class TestCache:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @load(metadata)
         @dataclass
@@ -126,7 +126,7 @@ class TestCache:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @load(metadata, cache=False)
         @dataclass
@@ -152,7 +152,7 @@ class TestLoadAsFunction:
             name: str
             port: int
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
         result = load(metadata, Config)
 
         assert result.name == "FromFile"
@@ -188,25 +188,25 @@ class TestLoadAsFunction:
 class TestFileNotFoundWithLoad:
     @pytest.mark.parametrize(
         "loader_class",
-        _all_file_loaders(),
+        _all_fileloaders(),
     )
-    def test_load_function_single_source_file_not_found(self, loader_class: type) -> None:
+    def test_load_function_single_source_filenot_found(self, loader_class: type) -> None:
 
         @dataclass
         class Config:
             name: str
 
-        metadata = Source(file_="/non/existent/file.json", loader=loader_class)
+        metadata = Source(file="/non/existent/file.json", loader=loader_class)
 
         with pytest.raises(FileNotFoundError):
             load(metadata, Config)
 
     @pytest.mark.parametrize(
         "loader_class",
-        _all_file_loaders(),
+        _all_fileloaders(),
     )
-    def test_load_decorator_single_source_file_not_found(self, loader_class: type) -> None:
-        metadata = Source(file_="/non/existent/config.json", loader=loader_class)
+    def test_load_decorator_single_source_filenot_found(self, loader_class: type) -> None:
+        metadata = Source(file="/non/existent/config.json", loader=loader_class)
 
         @load(metadata)
         @dataclass

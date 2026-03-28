@@ -26,7 +26,7 @@ def check_debug_not_on_production(obj: Config) -> bool:
 try:
     load(
         Source(
-            file_=SOURCES_DIR / "validation_root_invalid.yaml",
+            file=SOURCES_DIR / "validation_root_invalid.yaml",
             root_validators=(
                 RootValidator(
                     func=check_debug_not_on_production,

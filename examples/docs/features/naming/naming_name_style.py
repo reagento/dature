@@ -17,7 +17,7 @@ class ApiConfig:
 
 
 config = load(
-    Source(file_=SOURCES_DIR / "naming_name_style.yaml", name_style="lower_camel"),
+    Source(file=SOURCES_DIR / "naming_name_style.yaml", name_style="lower_camel"),
     ApiConfig,
 )
 

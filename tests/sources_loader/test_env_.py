@@ -44,7 +44,7 @@ class TestEnvFileLoader:
 
     def test_comprehensive_type_conversion(self, all_types_env_file: Path):
         """Test loading ENV with full type coercion to dataclass."""
-        result = load(Source(file_=all_types_env_file, loader=EnvFileLoader), AllPythonTypesCompact)
+        result = load(Source(file=all_types_env_file, loader=EnvFileLoader), AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -58,7 +58,7 @@ class TestEnvFileLoader:
 
         assert data == {}
 
-    def test_env_file_env_var_substitution(self, tmp_path: Path, monkeypatch):
+    def test_env_fileenv_var_substitution(self, tmp_path: Path, monkeypatch):
         monkeypatch.setenv("BASE_URL", "https://api.example.com")
 
         env_file = tmp_path / ".env"
@@ -69,12 +69,12 @@ class TestEnvFileLoader:
             api_url: str
             base: str
 
-        result = load(Source(file_=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
 
         assert result.api_url == "https://api.example.com/v1"
         assert result.base == "https://api.example.com"
 
-    def test_env_file_env_var_partial_substitution(self, tmp_path: Path, monkeypatch):
+    def test_env_fileenv_var_partial_substitution(self, tmp_path: Path, monkeypatch):
         monkeypatch.setenv("HOST", "localhost")
         monkeypatch.setenv("PORT", "8080")
 
@@ -85,11 +85,11 @@ class TestEnvFileLoader:
         class Config:
             url: str
 
-        result = load(Source(file_=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
 
         assert result.url == "http://localhost:8080/api"
 
-    def test_env_file_dollar_sign_mid_string_existing_var(self, tmp_path: Path, monkeypatch):
+    def test_env_filedollar_sign_mid_string_existing_var(self, tmp_path: Path, monkeypatch):
         monkeypatch.setenv("abc", "replaced")
 
         env_file = tmp_path / ".env"
@@ -99,7 +99,7 @@ class TestEnvFileLoader:
         class Config:
             value: str
 
-        result = load(Source(file_=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -130,7 +130,7 @@ class TestEnvFileLoader:
 
         assert data == {"value": expected}
 
-    def test_env_file_dollar_sign_mid_string_missing_var(self, tmp_path: Path, monkeypatch):
+    def test_env_filedollar_sign_mid_string_missing_var(self, tmp_path: Path, monkeypatch):
         monkeypatch.delenv("nonexistent", raising=False)
 
         env_file = tmp_path / ".env"
@@ -140,7 +140,7 @@ class TestEnvFileLoader:
         class Config:
             value: str
 
-        result = load(Source(file_=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 

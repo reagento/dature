@@ -43,7 +43,7 @@ class LoaderProtocol(Protocol):
         cls,
         field_path: list[str],
         file_path: Path | None,
-        file_content: str | None,
+        filecontent: str | None,
         prefix: str | None,
         split_symbols: str,
         nested_conflict: NestedConflict | None,

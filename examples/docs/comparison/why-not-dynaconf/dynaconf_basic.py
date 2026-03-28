@@ -16,7 +16,7 @@ class Config:
     debug: bool = False
 
 
-config = load(Source(file_=SOURCES_DIR / "dynaconf_basic.toml"), Config)
+config = load(Source(file=SOURCES_DIR / "dynaconf_basic.toml"), Config)
 # config.hostt → AttributeError immediately
 # config.port is always int — guaranteed
 # --8<-- [end:basic]

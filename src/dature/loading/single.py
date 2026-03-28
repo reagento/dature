@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from dature.config import config
 from dature.errors.exceptions import DatureConfigError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
-from dature.errors.location import read_file_content
+from dature.errors.location import read_filecontent
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry, attach_load_report
 from dature.loading.context import (
     apply_skip_invalid,
@@ -129,7 +129,7 @@ class _PatchContext:
         self.validating = False
         self.loading = False
 
-        loader_class = resolve_loader_class(metadata.loader, metadata.file_)
+        loader_class = resolve_loader_class(metadata.loader, metadata.file)
         self.loader_type = loader_class.display_name
 
         mask_secrets = _resolve_single_mask_secrets(metadata)
@@ -180,10 +180,10 @@ def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
     raw_data = coerce_flag_fields(raw_data, ctx.cls)
 
     skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-    file_content = read_file_content(ctx.error_ctx.file_path)
+    filecontent = read_filecontent(ctx.error_ctx.file_path)
     for path in filter_result.skipped_paths:
         skipped_fields.setdefault(path, []).append(
-            SkippedFieldSource(metadata=ctx.metadata, error_ctx=ctx.error_ctx, file_content=file_content),
+            SkippedFieldSource(metadata=ctx.metadata, error_ctx=ctx.error_ctx, filecontent=filecontent),
         )
 
     def _transform(rd: JSONValue = raw_data) -> DataclassInstance:
@@ -237,7 +237,7 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
                 dataclass_name=ctx.cls.__name__,
                 loader_type=ctx.loader_type,
                 file_path=str(ctx.file_path)
-                if not isinstance(ctx.metadata.file_, (*FILE_LIKE_TYPES, type(None)))
+                if not isinstance(ctx.metadata.file, (*FILE_LIKE_TYPES, type(None)))
                 else None,
                 raw_data=result_dict,
                 secret_paths=ctx.secret_paths,
@@ -258,7 +258,7 @@ def load_as_function(  # noqa: C901, PLR0912
     metadata: Source,
     debug: bool,
 ) -> DataclassInstance:
-    loader_class = resolve_loader_class(metadata.loader, metadata.file_)
+    loader_class = resolve_loader_class(metadata.loader, metadata.file)
     display_name = loader_class.display_name
 
     secret_paths: frozenset[str] = frozenset()
@@ -293,18 +293,18 @@ def load_as_function(  # noqa: C901, PLR0912
     raw_data = filter_result.cleaned_dict
 
     skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-    file_content = read_file_content(error_ctx.file_path)
+    filecontent = read_filecontent(error_ctx.file_path)
     for path in filter_result.skipped_paths:
         skipped_fields.setdefault(path, []).append(
-            SkippedFieldSource(metadata=metadata, error_ctx=error_ctx, file_content=file_content),
+            SkippedFieldSource(metadata=metadata, error_ctx=error_ctx, filecontent=filecontent),
         )
 
     report: LoadReport | None = None
     if debug:
-        if isinstance(metadata.file_, FILE_LIKE_TYPES):
+        if isinstance(metadata.file, FILE_LIKE_TYPES):
             report_file_path = None
-        elif metadata.file_ is not None:
-            report_file_path = str(metadata.file_)
+        elif metadata.file is not None:
+            report_file_path = str(metadata.file)
         else:
             report_file_path = None
         report = _build_single_source_report(

@@ -16,7 +16,7 @@ class TestResolveSourceLocation:
             prefix="APP_",
             split_symbols="__",
         )
-        locs = resolve_source_location(["database", "port"], ctx, file_content=None)
+        locs = resolve_source_location(["database", "port"], ctx, filecontent=None)
         assert len(locs) == 1
         assert locs[0].display_label == "ENV"
         assert locs[0].env_var_name == "APP_DATABASE__PORT"
@@ -30,7 +30,7 @@ class TestResolveSourceLocation:
             prefix=None,
             split_symbols="__",
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=None)
+        locs = resolve_source_location(["timeout"], ctx, filecontent=None)
         assert locs[0].env_var_name == "TIMEOUT"
 
     def test_env_source_custom_split_symbols(self):
@@ -41,7 +41,7 @@ class TestResolveSourceLocation:
             prefix="APP_",
             split_symbols="_",
         )
-        locs = resolve_source_location(["database", "port"], ctx, file_content=None)
+        locs = resolve_source_location(["database", "port"], ctx, filecontent=None)
         assert locs[0].env_var_name == "APP_DATABASE_PORT"
 
     def test_json_source_with_line(self):
@@ -53,7 +53,7 @@ class TestResolveSourceLocation:
             prefix=None,
             split_symbols="__",
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, filecontent=content)
         assert locs[0].display_label == "FILE"
         assert locs[0].line_range == LineRange(start=2, end=2)
         assert locs[0].line_content == ['"timeout": "30",']
@@ -67,12 +67,12 @@ class TestResolveSourceLocation:
             prefix=None,
             split_symbols="__",
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, filecontent=content)
         assert locs[0].display_label == "FILE"
         assert locs[0].line_range == LineRange(start=1, end=1)
         assert locs[0].line_content == ['timeout = "30"']
 
-    def test_envfile_source(self):
+    def test_envfilesource(self):
         content = "# comment\nAPP_TIMEOUT=30\nAPP_NAME=test"
         ctx = ErrorContext(
             dataclass_name="Config",
@@ -81,13 +81,13 @@ class TestResolveSourceLocation:
             prefix="APP_",
             split_symbols="__",
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, filecontent=content)
         assert locs[0].display_label == "ENV FILE"
         assert locs[0].env_var_name == "APP_TIMEOUT"
         assert locs[0].line_range == LineRange(start=2, end=2)
         assert locs[0].line_content == ["APP_TIMEOUT=30"]
 
-    def test_file_source_does_not_mask_non_secret_field(self):
+    def test_filesource_does_not_mask_non_secret_field(self):
         content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
         ctx = ErrorContext(
             dataclass_name="Config",
@@ -97,10 +97,10 @@ class TestResolveSourceLocation:
             split_symbols="__",
             secret_paths=frozenset({"password"}),
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, filecontent=content)
         assert locs[0].line_content == ['"timeout": "30"']
 
-    def test_file_source_masks_secret_field(self):
+    def test_filesource_masks_secret_field(self):
         content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
         ctx = ErrorContext(
             dataclass_name="Config",
@@ -110,10 +110,10 @@ class TestResolveSourceLocation:
             split_symbols="__",
             secret_paths=frozenset({"password"}),
         )
-        locs = resolve_source_location(["password"], ctx, file_content=content)
+        locs = resolve_source_location(["password"], ctx, filecontent=content)
         assert locs[0].line_content == ['"password": "<REDACTED>",']
 
-    def test_file_source_masks_line_when_secret_on_same_line(self):
+    def test_filesource_masks_line_when_secret_on_same_line(self):
         content = '{"password": "secret123", "timeout": "30"}'
         ctx = ErrorContext(
             dataclass_name="Config",
@@ -123,5 +123,5 @@ class TestResolveSourceLocation:
             split_symbols="__",
             secret_paths=frozenset({"password"}),
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, filecontent=content)
         assert locs[0].line_content == ['{"password": "<REDACTED>", "timeout": "30"}']

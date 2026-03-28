@@ -24,8 +24,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                Source(file_=valid),
-                Source(file_=missing),
+                Source(file=valid),
+                Source(file=missing),
                 skip_broken_sources=True,
             ),
             Config,
@@ -48,8 +48,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                Source(file_=valid),
-                Source(file_=broken),
+                Source(file=valid),
+                Source(file=broken),
                 skip_broken_sources=True,
             ),
             Config,
@@ -72,8 +72,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=broken_a),
-                    Source(file_=broken_b),
+                    Source(file=broken_a),
+                    Source(file=broken_b),
                     skip_broken_sources=True,
                 ),
                 Config,
@@ -96,8 +96,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    Source(file_=valid),
-                    Source(file_=broken),
+                    Source(file=valid),
+                    Source(file=broken),
                 ),
                 Config,
             )
@@ -119,9 +119,9 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                Source(file_=a),
-                Source(file_=broken),
-                Source(file_=c),
+                Source(file=a),
+                Source(file=broken),
+                Source(file=c),
                 skip_broken_sources=True,
             ),
             Config,
@@ -144,8 +144,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                Source(file_=valid),
-                Source(file_=broken, skip_if_broken=True),
+                Source(file=valid),
+                Source(file=broken, skip_if_broken=True),
                 skip_broken_sources=False,
             ),
             Config,
@@ -169,8 +169,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError):
             load(
                 Merge(
-                    Source(file_=valid),
-                    Source(file_=broken, skip_if_broken=False),
+                    Source(file=valid),
+                    Source(file=broken, skip_if_broken=False),
                     skip_broken_sources=True,
                 ),
                 Config,
@@ -190,8 +190,8 @@ class TestSkipBrokenSources:
 
         result = load(
             Merge(
-                Source(file_=valid),
-                Source(file_=broken, skip_if_broken=None),
+                Source(file=valid),
+                Source(file=broken, skip_if_broken=None),
                 skip_broken_sources=True,
             ),
             Config,
@@ -217,8 +217,8 @@ class TestSkipBrokenSources:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Merge(
-                    Source(file_=missing),
-                    Source(file_=broken),
+                    Source(file=missing),
+                    Source(file=broken),
                     skip_broken_sources=True,
                 ),
                 Config,
@@ -241,7 +241,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                Source(file_=json_file),
+                Source(file=json_file),
             ),
             Config,
         )
@@ -260,7 +260,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                Source(file_=json_file),
+                Source(file=json_file),
                 expand_env_vars="disabled",
             ),
             Config,
@@ -281,7 +281,7 @@ class TestMergeExpandEnvVars:
         with pytest.raises(EnvVarExpandError):
             load(
                 Merge(
-                    Source(file_=json_file),
+                    Source(file=json_file),
                     expand_env_vars="strict",
                 ),
                 Config,
@@ -299,7 +299,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                Source(file_=json_file, expand_env_vars="disabled"),
+                Source(file=json_file, expand_env_vars="disabled"),
                 expand_env_vars="default",
             ),
             Config,
@@ -319,7 +319,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                Source(file_=json_file, expand_env_vars=None),
+                Source(file=json_file, expand_env_vars=None),
                 expand_env_vars="disabled",
             ),
             Config,
@@ -339,7 +339,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Merge(
-                Source(file_=json_file),
+                Source(file=json_file),
                 expand_env_vars="empty",
             ),
             Config,
@@ -383,7 +383,7 @@ class TestEnvVarExpandErrorFormat:
 
         with pytest.raises(EnvVarExpandError) as exc_info:
             load(
-                Source(file_=file, prefix=prefix, expand_env_vars="strict"),
+                Source(file=file, prefix=prefix, expand_env_vars="strict"),
                 StrictConfig,
             )
 

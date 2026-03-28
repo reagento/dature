@@ -16,7 +16,7 @@ class Config:
 
 
 config = load(
-    Source(file_=SOURCES_DIR / "intro_app_docker_secrets"),
+    Source(file=SOURCES_DIR / "intro_app_docker_secrets"),
     Config,
 )
 

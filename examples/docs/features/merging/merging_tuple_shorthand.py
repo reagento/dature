@@ -17,8 +17,8 @@ class Config:
 
 config = load(
     (
-        Source(file_=SHARED_DIR / "common_defaults.yaml"),
-        Source(file_=SHARED_DIR / "common_overrides.yaml"),
+        Source(file=SHARED_DIR / "common_defaults.yaml"),
+        Source(file=SHARED_DIR / "common_overrides.yaml"),
     ),
     Config,
 )

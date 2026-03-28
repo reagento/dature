@@ -10,7 +10,7 @@ from tests.sources_loader.checker import assert_all_types_equal
 class TestDockerSecretsLoader:
     def test_comprehensive_type_conversion(self, all_types_docker_secrets_dir: Path):
         result = load(
-            Source(file_=all_types_docker_secrets_dir, loader=DockerSecretsLoader),
+            Source(file=all_types_docker_secrets_dir, loader=DockerSecretsLoader),
             AllPythonTypesCompact,
         )
 
@@ -52,7 +52,7 @@ class TestDockerSecretsLoader:
 
         assert data == {}
 
-    def test_strip_file_content(self, tmp_path: Path):
+    def test_strip_filecontent(self, tmp_path: Path):
         (tmp_path / "secret").write_text("  password123\n")
 
         loader = DockerSecretsLoader()
@@ -72,7 +72,7 @@ class TestDockerSecretsLoader:
             base: str
 
         result = load(
-            Source(file_=tmp_path, loader=DockerSecretsLoader),
+            Source(file=tmp_path, loader=DockerSecretsLoader),
             Config,
         )
 

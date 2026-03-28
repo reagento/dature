@@ -27,7 +27,7 @@ def check_debug_port(config: Config) -> bool:
 try:
     load(
         Source(
-            file_=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
+            file=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
             root_validators=(
                 RootValidator(
                     func=check_debug_port,

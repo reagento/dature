@@ -52,7 +52,7 @@ class Config:
     port: int
     debug: bool = False
 
-config = load(Source(file_="config.yaml"), Config)
+config = load(Source(file="config.yaml"), Config)
 ```
 
 ## Key Features

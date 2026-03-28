@@ -296,26 +296,26 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         cls,
         field_path: list[str],
         file_path: Path | None,
-        file_content: str | None,
+        filecontent: str | None,
         prefix: str | None,
         split_symbols: str,  # noqa: ARG003
         nested_conflict: NestedConflict | None,  # noqa: ARG003
     ) -> list[SourceLocation]:
-        if file_content is None or not field_path:
-            return [_empty_file_location(cls.display_label, file_path)]
+        if filecontent is None or not field_path:
+            return [_empty_filelocation(cls.display_label, file_path)]
 
         if cls.path_finder_class is None:
-            return [_empty_file_location(cls.display_label, file_path)]
+            return [_empty_filelocation(cls.display_label, file_path)]
 
         search_path = _build_search_path(field_path, prefix)
-        finder = cls.path_finder_class(file_content)
+        finder = cls.path_finder_class(filecontent)
         line_range = finder.find_line_range(search_path)
         if line_range is None:
             line_range = _find_parent_line_range(finder, search_path)
         if line_range is None:
-            return [_empty_file_location(cls.display_label, file_path)]
+            return [_empty_filelocation(cls.display_label, file_path)]
 
-        lines = file_content.splitlines()
+        lines = filecontent.splitlines()
         content_lines: list[str] | None = None
         if 0 < line_range.start <= len(lines):
             end = min(line_range.end, len(lines))
@@ -358,7 +358,7 @@ def _strip_common_indent(raw_lines: list[str]) -> list[str]:
     return [line[min_indent:] for line in raw_lines]
 
 
-def _empty_file_location(display_label: str, file_path: Path | None) -> SourceLocation:
+def _empty_filelocation(display_label: str, file_path: Path | None) -> SourceLocation:
     return SourceLocation(
         display_label=display_label,
         file_path=file_path,

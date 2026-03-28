@@ -18,7 +18,7 @@ class Config:
 
 
 config = load(
-    Source(file_=str(SOURCES_DIR / "config.$DATURE_APP_ENV.yaml")),
+    Source(file=str(SOURCES_DIR / "config.$DATURE_APP_ENV.yaml")),
     Config,
 )
 

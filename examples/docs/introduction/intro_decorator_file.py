@@ -8,7 +8,7 @@ from dature import Source, load
 SHARED_DIR = Path(__file__).parents[1] / "shared"
 
 
-@load(Source(file_=SHARED_DIR / "common_app.yaml"))
+@load(Source(file=SHARED_DIR / "common_app.yaml"))
 @dataclass
 class Config:
     host: str

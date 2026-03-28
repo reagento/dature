@@ -21,7 +21,7 @@ class Config:
 try:
     load(
         Source(
-            file_=SOURCES_DIR / "validation_metadata_invalid.yaml",
+            file=SOURCES_DIR / "validation_metadata_invalid.yaml",
             validators={
                 F[Config].host: MinLength(value=1),
                 F[Config].port: (Ge(value=1), Lt(value=65536)),

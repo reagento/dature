@@ -17,20 +17,20 @@ class Config:
 
 
 # 1. Default config — debug is off, no report
-config = load(Source(file_=SHARED_DIR / "common_app.yaml"), Config)
+config = load(Source(file=SHARED_DIR / "common_app.yaml"), Config)
 report = get_load_report(config)
 assert report is None
 
 # 2. Enable debug globally via configure()
 configure(loading=LoadingConfig(debug=True))
 
-config = load(Source(file_=SHARED_DIR / "common_app.yaml"), Config)
+config = load(Source(file=SHARED_DIR / "common_app.yaml"), Config)
 report = get_load_report(config)
 assert report is not None
 
 # 3. Reset to defaults — debug is off again
 configure(loading=LoadingConfig())
 
-config = load(Source(file_=SHARED_DIR / "common_app.yaml"), Config)
+config = load(Source(file=SHARED_DIR / "common_app.yaml"), Config)
 report = get_load_report(config)
 assert report is None

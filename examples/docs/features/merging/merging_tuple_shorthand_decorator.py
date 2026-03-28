@@ -13,7 +13,7 @@ os.environ["APP_HOST"] = "env_localhost"
 
 @load(
     (
-        Source(file_=SHARED_DIR / "common_defaults.yaml"),
+        Source(file=SHARED_DIR / "common_defaults.yaml"),
         Source(prefix="APP_"),
     ),
 )

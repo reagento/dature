@@ -17,7 +17,7 @@ class DbConfig:
 
 config = load(
     Source(
-        file_=SOURCES_DIR / "naming_field_mapping.yaml",
+        file=SOURCES_DIR / "naming_field_mapping.yaml",
         field_mapping={
             F[DbConfig].database_url: "db_url",
             F[DbConfig].secret_key: "key",

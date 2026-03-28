@@ -62,7 +62,7 @@ class FieldMergeStrategy(StrEnum):
 # --8<-- [start:load-metadata]
 @dataclass(slots=True, kw_only=True)
 class Source:
-    file_: "FileLike | FilePath | None" = None
+    file: "FileLike | FilePath | None" = None
     loader: "type[LoaderProtocol] | None" = None
     prefix: "DotSeparatedPath | None" = None
     split_symbols: str = "__"
@@ -81,16 +81,16 @@ class Source:
     # --8<-- [end:load-metadata]
 
     def __post_init__(self) -> None:
-        if isinstance(self.file_, (str, Path)):
-            self.file_ = expand_file_path(str(self.file_), mode="strict")
+        if isinstance(self.file, (str, Path)):
+            self.file = expand_file_path(str(self.file), mode="strict")
 
     def __repr__(self) -> str:
-        loader_class = resolve_loader_class(self.loader, self.file_)
+        loader_class = resolve_loader_class(self.loader, self.file)
         display = loader_class.display_name
-        if isinstance(self.file_, FILE_LIKE_TYPES):
+        if isinstance(self.file, FILE_LIKE_TYPES):
             return f"{display} '<stream>'"
-        if self.file_ is not None:
-            return f"{display} '{self.file_}'"
+        if self.file is not None:
+            return f"{display} '{self.file}'"
         return display
 
 

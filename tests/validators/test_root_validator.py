@@ -24,7 +24,7 @@ class TestRootValidator:
         json_file.write_text('{"port": 80, "user": "root"}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(RootValidator(func=validate_config),),
         )
         result = load(metadata, Config)
@@ -47,7 +47,7 @@ class TestRootValidator:
         json_file.write_text('{"port": 80, "user": "admin"}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(RootValidator(func=validate_config),),
         )
 
@@ -76,7 +76,7 @@ class TestRootValidator:
         json_file.write_text('{"min_value": 10, "max_value": 100, "step": 5}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(
                 RootValidator(func=validate_min_max),
                 RootValidator(func=validate_step),
@@ -105,7 +105,7 @@ class TestRootValidator:
         json_file.write_text('{"min_value": 100, "max_value": 10, "step": -5}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(
                 RootValidator(func=validate_min_max),
                 RootValidator(func=validate_step),
@@ -133,7 +133,7 @@ class TestRootValidator:
         json_file.write_text('{"port": 80, "host": "localhost"}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(RootValidator(func=validate_config),),
         )
 
@@ -155,7 +155,7 @@ class TestRootValidator:
         json_file.write_text('{"username": "admin", "password": "short"}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(RootValidator(func=validate_credentials),),
         )
 
@@ -188,7 +188,7 @@ class TestRootValidator:
         json_file.write_text('{"port": 80, "user": "admin"}')
 
         metadata = Source(
-            file_=json_file,
+            file=json_file,
             root_validators=(
                 RootValidator(
                     func=validate_config,

@@ -17,8 +17,8 @@ class Config:
 # --8<-- [start:merge]
 config = load(
     Merge(
-        Source(file_=SOURCES_DIR / "dynaconf_merge_defaults.yaml"),
-        Source(file_=SOURCES_DIR / "dynaconf_merge_local.yaml", skip_if_broken=True),
+        Source(file=SOURCES_DIR / "dynaconf_merge_defaults.yaml"),
+        Source(file=SOURCES_DIR / "dynaconf_merge_local.yaml", skip_if_broken=True),
         strategy=MergeStrategy.LAST_WINS,
     ),
     Config,

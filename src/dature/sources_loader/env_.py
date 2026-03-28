@@ -6,14 +6,7 @@ from typing import ClassVar, cast
 
 from dature.errors.exceptions import LineRange, SourceLocation
 from dature.sources_loader.flat_key import FlatKeyLoader
-from dature.types import (
-    BINARY_IO_TYPES,
-    TEXT_IO_TYPES,
-    FileOrStream,
-    JSONValue,
-    NestedConflict,
-    NestedConflicts,
-)
+from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue, NestedConflict, NestedConflicts
 
 
 class EnvLoader(FlatKeyLoader):
@@ -28,7 +21,7 @@ class EnvLoader(FlatKeyLoader):
         cls,
         field_path: list[str],
         file_path: Path | None,  # noqa: ARG003
-        file_content: str | None,  # noqa: ARG003
+        filecontent: str | None,  # noqa: ARG003
         prefix: str | None,
         split_symbols: str,
         nested_conflict: NestedConflict | None,
@@ -76,7 +69,7 @@ class EnvFileLoader(EnvLoader):
         cls,
         field_path: list[str],
         file_path: Path | None,
-        file_content: str | None,
+        filecontent: str | None,
         prefix: str | None,
         split_symbols: str,
         nested_conflict: NestedConflict | None,
@@ -84,8 +77,8 @@ class EnvFileLoader(EnvLoader):
         var_name = cls._resolve_var_name(field_path, prefix, split_symbols, nested_conflict)
         line_range: LineRange | None = None
         line_content: list[str] | None = None
-        if file_content is not None:
-            line_range, line_content = _find_env_line(file_content, var_name)
+        if filecontent is not None:
+            line_range, line_content = _find_env_line(filecontent, var_name)
         return [
             SourceLocation(
                 display_label=cls.display_label,

@@ -48,7 +48,7 @@ class TestTypeLoadersInSource:
     def test_single_source_with_type_loader(self, yaml_with_rgb: Path) -> None:
         result = load(
             Source(
-                file_=yaml_with_rgb,
+                file=yaml_with_rgb,
                 type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
             ),
             ConfigWithRgb,
@@ -67,7 +67,7 @@ class TestTypeLoadersInSource:
 
         result = load(
             Source(
-                file_=p,
+                file=p,
                 type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
             ),
             ConfigWithRgb,
@@ -81,7 +81,7 @@ class TestTypeLoadersInConfigure:
         configure(
             type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
         )
-        result = load(Source(file_=yaml_with_rgb), ConfigWithRgb)
+        result = load(Source(file=yaml_with_rgb), ConfigWithRgb)
         assert result.color == Rgb(r=255, g=128, b=0)
 
 
@@ -94,8 +94,8 @@ class TestTypeLoadersInMerge:
 
         result = load(
             Merge(
-                Source(file_=base),
-                Source(file_=override),
+                Source(file=base),
+                Source(file=override),
                 type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
             ),
             ConfigWithRgb,
@@ -124,7 +124,7 @@ class TestTypeLoadersMergedFromBoth:
 
         result = load(
             Source(
-                file_=p,
+                file=p,
                 type_loaders=(TypeLoader(type_=str, func=tag_upper),),
             ),
             TwoCustom,

@@ -37,7 +37,7 @@ class ServiceConfig:
 
 try:
     load(
-        Source(file_=SOURCES_DIR / "validation_custom_invalid.json5"),
+        Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),
         ServiceConfig,
     )
 except DatureConfigError as exc:

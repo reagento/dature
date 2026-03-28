@@ -15,7 +15,7 @@ class Config:
     debug: bool = False
 
 
-config = load(Source(file_=SOURCES_DIR / "intro_app.json"), Config)
+config = load(Source(file=SOURCES_DIR / "intro_app.json"), Config)
 
 assert config.host == "localhost"
 assert config.port == 8080

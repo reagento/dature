@@ -42,7 +42,7 @@ class Config:
 
 config = load(
     Source(
-        file_=SOURCES_DIR / "custom_loader.xml",
+        file=SOURCES_DIR / "custom_loader.xml",
         loader=XmlLoader,
     ),
     Config,

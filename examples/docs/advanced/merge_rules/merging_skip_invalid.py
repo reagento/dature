@@ -15,7 +15,7 @@ class Config:
 
 
 config = load(
-    Source(file_=SOURCES_DIR / "merging_skip_invalid_defaults.yaml", skip_if_invalid=True),
+    Source(file=SOURCES_DIR / "merging_skip_invalid_defaults.yaml", skip_if_invalid=True),
     Config,
 )
 

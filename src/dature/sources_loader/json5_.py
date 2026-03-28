@@ -38,5 +38,5 @@ class Json5Loader(BaseLoader):
             return cast("JSONValue", json5.load(cast("TextIO", path)))
         if isinstance(path, BINARY_IO_TYPES):
             return cast("JSONValue", json5.load(io.TextIOWrapper(cast("io.BufferedReader", path))))
-        with path.open() as file_:
-            return cast("JSONValue", json5.load(file_))
+        with path.open() as file:
+            return cast("JSONValue", json5.load(file))

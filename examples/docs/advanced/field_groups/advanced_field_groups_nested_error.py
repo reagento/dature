@@ -23,8 +23,8 @@ class Config:
 try:
     load(
         Merge(
-            Source(file_=SHARED_DIR / "common_field_groups_defaults.yaml"),
-            Source(file_=SOURCES_DIR / "field_groups_partial_overrides.yaml"),
+            Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
+            Source(file=SOURCES_DIR / "field_groups_partial_overrides.yaml"),
             field_groups=(
                 FieldGroup(F[Config].host, F[Config].port),
                 FieldGroup(F[Config].user, F[Config].password),

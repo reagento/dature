@@ -23,7 +23,7 @@ class ErrorContext:
     nested_conflicts: NestedConflicts | None = None
 
 
-def read_file_content(file_path: Path | None) -> str | None:
+def read_filecontent(file_path: Path | None) -> str | None:
     if file_path is None:
         return None
 
@@ -46,13 +46,13 @@ def _ranges_overlap(a: LineRange, b: LineRange) -> bool:
 
 def _secret_overlaps_lines(
     *,
-    file_content: str,
+    filecontent: str,
     line_range: LineRange,
     secret_paths: frozenset[str],
     prefix: str | None,
     path_finder_class: type,
 ) -> bool:
-    finder = path_finder_class(file_content)
+    finder = path_finder_class(filecontent)
     for secret_path in secret_paths:
         search_path = _build_search_path(secret_path.split("."), prefix)
         secret_range = finder.find_line_range(search_path)
@@ -74,7 +74,7 @@ def _resolve_conflict(
 def _apply_masking(
     locations: list[SourceLocation],
     ctx: ErrorContext,
-    file_content: str | None,
+    filecontent: str | None,
     *,
     is_secret: bool,
 ) -> list[SourceLocation]:
@@ -86,10 +86,10 @@ def _apply_masking(
             and ctx.secret_paths
             and location.line_range is not None
             and ctx.loader_class.path_finder_class is not None
-            and file_content is not None
+            and filecontent is not None
         ):
             should_mask = _secret_overlaps_lines(
-                file_content=file_content,
+                filecontent=filecontent,
                 line_range=location.line_range,
                 secret_paths=ctx.secret_paths,
                 prefix=ctx.prefix,
@@ -114,7 +114,7 @@ def _apply_masking(
 def resolve_source_location(
     field_path: list[str],
     ctx: ErrorContext,
-    file_content: str | None,
+    filecontent: str | None,
 ) -> list[SourceLocation]:
     is_secret = ".".join(field_path) in ctx.secret_paths
     conflict = _resolve_conflict(field_path, ctx)
@@ -122,10 +122,10 @@ def resolve_source_location(
     locations = ctx.loader_class.resolve_location(
         field_path,
         ctx.file_path,
-        file_content,
+        filecontent,
         ctx.prefix,
         ctx.split_symbols,
         conflict,
     )
 
-    return _apply_masking(locations, ctx, file_content, is_secret=is_secret)
+    return _apply_masking(locations, ctx, filecontent, is_secret=is_secret)

@@ -123,7 +123,7 @@ Override auto-detection with the `loader` parameter:
 ```python
 from dature.sources_loader.yaml_ import Yaml11Loader
 
-Source(file_="config.yaml", loader=Yaml11Loader)
+Source(file="config.yaml", loader=Yaml11Loader)
 ```
 
 ## Source Reference
@@ -134,7 +134,7 @@ Source(file_="config.yaml", loader=Yaml11Loader)
 
 | Parameter | Description |
 |-----------|-------------|
-| `file_` | Path to config file (`str`, `Path`), file-like object (`BytesIO`, `StringIO`), or directory. `None` → environment variables. File-like objects require explicit `loader` |
+| `file` | Path to config file (`str`, `Path`), file-like object (`BytesIO`, `StringIO`), or directory. `None` → environment variables. File-like objects require explicit `loader` |
 | `loader` | Explicit loader class. `None` → auto-detect from extension |
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
 | `split_symbols` | Delimiter for flat→nested conversion. Default: `"__"` |
@@ -153,10 +153,10 @@ Source(file_="config.yaml", loader=Yaml11Loader)
 
 ### File-Like Objects
 
-`file_` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass). The `loader` parameter is required since there is no file extension to auto-detect from:
+`file` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass). The `loader` parameter is required since there is no file extension to auto-detect from:
 
 ```python
---8<-- "examples/docs/introduction/intro_file_like.py"
+--8<-- "examples/docs/introduction/intro_filelike.py"
 ```
 
 !!! note

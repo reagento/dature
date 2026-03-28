@@ -33,5 +33,5 @@ class JsonLoader(BaseLoader):
     def _load(self, path: FileOrStream) -> JSONValue:
         if isinstance(path, FILE_LIKE_TYPES):
             return cast("JSONValue", json.load(path))
-        with path.open() as file_:
-            return cast("JSONValue", json.load(file_))
+        with path.open() as file:
+            return cast("JSONValue", json.load(file))

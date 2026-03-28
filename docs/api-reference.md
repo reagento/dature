@@ -13,13 +13,13 @@ Main entry point. Two calling patterns:
 **Function mode** — pass `dataclass_`, get an instance back:
 
 ```python
-config = load(Source(file_="config.yaml"), Config)
+config = load(Source(file="config.yaml"), Config)
 ```
 
 **Decorator mode** — omit `dataclass_`, get a decorator:
 
 ```python
-@load(Source(file_="config.yaml"))
+@load(Source(file="config.yaml"))
 @dataclass
 class Config:
     host: str

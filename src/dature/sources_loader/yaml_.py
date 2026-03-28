@@ -28,8 +28,8 @@ class BaseYamlLoader(BaseLoader, abc.ABC):
         yaml.version = self._yaml_version()
         if isinstance(path, FILE_LIKE_TYPES):
             return cast("JSONValue", yaml.load(path))
-        with path.open() as file_:
-            return cast("JSONValue", yaml.load(file_))
+        with path.open() as file:
+            return cast("JSONValue", yaml.load(file))
 
 
 class Yaml11Loader(BaseYamlLoader):

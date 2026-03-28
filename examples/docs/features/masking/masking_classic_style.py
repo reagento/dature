@@ -22,7 +22,7 @@ class Config:
     host: str
 
 
-config = load(Source(file_=SOURCES_DIR / "masking_by_name.yaml"), Config)
+config = load(Source(file=SOURCES_DIR / "masking_by_name.yaml"), Config)
 assert mask_value("my_secret_password") == "my*****rd"
 assert mask_value("ab") == "ab"
 

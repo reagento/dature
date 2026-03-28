@@ -19,7 +19,7 @@ class Config:
 
 
 try:
-    load(Source(file_=SOURCES_DIR / "hydra_validators_invalid.yaml"), Config)
+    load(Source(file=SOURCES_DIR / "hydra_validators_invalid.yaml"), Config)
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "hydra_validators_invalid.yaml")
     assert str(exc) == "Config loading errors (1)"

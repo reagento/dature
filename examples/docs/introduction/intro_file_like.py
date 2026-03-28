@@ -16,14 +16,14 @@ class Config:
 
 # From StringIO
 text_stream = StringIO('{"host": "localhost", "port": 8080, "debug": true}')
-config = load(Source(file_=text_stream, loader=JsonLoader), Config)
+config = load(Source(file=text_stream, loader=JsonLoader), Config)
 
 assert config.host == "localhost"
 assert config.port == 8080
 
 # From BytesIO
 binary_stream = BytesIO(b'{"host": "0.0.0.0", "port": 3000}')
-config = load(Source(file_=binary_stream, loader=JsonLoader), Config)
+config = load(Source(file=binary_stream, loader=JsonLoader), Config)
 
 assert config.host == "0.0.0.0"
 assert config.port == 3000

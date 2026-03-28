@@ -48,7 +48,7 @@ class TestCustomFieldValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"count": 10}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
         result = load(metadata, Config)
 
         assert result.count == 10
@@ -62,7 +62,7 @@ class TestCustomFieldValidator:
         content = '{"count": 7}'
         json_file.write_text(content)
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -86,7 +86,7 @@ class TestCustomFieldValidator:
         content = '{"count": 7}'
         json_file.write_text(content)
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -111,7 +111,7 @@ class TestCustomStringValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"url": "https://example.com"}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
         result = load(metadata, Config)
 
         assert result.url == "https://example.com"
@@ -125,7 +125,7 @@ class TestCustomStringValidator:
         content = '{"url": "http://example.com"}'
         json_file.write_text(content)
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)
@@ -146,7 +146,7 @@ class TestCustomValidatorWithDecorator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 8080}')
 
-        @load(Source(file_=json_file))
+        @load(Source(file=json_file))
         @dataclass
         class Config:
             port: Annotated[int, Divisible(value=10)]
@@ -159,7 +159,7 @@ class TestCustomValidatorWithDecorator:
         content = '{"port": 8081}'
         json_file.write_text(content)
 
-        @load(Source(file_=json_file))
+        @load(Source(file=json_file))
         @dataclass
         class Config:
             port: Annotated[int, Divisible(value=10)]
@@ -182,7 +182,7 @@ class TestCustomValidatorWithDecorator:
         content = '{"port": 8080}'
         json_file.write_text(content)
 
-        @load(Source(file_=json_file))
+        @load(Source(file=json_file))
         @dataclass
         class Config:
             port: Annotated[int, Divisible(value=10)]
@@ -208,7 +208,7 @@ class TestMultipleCustomValidators:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"count": 15, "url": "https://example.com"}')
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
         result = load(metadata, Config)
 
         assert result.count == 15
@@ -224,7 +224,7 @@ class TestMultipleCustomValidators:
         content = '{"count": 7, "url": "http://example.com"}'
         json_file.write_text(content)
 
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, Config)

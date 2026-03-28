@@ -216,7 +216,7 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        result = load(Source(file_=json_file), Cfg, debug=True)
+        result = load(Source(file=json_file), Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -242,8 +242,8 @@ class TestSecretMaskingIntegration:
 
         result = load(
             Merge(
-                Source(file_=defaults),
-                Source(file_=overrides),
+                Source(file=defaults),
+                Source(file=overrides),
             ),
             Cfg,
             debug=True,
@@ -269,7 +269,7 @@ class TestSecretMaskingIntegration:
             api_key: SecretStr
             host: str
 
-        result = load(Source(file_=json_file), Cfg, debug=True)
+        result = load(Source(file=json_file), Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -290,7 +290,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with caplog.at_level("DEBUG", logger="dature"):
-            load(Source(file_=json_file), Cfg, debug=True)
+            load(Source(file=json_file), Cfg, debug=True)
 
         assert _SECRET_VALUE not in caplog.text
 
@@ -309,8 +309,8 @@ class TestSecretMaskingIntegration:
         with caplog.at_level("DEBUG", logger="dature"):
             load(
                 Merge(
-                    Source(file_=defaults),
-                    Source(file_=overrides),
+                    Source(file=defaults),
+                    Source(file=overrides),
                 ),
                 Cfg,
                 debug=True,
@@ -328,7 +328,7 @@ class TestSecretMaskingIntegration:
             port: int
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=json_file), Cfg)
+            load(Source(file=json_file), Cfg)
 
         assert _SECRET_VALUE not in str(exc_info.value)
 
@@ -337,7 +337,7 @@ class TestSecretMaskingIntegration:
         json_file.write_text('{"password": "allowed", "host": "prod"}')
 
         meta = Merge(
-            Source(file_=json_file),
+            Source(file=json_file),
         )
 
         @load(meta)
@@ -363,7 +363,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=json_file, mask_secrets=True), Cfg)
+            load(Source(file=json_file, mask_secrets=True), Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
@@ -385,7 +385,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with patch("dature.masking.masking._heuristic_detector", None), pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=json_file, mask_secrets=True), Cfg)
+            load(Source(file=json_file, mask_secrets=True), Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
@@ -418,7 +418,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         configure(masking=MaskingConfig(mask_secrets=mask_secrets))
-        result = load(Source(file_=json_file), Cfg, debug=True)
+        result = load(Source(file=json_file), Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -451,7 +451,7 @@ class TestSecretMaskingIntegration:
         configure(masking=MaskingConfig(mask_secrets=mask_secrets))
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file_=json_file), Cfg)
+            load(Source(file=json_file), Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         content = f'{{"password": "{expected_password}", "port": "not_a_number"}}'

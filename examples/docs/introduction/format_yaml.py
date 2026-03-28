@@ -15,7 +15,7 @@ class Config:
     debug: bool = False
 
 
-config = load(Source(file_=SHARED_DIR / "common_app.yaml"), Config)
+config = load(Source(file=SHARED_DIR / "common_app.yaml"), Config)
 
 assert config.host == "localhost"
 assert config.port == 8080

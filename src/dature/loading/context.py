@@ -49,11 +49,11 @@ def build_error_ctx(
     mask_secrets: bool = False,
     nested_conflicts: NestedConflicts | None = None,
 ) -> ErrorContext:
-    loader_class = resolve_loader_class(metadata.loader, metadata.file_)
-    if isinstance(metadata.file_, FILE_LIKE_TYPES):
+    loader_class = resolve_loader_class(metadata.loader, metadata.file)
+    if isinstance(metadata.file, FILE_LIKE_TYPES):
         error_file_path = None
-    elif metadata.file_ is not None:
-        error_file_path = Path(metadata.file_)
+    elif metadata.file is not None:
+        error_file_path = Path(metadata.file)
     else:
         error_file_path = None
     return ErrorContext(

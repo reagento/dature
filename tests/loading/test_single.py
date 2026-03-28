@@ -17,7 +17,7 @@ class TestMakeDecorator:
     def test_not_dataclass_raises(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         decorator = make_decorator(
             loader_instance=JsonLoader(),
@@ -36,7 +36,7 @@ class TestMakeDecorator:
     def test_patches_init(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -57,7 +57,7 @@ class TestMakeDecorator:
     def test_patches_post_init(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -77,7 +77,7 @@ class TestMakeDecorator:
     def test_loads_on_init(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "from_file", "port": 8080}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -100,7 +100,7 @@ class TestMakeDecorator:
     def test_init_args_override_loaded(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "from_file", "port": 8080}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -123,7 +123,7 @@ class TestMakeDecorator:
     def test_returns_same_class(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -143,7 +143,7 @@ class TestMakeDecorator:
     def test_preserves_original_post_init(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         post_init_called = []
 
@@ -171,7 +171,7 @@ class TestCache:
     def test_cache_returns_same_data(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -198,7 +198,7 @@ class TestCache:
     def test_no_cache_rereads_file(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -225,7 +225,7 @@ class TestCache:
     def test_cache_allows_override(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -254,7 +254,7 @@ class TestLoadAsFunction:
     def test_returns_loaded_dataclass(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test", "port": 3000}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -275,7 +275,7 @@ class TestLoadAsFunction:
     def test_with_prefix(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"app": {"name": "nested"}}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -302,7 +302,7 @@ class TestCoerceFlagFieldsFunctionMode:
     def test_flag_from_env_file(self, tmp_path: Path):
         env_file = tmp_path / "config.env"
         env_file.write_text("NAME=test\nPERMS=3\n")
-        metadata = Source(file_=env_file, loader=EnvFileLoader)
+        metadata = Source(file=env_file, loader=EnvFileLoader)
 
         @dataclass
         class Config:
@@ -322,7 +322,7 @@ class TestCoerceFlagFieldsFunctionMode:
     def test_flag_from_json_as_int(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test", "perms": 3}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -344,7 +344,7 @@ class TestCoerceFlagFieldsDecoratorMode:
     def test_flag_from_env_file(self, tmp_path: Path):
         env_file = tmp_path / "config.env"
         env_file.write_text("NAME=test\nPERMS=5\n")
-        metadata = Source(file_=env_file, loader=EnvFileLoader)
+        metadata = Source(file=env_file, loader=EnvFileLoader)
 
         @dataclass
         class Config:
@@ -366,7 +366,7 @@ class TestCoerceFlagFieldsDecoratorMode:
     def test_flag_from_json_as_int(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test", "perms": 7}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
@@ -394,8 +394,8 @@ class TestFilelikeLoadAsFunction:
             StringIO('{"name": "test", "port": 3000}'),
         ],
     )
-    def test_json_from_file_like(self, stream) -> None:
-        metadata = Source(file_=stream, loader=JsonLoader)
+    def test_json_from_filelike(self, stream) -> None:
+        metadata = Source(file=stream, loader=JsonLoader)
 
         @dataclass
         class Config:
@@ -416,7 +416,7 @@ class TestFilelikeLoadAsFunction:
     def test_path_object_directly(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "direct_path"}')
-        metadata = Source(file_=json_file)
+        metadata = Source(file=json_file)
 
         @dataclass
         class Config:
