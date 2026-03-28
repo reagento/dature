@@ -19,7 +19,7 @@ class TestMinLength:
         json_file.write_text('{"name": "Alice"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.name == "Alice"
 
@@ -35,7 +35,7 @@ class TestMinLength:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -58,7 +58,7 @@ class TestMaxLength:
         json_file.write_text('{"name": "Alice"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.name == "Alice"
 
@@ -74,7 +74,7 @@ class TestMaxLength:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -97,7 +97,7 @@ class TestRegexPattern:
         json_file.write_text('{"email": "test@example.com"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.email == "test@example.com"
 
@@ -113,7 +113,7 @@ class TestRegexPattern:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -136,7 +136,7 @@ class TestCombined:
         json_file.write_text('{"username": "john_doe"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.username == "john_doe"
 
@@ -152,7 +152,7 @@ class TestCombined:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1

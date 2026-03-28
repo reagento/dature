@@ -24,7 +24,7 @@ try:
             file=SOURCES_DIR / "masking_per_source.yaml",
             secret_field_names=("api_key",),
         ),
-        Config,
+        dataclass_=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_per_source.yaml")

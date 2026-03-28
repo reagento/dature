@@ -19,7 +19,7 @@ class TestIniLoader:
         """Test loading INI with full type coercion to dataclass."""
         result = load(
             Source(file=all_types_ini_file, loader=IniLoader, prefix="all_types"),
-            AllPythonTypesCompact,
+            dataclass_=AllPythonTypesCompact,
         )
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
@@ -60,7 +60,7 @@ class TestIniLoader:
 
         result = load(
             Source(file=prefixed_ini_file, loader=IniLoader, prefix="app"),
-            PrefixedConfig,
+            dataclass_=PrefixedConfig,
         )
 
         assert result == expected_data
@@ -89,7 +89,7 @@ class TestIniLoader:
 
         result = load(
             Source(file=ini_file, loader=IniLoader, prefix="database"),
-            DbConfig,
+            dataclass_=DbConfig,
         )
 
         assert result.host == "db.example.com"
@@ -108,7 +108,7 @@ class TestIniLoader:
 
         result = load(
             Source(file=ini_file, loader=IniLoader, prefix="section"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.url == "http://localhost:8080/api"
@@ -125,7 +125,7 @@ class TestIniLoader:
 
         result = load(
             Source(file=ini_file, loader=IniLoader, prefix="section"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.value == "prefixreplaced/suffix"
@@ -142,7 +142,7 @@ class TestIniLoader:
 
         result = load(
             Source(file=ini_file, loader=IniLoader, prefix="section"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.value == "prefix$nonexistent/suffix"

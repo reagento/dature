@@ -117,7 +117,7 @@ Control masking via `Source`:
 --8<-- "examples/docs/features/masking/masking_merge_mode.py:merge-mode"
 ```
 
-`Source.mask_secrets` overrides `Merge.mask_secrets` when not `None`. `secret_field_names` from both are combined.
+`Source.mask_secrets` overrides the `mask_secrets` parameter of `dature.load()` when not `None`. `secret_field_names` from both source and load-level are combined.
 
 ### Global
 

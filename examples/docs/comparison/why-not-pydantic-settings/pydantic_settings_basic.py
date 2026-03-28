@@ -16,7 +16,7 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_basic.yaml"), Config)
+config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_basic.yaml"), dataclass_=Config)
 # config.hostt → AttributeError immediately
 # config.port is always int — guaranteed
 # --8<-- [end:basic]

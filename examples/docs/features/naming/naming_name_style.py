@@ -18,7 +18,7 @@ class ApiConfig:
 
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "naming_name_style.yaml", name_style="lower_camel"),
-    ApiConfig,
+    dataclass_=ApiConfig,
 )
 
 assert config.user_name == "admin"

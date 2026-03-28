@@ -42,7 +42,7 @@ config = dature.load(
             "flat": (dature.F[Config].cache,),
         },
     ),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.database.host == "json-host"

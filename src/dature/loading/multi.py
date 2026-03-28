@@ -29,20 +29,20 @@ from dature.masking.masking import mask_field_origins, mask_json_value, mask_sou
 from dature.merging.deep_merge import deep_merge, deep_merge_last_wins, raise_on_conflict
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
-from dature.metadata import FieldMergeStrategy, Merge, MergeStrategy, Source, TypeLoader
+from dature.metadata import FieldMergeStrategy, MergeStrategy, Source, TypeLoader, _MergeConfig
 from dature.protocols import DataclassInstance, LoaderProtocol
 from dature.types import FieldMergeCallable, JSONValue
 
 logger = logging.getLogger("dature")
 
 
-def _resolve_merge_mask_secrets(merge_meta: Merge) -> bool:
+def _resolve_merge_mask_secrets(merge_meta: _MergeConfig) -> bool:
     if merge_meta.mask_secrets is not None:
         return merge_meta.mask_secrets
     return config.masking.mask_secrets
 
 
-def _collect_extra_secret_patterns(merge_meta: Merge) -> tuple[str, ...]:
+def _collect_extra_secret_patterns(merge_meta: _MergeConfig) -> tuple[str, ...]:
     merge_names = merge_meta.secret_field_names or ()
     source_names: list[str] = []
     for source_meta in merge_meta.sources:
@@ -263,7 +263,7 @@ class _MergedData[T: DataclassInstance]:
 
 def _load_and_merge[T: DataclassInstance](  # noqa: C901
     *,
-    merge_meta: Merge,
+    merge_meta: _MergeConfig,
     dataclass_: type[T],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     debug: bool = False,
@@ -380,7 +380,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
 
 
 def merge_load_as_function[T: DataclassInstance](
-    merge_meta: Merge,
+    merge_meta: _MergeConfig,
     dataclass_: type[T],
     *,
     debug: bool,
@@ -427,7 +427,7 @@ class _MergePatchContext:
     def __init__(
         self,
         *,
-        merge_meta: Merge,
+        merge_meta: _MergeConfig,
         cls: type[DataclassInstance],
         cache: bool,
         debug: bool,
@@ -468,7 +468,7 @@ class _MergePatchContext:
     @staticmethod
     def _prepare_loaders(
         *,
-        merge_meta: Merge,
+        merge_meta: _MergeConfig,
         cls: type[DataclassInstance],
         type_loaders: tuple[TypeLoader, ...] = (),
     ) -> tuple[LoaderProtocol, ...]:
@@ -543,7 +543,7 @@ def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
 
 
 def merge_make_decorator(
-    merge_meta: Merge,
+    merge_meta: _MergeConfig,
     *,
     cache: bool,
     debug: bool,

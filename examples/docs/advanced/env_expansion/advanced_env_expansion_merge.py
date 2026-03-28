@@ -22,13 +22,11 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_default.yaml"),  # uses global "default"
-        dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_empty.yaml", expand_env_vars="empty"),
-        dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_disabled.yaml", expand_env_vars="disabled"),
-        expand_env_vars="default",  # global default for all sources
-    ),
-    Config,
+    dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_default.yaml"),  # uses global "default"
+    dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_empty.yaml", expand_env_vars="empty"),
+    dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_disabled.yaml", expand_env_vars="disabled"),
+    dataclass_=Config,
+    expand_env_vars="default",  # global default for all sources
 )
 
 assert config.default_set_url == "https://api.example.com/api"

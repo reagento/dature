@@ -21,14 +21,12 @@ class Config:
 # --8<-- [start:merge-mode]
 try:
     dature.load(
-        dature.Merge(
-            dature.Source(file=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
-            dature.Source(
-                file=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
-                secret_field_names=("api_key",),
-            ),
+        dature.Source(file=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
+        dature.Source(
+            file=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
+            secret_field_names=("api_key",),
         ),
-        Config,
+        dataclass_=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_merge_mode_secrets.yaml")

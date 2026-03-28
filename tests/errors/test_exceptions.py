@@ -195,7 +195,7 @@ class TestLoadIntegrationErrors:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -217,7 +217,7 @@ class TestLoadIntegrationErrors:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 2
@@ -252,7 +252,7 @@ class TestLoadIntegrationErrors:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -301,7 +301,7 @@ class TestLoadIntegrationErrors:
         metadata = Source(file=toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -329,7 +329,7 @@ class TestLoadIntegrationErrors:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         first = err.exceptions[0]
@@ -622,7 +622,7 @@ class TestMultilineValueDisplay:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
@@ -646,7 +646,7 @@ class TestMultilineValueDisplay:
         metadata = Source(file=yaml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
@@ -669,7 +669,7 @@ class TestMultilineValueDisplay:
         metadata = Source(file=toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
@@ -692,7 +692,7 @@ class TestMultilineValueDisplay:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert str(err) == "Config loading errors (1)"
@@ -715,7 +715,7 @@ class TestMultilineValueDisplay:
             product: list[Product]
 
         metadata = Source(file=array_of_tables_toml_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result == Config(
             product=[
@@ -738,7 +738,7 @@ class TestMultilineValueDisplay:
         metadata = Source(file=array_of_tables_error_first_toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -763,7 +763,7 @@ class TestMultilineValueDisplay:
         metadata = Source(file=array_of_tables_error_last_toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1

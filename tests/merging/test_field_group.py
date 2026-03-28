@@ -6,7 +6,7 @@ from textwrap import dedent
 
 import pytest
 
-from dature import FieldGroup, FieldMergeStrategy, Merge, MergeRule, MergeStrategy, Source, load
+from dature import FieldGroup, FieldMergeStrategy, MergeRule, MergeStrategy, Source, load
 from dature.errors.exceptions import FieldGroupError
 from dature.field_path import F
 
@@ -25,13 +25,11 @@ class TestFieldGroupAllChanged:
             port: int
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                strategy=MergeStrategy.LAST_WINS,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            strategy=MergeStrategy.LAST_WINS,
+            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         )
 
         assert result.host == "remote"
@@ -50,13 +48,11 @@ class TestFieldGroupAllChanged:
             port: int
 
         result = load(
-            Merge(
-                Source(file=first),
-                Source(file=second),
-                strategy=MergeStrategy.FIRST_WINS,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-            ),
-            Config,
+            Source(file=first),
+            Source(file=second),
+            dataclass_=Config,
+            strategy=MergeStrategy.FIRST_WINS,
+            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         )
 
         assert result.host == "first-host"
@@ -77,12 +73,10 @@ class TestFieldGroupNoneChanged:
             port: int
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         )
 
         assert result.host == "localhost"
@@ -102,12 +96,10 @@ class TestFieldGroupNoneChanged:
             debug: bool
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         )
 
         assert result.host == "localhost"
@@ -133,12 +125,10 @@ class TestFieldGroupPartialChange:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -166,12 +156,10 @@ class TestFieldGroupPartialChange:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -196,13 +184,11 @@ class TestFieldGroupPartialChange:
 
         with pytest.raises(FieldGroupError):
             load(
-                Merge(
-                    Source(file=defaults),
-                    Source(file=overrides),
-                    strategy=MergeStrategy.FIRST_WINS,
-                    field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-                ),
-                Config,
+                Source(file=defaults),
+                Source(file=overrides),
+                dataclass_=Config,
+                strategy=MergeStrategy.FIRST_WINS,
+                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
             )
 
     def test_partial_change_with_raise_on_conflict(self, tmp_path: Path):
@@ -219,13 +205,11 @@ class TestFieldGroupPartialChange:
 
         with pytest.raises(FieldGroupError):
             load(
-                Merge(
-                    Source(file=defaults),
-                    Source(file=overrides),
-                    strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                    field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-                ),
-                Config,
+                Source(file=defaults),
+                Source(file=overrides),
+                dataclass_=Config,
+                strategy=MergeStrategy.RAISE_ON_CONFLICT,
+                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
             )
 
 
@@ -251,12 +235,10 @@ class TestFieldGroupAutoExpand:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].database),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].database),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -284,12 +266,10 @@ class TestFieldGroupAutoExpand:
             database: Database
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_groups=(FieldGroup(F[Config].database),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].database),),
         )
 
         assert result.database.host == "remote"
@@ -318,13 +298,11 @@ class TestFieldGroupThreeSources:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    a_meta,
-                    b_meta,
-                    c_meta,
-                    field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-                ),
-                Config,
+                a_meta,
+                b_meta,
+                c_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -351,13 +329,11 @@ class TestFieldGroupThreeSources:
             port: int
 
         result = load(
-            Merge(
-                Source(file=a),
-                Source(file=b),
-                Source(file=c),
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-            ),
-            Config,
+            Source(file=a),
+            Source(file=b),
+            Source(file=c),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         )
 
         assert result.host == "c-host"
@@ -384,15 +360,13 @@ class TestFieldGroupMultipleGroups:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(
-                        FieldGroup(F[Config].host, F[Config].port),
-                        FieldGroup(F[Config].user, F[Config].password),
-                    ),
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(
+                    FieldGroup(F[Config].host, F[Config].port),
+                    FieldGroup(F[Config].user, F[Config].password),
                 ),
-                Config,
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -419,13 +393,11 @@ class TestFieldGroupWithFieldMerges:
             tags: list[str]
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
+            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
         )
 
         assert result.host == "remote"
@@ -441,13 +413,11 @@ class TestFieldGroupDecorator:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote", "port": 9090}')
 
-        meta = Merge(
+        @load(
             Source(file=defaults),
             Source(file=overrides),
             field_groups=(FieldGroup(F["Config"].host, F["Config"].port),),
         )
-
-        @load(meta)
         @dataclass
         class Config:
             host: str
@@ -464,13 +434,11 @@ class TestFieldGroupDecorator:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote"}')
 
-        meta = Merge(
+        @load(
             Source(file=defaults),
             Source(file=overrides),
             field_groups=(FieldGroup(F["Config"].host, F["Config"].port),),
         )
-
-        @load(meta)
         @dataclass
         class Config:
             host: str
@@ -499,12 +467,10 @@ class TestFieldGroupErrorFormat:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].host, F[Config].port),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -534,15 +500,13 @@ class TestFieldGroupErrorFormat:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(
-                        FieldGroup(F[Config].host, F[Config].port),
-                        FieldGroup(F[Config].user, F[Config].password),
-                    ),
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(
+                    FieldGroup(F[Config].host, F[Config].port),
+                    FieldGroup(F[Config].user, F[Config].password),
                 ),
-                Config,
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -581,12 +545,10 @@ class TestFieldGroupMixedExpandAndFlat:
             timeout: int
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
         )
 
         assert result.database.host == "remote"
@@ -615,12 +577,10 @@ class TestFieldGroupMixedExpandAndFlat:
             timeout: int
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
         )
 
         assert result.database.host == "localhost"
@@ -651,12 +611,10 @@ class TestFieldGroupMixedExpandAndFlat:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -691,12 +649,10 @@ class TestFieldGroupMixedExpandAndFlat:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -733,12 +689,10 @@ class TestFieldGroupMixedExpandAndFlat:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -772,12 +726,10 @@ class TestFieldGroupSameFieldNameNested:
             inner: Inner
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-                field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
+            field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
         )
 
         assert result.user_name == "root-new"
@@ -806,12 +758,10 @@ class TestFieldGroupSameFieldNameNested:
 
         with pytest.raises(FieldGroupError) as exc_info:
             load(
-                Merge(
-                    defaults_meta,
-                    overrides_meta,
-                    field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
-                ),
-                Config,
+                defaults_meta,
+                overrides_meta,
+                dataclass_=Config,
+                field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
             )
 
         assert str(exc_info.value) == dedent(f"""\

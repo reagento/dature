@@ -18,12 +18,10 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_field_groups_overrides.yaml"),
-        field_groups=(dature.FieldGroup(dature.F[Config].host, dature.F[Config].port),),
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_field_groups_overrides.yaml"),
+    dataclass_=Config,
+    field_groups=(dature.FieldGroup(dature.F[Config].host, dature.F[Config].port),),
 )
 
 assert config.host == "production.example.com"

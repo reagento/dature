@@ -44,7 +44,7 @@ class TestEnvFileLoader:
 
     def test_comprehensive_type_conversion(self, all_types_env_file: Path):
         """Test loading ENV with full type coercion to dataclass."""
-        result = load(Source(file=all_types_env_file, loader=EnvFileLoader), AllPythonTypesCompact)
+        result = load(Source(file=all_types_env_file, loader=EnvFileLoader), dataclass_=AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -69,7 +69,7 @@ class TestEnvFileLoader:
             api_url: str
             base: str
 
-        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), dataclass_=Config)
 
         assert result.api_url == "https://api.example.com/v1"
         assert result.base == "https://api.example.com"
@@ -85,7 +85,7 @@ class TestEnvFileLoader:
         class Config:
             url: str
 
-        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), dataclass_=Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -99,7 +99,7 @@ class TestEnvFileLoader:
         class Config:
             value: str
 
-        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), dataclass_=Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -140,7 +140,7 @@ class TestEnvFileLoader:
         class Config:
             value: str
 
-        result = load(Source(file=env_file, loader=EnvFileLoader), Config)
+        result = load(Source(file=env_file, loader=EnvFileLoader), dataclass_=Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 
@@ -256,7 +256,7 @@ class TestEnvLoader:
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
 
-        result = load(Source(loader=EnvLoader, prefix="APP_"), AllPythonTypesCompact)
+        result = load(Source(loader=EnvLoader, prefix="APP_"), dataclass_=AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -273,7 +273,7 @@ class TestEnvLoader:
 
         expected_data = TestConfig(var="included", key="also_included")
 
-        data = load(Source(loader=EnvLoader, prefix="APP_"), TestConfig)
+        data = load(Source(loader=EnvLoader, prefix="APP_"), dataclass_=TestConfig)
 
         assert data == expected_data
 
@@ -295,7 +295,7 @@ class TestEnvLoader:
 
         data = load(
             Source(loader=EnvLoader, prefix="APP_", split_symbols="."),
-            TestConfig,
+            dataclass_=TestConfig,
         )
 
         assert data == expected_data

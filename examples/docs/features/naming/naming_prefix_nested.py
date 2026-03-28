@@ -14,7 +14,10 @@ class Database:
     port: int
 
 
-db = dature.load(dature.Source(file=SOURCES_DIR / "naming_prefix_nested.yaml", prefix="app.database"), Database)
+db = dature.load(
+    dature.Source(file=SOURCES_DIR / "naming_prefix_nested.yaml", prefix="app.database"),
+    dataclass_=Database,
+)
 
 assert db.host == "localhost"
 assert db.port == 5432

@@ -28,7 +28,7 @@ class Config:
 # Even with strategy="flat", JSON is parsed because there are no flat keys
 config = dature.load(
     dature.Source(loader=EnvLoader, prefix="APP__", nested_resolve_strategy="flat"),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.database.host == "json-host"

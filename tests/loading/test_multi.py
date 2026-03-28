@@ -8,7 +8,7 @@ from typing import Annotated
 
 import pytest
 
-from dature import Merge, MergeStrategy, Source, load
+from dature import MergeStrategy, Source, load
 from dature.errors.exceptions import DatureConfigError, MergeConflictError
 from dature.validators.number import Ge
 
@@ -27,11 +27,9 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
         )
 
         assert result.host == "localhost"
@@ -50,12 +48,10 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Merge(
-                Source(file=first),
-                Source(file=second),
-                strategy=MergeStrategy.FIRST_WINS,
-            ),
-            Config,
+            Source(file=first),
+            Source(file=second),
+            dataclass_=Config,
+            strategy=MergeStrategy.FIRST_WINS,
         )
 
         assert result.host == "first-host"
@@ -74,11 +70,9 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Merge(
-                Source(file=filea),
-                Source(file=fileb),
-            ),
-            Config,
+            Source(file=filea),
+            Source(file=fileb),
+            dataclass_=Config,
         )
 
         assert result.host == "myhost"
@@ -101,11 +95,9 @@ class TestMergeLoadAsFunction:
             database: Database
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(file=overrides),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
         )
 
         assert result.database.host == "prod-host"
@@ -128,12 +120,10 @@ class TestMergeLoadAsFunction:
             debug: bool
 
         result = load(
-            Merge(
-                Source(file=a),
-                Source(file=b),
-                Source(file=c),
-            ),
-            Config,
+            Source(file=a),
+            Source(file=b),
+            Source(file=c),
+            dataclass_=Config,
         )
 
         assert result.host == "a-host"
@@ -153,11 +143,9 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            (
-                Source(file=defaults),
-                Source(file=overrides),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(file=overrides),
+            dataclass_=Config,
         )
 
         assert result.host == "localhost"
@@ -176,11 +164,9 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Merge(
-                Source(file=defaults),
-                Source(prefix="APP_"),
-            ),
-            Config,
+            Source(file=defaults),
+            Source(prefix="APP_"),
+            dataclass_=Config,
         )
 
         assert result.host == "env-host"
@@ -200,11 +186,9 @@ class TestMergeLoadAsFunction:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=defaults),
-                    Source(prefix="APP_"),
-                ),
-                Config,
+                Source(file=defaults),
+                Source(prefix="APP_"),
+                dataclass_=Config,
             )
 
         err = exc_info.value
@@ -226,11 +210,9 @@ class TestMergeLoadAsFunction:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=a),
-                    Source(file=b),
-                ),
-                Config,
+                Source(file=a),
+                Source(file=b),
+                dataclass_=Config,
             )
 
         err = exc_info.value
@@ -247,7 +229,7 @@ class TestMergeLoadAsFunction:
             name: str
             port: int
 
-        result = load(Source(file=json_file), Config)
+        result = load(Source(file=json_file), dataclass_=Config)
 
         assert result.name == "test"
         assert result.port == 8080
@@ -259,7 +241,7 @@ class TestMergeLoadAsFunction:
         class Config:
             my_var: str
 
-        result = load(None, Config)
+        result = load(Source(), dataclass_=Config)
 
         assert result.my_var == "from_env"
 
@@ -272,12 +254,10 @@ class TestMergeAsDecorator:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"port": 9090}')
 
-        meta = Merge(
+        @load(
             Source(file=defaults),
             Source(file=overrides),
         )
-
-        @load(meta)
         @dataclass
         class Config:
             host: str
@@ -291,9 +271,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        meta = Merge(Source(file=defaults))
-
-        @load(meta)
+        @load(Source(file=defaults))
         @dataclass
         class Config:
             host: str
@@ -310,9 +288,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        meta = Merge(Source(file=defaults))
-
-        @load(meta, cache=False)
+        @load(Source(file=defaults), cache=False)
         @dataclass
         class Config:
             host: str
@@ -333,10 +309,8 @@ class TestMergeAsDecorator:
         overrides.write_text('{"port": 8080}')
 
         @load(
-            (
-                Source(file=defaults),
-                Source(file=overrides),
-            ),
+            Source(file=defaults),
+            Source(file=overrides),
         )
         @dataclass
         class Config:
@@ -351,9 +325,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "localhost", "port": 3000}')
 
-        meta = Merge(Source(file=defaults))
-
-        @load(meta)
+        @load(Source(file=defaults))
         @dataclass
         class Config:
             host: str
@@ -364,11 +336,9 @@ class TestMergeAsDecorator:
         assert config.port == 3000
 
     def test_decorator_not_dataclass(self):
-        meta = Merge(Source())
-
         with pytest.raises(TypeError, match="must be a dataclass"):
 
-            @load(meta)
+            @load(Source())
             class NotDataclass:
                 pass
 
@@ -379,13 +349,11 @@ class TestMergeAsDecorator:
         second = tmp_path / "second.json"
         second.write_text('{"host": "second-host", "port": 2000}')
 
-        meta = Merge(
+        @load(
             Source(file=first),
             Source(file=second),
             strategy=MergeStrategy.FIRST_WINS,
         )
-
-        @load(meta)
         @dataclass
         class Config:
             host: str
@@ -411,12 +379,10 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Merge(
-                    Source(file=a),
-                    Source(file=b),
-                    strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                ),
-                Config,
+                Source(file=a),
+                Source(file=b),
+                dataclass_=Config,
+                strategy=MergeStrategy.RAISE_ON_CONFLICT,
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -442,12 +408,10 @@ class TestRaiseOnConflict:
             port: int
 
         result = load(
-            Merge(
-                Source(file=a),
-                Source(file=b),
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
-            ),
-            Config,
+            Source(file=a),
+            Source(file=b),
+            dataclass_=Config,
+            strategy=MergeStrategy.RAISE_ON_CONFLICT,
         )
 
         assert result.host == "localhost"
@@ -466,12 +430,10 @@ class TestRaiseOnConflict:
             port: int
 
         result = load(
-            Merge(
-                Source(file=a),
-                Source(file=b),
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
-            ),
-            Config,
+            Source(file=a),
+            Source(file=b),
+            dataclass_=Config,
+            strategy=MergeStrategy.RAISE_ON_CONFLICT,
         )
 
         assert result.host == "same"
@@ -495,12 +457,10 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Merge(
-                    Source(file=a),
-                    Source(file=b),
-                    strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                ),
-                Config,
+                Source(file=a),
+                Source(file=b),
+                dataclass_=Config,
+                strategy=MergeStrategy.RAISE_ON_CONFLICT,
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -526,12 +486,10 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Merge(
-                    Source(file=a),
-                    Source(file=b),
-                    strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                ),
-                Config,
+                Source(file=a),
+                Source(file=b),
+                dataclass_=Config,
+                strategy=MergeStrategy.RAISE_ON_CONFLICT,
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -557,12 +515,10 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Merge(
-                    Source(file=a),
-                    Source(prefix="APP_"),
-                    strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                ),
-                Config,
+                Source(file=a),
+                Source(prefix="APP_"),
+                dataclass_=Config,
+                strategy=MergeStrategy.RAISE_ON_CONFLICT,
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -588,12 +544,10 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Merge(
-                    Source(file=a),
-                    Source(file=b),
-                    strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                ),
-                Config,
+                Source(file=a),
+                Source(file=b),
+                dataclass_=Config,
+                strategy=MergeStrategy.RAISE_ON_CONFLICT,
             )
 
         assert len(exc_info.value.exceptions) == 2
@@ -631,11 +585,9 @@ class TestMergeWithYamlAndEnvFile:
             port: int
 
         result = load(
-            Merge(
-                Source(file=yaml_file),
-                Source(file=env_file),
-            ),
-            Config,
+            Source(file=yaml_file),
+            Source(file=env_file),
+            dataclass_=Config,
         )
 
         assert result.host == "localhost"
@@ -662,11 +614,9 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         result = load(
-            Merge(
-                Source(file=json_file),
-                Source(file=env_file),
-            ),
-            Config,
+            Source(file=json_file),
+            Source(file=env_file),
+            dataclass_=Config,
         )
 
         assert result.perms == _Permission.READ | _Permission.WRITE
@@ -683,11 +633,9 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         result = load(
-            Merge(
-                Source(file=json_file),
-                Source(prefix="APP_"),
-            ),
-            Config,
+            Source(file=json_file),
+            Source(prefix="APP_"),
+            dataclass_=Config,
         )
 
         assert result.perms == _Permission.READ | _Permission.EXECUTE
@@ -705,11 +653,9 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         result = load(
-            Merge(
-                Source(file=a),
-                Source(file=b),
-            ),
-            Config,
+            Source(file=a),
+            Source(file=b),
+            dataclass_=Config,
         )
 
         assert result.perms == _Permission.READ | _Permission.WRITE | _Permission.EXECUTE
@@ -726,12 +672,10 @@ class TestCoerceFlagFieldsMergeMode:
             name: str
             perms: _Permission
 
-        meta = Merge(
+        @load(
             Source(file=json_file),
             Source(file=env_file),
         )
-
-        @load(meta)
         @dataclass
         class MergedConfig:
             name: str
@@ -755,12 +699,10 @@ class TestFirstFound:
             port: int
 
         result = load(
-            Merge(
-                Source(file=first),
-                Source(file=second),
-                strategy=MergeStrategy.FIRST_FOUND,
-            ),
-            Config,
+            Source(file=first),
+            Source(file=second),
+            dataclass_=Config,
+            strategy=MergeStrategy.FIRST_FOUND,
         )
 
         assert result.host == "first-host"
@@ -777,12 +719,10 @@ class TestFirstFound:
             port: int
 
         result = load(
-            Merge(
-                Source(file=missing),
-                Source(file=fallback),
-                strategy=MergeStrategy.FIRST_FOUND,
-            ),
-            Config,
+            Source(file=missing),
+            Source(file=fallback),
+            dataclass_=Config,
+            strategy=MergeStrategy.FIRST_FOUND,
         )
 
         assert result.host == "fallback-host"
@@ -801,12 +741,10 @@ class TestFirstFound:
             port: int
 
         result = load(
-            Merge(
-                Source(file=broken),
-                Source(file=fallback),
-                strategy=MergeStrategy.FIRST_FOUND,
-            ),
-            Config,
+            Source(file=broken),
+            Source(file=fallback),
+            dataclass_=Config,
+            strategy=MergeStrategy.FIRST_FOUND,
         )
 
         assert result.host == "fallback-host"
@@ -823,12 +761,10 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=missing1),
-                    Source(file=missing2),
-                    strategy=MergeStrategy.FIRST_FOUND,
-                ),
-                Config,
+                Source(file=missing1),
+                Source(file=missing2),
+                dataclass_=Config,
+                strategy=MergeStrategy.FIRST_FOUND,
             )
 
         err = exc_info.value
@@ -850,12 +786,10 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=partial),
-                    Source(file=full),
-                    strategy=MergeStrategy.FIRST_FOUND,
-                ),
-                Config,
+                Source(file=partial),
+                Source(file=full),
+                dataclass_=Config,
+                strategy=MergeStrategy.FIRST_FOUND,
             )
 
         err = exc_info.value
@@ -877,12 +811,10 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=bad_type),
-                    Source(file=fallback),
-                    strategy=MergeStrategy.FIRST_FOUND,
-                ),
-                Config,
+                Source(file=bad_type),
+                Source(file=fallback),
+                dataclass_=Config,
+                strategy=MergeStrategy.FIRST_FOUND,
             )
 
         err = exc_info.value
@@ -909,12 +841,10 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=first),
-                    Source(file=second),
-                    strategy=MergeStrategy.FIRST_FOUND,
-                ),
-                Config,
+                Source(file=first),
+                Source(file=second),
+                dataclass_=Config,
+                strategy=MergeStrategy.FIRST_FOUND,
             )
 
         err = exc_info.value
@@ -935,11 +865,9 @@ class TestFirstFound:
         second.write_text("host: second-host\nport: 5000\n")
 
         @load(
-            Merge(
-                Source(file=first),
-                Source(file=second),
-                strategy=MergeStrategy.FIRST_FOUND,
-            ),
+            Source(file=first),
+            Source(file=second),
+            strategy=MergeStrategy.FIRST_FOUND,
             cache=False,
         )
         @dataclass

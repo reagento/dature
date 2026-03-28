@@ -6,7 +6,7 @@ from textwrap import dedent
 
 import pytest
 
-from dature import Merge, Source, load
+from dature import Source, load
 from dature.errors.exceptions import DatureConfigError, EnvVarExpandError
 
 
@@ -23,12 +23,10 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Merge(
-                Source(file=valid),
-                Source(file=missing),
-                skip_broken_sources=True,
-            ),
-            Config,
+            Source(file=valid),
+            Source(file=missing),
+            dataclass_=Config,
+            skip_broken_sources=True,
         )
 
         assert result.host == "localhost"
@@ -47,12 +45,10 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Merge(
-                Source(file=valid),
-                Source(file=broken),
-                skip_broken_sources=True,
-            ),
-            Config,
+            Source(file=valid),
+            Source(file=broken),
+            dataclass_=Config,
+            skip_broken_sources=True,
         )
 
         assert result.host == "localhost"
@@ -71,12 +67,10 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=broken_a),
-                    Source(file=broken_b),
-                    skip_broken_sources=True,
-                ),
-                Config,
+                Source(file=broken_a),
+                Source(file=broken_b),
+                dataclass_=Config,
+                skip_broken_sources=True,
             )
 
         assert str(exc_info.value) == "Config loading errors (1)"
@@ -95,11 +89,9 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError):
             load(
-                Merge(
-                    Source(file=valid),
-                    Source(file=broken),
-                ),
-                Config,
+                Source(file=valid),
+                Source(file=broken),
+                dataclass_=Config,
             )
 
     def test_skip_middle_source(self, tmp_path: Path):
@@ -118,13 +110,11 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Merge(
-                Source(file=a),
-                Source(file=broken),
-                Source(file=c),
-                skip_broken_sources=True,
-            ),
-            Config,
+            Source(file=a),
+            Source(file=broken),
+            Source(file=c),
+            dataclass_=Config,
+            skip_broken_sources=True,
         )
 
         assert result.host == "a-host"
@@ -143,12 +133,10 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Merge(
-                Source(file=valid),
-                Source(file=broken, skip_if_broken=True),
-                skip_broken_sources=False,
-            ),
-            Config,
+            Source(file=valid),
+            Source(file=broken, skip_if_broken=True),
+            dataclass_=Config,
+            skip_broken_sources=False,
         )
 
         assert result.host == "localhost"
@@ -168,12 +156,10 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError):
             load(
-                Merge(
-                    Source(file=valid),
-                    Source(file=broken, skip_if_broken=False),
-                    skip_broken_sources=True,
-                ),
-                Config,
+                Source(file=valid),
+                Source(file=broken, skip_if_broken=False),
+                dataclass_=Config,
+                skip_broken_sources=True,
             )
 
     def test_per_source_none_uses_global(self, tmp_path: Path):
@@ -189,20 +175,18 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Merge(
-                Source(file=valid),
-                Source(file=broken, skip_if_broken=None),
-                skip_broken_sources=True,
-            ),
-            Config,
+            Source(file=valid),
+            Source(file=broken, skip_if_broken=None),
+            dataclass_=Config,
+            skip_broken_sources=True,
         )
 
         assert result.host == "localhost"
         assert result.port == 3000
 
     def test_empty_sources_raises(self):
-        with pytest.raises(TypeError, match="Merge\\(\\) requires at least one Source"):
-            Merge()
+        with pytest.raises(TypeError, match="load\\(\\) requires at least one Source"):
+            load(dataclass_=int)
 
     def test_all_sources_broken_mixed_errors(self, tmp_path: Path):
         missing = str(tmp_path / "does_not_exist.json")
@@ -216,12 +200,10 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Merge(
-                    Source(file=missing),
-                    Source(file=broken),
-                    skip_broken_sources=True,
-                ),
-                Config,
+                Source(file=missing),
+                Source(file=broken),
+                dataclass_=Config,
+                skip_broken_sources=True,
             )
 
         assert str(exc_info.value) == "Config loading errors (1)"
@@ -240,10 +222,8 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Merge(
-                Source(file=json_file),
-            ),
-            Config,
+            Source(file=json_file),
+            dataclass_=Config,
         )
 
         assert result.host == "from-env"
@@ -259,11 +239,9 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Merge(
-                Source(file=json_file),
-                expand_env_vars="disabled",
-            ),
-            Config,
+            Source(file=json_file),
+            dataclass_=Config,
+            expand_env_vars="disabled",
         )
 
         assert result.host == "$DATURE_HOST"
@@ -280,11 +258,9 @@ class TestMergeExpandEnvVars:
 
         with pytest.raises(EnvVarExpandError):
             load(
-                Merge(
-                    Source(file=json_file),
-                    expand_env_vars="strict",
-                ),
-                Config,
+                Source(file=json_file),
+                dataclass_=Config,
+                expand_env_vars="strict",
             )
 
     def test_source_overrides_merge(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -298,11 +274,9 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Merge(
-                Source(file=json_file, expand_env_vars="disabled"),
-                expand_env_vars="default",
-            ),
-            Config,
+            Source(file=json_file, expand_env_vars="disabled"),
+            dataclass_=Config,
+            expand_env_vars="default",
         )
 
         assert result.host == "$DATURE_HOST"
@@ -318,11 +292,9 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Merge(
-                Source(file=json_file, expand_env_vars=None),
-                expand_env_vars="disabled",
-            ),
-            Config,
+            Source(file=json_file, expand_env_vars=None),
+            dataclass_=Config,
+            expand_env_vars="disabled",
         )
 
         assert result.host == "$DATURE_HOST"
@@ -338,11 +310,9 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Merge(
-                Source(file=json_file),
-                expand_env_vars="empty",
-            ),
-            Config,
+            Source(file=json_file),
+            dataclass_=Config,
+            expand_env_vars="empty",
         )
 
         assert result.host == ""
@@ -384,7 +354,7 @@ class TestEnvVarExpandErrorFormat:
         with pytest.raises(EnvVarExpandError) as exc_info:
             load(
                 Source(file=file, prefix=prefix, expand_env_vars="strict"),
-                StrictConfig,
+                dataclass_=StrictConfig,
             )
 
         assert str(exc_info.value) == dedent(f"""\

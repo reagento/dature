@@ -22,7 +22,7 @@ class Config:
     host: str
 
 
-config = dature.load(dature.Source(file=SOURCES_DIR / "masking_by_name.yaml"), Config)
+config = dature.load(dature.Source(file=SOURCES_DIR / "masking_by_name.yaml"), dataclass_=Config)
 assert mask_value("my_secret_password") == "my*****rd"
 assert mask_value("ab") == "ab"
 

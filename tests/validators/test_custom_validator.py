@@ -49,7 +49,7 @@ class TestCustomFieldValidator:
         json_file.write_text('{"count": 10}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.count == 10
 
@@ -65,7 +65,7 @@ class TestCustomFieldValidator:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -89,7 +89,7 @@ class TestCustomFieldValidator:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -112,7 +112,7 @@ class TestCustomStringValidator:
         json_file.write_text('{"url": "https://example.com"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.url == "https://example.com"
 
@@ -128,7 +128,7 @@ class TestCustomStringValidator:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -209,7 +209,7 @@ class TestMultipleCustomValidators:
         json_file.write_text('{"count": 15, "url": "https://example.com"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.count == 15
         assert result.url == "https://example.com"
@@ -227,7 +227,7 @@ class TestMultipleCustomValidators:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 2

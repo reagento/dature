@@ -45,7 +45,7 @@ config = dature.load(
         file=SOURCES_DIR / "custom_loader.xml",
         loader=XmlLoader,
     ),
-    Config,
+    dataclass_=Config,
 )
 
 assert config == Config(host="localhost", port=9090, debug=True)

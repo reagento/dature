@@ -17,7 +17,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "intro_app_docker_secrets"),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.host == "localhost"

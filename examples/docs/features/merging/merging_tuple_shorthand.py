@@ -1,4 +1,4 @@
-"""Tuple shorthand — implicit LAST_WINS merge."""
+"""Multiple sources — implicit LAST_WINS merge."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,11 +16,9 @@ class Config:
 
 
 config = dature.load(
-    (
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
 )
 
 assert config.host == "production.example.com"

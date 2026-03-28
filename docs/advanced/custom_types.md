@@ -16,7 +16,7 @@ Each `TypeLoader` maps a type to a conversion function:
 
 ### Per-source vs Global
 
-`type_loaders` can be set per-source in `Source`, per-merge in `Merge`, or globally via `configure()`:
+`type_loaders` can be set per-source in `Source`, in `dature.load()` for merge mode, or globally via `configure()`:
 
 === "Per-source (Source)"
 
@@ -24,7 +24,7 @@ Each `TypeLoader` maps a type to a conversion function:
     --8<-- "examples/docs/advanced/custom_types/custom_type.py"
     ```
 
-=== "Per-merge (Merge)"
+=== "Per-merge (load)"
 
     ```python
     --8<-- "examples/docs/advanced/custom_types/custom_type_merge.py"

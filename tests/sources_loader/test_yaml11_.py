@@ -17,7 +17,7 @@ class TestYaml11Loader:
 
     def test_comprehensive_type_conversion(self, all_types_yaml11_file: Path):
         """Test loading YAML with full type coercion to dataclass."""
-        result = load(Source(file=all_types_yaml11_file, loader=Yaml11Loader), AllPythonTypesCompact)
+        result = load(Source(file=all_types_yaml11_file, loader=Yaml11Loader), dataclass_=AllPythonTypesCompact)
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
@@ -38,7 +38,7 @@ class TestYaml11Loader:
 
         result = load(
             Source(file=prefixed_yaml_file, loader=Yaml11Loader, prefix="app"),
-            PrefixedConfig,
+            dataclass_=PrefixedConfig,
         )
 
         assert result == expected_data
@@ -63,7 +63,7 @@ class TestYaml11Loader:
 
         result = load(
             Source(file=yaml_config_with_env_vars_file, loader=Yaml11Loader),
-            EnvConfig,
+            dataclass_=EnvConfig,
         )
 
         assert result.database_url == "postgresql://localhost/db"
@@ -82,7 +82,7 @@ class TestYaml11Loader:
         class Config:
             url: str
 
-        result = load(Source(file=yaml_file, loader=Yaml11Loader), Config)
+        result = load(Source(file=yaml_file, loader=Yaml11Loader), dataclass_=Config)
 
         assert result.url == "http://localhost:8080/api"
 
@@ -96,7 +96,7 @@ class TestYaml11Loader:
         class Config:
             value: str
 
-        result = load(Source(file=yaml_file, loader=Yaml11Loader), Config)
+        result = load(Source(file=yaml_file, loader=Yaml11Loader), dataclass_=Config)
 
         assert result.value == "prefixreplaced/suffix"
 
@@ -110,7 +110,7 @@ class TestYaml11Loader:
         class Config:
             value: str
 
-        result = load(Source(file=yaml_file, loader=Yaml11Loader), Config)
+        result = load(Source(file=yaml_file, loader=Yaml11Loader), dataclass_=Config)
 
         assert result.value == "prefix$nonexistent/suffix"
 
@@ -133,7 +133,7 @@ class TestYaml11Loader:
             count: int
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file=yaml_file, loader=Yaml11Loader), Config)
+            load(Source(file=yaml_file, loader=Yaml11Loader), dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1
@@ -156,7 +156,7 @@ class TestYaml11Loader:
             flag: bool
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file=yaml_file, loader=Yaml11Loader), Config)
+            load(Source(file=yaml_file, loader=Yaml11Loader), dataclass_=Config)
 
         err = exc_info.value
         assert len(err.exceptions) == 1

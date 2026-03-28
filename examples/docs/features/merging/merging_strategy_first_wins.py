@@ -16,12 +16,10 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        strategy=dature.MergeStrategy.FIRST_WINS,
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.FIRST_WINS,
 )
 
 assert config.host == "localhost"

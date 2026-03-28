@@ -47,7 +47,7 @@ class TestCustomLoader:
 
         result = load(
             Source(file=xml_file, loader=XmlLoader),
-            XmlConfig,
+            dataclass_=XmlConfig,
         )
 
         assert result.host == "localhost"

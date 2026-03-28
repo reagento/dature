@@ -107,7 +107,7 @@ class TestBuildFieldMergeMap:
         rules = (MergeRule(F[Other].host, FieldMergeStrategy.FIRST_WINS),)
 
         with pytest.raises(TypeError) as exc_info:
-            build_field_merge_map(rules, Config)
+            build_field_merge_map(rules, dataclass_=Config)
         assert str(exc_info.value) == "FieldPath owner 'Other' does not match target dataclass 'Config'"
 
 
@@ -118,7 +118,7 @@ class TestExtractFieldPathWithOwnerValidation:
             host: str
 
         with pytest.raises(TypeError) as exc_info:
-            extract_field_path(F["Other"].host, Config)
+            extract_field_path(F["Other"].host, dataclass_=Config)
         assert str(exc_info.value) == "FieldPath owner 'Other' does not match target dataclass 'Config'"
 
     def test_passes_with_correct_string_owner(self):
@@ -126,4 +126,4 @@ class TestExtractFieldPathWithOwnerValidation:
         class Config:
             host: str
 
-        assert extract_field_path(F["Config"].host, Config) == "host"
+        assert extract_field_path(F["Config"].host, dataclass_=Config) == "host"

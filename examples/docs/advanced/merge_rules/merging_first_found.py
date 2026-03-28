@@ -15,12 +15,10 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SOURCES_DIR / "merging_first_found_primary.yaml"),
-        dature.Source(file=SOURCES_DIR / "merging_first_found_fallback.yaml"),
-        strategy=dature.MergeStrategy.FIRST_FOUND,
-    ),
-    Config,
+    dature.Source(file=SOURCES_DIR / "merging_first_found_primary.yaml"),
+    dature.Source(file=SOURCES_DIR / "merging_first_found_fallback.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.FIRST_FOUND,
 )
 
 assert config.host == "production-host"

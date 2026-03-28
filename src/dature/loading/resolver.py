@@ -113,7 +113,7 @@ def resolve_loader(
 ) -> "LoaderProtocol":
     loader_class = resolve_loader_class(metadata.loader, metadata.file)
 
-    resolved_expand = expand_env_vars or metadata.expand_env_vars or "default"
+    resolved_expand = metadata.expand_env_vars or expand_env_vars or "default"
 
     kwargs: dict[str, Any] = {
         "prefix": metadata.prefix,

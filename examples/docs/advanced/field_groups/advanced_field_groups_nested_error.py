@@ -22,15 +22,13 @@ class Config:
 
 try:
     dature.load(
-        dature.Merge(
-            dature.Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
-            dature.Source(file=SOURCES_DIR / "field_groups_partial_overrides.yaml"),
-            field_groups=(
-                dature.FieldGroup(dature.F[Config].host, dature.F[Config].port),
-                dature.FieldGroup(dature.F[Config].user, dature.F[Config].password),
-            ),
+        dature.Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
+        dature.Source(file=SOURCES_DIR / "field_groups_partial_overrides.yaml"),
+        dataclass_=Config,
+        field_groups=(
+            dature.FieldGroup(dature.F[Config].host, dature.F[Config].port),
+            dature.FieldGroup(dature.F[Config].user, dature.F[Config].password),
         ),
-        Config,
     )
 except FieldGroupError as exc:
     defaults_path = str(SHARED_DIR / "common_field_groups_defaults.yaml")

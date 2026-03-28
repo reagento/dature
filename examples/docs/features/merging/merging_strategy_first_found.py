@@ -16,13 +16,11 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "nonexistent.yaml"),
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        strategy=dature.MergeStrategy.FIRST_FOUND,
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "nonexistent.yaml"),
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.FIRST_FOUND,
 )
 
 # nonexistent.yaml is skipped, common_defaults.yaml is used entirely

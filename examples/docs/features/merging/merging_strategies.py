@@ -16,21 +16,17 @@ class Config:
 
 
 last_wins = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        strategy=dature.MergeStrategy.LAST_WINS,
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.LAST_WINS,
 )
 
 first_wins = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        strategy=dature.MergeStrategy.FIRST_WINS,
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.FIRST_WINS,
 )
 
 assert last_wins.host == "production.example.com"

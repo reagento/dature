@@ -19,7 +19,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "advanced_env_expansion_strict.yaml", expand_env_vars="strict"),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.resolved_url == "https://api.example.com/api/v1"

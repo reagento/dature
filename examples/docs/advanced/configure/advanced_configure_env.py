@@ -21,20 +21,20 @@ class Config:
 
 
 # 1. DATURE_LOADING__DEBUG=true — debug is on, report attached
-config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), Config)
+config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), dataclass_=Config)
 report = dature.get_load_report(config)
 assert report is not None
 
 # 2. Override env with dature.configure() — debug is off
 dature.configure(loading=LoadingConfig(debug=False))
 
-config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), Config)
+config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), dataclass_=Config)
 report = dature.get_load_report(config)
 assert report is None
 
 # 3. Reset to env defaults — debug is on again
 dature.configure(loading=LoadingConfig(debug=True))
 
-config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), Config)
+config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), dataclass_=Config)
 report = dature.get_load_report(config)
 assert report is not None

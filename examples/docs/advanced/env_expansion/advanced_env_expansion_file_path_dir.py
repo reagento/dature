@@ -19,7 +19,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file="$DATURE_SOURCES_DIR/advanced_env_expansion_file_path.yaml"),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.host == "localhost"

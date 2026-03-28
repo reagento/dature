@@ -16,17 +16,15 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        strategy=dature.MergeStrategy.RAISE_ON_CONFLICT,
-        field_merges=(
-            dature.MergeRule(dature.F[Config].host, dature.FieldMergeStrategy.LAST_WINS),
-            dature.MergeRule(dature.F[Config].port, dature.FieldMergeStrategy.LAST_WINS),
-            dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.APPEND_UNIQUE),
-        ),
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.RAISE_ON_CONFLICT,
+    field_merges=(
+        dature.MergeRule(dature.F[Config].host, dature.FieldMergeStrategy.LAST_WINS),
+        dature.MergeRule(dature.F[Config].port, dature.FieldMergeStrategy.LAST_WINS),
+        dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.APPEND_UNIQUE),
     ),
-    Config,
 )
 
 assert config.host == "production.example.com"

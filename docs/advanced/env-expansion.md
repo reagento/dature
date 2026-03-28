@@ -49,7 +49,7 @@ Set the mode on `Source`:
     --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_strict.yaml"
     ```
 
-For merge mode, set on `Merge` as default for all sources:
+For merge mode, pass `expand_env_vars` to `dature.load()` as default for all sources:
 
 === "Python"
 

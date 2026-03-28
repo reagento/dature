@@ -23,7 +23,7 @@ class TestMultipleFields:
         json_file.write_text('{"name": "Alice", "age": 30, "tags": ["python", "coding"]}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.name == "Alice"
         assert result.age == 30
@@ -43,7 +43,7 @@ class TestMultipleFields:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 3
@@ -87,7 +87,7 @@ class TestNestedDataclass:
         )
 
         metadata = Source(file=json_file)
-        result = load(metadata, User)
+        result = load(metadata, dataclass_=User)
 
         assert result.name == "Alice"
         assert result.age == 30
@@ -113,7 +113,7 @@ class TestNestedDataclass:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, User)
+            load(metadata, dataclass_=User)
 
         e = exc_info.value
         assert len(e.exceptions) == 4
@@ -157,7 +157,7 @@ class TestCustomErrorMessage:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -179,7 +179,7 @@ class TestDictListDict:
         )
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.groups == {"admins": [{"name": "Alice"}]}
 
@@ -195,7 +195,7 @@ class TestDictListDict:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -223,7 +223,7 @@ class TestDictListDict:
         )
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.teams["backend"][0].name == "Alice"
         assert result.teams["backend"][0].role == "admin"
@@ -245,7 +245,7 @@ class TestDictListDict:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 2

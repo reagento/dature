@@ -15,7 +15,7 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), Config)
+config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), dataclass_=Config)
 
 assert config.host == "localhost"
 assert config.port == 8080

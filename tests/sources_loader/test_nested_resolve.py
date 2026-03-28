@@ -103,14 +103,14 @@ class TestNestedResolve:
     def test_json_only(self, flat_loader_setup: FlatLoaderSetup) -> None:
         flat_loader_setup.set_data({"var": '{"foo": "from_json", "bar": "from_json"}'})
 
-        result = load(flat_loader_setup.make_metadata(), NestedConfig)
+        result = load(flat_loader_setup.make_metadata(), dataclass_=NestedConfig)
 
         assert result == NestedConfig(var=NestedVar(foo="from_json", bar="from_json"))
 
     def test_flat_only(self, flat_loader_setup: FlatLoaderSetup) -> None:
         flat_loader_setup.set_data({"var__foo": "from_flat", "var__bar": "from_flat"})
 
-        result = load(flat_loader_setup.make_metadata(), NestedConfig)
+        result = load(flat_loader_setup.make_metadata(), dataclass_=NestedConfig)
 
         assert result == NestedConfig(var=NestedVar(foo="from_flat", bar="from_flat"))
 
@@ -141,7 +141,7 @@ class TestNestedResolve:
 
         result = load(
             flat_loader_setup.make_metadata(**_strategy_kwargs(strategy, local=local)),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result == NestedConfig(var=NestedVar(foo=expected_source, bar=expected_source))
@@ -181,7 +181,7 @@ class TestPartialNestedResolveEnv:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(loader=EnvLoader, prefix="MYAPP__", **_strategy_kwargs(strategy, local=local)),
-                NestedConfig,
+                dataclass_=NestedConfig,
             )
 
         err = exc_info.value
@@ -208,7 +208,7 @@ class TestPartialNestedResolveEnvFile:
                     prefix="MYAPP__",
                     **_strategy_kwargs("flat", local=local),
                 ),
-                NestedConfig,
+                dataclass_=NestedConfig,
             )
 
         err = exc_info.value
@@ -231,7 +231,7 @@ class TestPartialNestedResolveEnvFile:
                     prefix="MYAPP__",
                     **_strategy_kwargs("json", local=local),
                 ),
-                NestedConfig,
+                dataclass_=NestedConfig,
             )
 
         err = exc_info.value
@@ -257,7 +257,7 @@ class TestPartialNestedResolveDockerSecrets:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(file=tmp_path, loader=DockerSecretsLoader, **_strategy_kwargs("flat", local=local)),
-                NestedConfig,
+                dataclass_=NestedConfig,
             )
 
         err = exc_info.value
@@ -275,7 +275,7 @@ class TestPartialNestedResolveDockerSecrets:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(file=tmp_path, loader=DockerSecretsLoader, **_strategy_kwargs("json", local=local)),
-                NestedConfig,
+                dataclass_=NestedConfig,
             )
 
         err = exc_info.value
@@ -296,7 +296,7 @@ class TestInvalidDataNestedResolveEnv:
 
         result = load(
             Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="flat"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -309,7 +309,7 @@ class TestInvalidDataNestedResolveEnv:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="json"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -335,7 +335,7 @@ class TestInvalidDataNestedResolveEnv:
 
         result = load(
             Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="json"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -348,7 +348,7 @@ class TestInvalidDataNestedResolveEnv:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="flat"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -377,7 +377,7 @@ class TestInvalidDataNestedResolveEnvFile:
 
         result = load(
             Source(file=env_file, loader=EnvFileLoader, prefix="MYAPP__", nested_resolve_strategy="flat"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -391,7 +391,7 @@ class TestInvalidDataNestedResolveEnvFile:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(file=env_file, loader=EnvFileLoader, prefix="MYAPP__", nested_resolve_strategy="json"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -422,7 +422,7 @@ class TestInvalidDataNestedResolveEnvFile:
 
         result = load(
             Source(file=env_file, loader=EnvFileLoader, prefix="MYAPP__", nested_resolve_strategy="json"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -436,7 +436,7 @@ class TestInvalidDataNestedResolveEnvFile:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(file=env_file, loader=EnvFileLoader, prefix="MYAPP__", nested_resolve_strategy="flat"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -470,7 +470,7 @@ class TestInvalidDataNestedResolveDockerSecrets:
 
         result = load(
             Source(file=tmp_path, loader=DockerSecretsLoader, nested_resolve_strategy="flat"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -483,7 +483,7 @@ class TestInvalidDataNestedResolveDockerSecrets:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(file=tmp_path, loader=DockerSecretsLoader, nested_resolve_strategy="json"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -509,7 +509,7 @@ class TestInvalidDataNestedResolveDockerSecrets:
 
         result = load(
             Source(file=tmp_path, loader=DockerSecretsLoader, nested_resolve_strategy="json"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -522,7 +522,7 @@ class TestInvalidDataNestedResolveDockerSecrets:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(file=tmp_path, loader=DockerSecretsLoader, nested_resolve_strategy="flat"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -554,7 +554,7 @@ class TestMultilineJsonNestedResolveEnv:
         with pytest.raises(DatureConfigError) as exc_info:
             load(
                 Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="json"),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -583,7 +583,7 @@ class TestMultilineJsonNestedResolveEnv:
 
         result = load(
             Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="flat"),
-            NestedIntConfig,
+            dataclass_=NestedIntConfig,
         )
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
@@ -624,7 +624,7 @@ class TestPerFieldDifferentStrategies:
                     var2_strategy: (F[TwoNestedConfig].var2,),
                 },
             ),
-            TwoNestedConfig,
+            dataclass_=TwoNestedConfig,
         )
 
         assert result == TwoNestedConfig(var1=expected_var1, var2=expected_var2)
@@ -659,7 +659,7 @@ class TestPerFieldOverridesGlobal:
                 nested_resolve_strategy=global_strategy,
                 nested_resolve={local_strategy: (F[NestedConfig].var,)},
             ),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result == NestedConfig(var=NestedVar(foo=expected_source, bar=expected_source))
@@ -680,7 +680,7 @@ class TestCustomSplitSymbolsConflict:
                 split_symbols="_",
                 nested_resolve_strategy="flat",
             ),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result == NestedConfig(var=NestedVar(foo="from_flat", bar="from_flat"))
@@ -698,7 +698,7 @@ class TestCustomSplitSymbolsConflict:
                     split_symbols="_",
                     nested_resolve_strategy="json",
                 ),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -722,7 +722,7 @@ class TestCustomSplitSymbolsConflict:
                     split_symbols="_",
                     nested_resolve_strategy="flat",
                 ),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -746,7 +746,7 @@ class TestNoConflictWithStrategy:
 
         result = load(
             flat_loader_setup.make_metadata(nested_resolve_strategy=strategy),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result == NestedConfig(var=NestedVar(foo="val1", bar="val2"))
@@ -761,7 +761,7 @@ class TestNoConflictWithStrategy:
 
         result = load(
             flat_loader_setup.make_metadata(nested_resolve_strategy=strategy),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result == NestedConfig(var=NestedVar(foo="val1", bar="val2"))
@@ -781,7 +781,7 @@ class TestDeepNestedConflict:
 
         result = load(
             Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy=strategy),
-            DeepConfig,
+            dataclass_=DeepConfig,
         )
 
         assert result == DeepConfig(var=DeepVar(sub=DeepSub(key=expected_key)))
@@ -799,7 +799,7 @@ class TestDeepNestedConflict:
                 prefix="MYAPP__",
                 nested_resolve_strategy="flat",
             ),
-            DeepConfig,
+            dataclass_=DeepConfig,
         )
 
         assert result == DeepConfig(var=DeepVar(sub=DeepSub(key="from_flat")))
@@ -810,7 +810,7 @@ class TestDeepNestedConflict:
 
         result = load(
             Source(file=tmp_path, loader=DockerSecretsLoader, nested_resolve_strategy="json"),
-            DeepConfig,
+            dataclass_=DeepConfig,
         )
 
         assert result == DeepConfig(var=DeepVar(sub=DeepSub(key="from_json")))
@@ -832,7 +832,7 @@ class TestPrefixDockerSecretsConflict:
                     prefix="myapp__",
                     nested_resolve_strategy="flat",
                 ),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -857,7 +857,7 @@ class TestPrefixDockerSecretsConflict:
                     prefix="myapp__",
                     nested_resolve_strategy="json",
                 ),
-                NestedIntConfig,
+                dataclass_=NestedIntConfig,
             )
 
         err = exc_info.value
@@ -880,11 +880,11 @@ class TestKeyOrderDoesNotAffectConflict:
 
         result_flat = load(
             Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="flat"),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
         result_json = load(
             Source(loader=EnvLoader, prefix="MYAPP__", nested_resolve_strategy="json"),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result_flat == NestedConfig(var=NestedVar(foo="from_flat", bar="from_flat"))
@@ -903,7 +903,7 @@ class TestKeyOrderDoesNotAffectConflict:
                 prefix="MYAPP__",
                 nested_resolve_strategy="flat",
             ),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
         result_json = load(
             Source(
@@ -912,7 +912,7 @@ class TestKeyOrderDoesNotAffectConflict:
                 prefix="MYAPP__",
                 nested_resolve_strategy="json",
             ),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result_flat == NestedConfig(var=NestedVar(foo="from_flat", bar="from_flat"))
@@ -944,7 +944,7 @@ class TestEmptyNestedResolveDict:
                 nested_resolve_strategy=strategy,
                 nested_resolve={},
             ),
-            NestedConfig,
+            dataclass_=NestedConfig,
         )
 
         assert result == NestedConfig(var=NestedVar(foo=expected_source, bar=expected_source))

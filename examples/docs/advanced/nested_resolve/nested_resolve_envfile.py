@@ -27,7 +27,7 @@ config = dature.load(
         prefix="APP__",
         nested_resolve_strategy="json",
     ),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.database.host == "json-host"

@@ -40,7 +40,7 @@ config = dature.load(
         nested_resolve_strategy="flat",
         nested_resolve={"json": (dature.F[Config].database,)},
     ),
-    Config,
+    dataclass_=Config,
 )
 
 assert config.database.host == "json-host"  # per-field override wins

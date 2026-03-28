@@ -19,7 +19,7 @@ class Config:
 try:
     dature.load(
         dature.Source(file=SOURCES_DIR / "masking_heuristic.yaml", mask_secrets=True),
-        Config,
+        dataclass_=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_heuristic.yaml")

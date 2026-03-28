@@ -116,9 +116,8 @@ class FieldGroup:
 # --8<-- [end:field-group]
 
 
-# --8<-- [start:merge-metadata]
-@dataclass(slots=True)
-class Merge:
+@dataclass(slots=True, kw_only=True)
+class _MergeConfig:
     sources: tuple[Source, ...]
     strategy: MergeStrategy = MergeStrategy.LAST_WINS
     field_merges: tuple[MergeRule, ...] = ()
@@ -131,38 +130,3 @@ class Merge:
     type_loaders: "tuple[TypeLoader, ...] | None" = None
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: "NestedResolve | None" = None
-
-    def __init__(  # noqa: PLR0913
-        self,
-        *sources: Source,
-        strategy: MergeStrategy = MergeStrategy.LAST_WINS,
-        field_merges: tuple[MergeRule, ...] = (),
-        field_groups: tuple[FieldGroup, ...] = (),
-        skip_broken_sources: bool = False,
-        skip_invalid_fields: bool = False,
-        expand_env_vars: "ExpandEnvVarsMode" = "default",
-        secret_field_names: tuple[str, ...] | None = None,
-        mask_secrets: bool | None = None,
-        type_loaders: "tuple[TypeLoader, ...] | None" = None,
-        nested_resolve_strategy: "NestedResolveStrategy | None" = None,
-        nested_resolve: "NestedResolve | None" = None,
-    ) -> None:
-        if not sources:
-            msg = "Merge() requires at least one Source"
-            raise TypeError(msg)
-
-        self.sources = sources
-        self.strategy = strategy
-        self.field_merges = field_merges
-        self.field_groups = field_groups
-        self.skip_broken_sources = skip_broken_sources
-        self.skip_invalid_fields = skip_invalid_fields
-        self.expand_env_vars = expand_env_vars
-        self.secret_field_names = secret_field_names
-        self.mask_secrets = mask_secrets
-        self.type_loaders = type_loaders
-        self.nested_resolve_strategy = nested_resolve_strategy
-        self.nested_resolve = nested_resolve
-
-
-# --8<-- [end:merge-metadata]

@@ -11,7 +11,7 @@ class TestDockerSecretsLoader:
     def test_comprehensive_type_conversion(self, all_types_docker_secrets_dir: Path):
         result = load(
             Source(file=all_types_docker_secrets_dir, loader=DockerSecretsLoader),
-            AllPythonTypesCompact,
+            dataclass_=AllPythonTypesCompact,
         )
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
@@ -73,7 +73,7 @@ class TestDockerSecretsLoader:
 
         result = load(
             Source(file=tmp_path, loader=DockerSecretsLoader),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.api_url == "https://api.example.com/v1"

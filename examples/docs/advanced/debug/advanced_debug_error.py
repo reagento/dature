@@ -19,11 +19,9 @@ class Config:
 
 try:
     config = dature.load(
-        dature.Merge(
-            dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-            dature.Source(file=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
-        ),
-        Config,
+        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+        dature.Source(file=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
+        dataclass_=Config,
         debug=True,
     )
 except DatureConfigError:

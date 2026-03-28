@@ -19,7 +19,7 @@ class TestMinItems:
         json_file.write_text('{"tags": ["python", "typing"]}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.tags == ["python", "typing"]
 
@@ -35,7 +35,7 @@ class TestMinItems:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -58,7 +58,7 @@ class TestMaxItems:
         json_file.write_text('{"tags": ["python", "typing"]}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.tags == ["python", "typing"]
 
@@ -74,7 +74,7 @@ class TestMaxItems:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -97,7 +97,7 @@ class TestUniqueItems:
         json_file.write_text('{"tags": ["python", "typing", "validation"]}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.tags == ["python", "typing", "validation"]
 
@@ -113,7 +113,7 @@ class TestUniqueItems:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -136,7 +136,7 @@ class TestCombined:
         json_file.write_text('{"tags": ["python", "typing", "validation"]}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.tags == ["python", "typing", "validation"]
 
@@ -152,7 +152,7 @@ class TestCombined:
         metadata = Source(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1

@@ -15,7 +15,7 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Source(file=SOURCES_DIR / "intro_app.json5"), Config)
+config = dature.load(dature.Source(file=SOURCES_DIR / "intro_app.json5"), dataclass_=Config)
 
 assert config.host == "localhost"
 assert config.port == 8080

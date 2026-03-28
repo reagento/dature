@@ -20,7 +20,7 @@ class Config:
     db: Database
 
 
-config = dature.load(dature.Source(prefix="NS_", split_symbols="__"), Config)
+config = dature.load(dature.Source(prefix="NS_", split_symbols="__"), dataclass_=Config)
 
 assert config.db.host == "localhost"
 assert config.db.port == 5432

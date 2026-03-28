@@ -109,7 +109,7 @@ class TestBaseLoader:
         data = {"name": "TestApp", "port": 8080}
         loader = MockLoader(test_data=data)
 
-        result = loader.transform_to_dataclass(data, Config)
+        result = loader.transform_to_dataclass(data, dataclass_=Config)
 
         assert result == expected_data
 
@@ -129,7 +129,7 @@ class TestBaseLoader:
         data = {"database": {"host": "localhost", "port": 5432}}
         loader = MockLoader(test_data=data)
 
-        result = loader.transform_to_dataclass(data, Config)
+        result = loader.transform_to_dataclass(data, dataclass_=Config)
 
         assert result == expected_data
 
@@ -148,7 +148,7 @@ class TestBaseLoader:
         loader = MockLoader(prefix="app", test_data=data)
 
         load_result = loader.load_raw(Path())
-        result = loader.transform_to_dataclass(load_result.data, Config)
+        result = loader.transform_to_dataclass(load_result.data, dataclass_=Config)
 
         assert result == expected_data
 
@@ -175,7 +175,7 @@ class TestNameStyleMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, name_style="lower_camel"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "John"
@@ -193,7 +193,7 @@ class TestNameStyleMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, name_style="lower_snake"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Alice"
@@ -210,7 +210,7 @@ class TestNameStyleMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, name_style="upper_camel"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Bob"
@@ -227,7 +227,7 @@ class TestNameStyleMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, name_style="lower_kebab"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Charlie"
@@ -244,7 +244,7 @@ class TestNameStyleMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, name_style="upper_kebab"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Dave"
@@ -261,7 +261,7 @@ class TestNameStyleMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, name_style="upper_snake"),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Eve"
@@ -287,7 +287,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.name == "John Doe"
@@ -308,7 +308,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.name == "Alice"
@@ -334,7 +334,7 @@ class TestFieldMapping:
                 name_style="lower_camel",
                 field_mapping=field_mapping,
             ),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Bob"
@@ -366,7 +366,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            User,
+            dataclass_=User,
         )
 
         assert result.name == "Charlie"
@@ -385,7 +385,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.name == "Alice"
@@ -402,7 +402,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.name == "Bob"
@@ -423,7 +423,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            User,
+            dataclass_=User,
         )
 
         assert result.address.city == "LA"
@@ -440,7 +440,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.name == "Eve"
@@ -457,7 +457,7 @@ class TestFieldMapping:
 
         result = load(
             Source(file=json_file, loader=JsonLoader, field_mapping=field_mapping),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.name == "Direct"
@@ -490,7 +490,7 @@ class TestFieldMapping:
                 name_style="lower_camel",
                 field_mapping=field_mapping,
             ),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Alice"
@@ -525,7 +525,7 @@ class TestFieldMapping:
                 name_style="lower_camel",
                 field_mapping=field_mapping,
             ),
-            Config,
+            dataclass_=Config,
         )
 
         assert result.user_name == "Alice"

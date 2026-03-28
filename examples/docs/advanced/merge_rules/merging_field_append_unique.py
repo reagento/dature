@@ -14,12 +14,10 @@ class Config:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SOURCES_DIR / "merging_field_base.yaml"),
-        dature.Source(file=SOURCES_DIR / "merging_field_override.yaml"),
-        field_merges=(dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.APPEND_UNIQUE),),
-    ),
-    Config,
+    dature.Source(file=SOURCES_DIR / "merging_field_base.yaml"),
+    dature.Source(file=SOURCES_DIR / "merging_field_override.yaml"),
+    dataclass_=Config,
+    field_merges=(dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.APPEND_UNIQUE),),
 )
 
 assert config.tags == ["web", "default", "api"]

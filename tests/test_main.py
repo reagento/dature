@@ -54,7 +54,7 @@ class TestLoadAsDecorator:
     def test_default_metadata(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("MY_VAR", "test_value")
 
-        @load()
+        @load(Source())
         @dataclass
         class Config:
             my_var: str
@@ -80,7 +80,7 @@ class TestLoadAsDecorator:
         monkeypatch.setenv("LOADED_VAR", "loaded")
         monkeypatch.setenv("OVERRIDDEN_VAR", "loaded")
 
-        @load()
+        @load(Source())
         @dataclass
         class Config:
             overridden_var: str
@@ -97,7 +97,7 @@ class TestLoadAsDecorator:
         with pytest.raises(TypeError, match="Config must be a dataclass"):
 
             @dataclass
-            @load()
+            @load(Source())
             class Config:
                 pass
 
@@ -153,7 +153,7 @@ class TestLoadAsFunction:
             port: int
 
         metadata = Source(file=json_file)
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.name == "FromFile"
         assert result.port == 9090
@@ -168,7 +168,7 @@ class TestLoadAsFunction:
             debug: bool
 
         metadata = Source(prefix="APP_")
-        result = load(metadata, Config)
+        result = load(metadata, dataclass_=Config)
 
         assert result.name == "EnvFunc"
         assert result.debug is True
@@ -180,7 +180,7 @@ class TestLoadAsFunction:
         class Config:
             my_var: str
 
-        result = load(None, Config)
+        result = load(Source(), dataclass_=Config)
 
         assert result.my_var == "from_env"
 
@@ -199,7 +199,7 @@ class TestFileNotFoundWithLoad:
         metadata = Source(file="/non/existent/file.json", loader=loader_class)
 
         with pytest.raises(FileNotFoundError):
-            load(metadata, Config)
+            load(metadata, dataclass_=Config)
 
     @pytest.mark.parametrize(
         "loader_class",

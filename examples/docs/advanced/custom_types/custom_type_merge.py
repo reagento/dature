@@ -27,12 +27,10 @@ class AppConfig:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SOURCES_DIR / "custom_type_common.yaml"),
-        dature.Source(file=SOURCES_DIR / "custom_type_merge_override.yaml"),
-        type_loaders=(dature.TypeLoader(type_=Rgb, func=rgb_from_string),),
-    ),
-    AppConfig,
+    dature.Source(file=SOURCES_DIR / "custom_type_common.yaml"),
+    dature.Source(file=SOURCES_DIR / "custom_type_merge_override.yaml"),
+    dataclass_=AppConfig,
+    type_loaders=(dature.TypeLoader(type_=Rgb, func=rgb_from_string),),
 )
 
 assert config == AppConfig(name="my-app", color=Rgb(r=100, g=200, b=50))

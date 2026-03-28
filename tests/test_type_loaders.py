@@ -1,4 +1,4 @@
-"""Tests for TypeLoader — custom type loading via Source, configure(), and Merge."""
+"""Tests for TypeLoader — custom type loading via Source, configure(), and load()."""
 
 from collections.abc import Generator
 from dataclasses import dataclass
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import Merge, Source, TypeLoader, configure, load
+from dature import Source, TypeLoader, configure, load
 from dature.config import _ConfigProxy
 
 
@@ -51,7 +51,7 @@ class TestTypeLoadersInSource:
                 file=yaml_with_rgb,
                 type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
             ),
-            ConfigWithRgb,
+            dataclass_=ConfigWithRgb,
         )
         assert result.name == "test"
         assert result.color == Rgb(r=255, g=128, b=0)
@@ -70,7 +70,7 @@ class TestTypeLoadersInSource:
                 file=p,
                 type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
             ),
-            ConfigWithRgb,
+            dataclass_=ConfigWithRgb,
         )
         assert result.color == Rgb(r=10, g=20, b=30)
 
@@ -81,7 +81,7 @@ class TestTypeLoadersInConfigure:
         configure(
             type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
         )
-        result = load(Source(file=yaml_with_rgb), ConfigWithRgb)
+        result = load(Source(file=yaml_with_rgb), dataclass_=ConfigWithRgb)
         assert result.color == Rgb(r=255, g=128, b=0)
 
 
@@ -93,12 +93,10 @@ class TestTypeLoadersInMerge:
         override.write_text("name: override\n")
 
         result = load(
-            Merge(
-                Source(file=base),
-                Source(file=override),
-                type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
-            ),
-            ConfigWithRgb,
+            Source(file=base),
+            Source(file=override),
+            dataclass_=ConfigWithRgb,
+            type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
         )
         assert result.name == "override"
         assert result.color == Rgb(r=1, g=2, b=3)
@@ -127,7 +125,7 @@ class TestTypeLoadersMergedFromBoth:
                 file=p,
                 type_loaders=(TypeLoader(type_=str, func=tag_upper),),
             ),
-            TwoCustom,
+            dataclass_=TwoCustom,
         )
         assert result.color == Rgb(r=10, g=20, b=30)
         assert result.tag == "HELLO"

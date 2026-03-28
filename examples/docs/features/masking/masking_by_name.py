@@ -17,7 +17,7 @@ class Config:
 
 
 try:
-    dature.load(dature.Source(file=SOURCES_DIR / "masking_by_name.yaml"), Config)
+    dature.load(dature.Source(file=SOURCES_DIR / "masking_by_name.yaml"), dataclass_=Config)
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_by_name.yaml")
     assert str(exc) == "Config loading errors (1)"

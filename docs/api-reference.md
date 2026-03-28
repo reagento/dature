@@ -26,10 +26,21 @@ Main entry point. Two calling patterns:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `metadata` | `Source \| Merge \| tuple[Source, ...] \| None` | Source descriptor. Tuple is shorthand for `Merge(...)` with `LAST_WINS`. `None` → `Source()` (env vars). |
+| `*sources` | `Source` | One or more source descriptors. No sources → `Source()` (env vars). Multiple sources → merge mode. |
 | `dataclass_` | `type[T] \| None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
 | `cache` | `bool \| None` | Enable caching in decorator mode. Default from `configure()`. |
 | `debug` | `bool \| None` | Collect `LoadReport`. Default from `configure()`. |
+| `strategy` | `MergeStrategy` | Merge strategy (default `LAST_WINS`). Only used with multiple sources. |
+| `field_merges` | `tuple[MergeRule, ...]` | Per-field merge strategy overrides. |
+| `field_groups` | `tuple[FieldGroup, ...]` | Groups of fields that must change together. |
+| `skip_broken_sources` | `bool` | Skip sources that fail to load (default `False`). |
+| `skip_invalid_fields` | `bool` | Skip fields that fail validation (default `False`). |
+| `expand_env_vars` | `ExpandEnvVarsMode` | Env var expansion mode for all sources (default `"default"`). |
+| `secret_field_names` | `tuple[str, ...] \| None` | Extra secret field name patterns. |
+| `mask_secrets` | `bool \| None` | Enable/disable secret masking globally. |
+| `type_loaders` | `tuple[TypeLoader, ...] \| None` | Custom type loaders. |
+| `nested_resolve_strategy` | `NestedResolveStrategy \| None` | Default priority for JSON vs flat keys. See [Nested Resolve](advanced/nested-resolve.md). |
+| `nested_resolve` | `NestedResolve \| None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
 
 ---
 
@@ -40,28 +51,6 @@ Main entry point. Two calling patterns:
 ```
 
 See [Introduction — Source Reference](introduction.md#source-reference) for parameter descriptions.
-
----
-
-### `Merge`
-
-```python
---8<-- "src/dature/metadata.py:merge-metadata"
-```
-
-| Parameter | Description |
-|-----------|-------------|
-| `sources` | Ordered tuple of `Source` to merge |
-| `strategy` | Global merge strategy |
-| `field_merges` | Per-field strategy overrides |
-| `field_groups` | Groups of fields that must change together |
-| `skip_broken_sources` | Global default for broken source handling |
-| `skip_invalid_fields` | Global default for invalid field handling |
-| `expand_env_vars` | Default env expansion mode for all sources |
-| `secret_field_names` | Extra secret patterns for all sources |
-| `mask_secrets` | Enable/disable masking globally |
-| `nested_resolve_strategy` | Default priority for JSON vs flat keys across all sources. See [Nested Resolve](advanced/nested-resolve.md) |
-| `nested_resolve` | Default per-field strategy overrides for all sources. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
 
 ---
 

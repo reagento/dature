@@ -21,13 +21,11 @@ def merge_tags(values: list[Any]) -> list[str]:
 
 
 config = dature.load(
-    dature.Merge(
-        dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        strategy=dature.MergeStrategy.LAST_WINS,
-        field_merges=(dature.MergeRule(dature.F[Config].tags, merge_tags),),
-    ),
-    Config,
+    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dataclass_=Config,
+    strategy=dature.MergeStrategy.LAST_WINS,
+    field_merges=(dature.MergeRule(dature.F[Config].tags, merge_tags),),
 )
 
 assert config.host == "production.example.com"

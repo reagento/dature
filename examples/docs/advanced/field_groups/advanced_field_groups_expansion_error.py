@@ -27,12 +27,10 @@ class Config:
 # expands to (database.host, database.port, port)
 try:
     dature.load(
-        dature.Merge(
-            dature.Source(file=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
-            dature.Source(file=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml"),
-            field_groups=(dature.FieldGroup(dature.F[Config].database, dature.F[Config].port),),
-        ),
-        Config,
+        dature.Source(file=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
+        dature.Source(file=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml"),
+        dataclass_=Config,
+        field_groups=(dature.FieldGroup(dature.F[Config].database, dature.F[Config].port),),
     )
 except FieldGroupError as exc:
     defaults_path = str(SOURCES_DIR / "field_groups_nested_defaults.yaml")

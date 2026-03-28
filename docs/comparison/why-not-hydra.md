@@ -13,7 +13,7 @@ The trade-off is scope: Hydra is a **framework** that takes over your entry poin
 | **Formats** | YAML only | YAML (1.1/1.2), JSON, JSON5, TOML (1.0/1.1), INI, `.env`, env vars, Docker secrets |
 | **Env variables** | `oc.env` resolver; no `.env` support | First-class: env vars, `.env` files, `${VAR:-default}` expansion in all formats + file paths |
 | **CLI overrides** | Built-in: `python app.py db.port=3306` + tab completion | No CLI |
-| **Composition** | Config groups, defaults list, package overrides | Multi-source `Merge` with explicit strategies |
+| **Composition** | Config groups, defaults list, package overrides | Multi-source merge with explicit strategies |
 | **Parameter sweeps** | Built-in multirun + sweeper plugins (Ax, Optuna, etc.) | No — not a use case |
 | **Object instantiation** | `instantiate()` — creates objects from config with DI | No — config loading only |
 | **Variable interpolation** | OmegaConf `${path.to.key}` + custom resolvers | `${VAR:-default}` env expansion in all formats + file paths |

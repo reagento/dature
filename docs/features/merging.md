@@ -4,7 +4,7 @@ Load configuration from multiple sources and merge them into one dataclass.
 
 ## Basic Merging
 
-Use `Merge` to combine sources:
+Pass multiple `Source` objects to `dature.load()`:
 
 === "Python"
 
@@ -24,9 +24,9 @@ Use `Merge` to combine sources:
     --8<-- "examples/docs/shared/common_overrides.yaml"
     ```
 
-## Tuple Shorthand
+## Multiple Sources
 
-Pass a tuple of `Source` directly — uses `LAST_WINS` by default:
+Multiple sources use `LAST_WINS` by default:
 
 === "Python"
 
@@ -147,15 +147,12 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
 
 For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/merge-rules.md#field-groups).
 
-## Merge Reference
+## Merge Parameters
 
-```python
---8<-- "src/dature/metadata.py:merge-metadata"
-```
+All merge-related parameters are passed directly to `dature.load()` as keyword arguments:
 
 | Parameter | Description |
 |-----------|-------------|
-| `sources` | Tuple of `Source` descriptors — one per source to merge |
 | `strategy` | Global merge strategy. Default: `LAST_WINS`. See [Merge Strategies](#merge-strategies) |
 | `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies) |
 | `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/merge-rules.md#field-groups) |
