@@ -182,6 +182,11 @@ name = "Docs"
 showcontent = true
 
 [[tool.towncrier.type]]
+directory = "refactor"
+name = "Refactoring"
+showcontent = true
+
+[[tool.towncrier.type]]
 directory = "removal"
 name = "Removals"
 showcontent = true

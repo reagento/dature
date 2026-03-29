@@ -1,0 +1,1 @@
+Recommended import style changed from `from dature import load, Source` to `import dature` with access via `dature.load()`, `dature.Source()`.

@@ -1,0 +1,1 @@
+`Merge` class has been removed. Use `load()` with multiple `Source` arguments instead.
