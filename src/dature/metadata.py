@@ -1,8 +1,5 @@
-from collections.abc import Callable
-from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from dature.expansion.env_expand import expand_file_path
 from dature.loading.resolver import resolve_loader_class
@@ -14,49 +11,21 @@ if TYPE_CHECKING:
     from dature.types import (
         DotSeparatedPath,
         ExpandEnvVarsMode,
+        FieldGroupTuple,
         FieldMapping,
-        FieldMergeCallable,
+        FieldMergeMap,
         FieldValidators,
         FileLike,
         FilePath,
         NameStyle,
         NestedResolve,
         NestedResolveStrategy,
+        TypeLoaderMap,
     )
 
+from dataclasses import dataclass
 
-# --8<-- [start:type-loader]
-@dataclass(frozen=True, slots=True)
-class TypeLoader:
-    type_: type
-    func: Callable[..., Any]
-
-
-# --8<-- [end:type-loader]
-
-
-# --8<-- [start:merge-strategy]
-class MergeStrategy(StrEnum):
-    LAST_WINS = "last_wins"
-    FIRST_WINS = "first_wins"
-    FIRST_FOUND = "first_found"
-    RAISE_ON_CONFLICT = "raise_on_conflict"
-
-
-# --8<-- [end:merge-strategy]
-
-
-# --8<-- [start:field-merge-strategy]
-class FieldMergeStrategy(StrEnum):
-    FIRST_WINS = "first_wins"
-    LAST_WINS = "last_wins"
-    APPEND = "append"
-    APPEND_UNIQUE = "append_unique"
-    PREPEND = "prepend"
-    PREPEND_UNIQUE = "prepend_unique"
-
-
-# --8<-- [end:field-merge-strategy]
+from dature.merging.strategy import MergeStrategyEnum
 
 
 # --8<-- [start:load-metadata]
@@ -75,7 +44,7 @@ class Source:
     skip_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     secret_field_names: tuple[str, ...] | None = None
     mask_secrets: bool | None = None
-    type_loaders: "tuple[TypeLoader, ...] | None" = None
+    type_loaders: "TypeLoaderMap | None" = None
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: "NestedResolve | None" = None
     # --8<-- [end:load-metadata]
@@ -94,39 +63,17 @@ class Source:
         return display
 
 
-# --8<-- [start:merge-rule]
-@dataclass(frozen=True, slots=True)
-class MergeRule:
-    predicate: "FieldPath"
-    strategy: "FieldMergeStrategy | FieldMergeCallable"
-
-
-# --8<-- [end:merge-rule]
-
-
-# --8<-- [start:field-group]
-@dataclass(slots=True)
-class FieldGroup:
-    fields: "tuple[FieldPath, ...]"
-
-    def __init__(self, *fields: "FieldPath") -> None:
-        self.fields = fields
-
-
-# --8<-- [end:field-group]
-
-
 @dataclass(slots=True, kw_only=True)
 class _MergeConfig:
     sources: tuple[Source, ...]
-    strategy: MergeStrategy = MergeStrategy.LAST_WINS
-    field_merges: tuple[MergeRule, ...] = ()
-    field_groups: tuple[FieldGroup, ...] = ()
+    strategy: MergeStrategyEnum = MergeStrategyEnum.LAST_WINS
+    field_merges: "FieldMergeMap | None" = None
+    field_groups: "tuple[FieldGroupTuple, ...]" = ()
     skip_broken_sources: bool = False
     skip_invalid_fields: bool = False
     expand_env_vars: "ExpandEnvVarsMode" = "default"
     secret_field_names: tuple[str, ...] | None = None
     mask_secrets: bool | None = None
-    type_loaders: "tuple[TypeLoader, ...] | None" = None
+    type_loaders: "TypeLoaderMap | None" = None
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: "NestedResolve | None" = None

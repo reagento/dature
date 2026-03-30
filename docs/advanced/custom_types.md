@@ -4,7 +4,7 @@
 
 Use `type_loaders` to teach dature how to parse custom types from strings.
 
-Each `TypeLoader` maps a type to a conversion function:
+Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion functions:
 
 ```python
 --8<-- "examples/docs/advanced/custom_types/custom_type.py"
@@ -36,18 +36,7 @@ Each `TypeLoader` maps a type to a conversion function:
     --8<-- "examples/docs/advanced/custom_types/advanced_configure_type_loaders.py"
     ```
 
-When both per-source and global `type_loaders` are set, they merge — per-source loaders take priority (placed first in the recipe).
-
-### TypeLoader Reference
-
-```python
---8<-- "src/dature/metadata.py:type-loader"
-```
-
-| Parameter | Description |
-|-----------|-------------|
-| `type_` | The target type to register a loader for |
-| `func` | A callable that converts the raw value to the target type |
+When both per-source and global `type_loaders` are set, they merge — per-source loaders take priority.
 
 ## Custom Loaders
 

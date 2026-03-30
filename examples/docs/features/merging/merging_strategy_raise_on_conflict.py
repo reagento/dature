@@ -19,7 +19,7 @@ config = dature.load(
     dature.Source(file=SHARED_DIR / "common_raise_on_conflict_a.yaml"),
     dature.Source(file=SHARED_DIR / "common_raise_on_conflict_b.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.RAISE_ON_CONFLICT,
+    strategy="raise_on_conflict",
 )
 
 # Disjoint keys — no conflict

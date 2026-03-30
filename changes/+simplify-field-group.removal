@@ -1,0 +1,1 @@
+Removed `FieldGroup` dataclass from public API. Pass `field_groups` as `tuple[tuple[F[Config].field, ...], ...]` instead.

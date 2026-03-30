@@ -26,8 +26,8 @@ try:
         dature.Source(file=SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml"),
         dataclass_=Config,
         field_groups=(
-            dature.FieldGroup(dature.F[Config].host, dature.F[Config].port),
-            dature.FieldGroup(dature.F[Config].user, dature.F[Config].password),
+            (dature.F[Config].host, dature.F[Config].port),
+            (dature.F[Config].user, dature.F[Config].password),
         ),
     )
 except FieldGroupError as exc:

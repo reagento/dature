@@ -15,7 +15,7 @@ The trade-off is **how** it covers it: Dynaconf is powerful and battle-tested, b
 | **Validation** | Separate `Validator` objects | Both: `Annotated` inline validators + separate root/custom validators |
 | **Formats** | YAML, TOML, JSON, INI, `.env`, Python files | YAML (1.1/1.2), JSON, JSON5, TOML (1.0/1.1), INI, `.env`, env vars, Docker secrets |
 | **Remote sources** | Vault, Redis + community plugins | Not yet (planned) |
-| **Merging** | Layered override + `dynaconf_merge` | 4 strategies + per-field rules (`APPEND`, `PREPEND`, field groups, etc.) |
+| **Merging** | Layered override + `dynaconf_merge` | 4 strategies + per-field rules (`"append"`, `"prepend"`, field groups, etc.) |
 | **Dynamic variables** | `@format`, `@jinja` templates with lazy evaluation | `${VAR:-default}` env expansion in all formats + file paths |
 | **CLI** | `dynaconf list`, `inspect`, `write`, `validate`, etc. | No CLI |
 | **Per-environment files** | Built-in (`[development]`, `[production]` sections) | Manual via multiple `Source` objects |

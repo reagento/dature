@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from dature.config import (
@@ -27,27 +29,27 @@ class TestConfigure:
         ("kwargs", "attr_path", "expected"),
         [
             (
-                {"masking": MaskingConfig(mask="[HIDDEN]")},
+                {"masking": {"mask": "[HIDDEN]"}},
                 ("masking", "mask"),
                 "[HIDDEN]",
             ),
             (
-                {"masking": MaskingConfig(visible_prefix=3)},
+                {"masking": {"visible_prefix": 3}},
                 ("masking", "visible_prefix"),
                 3,
             ),
             (
-                {"error_display": ErrorDisplayConfig(max_visible_lines=10)},
+                {"error_display": {"max_visible_lines": 10}},
                 ("error_display", "max_visible_lines"),
                 10,
             ),
             (
-                {"loading": LoadingConfig(cache=False, debug=True)},
+                {"loading": {"cache": False, "debug": True}},
                 ("loading", "cache"),
                 False,
             ),
             (
-                {"loading": LoadingConfig(cache=False, debug=True)},
+                {"loading": {"cache": False, "debug": True}},
                 ("loading", "debug"),
                 True,
             ),
@@ -61,7 +63,7 @@ class TestConfigure:
         ],
     )
     def test_configure_overrides(
-        kwargs: dict[str, MaskingConfig | ErrorDisplayConfig | LoadingConfig],
+        kwargs: dict[str, Any],
         attr_path: tuple[str, str],
         expected: str | int | bool,
     ) -> None:
@@ -74,17 +76,17 @@ class TestConfigure:
         ("kwargs", "unchanged_group", "expected_default"),
         [
             (
-                {"masking": MaskingConfig(mask="###")},
+                {"masking": {"mask": "###"}},
                 "error_display",
                 ErrorDisplayConfig(),
             ),
             (
-                {"masking": MaskingConfig(mask="###")},
+                {"masking": {"mask": "###"}},
                 "loading",
                 LoadingConfig(),
             ),
             (
-                {"error_display": ErrorDisplayConfig(max_visible_lines=10)},
+                {"error_display": {"max_visible_lines": 10}},
                 "masking",
                 MaskingConfig(),
             ),
@@ -96,7 +98,7 @@ class TestConfigure:
         ],
     )
     def test_configure_preserves_other_groups(
-        kwargs: dict[str, MaskingConfig | ErrorDisplayConfig | LoadingConfig],
+        kwargs: dict[str, Any],
         unchanged_group: str,
         expected_default: MaskingConfig | ErrorDisplayConfig | LoadingConfig,
     ) -> None:

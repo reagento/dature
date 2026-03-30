@@ -19,7 +19,7 @@ config = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.LAST_WINS,
+    strategy="last_wins",
 )
 
 assert config.host == "production.example.com"

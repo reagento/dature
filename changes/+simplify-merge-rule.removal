@@ -1,0 +1,1 @@
+Removed `MergeRule` dataclass from public API. Pass `field_merges` as `dict` mapping `F[Config].field` to a strategy string or callable instead.

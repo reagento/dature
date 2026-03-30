@@ -8,7 +8,7 @@ from typing import Annotated
 
 import pytest
 
-from dature import MergeStrategy, Source, load
+from dature import Source, load
 from dature.errors.exceptions import DatureConfigError, MergeConflictError
 from dature.validators.number import Ge
 
@@ -51,7 +51,7 @@ class TestMergeLoadAsFunction:
             Source(file=first),
             Source(file=second),
             dataclass_=Config,
-            strategy=MergeStrategy.FIRST_WINS,
+            strategy="first_wins",
         )
 
         assert result.host == "first-host"
@@ -352,7 +352,7 @@ class TestMergeAsDecorator:
         @load(
             Source(file=first),
             Source(file=second),
-            strategy=MergeStrategy.FIRST_WINS,
+            strategy="first_wins",
         )
         @dataclass
         class Config:
@@ -382,7 +382,7 @@ class TestRaiseOnConflict:
                 Source(file=a),
                 Source(file=b),
                 dataclass_=Config,
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
+                strategy="raise_on_conflict",
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -411,7 +411,7 @@ class TestRaiseOnConflict:
             Source(file=a),
             Source(file=b),
             dataclass_=Config,
-            strategy=MergeStrategy.RAISE_ON_CONFLICT,
+            strategy="raise_on_conflict",
         )
 
         assert result.host == "localhost"
@@ -433,7 +433,7 @@ class TestRaiseOnConflict:
             Source(file=a),
             Source(file=b),
             dataclass_=Config,
-            strategy=MergeStrategy.RAISE_ON_CONFLICT,
+            strategy="raise_on_conflict",
         )
 
         assert result.host == "same"
@@ -460,7 +460,7 @@ class TestRaiseOnConflict:
                 Source(file=a),
                 Source(file=b),
                 dataclass_=Config,
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
+                strategy="raise_on_conflict",
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -489,7 +489,7 @@ class TestRaiseOnConflict:
                 Source(file=a),
                 Source(file=b),
                 dataclass_=Config,
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
+                strategy="raise_on_conflict",
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -518,7 +518,7 @@ class TestRaiseOnConflict:
                 Source(file=a),
                 Source(prefix="APP_"),
                 dataclass_=Config,
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
+                strategy="raise_on_conflict",
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -547,7 +547,7 @@ class TestRaiseOnConflict:
                 Source(file=a),
                 Source(file=b),
                 dataclass_=Config,
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
+                strategy="raise_on_conflict",
             )
 
         assert len(exc_info.value.exceptions) == 2
@@ -702,7 +702,7 @@ class TestFirstFound:
             Source(file=first),
             Source(file=second),
             dataclass_=Config,
-            strategy=MergeStrategy.FIRST_FOUND,
+            strategy="first_found",
         )
 
         assert result.host == "first-host"
@@ -722,7 +722,7 @@ class TestFirstFound:
             Source(file=missing),
             Source(file=fallback),
             dataclass_=Config,
-            strategy=MergeStrategy.FIRST_FOUND,
+            strategy="first_found",
         )
 
         assert result.host == "fallback-host"
@@ -744,7 +744,7 @@ class TestFirstFound:
             Source(file=broken),
             Source(file=fallback),
             dataclass_=Config,
-            strategy=MergeStrategy.FIRST_FOUND,
+            strategy="first_found",
         )
 
         assert result.host == "fallback-host"
@@ -764,7 +764,7 @@ class TestFirstFound:
                 Source(file=missing1),
                 Source(file=missing2),
                 dataclass_=Config,
-                strategy=MergeStrategy.FIRST_FOUND,
+                strategy="first_found",
             )
 
         err = exc_info.value
@@ -789,7 +789,7 @@ class TestFirstFound:
                 Source(file=partial),
                 Source(file=full),
                 dataclass_=Config,
-                strategy=MergeStrategy.FIRST_FOUND,
+                strategy="first_found",
             )
 
         err = exc_info.value
@@ -814,7 +814,7 @@ class TestFirstFound:
                 Source(file=bad_type),
                 Source(file=fallback),
                 dataclass_=Config,
-                strategy=MergeStrategy.FIRST_FOUND,
+                strategy="first_found",
             )
 
         err = exc_info.value
@@ -844,7 +844,7 @@ class TestFirstFound:
                 Source(file=first),
                 Source(file=second),
                 dataclass_=Config,
-                strategy=MergeStrategy.FIRST_FOUND,
+                strategy="first_found",
             )
 
         err = exc_info.value
@@ -867,7 +867,7 @@ class TestFirstFound:
         @load(
             Source(file=first),
             Source(file=second),
-            strategy=MergeStrategy.FIRST_FOUND,
+            strategy="first_found",
             cache=False,
         )
         @dataclass

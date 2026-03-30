@@ -59,7 +59,7 @@ config = dature.load(dature.Source(file="config.yaml"), Config)
 ## Key Features
 
 - **Multiple formats** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets
-- **Merging** — combine multiple sources with configurable strategies (`LAST_WINS`, `FIRST_WINS`, `RAISE_ON_CONFLICT`)
+- **Merging** — combine multiple sources with configurable strategies (`"last_wins"`, `"first_wins"`, `"raise_on_conflict"`)
 - **Validation** — `Annotated` field validators, root validators, `__post_init__` support
 - **Naming** — automatic field name mapping (`snake_case` ↔ `camelCase` ↔ `UPPER_SNAKE` etc.)
 - **Secret masking** — automatic masking in error messages and logs by field type, name, or heuristic

@@ -10,7 +10,7 @@ The trade-off is coupling: your config must be a Pydantic model, custom types ne
 |---|---|---|
 | **Base class** | `BaseSettings` (Pydantic model) | stdlib `@dataclass` |
 | **Formats** | `.env`, env vars, JSON, YAML, TOML + custom sources | YAML (1.1/1.2), JSON, JSON5, TOML (1.0/1.1), INI, `.env`, env vars, Docker secrets — auto-detected |
-| **Merging** | Fixed priority order (init > env > dotenv > secrets > defaults) | 4 strategies + per-field rules (`APPEND`, `PREPEND`, field groups, etc.) |
+| **Merging** | Fixed priority order (init > env > dotenv > secrets > defaults) | 4 strategies + per-field rules (`"append"`, `"prepend"`, field groups, etc.) |
 | **Skip broken sources** | No | Yes — `skip_if_broken`, `skip_if_invalid` |
 | **Field groups** | No | Yes — enforce related fields are overridden together |
 | **Naming conventions** | `alias` / `alias_generator` (`to_camel`, `to_pascal`, `to_snake`) | Built-in `name_style` (6 conventions) + explicit `field_mapping` with multiple aliases |

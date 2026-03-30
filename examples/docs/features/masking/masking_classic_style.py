@@ -4,13 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from dature.config import MaskingConfig
 from dature.masking.masking import mask_value
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:classic-style]
-dature.configure(masking=MaskingConfig(mask="*****", visible_prefix=2, visible_suffix=2))
+dature.configure(masking={"mask": "*****", "visible_prefix": 2, "visible_suffix": 2})
 # "my_secret_password" → "my*****rd"
 # "ab"                 → "ab"  (too short — shown as-is)
 # --8<-- [end:classic-style]
@@ -26,4 +25,4 @@ config = dature.load(dature.Source(file=SOURCES_DIR / "masking_by_name.yaml"), d
 assert mask_value("my_secret_password") == "my*****rd"
 assert mask_value("ab") == "ab"
 
-dature.configure(masking=MaskingConfig())
+dature.configure(masking={})

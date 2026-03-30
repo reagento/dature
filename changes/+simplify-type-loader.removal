@@ -1,0 +1,1 @@
+Removed `TypeLoader` dataclass from public API. Pass `type_loaders` as `dict[type, Callable]` instead.

@@ -24,8 +24,8 @@ config = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.LAST_WINS,
-    field_merges=(dature.MergeRule(dature.F[Config].tags, merge_tags),),
+    strategy="last_wins",
+    field_merges={dature.F[Config].tags: merge_tags},
 )
 
 assert config.host == "production.example.com"

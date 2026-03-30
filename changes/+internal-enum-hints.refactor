@@ -1,0 +1,1 @@
+Internal type hints now use `MergeStrategyEnum`/`FieldMergeStrategyEnum` instead of `MergeStrategyName`/`FieldMergeStrategyName` Literal aliases. Public API type hints remain unchanged.

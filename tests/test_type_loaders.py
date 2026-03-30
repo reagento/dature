@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import Source, TypeLoader, configure, load
+from dature import Source, configure, load
 from dature.config import _ConfigProxy
 
 
@@ -31,10 +31,10 @@ class ConfigWithRgb:
 @pytest.fixture
 def _reset_config() -> Generator[None]:
     _ConfigProxy.set_instance(None)
-    _ConfigProxy.set_type_loaders(())
+    _ConfigProxy.set_type_loaders({})
     yield
     _ConfigProxy.set_instance(None)
-    _ConfigProxy.set_type_loaders(())
+    _ConfigProxy.set_type_loaders({})
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ class TestTypeLoadersInSource:
         result = load(
             Source(
                 file=yaml_with_rgb,
-                type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
+                type_loaders={Rgb: rgb_from_string},
             ),
             dataclass_=ConfigWithRgb,
         )
@@ -68,7 +68,7 @@ class TestTypeLoadersInSource:
         result = load(
             Source(
                 file=p,
-                type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
+                type_loaders={Rgb: rgb_from_string},
             ),
             dataclass_=ConfigWithRgb,
         )
@@ -79,7 +79,7 @@ class TestTypeLoadersInConfigure:
     @pytest.mark.usefixtures("_reset_config")
     def test_global_type_loaders_via_configure(self, yaml_with_rgb: Path) -> None:
         configure(
-            type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
+            type_loaders={Rgb: rgb_from_string},
         )
         result = load(Source(file=yaml_with_rgb), dataclass_=ConfigWithRgb)
         assert result.color == Rgb(r=255, g=128, b=0)
@@ -96,7 +96,7 @@ class TestTypeLoadersInMerge:
             Source(file=base),
             Source(file=override),
             dataclass_=ConfigWithRgb,
-            type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
+            type_loaders={Rgb: rgb_from_string},
         )
         assert result.name == "override"
         assert result.color == Rgb(r=1, g=2, b=3)
@@ -114,7 +114,7 @@ class TestTypeLoadersMergedFromBoth:
             return value.upper()
 
         configure(
-            type_loaders=(TypeLoader(type_=Rgb, func=rgb_from_string),),
+            type_loaders={Rgb: rgb_from_string},
         )
 
         p = tmp_path / "cfg.yaml"
@@ -123,7 +123,7 @@ class TestTypeLoadersMergedFromBoth:
         result = load(
             Source(
                 file=p,
-                type_loaders=(TypeLoader(type_=str, func=tag_upper),),
+                type_loaders={str: tag_upper},
             ),
             dataclass_=TwoCustom,
         )

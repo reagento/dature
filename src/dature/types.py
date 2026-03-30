@@ -52,10 +52,14 @@ type NameStyle = Literal[
     "upper_kebab",
 ]
 
-# Keys are FieldPath at runtime, but F[Type].field returns the field's static type (str, int, etc.)
-# due to the overload trick for IDE autocompletion, so we accept those types here too.
-type _FieldMappingKey = "FieldPath | str | int | float | bool | None"
-type FieldMapping = dict[_FieldMappingKey, str | tuple[str, ...]]
+# F[Type].field is FieldPath at runtime, but the overload trick makes mypy see the
+# field's static type (str, int, list[str], dict, etc.) for IDE autocompletion.
+# This union covers all types mypy can infer from F expressions.
+type FieldRef = (
+    "FieldPath | str | int | float | bool | list[Any] | dict[str, Any] | tuple[Any, ...] | set[Any] | bytes | None"
+)
+
+type FieldMapping = dict[FieldRef, str | tuple[str, ...]]
 
 type URL = ParseResult
 
@@ -70,10 +74,15 @@ type NestedResolveStrategy = Literal["flat", "json"]
 type _NestedResolveValue = "tuple[FieldPath | Any, ...]"
 type NestedResolve = dict[NestedResolveStrategy, _NestedResolveValue]
 
-type _ValidatorKey = "FieldPath | str | int | float | bool | None"
-type FieldValidators = dict[_ValidatorKey, "ValidatorProtocol | tuple[ValidatorProtocol, ...]"]
+type FieldValidators = dict[FieldRef, "ValidatorProtocol | tuple[ValidatorProtocol, ...]"]
 
 type FieldMergeCallable = Callable[[list[JSONValue]], JSONValue]
+
+type MergeStrategyName = Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]
+type FieldMergeStrategyName = Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]
+type TypeLoaderMap = dict[type, Callable[..., Any]]
+type FieldMergeMap = dict[FieldRef, "FieldMergeStrategyName | Callable[..., Any]"]
+type FieldGroupTuple = tuple[FieldRef, ...]
 
 type FileLike = TextIOBase | BufferedIOBase | RawIOBase
 FILE_LIKE_TYPES: Final = (TextIOBase, BufferedIOBase, RawIOBase)

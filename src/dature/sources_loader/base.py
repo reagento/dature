@@ -55,7 +55,7 @@ from dature.validators.base import (
 )
 
 if TYPE_CHECKING:
-    from dature.metadata import TypeLoader
+    from dature.types import TypeLoaderMap
 
 T = TypeVar("T")
 
@@ -76,7 +76,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         root_validators: tuple[ValidatorProtocol, ...] | None = None,
         validators: FieldValidators | None = None,
         expand_env_vars: ExpandEnvVarsMode = "default",
-        type_loaders: "tuple[TypeLoader, ...]" = (),
+        type_loaders: "TypeLoaderMap | None" = None,
     ) -> None:
         self._prefix = prefix
         self._name_style = name_style
@@ -203,7 +203,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         return result
 
     def _base_recipe(self) -> list[Provider]:
-        user_loaders: list[Provider] = [loader(tl.type_, tl.func) for tl in self._type_loaders]
+        user_loaders: list[Provider] = [loader(type_, func) for type_, func in (self._type_loaders or {}).items()]
         default_loaders: list[Provider] = [
             loader(int, int_from_string),
             loader(float, float_passthrough),

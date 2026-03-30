@@ -8,7 +8,7 @@ from typing import Annotated
 
 import pytest
 
-from dature import MergeStrategy, Source, get_load_report, load
+from dature import Source, get_load_report, load
 from dature.errors.exceptions import DatureConfigError
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry
 from dature.validators.number import Ge
@@ -38,7 +38,7 @@ class TestGetLoadReportMergeFunction:
 
         expected = LoadReport(
             dataclass_name="Config",
-            strategy=MergeStrategy.LAST_WINS,
+            strategy="last_wins",
             sources=(
                 SourceEntry(
                     index=0,
@@ -89,7 +89,7 @@ class TestGetLoadReportMergeFunction:
             Source(file=first),
             Source(file=second),
             dataclass_=Config,
-            strategy=MergeStrategy.FIRST_WINS,
+            strategy="first_wins",
             debug=True,
         )
 
@@ -97,7 +97,7 @@ class TestGetLoadReportMergeFunction:
 
         expected = LoadReport(
             dataclass_name="Config",
-            strategy=MergeStrategy.FIRST_WINS,
+            strategy="first_wins",
             sources=(
                 SourceEntry(
                     index=0,
@@ -240,7 +240,7 @@ class TestGetLoadReportDecorator:
         config = Config()
         report = get_load_report(config)
         assert report is not None
-        assert report.strategy == MergeStrategy.LAST_WINS
+        assert report.strategy == "last_wins"
         assert len(report.sources) == 2
 
     def test_single_source_decorator(self, tmp_path: Path):
@@ -376,7 +376,7 @@ class TestLoadReportOnError:
 
         expected = LoadReport(
             dataclass_name="Config",
-            strategy=MergeStrategy.LAST_WINS,
+            strategy="last_wins",
             sources=(
                 SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"host": "localhost"}),
                 SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "override"}),
@@ -416,7 +416,7 @@ class TestLoadReportOnError:
 
         expected = LoadReport(
             dataclass_name="Config",
-            strategy=MergeStrategy.LAST_WINS,
+            strategy="last_wins",
             sources=(
                 SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"port": -5}),
                 SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "localhost"}),

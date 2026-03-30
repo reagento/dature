@@ -27,7 +27,7 @@ class AppConfig:
 
 
 # Register Rgb parser globally — no need to pass type_loaders to every load() call
-dature.configure(type_loaders=(dature.TypeLoader(type_=Rgb, func=rgb_from_string),))
+dature.configure(type_loaders={Rgb: rgb_from_string})
 
 config = dature.load(dature.Source(file=SOURCES_DIR / "custom_type_common.yaml"), dataclass_=AppConfig)
 assert config == AppConfig(name="my-app", color=Rgb(r=255, g=128, b=0))

@@ -20,7 +20,7 @@ config = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.FIRST_FOUND,
+    strategy="first_found",
 )
 
 # nonexistent.yaml is skipped, common_defaults.yaml is used entirely

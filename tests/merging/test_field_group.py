@@ -6,7 +6,7 @@ from textwrap import dedent
 
 import pytest
 
-from dature import FieldGroup, FieldMergeStrategy, MergeRule, MergeStrategy, Source, load
+from dature import Source, load
 from dature.errors.exceptions import FieldGroupError
 from dature.field_path import F
 
@@ -28,8 +28,8 @@ class TestFieldGroupAllChanged:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            strategy=MergeStrategy.LAST_WINS,
-            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+            strategy="last_wins",
+            field_groups=((F[Config].host, F[Config].port),),
         )
 
         assert result.host == "remote"
@@ -51,8 +51,8 @@ class TestFieldGroupAllChanged:
             Source(file=first),
             Source(file=second),
             dataclass_=Config,
-            strategy=MergeStrategy.FIRST_WINS,
-            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+            strategy="first_wins",
+            field_groups=((F[Config].host, F[Config].port),),
         )
 
         assert result.host == "first-host"
@@ -76,7 +76,7 @@ class TestFieldGroupNoneChanged:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+            field_groups=((F[Config].host, F[Config].port),),
         )
 
         assert result.host == "localhost"
@@ -99,7 +99,7 @@ class TestFieldGroupNoneChanged:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+            field_groups=((F[Config].host, F[Config].port),),
         )
 
         assert result.host == "localhost"
@@ -128,7 +128,7 @@ class TestFieldGroupPartialChange:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+                field_groups=((F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -159,7 +159,7 @@ class TestFieldGroupPartialChange:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+                field_groups=((F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -187,8 +187,8 @@ class TestFieldGroupPartialChange:
                 Source(file=defaults),
                 Source(file=overrides),
                 dataclass_=Config,
-                strategy=MergeStrategy.FIRST_WINS,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+                strategy="first_wins",
+                field_groups=((F[Config].host, F[Config].port),),
             )
 
     def test_partial_change_with_raise_on_conflict(self, tmp_path: Path):
@@ -208,8 +208,8 @@ class TestFieldGroupPartialChange:
                 Source(file=defaults),
                 Source(file=overrides),
                 dataclass_=Config,
-                strategy=MergeStrategy.RAISE_ON_CONFLICT,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+                strategy="raise_on_conflict",
+                field_groups=((F[Config].host, F[Config].port),),
             )
 
 
@@ -238,7 +238,7 @@ class TestFieldGroupAutoExpand:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].database),),
+                field_groups=((F[Config].database,),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -269,7 +269,7 @@ class TestFieldGroupAutoExpand:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].database),),
+            field_groups=((F[Config].database,),),
         )
 
         assert result.database.host == "remote"
@@ -302,7 +302,7 @@ class TestFieldGroupThreeSources:
                 b_meta,
                 c_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+                field_groups=((F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -333,7 +333,7 @@ class TestFieldGroupThreeSources:
             Source(file=b),
             Source(file=c),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+            field_groups=((F[Config].host, F[Config].port),),
         )
 
         assert result.host == "c-host"
@@ -364,8 +364,8 @@ class TestFieldGroupMultipleGroups:
                 overrides_meta,
                 dataclass_=Config,
                 field_groups=(
-                    FieldGroup(F[Config].host, F[Config].port),
-                    FieldGroup(F[Config].user, F[Config].password),
+                    (F[Config].host, F[Config].port),
+                    (F[Config].user, F[Config].password),
                 ),
             )
 
@@ -396,8 +396,8 @@ class TestFieldGroupWithFieldMerges:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_merges=(MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),),
-            field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+            field_merges={F[Config].tags: "append"},
+            field_groups=((F[Config].host, F[Config].port),),
         )
 
         assert result.host == "remote"
@@ -416,7 +416,7 @@ class TestFieldGroupDecorator:
         @load(
             Source(file=defaults),
             Source(file=overrides),
-            field_groups=(FieldGroup(F["Config"].host, F["Config"].port),),
+            field_groups=((F["Config"].host, F["Config"].port),),
         )
         @dataclass
         class Config:
@@ -437,7 +437,7 @@ class TestFieldGroupDecorator:
         @load(
             Source(file=defaults),
             Source(file=overrides),
-            field_groups=(FieldGroup(F["Config"].host, F["Config"].port),),
+            field_groups=((F["Config"].host, F["Config"].port),),
         )
         @dataclass
         class Config:
@@ -470,7 +470,7 @@ class TestFieldGroupErrorFormat:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].host, F[Config].port),),
+                field_groups=((F[Config].host, F[Config].port),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -504,8 +504,8 @@ class TestFieldGroupErrorFormat:
                 overrides_meta,
                 dataclass_=Config,
                 field_groups=(
-                    FieldGroup(F[Config].host, F[Config].port),
-                    FieldGroup(F[Config].user, F[Config].password),
+                    (F[Config].host, F[Config].port),
+                    (F[Config].user, F[Config].password),
                 ),
             )
 
@@ -548,7 +548,7 @@ class TestFieldGroupMixedExpandAndFlat:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
+            field_groups=((F[Config].database, F[Config].timeout),),
         )
 
         assert result.database.host == "remote"
@@ -580,7 +580,7 @@ class TestFieldGroupMixedExpandAndFlat:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
+            field_groups=((F[Config].database, F[Config].timeout),),
         )
 
         assert result.database.host == "localhost"
@@ -614,7 +614,7 @@ class TestFieldGroupMixedExpandAndFlat:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
+                field_groups=((F[Config].database, F[Config].timeout),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -652,7 +652,7 @@ class TestFieldGroupMixedExpandAndFlat:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
+                field_groups=((F[Config].database, F[Config].timeout),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -692,7 +692,7 @@ class TestFieldGroupMixedExpandAndFlat:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].database, F[Config].timeout),),
+                field_groups=((F[Config].database, F[Config].timeout),),
             )
 
         assert str(exc_info.value) == dedent(f"""\
@@ -729,7 +729,7 @@ class TestFieldGroupSameFieldNameNested:
             Source(file=defaults),
             Source(file=overrides),
             dataclass_=Config,
-            field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
+            field_groups=((F[Config].user_name, F[Config].inner.user_name),),
         )
 
         assert result.user_name == "root-new"
@@ -761,7 +761,7 @@ class TestFieldGroupSameFieldNameNested:
                 defaults_meta,
                 overrides_meta,
                 dataclass_=Config,
-                field_groups=(FieldGroup(F[Config].user_name, F[Config].inner.user_name),),
+                field_groups=((F[Config].user_name, F[Config].inner.user_name),),
             )
 
         assert str(exc_info.value) == dedent(f"""\

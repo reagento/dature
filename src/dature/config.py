@@ -1,12 +1,9 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated
+from dataclasses import asdict, dataclass
+from typing import Annotated, Any, ClassVar, TypedDict, cast
 
-from dature.types import NestedResolveStrategy
+from dature.types import NestedResolveStrategy, TypeLoaderMap
 from dature.validators.number import Ge
 from dature.validators.string import MinLength
-
-if TYPE_CHECKING:
-    from dature.metadata import TypeLoader
 
 
 # --8<-- [start:masking-config]
@@ -71,10 +68,31 @@ def _load_config() -> DatureConfig:
     return load(Source(prefix="DATURE_"), dataclass_=DatureConfig)
 
 
+class MaskingOptions(TypedDict, total=False):
+    mask: str
+    visible_prefix: int
+    visible_suffix: int
+    min_heuristic_length: int
+    heuristic_threshold: float
+    secret_field_names: tuple[str, ...]
+    mask_secrets: bool
+
+
+class ErrorDisplayOptions(TypedDict, total=False):
+    max_visible_lines: int
+    max_line_length: int
+
+
+class LoadingOptions(TypedDict, total=False):
+    cache: bool
+    debug: bool
+    nested_resolve_strategy: NestedResolveStrategy
+
+
 class _ConfigProxy:
     _instance: DatureConfig | None = None
     _loading: bool = False
-    _type_loaders: "tuple[TypeLoader, ...]" = ()
+    _type_loaders: ClassVar[TypeLoaderMap] = {}
 
     @staticmethod
     def ensure_loaded() -> DatureConfig:
@@ -94,7 +112,7 @@ class _ConfigProxy:
         _ConfigProxy._instance = value
 
     @staticmethod
-    def set_type_loaders(value: "tuple[TypeLoader, ...]") -> None:
+    def set_type_loaders(value: TypeLoaderMap) -> None:
         _ConfigProxy._type_loaders = value
 
     @property
@@ -110,7 +128,7 @@ class _ConfigProxy:
         return self.ensure_loaded().loading
 
     @property
-    def type_loaders(self) -> "tuple[TypeLoader, ...]":
+    def type_loaders(self) -> TypeLoaderMap:
         return _ConfigProxy._type_loaders
 
 
@@ -120,24 +138,35 @@ config: _ConfigProxy = _ConfigProxy()
 # --8<-- [start:configure]
 def configure(
     *,
-    masking: MaskingConfig | None = None,
-    error_display: ErrorDisplayConfig | None = None,
-    loading: LoadingConfig | None = None,
-    type_loaders: "tuple[TypeLoader, ...] | None" = None,
+    masking: MaskingOptions | None = None,
+    error_display: ErrorDisplayOptions | None = None,
+    loading: LoadingOptions | None = None,
+    type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
     current = config.ensure_loaded()
-    if masking is None:
-        masking = current.masking
-    if error_display is None:
-        error_display = current.error_display
-    if loading is None:
-        loading = current.loading
+
+    merged_masking = (
+        MaskingConfig(**cast("dict[str, Any]", asdict(MaskingConfig()) | masking))
+        if masking is not None
+        else current.masking
+    )
+    merged_error = (
+        ErrorDisplayConfig(**cast("dict[str, Any]", asdict(ErrorDisplayConfig()) | error_display))
+        if error_display is not None
+        else current.error_display
+    )
+    merged_loading = (
+        LoadingConfig(**cast("dict[str, Any]", asdict(LoadingConfig()) | loading))
+        if loading is not None
+        else current.loading
+    )
+
     config.set_instance(
         DatureConfig(
-            masking=masking,
-            error_display=error_display,
-            loading=loading,
+            masking=merged_masking,
+            error_display=merged_error,
+            loading=merged_loading,
         ),
     )
     if type_loaders is not None:

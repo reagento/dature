@@ -1,0 +1,1 @@
+Removed `MergeStrategy` and `FieldMergeStrategy` enums from public API. Use string literals instead: `"last_wins"`, `"first_wins"`, `"first_found"`, `"raise_on_conflict"` for merge strategies; `"first_wins"`, `"last_wins"`, `"append"`, `"append_unique"`, `"prepend"`, `"prepend_unique"` for field merge strategies.

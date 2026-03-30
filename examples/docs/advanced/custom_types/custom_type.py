@@ -29,7 +29,7 @@ class AppConfig:
 config = dature.load(
     dature.Source(
         file=SOURCES_DIR / "custom_type_common.yaml",
-        type_loaders=(dature.TypeLoader(type_=Rgb, func=rgb_from_string),),
+        type_loaders={Rgb: rgb_from_string},
     ),
     dataclass_=AppConfig,
 )

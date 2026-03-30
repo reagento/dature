@@ -19,12 +19,12 @@ config = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.RAISE_ON_CONFLICT,
-    field_merges=(
-        dature.MergeRule(dature.F[Config].host, dature.FieldMergeStrategy.LAST_WINS),
-        dature.MergeRule(dature.F[Config].port, dature.FieldMergeStrategy.LAST_WINS),
-        dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.APPEND_UNIQUE),
-    ),
+    strategy="raise_on_conflict",
+    field_merges={
+        dature.F[Config].host: "last_wins",
+        dature.F[Config].port: "last_wins",
+        dature.F[Config].tags: "append_unique",
+    },
 )
 
 assert config.host == "production.example.com"

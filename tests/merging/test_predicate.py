@@ -6,7 +6,6 @@ import pytest
 
 from dature.field_path import F
 from dature.merging.predicate import build_field_merge_map, extract_field_path
-from dature.metadata import FieldMergeStrategy, MergeRule
 
 
 class TestExtractFieldPath:
@@ -45,21 +44,21 @@ class TestBuildFieldMergeMap:
             port: int
             tags: list[str]
 
-        rules = (
-            MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
-            MergeRule(F[Config].tags, FieldMergeStrategy.APPEND),
-        )
+        field_merges = {
+            F[Config].host: "first_wins",
+            F[Config].tags: "append",
+        }
 
-        result = build_field_merge_map(rules)
+        result = build_field_merge_map(field_merges)
 
         assert result.enum_map == {
-            "host": FieldMergeStrategy.FIRST_WINS,
-            "tags": FieldMergeStrategy.APPEND,
+            "host": "first_wins",
+            "tags": "append",
         }
         assert result.callable_map == {}
 
     def test_empty_rules(self):
-        result = build_field_merge_map(())
+        result = build_field_merge_map({})
         assert result.enum_map == {}
         assert result.callable_map == {}
 
@@ -72,11 +71,11 @@ class TestBuildFieldMergeMap:
         class Config:
             database: Database
 
-        rules = (MergeRule(F[Config].database.host, FieldMergeStrategy.LAST_WINS),)
+        field_merges = {F[Config].database.host: "last_wins"}
 
-        result = build_field_merge_map(rules)
+        result = build_field_merge_map(field_merges)
 
-        assert result.enum_map == {"database.host": FieldMergeStrategy.LAST_WINS}
+        assert result.enum_map == {"database.host": "last_wins"}
         assert result.callable_map == {}
 
     def test_callable_strategy(self):
@@ -85,14 +84,14 @@ class TestBuildFieldMergeMap:
             host: str
             score: int
 
-        rules = (
-            MergeRule(F[Config].host, FieldMergeStrategy.FIRST_WINS),
-            MergeRule(F[Config].score, sum),
-        )
+        field_merges = {
+            F[Config].host: "first_wins",
+            F[Config].score: sum,
+        }
 
-        result = build_field_merge_map(rules)
+        result = build_field_merge_map(field_merges)
 
-        assert result.enum_map == {"host": FieldMergeStrategy.FIRST_WINS}
+        assert result.enum_map == {"host": "first_wins"}
         assert result.callable_map == {"score": sum}
 
     def test_validates_owner_mismatch(self):
@@ -104,10 +103,10 @@ class TestBuildFieldMergeMap:
         class Other:
             host: str
 
-        rules = (MergeRule(F[Other].host, FieldMergeStrategy.FIRST_WINS),)
+        field_merges = {F[Other].host: "first_wins"}
 
         with pytest.raises(TypeError) as exc_info:
-            build_field_merge_map(rules, dataclass_=Config)
+            build_field_merge_map(field_merges, dataclass_=Config)
         assert str(exc_info.value) == "FieldPath owner 'Other' does not match target dataclass 'Config'"
 
 

@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from dature import Source, configure, get_load_report, load
-from dature.config import MaskingConfig
 from dature.errors.exceptions import DatureConfigError
 from dature.fields.secret_str import SecretStr
 from dature.load_report import FieldOrigin, SourceEntry
@@ -58,11 +57,11 @@ class TestMaskValueCustomConfig:
         expected: str,
     ):
         configure(
-            masking=MaskingConfig(
-                mask=mask,
-                visible_prefix=visible_prefix,
-                visible_suffix=visible_suffix,
-            ),
+            masking={
+                "mask": mask,
+                "visible_prefix": visible_prefix,
+                "visible_suffix": visible_suffix,
+            },
         )
         assert mask_value(input_value) == expected
 
@@ -409,7 +408,7 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        configure(masking=MaskingConfig(mask_secrets=mask_secrets))
+        configure(masking={"mask_secrets": mask_secrets})
         result = load(Source(file=json_file), dataclass_=Cfg, debug=True)
 
         report = get_load_report(result)
@@ -440,7 +439,7 @@ class TestSecretMaskingIntegration:
             password: str
             port: int
 
-        configure(masking=MaskingConfig(mask_secrets=mask_secrets))
+        configure(masking={"mask_secrets": mask_secrets})
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(Source(file=json_file), dataclass_=Cfg)

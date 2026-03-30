@@ -36,7 +36,7 @@ from dature.types import (
 
 if TYPE_CHECKING:
     from dature.field_path import FieldPath
-    from dature.metadata import TypeLoader
+    from dature.types import TypeLoaderMap
 
 
 def set_nested(d: dict[str, JSONValue], keys: list[str], value: str) -> None:
@@ -56,7 +56,7 @@ class FlatKeyLoader(BaseLoader, abc.ABC):
         root_validators: tuple[ValidatorProtocol, ...] | None = None,
         validators: FieldValidators | None = None,
         expand_env_vars: ExpandEnvVarsMode = "default",
-        type_loaders: "tuple[TypeLoader, ...]" = (),
+        type_loaders: "TypeLoaderMap | None" = None,
         nested_resolve_strategy: NestedResolveStrategy = "flat",
         nested_resolve: NestedResolve | None = None,
     ) -> None:

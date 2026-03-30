@@ -17,7 +17,7 @@ config = dature.load(
     dature.Source(file=SOURCES_DIR / "merging_field_base.yaml"),
     dature.Source(file=SOURCES_DIR / "merging_field_override.yaml"),
     dataclass_=Config,
-    field_merges=(dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.LAST_WINS),),
+    field_merges={dature.F[Config].tags: "last_wins"},
 )
 
 assert config.tags == ["web", "api"]

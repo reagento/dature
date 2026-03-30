@@ -17,7 +17,7 @@ config = dature.load(
     dature.Source(file=SOURCES_DIR / "merging_field_base.yaml"),
     dature.Source(file=SOURCES_DIR / "merging_field_override.yaml"),
     dataclass_=Config,
-    field_merges=(dature.MergeRule(dature.F[Config].tags, dature.FieldMergeStrategy.PREPEND_UNIQUE),),
+    field_merges={dature.F[Config].tags: "prepend_unique"},
 )
 
 assert config.tags == ["web", "api", "default"]

@@ -1,0 +1,1 @@
+`configure()` now accepts dicts instead of dataclass instances: `masking={"mask": "***"}`, `error_display={"max_visible_lines": 5}`, `loading={"debug": True}`, `type_loaders={MyType: my_loader}`.

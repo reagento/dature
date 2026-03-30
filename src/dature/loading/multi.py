@@ -29,9 +29,10 @@ from dature.masking.masking import mask_field_origins, mask_json_value, mask_sou
 from dature.merging.deep_merge import deep_merge, deep_merge_last_wins, raise_on_conflict
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
-from dature.metadata import FieldMergeStrategy, MergeStrategy, Source, TypeLoader, _MergeConfig
+from dature.merging.strategy import FieldMergeStrategyEnum, MergeStrategyEnum
+from dature.metadata import Source, _MergeConfig
 from dature.protocols import DataclassInstance, LoaderProtocol
-from dature.types import FieldMergeCallable, JSONValue
+from dature.types import FieldMergeCallable, JSONValue, TypeLoaderMap
 
 logger = logging.getLogger("dature")
 
@@ -55,7 +56,7 @@ def _log_merge_step(  # noqa: PLR0913
     *,
     dataclass_name: str,
     step_idx: int,
-    strategy: MergeStrategy,
+    strategy: MergeStrategyEnum,
     before: JSONValue,
     source_data: JSONValue,
     after: JSONValue,
@@ -68,7 +69,7 @@ def _log_merge_step(  # noqa: PLR0913
             "[%s] Merge step %d (strategy=%s): added=%s, overwritten=%s",
             dataclass_name,
             step_idx,
-            strategy.value,
+            strategy,
             sorted(added_keys),
             sorted(overwritten_keys),
         )
@@ -115,7 +116,7 @@ def _log_field_origins(
 def _build_merge_report(
     *,
     dataclass_name: str,
-    strategy: MergeStrategy,
+    strategy: MergeStrategyEnum,
     source_entries: tuple[SourceEntry, ...],
     field_origins: tuple[FieldOrigin, ...],
     merged_data: JSONValue,
@@ -217,9 +218,9 @@ def _set_nested_value(
 def _merge_raw_dicts(
     *,
     raw_dicts: list[JSONValue],
-    strategy: MergeStrategy,
+    strategy: MergeStrategyEnum,
     dataclass_name: str,
-    field_merge_map: dict[str, FieldMergeStrategy] | None = None,
+    field_merge_map: dict[str, FieldMergeStrategyEnum] | None = None,
     callable_merge_map: dict[str, FieldMergeCallable] | None = None,
     secret_paths: frozenset[str] = frozenset(),
 ) -> JSONValue:
@@ -227,7 +228,7 @@ def _merge_raw_dicts(
     for step_idx, raw in enumerate(raw_dicts):
         before = merged
 
-        if strategy == MergeStrategy.RAISE_ON_CONFLICT:
+        if strategy == MergeStrategyEnum.RAISE_ON_CONFLICT:
             merged = deep_merge_last_wins(merged, raw, field_merge_map=field_merge_map)
         else:
             merged = deep_merge(merged, raw, strategy=strategy, field_merge_map=field_merge_map)
@@ -267,7 +268,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     dataclass_: type[T],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     debug: bool = False,
-    type_loaders: tuple[TypeLoader, ...] = (),
+    type_loaders: TypeLoaderMap | None = None,
 ) -> _MergedData[T]:
     secret_paths: frozenset[str] = frozenset()
     if _resolve_merge_mask_secrets(merge_meta):
@@ -299,7 +300,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
             source_reprs=source_reprs,
         )
 
-    if merge_meta.strategy == MergeStrategy.RAISE_ON_CONFLICT:
+    if merge_meta.strategy == MergeStrategyEnum.RAISE_ON_CONFLICT:
         raise_on_conflict(
             loaded.raw_dicts,
             loaded.source_ctxs,
@@ -324,7 +325,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     logger.debug(
         "[%s] Merged result (strategy=%s, %d sources): %s",
         dataclass_.__name__,
-        merge_meta.strategy.value,
+        merge_meta.strategy,
         len(loaded.raw_dicts),
         masked_merged,
     )
@@ -384,7 +385,7 @@ def merge_load_as_function[T: DataclassInstance](
     dataclass_: type[T],
     *,
     debug: bool,
-    type_loaders: tuple[TypeLoader, ...] = (),
+    type_loaders: TypeLoaderMap | None = None,
 ) -> T:
     data = _load_and_merge(
         merge_meta=merge_meta,
@@ -431,7 +432,7 @@ class _MergePatchContext:
         cls: type[DataclassInstance],
         cache: bool,
         debug: bool,
-        type_loaders: tuple[TypeLoader, ...] = (),
+        type_loaders: TypeLoaderMap | None = None,
     ) -> None:
         self.loaders = self._prepare_loaders(merge_meta=merge_meta, cls=cls, type_loaders=type_loaders)
 
@@ -470,12 +471,12 @@ class _MergePatchContext:
         *,
         merge_meta: _MergeConfig,
         cls: type[DataclassInstance],
-        type_loaders: tuple[TypeLoader, ...] = (),
+        type_loaders: TypeLoaderMap | None = None,
     ) -> tuple[LoaderProtocol, ...]:
         loaders: list[LoaderProtocol] = []
         for source_meta in merge_meta.sources:
             resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
-            source_type_loaders = (source_meta.type_loaders or ()) + type_loaders
+            source_type_loaders = {**(type_loaders or {}), **(source_meta.type_loaders or {})}
             resolved_strategy = (
                 source_meta.nested_resolve_strategy
                 or merge_meta.nested_resolve_strategy
@@ -547,7 +548,7 @@ def merge_make_decorator(
     *,
     cache: bool,
     debug: bool,
-    type_loaders: tuple[TypeLoader, ...] = (),
+    type_loaders: TypeLoaderMap | None = None,
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
     def decorator(cls: type[DataclassInstance]) -> type[DataclassInstance]:
         if not is_dataclass(cls):

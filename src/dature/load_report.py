@@ -3,7 +3,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 
-from dature.metadata import MergeStrategy
+from dature.merging.strategy import MergeStrategyEnum
 from dature.types import JSONValue
 
 logger = logging.getLogger("dature")
@@ -32,7 +32,7 @@ class FieldOrigin:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LoadReport:
     dataclass_name: str
-    strategy: MergeStrategy | None
+    strategy: MergeStrategyEnum | None
     sources: tuple[SourceEntry, ...]
     field_origins: tuple[FieldOrigin, ...]
     merged_data: JSONValue
@@ -43,7 +43,7 @@ def compute_field_origins(
     *,
     raw_dicts: list[JSONValue],
     source_entries: tuple[SourceEntry, ...],
-    strategy: MergeStrategy,
+    strategy: MergeStrategyEnum,
 ) -> tuple[FieldOrigin, ...]:
     first_source: dict[str, int] = {}
     last_source: dict[str, int] = {}
@@ -60,7 +60,7 @@ def compute_field_origins(
 
     origins: list[FieldOrigin] = []
     for key in sorted(last_source):
-        if strategy in (MergeStrategy.FIRST_WINS, MergeStrategy.FIRST_FOUND):
+        if strategy in (MergeStrategyEnum.FIRST_WINS, MergeStrategyEnum.FIRST_FOUND):
             winner_idx = first_source[key]
         else:
             winner_idx = last_source[key]

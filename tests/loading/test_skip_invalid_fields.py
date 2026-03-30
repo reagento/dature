@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import F, MergeStrategy, Source, load
+from dature import F, Source, load
 from dature.errors.exceptions import DatureConfigError
 
 
@@ -196,7 +196,7 @@ class TestMergeSkipInvalidFields:
             Source(file=source1),
             Source(file=source2),
             dataclass_=Config,
-            strategy=MergeStrategy.RAISE_ON_CONFLICT,
+            strategy="raise_on_conflict",
             skip_invalid_fields=True,
         )
 

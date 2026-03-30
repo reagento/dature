@@ -30,15 +30,15 @@ Main entry point. Two calling patterns:
 | `dataclass_` | `type[T] \| None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
 | `cache` | `bool \| None` | Enable caching in decorator mode. Default from `configure()`. |
 | `debug` | `bool \| None` | Collect `LoadReport`. Default from `configure()`. |
-| `strategy` | `MergeStrategy` | Merge strategy (default `LAST_WINS`). Only used with multiple sources. |
-| `field_merges` | `tuple[MergeRule, ...]` | Per-field merge strategy overrides. |
-| `field_groups` | `tuple[FieldGroup, ...]` | Groups of fields that must change together. |
+| `strategy` | `str` | Merge strategy: `"last_wins"` (default), `"first_wins"`, `"first_found"`, `"raise_on_conflict"`. Only used with multiple sources. |
+| `field_merges` | `dict` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy string or callable. |
+| `field_groups` | `tuple[tuple[...], ...]` | Groups of fields that must change together. Each group is a tuple of `F[Config].field` references. |
 | `skip_broken_sources` | `bool` | Skip sources that fail to load (default `False`). |
 | `skip_invalid_fields` | `bool` | Skip fields that fail validation (default `False`). |
 | `expand_env_vars` | `ExpandEnvVarsMode` | Env var expansion mode for all sources (default `"default"`). |
 | `secret_field_names` | `tuple[str, ...] \| None` | Extra secret field name patterns. |
 | `mask_secrets` | `bool \| None` | Enable/disable secret masking globally. |
-| `type_loaders` | `tuple[TypeLoader, ...] \| None` | Custom type loaders. |
+| `type_loaders` | `dict[type, Callable] \| None` | Custom type loaders mapping types to conversion functions. |
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | Default priority for JSON vs flat keys. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
 
@@ -54,37 +54,25 @@ See [Introduction — Source Reference](introduction.md#source-reference) for pa
 
 ---
 
-### `MergeStrategy`
+### Merge Strategies
 
-```python
---8<-- "src/dature/metadata.py:merge-strategy"
-```
+| Strategy | Behavior |
+|----------|----------|
+| `"last_wins"` | Last source overrides (default) |
+| `"first_wins"` | First source wins |
+| `"first_found"` | Uses the first source that loads successfully |
+| `"raise_on_conflict"` | Raises `MergeConflictError` on conflicting values |
 
----
+### Field Merge Strategies
 
-### `FieldMergeStrategy`
-
-```python
---8<-- "src/dature/metadata.py:field-merge-strategy"
-```
-
----
-
-### `MergeRule`
-
-```python
---8<-- "src/dature/metadata.py:merge-rule"
-```
-
----
-
-### `FieldGroup`
-
-```python
---8<-- "src/dature/metadata.py:field-group"
-```
-
-Usage: `dature.FieldGroup(dature.F[Config].host, dature.F[Config].port)`
+| Strategy | Behavior |
+|----------|----------|
+| `"first_wins"` | Keep the value from the first source |
+| `"last_wins"` | Keep the value from the last source |
+| `"append"` | Concatenate lists: `base + override` |
+| `"append_unique"` | Concatenate lists, removing duplicates |
+| `"prepend"` | Concatenate lists: `override + base` |
+| `"prepend_unique"` | Concatenate lists in reverse order, removing duplicates |
 
 ---
 
@@ -126,7 +114,7 @@ Returns the `LoadReport` attached to a loaded instance (or type on error). Retur
 --8<-- "src/dature/config.py:configure"
 ```
 
-Set global configuration. `None` parameters keep their current values.
+Set global configuration. Pass dicts to override specific options: `masking={"mask": "***"}`, `loading={"debug": True}`. `None` parameters keep their current values. Empty dict resets the group to defaults.
 
 ### `MaskingConfig`
 

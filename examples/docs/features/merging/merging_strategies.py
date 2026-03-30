@@ -19,14 +19,14 @@ last_wins = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.LAST_WINS,
+    strategy="last_wins",
 )
 
 first_wins = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.FIRST_WINS,
+    strategy="first_wins",
 )
 
 assert last_wins.host == "production.example.com"

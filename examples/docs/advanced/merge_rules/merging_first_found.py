@@ -18,7 +18,7 @@ config = dature.load(
     dature.Source(file=SOURCES_DIR / "merging_first_found_primary.yaml"),
     dature.Source(file=SOURCES_DIR / "merging_first_found_fallback.yaml"),
     dataclass_=Config,
-    strategy=dature.MergeStrategy.FIRST_FOUND,
+    strategy="first_found",
 )
 
 assert config.host == "production-host"
