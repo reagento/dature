@@ -54,11 +54,16 @@ function renderVersionItem(version) {
 // Cached HTML fragments, built once from RTD data
 let versioningHtml = "";
 let olderItemsHtml = "";
+// Set when MutationObserver detects missing selector but data isn't ready yet
+let pendingInject = false;
 
 function injectVersionSelector() {
   if (versioningHtml === "") {
+    pendingInject = true;
     return;
   }
+
+  pendingInject = false;
 
   const topic = document.querySelector(".md-header__topic");
   if (topic === null) {
@@ -120,19 +125,19 @@ document.addEventListener("readthedocs-addons-data-ready", function (event) {
   injectVersionSelector();
 });
 
-// Re-inject after Material instant navigation replaces the DOM
+// Re-inject after Material instant navigation replaces the DOM.
+// Debounce via setTimeout so we inject only after Material finishes its
+// batch of DOM mutations, not in between them.
 document.addEventListener("DOMContentLoaded", function () {
   if (typeof document.body.dataset.mdColorScheme === "undefined") {
     return;
   }
-  let injecting = false;
+  let timer = 0;
   new MutationObserver(function () {
-    if (injecting) return;
     const topic = document.querySelector(".md-header__topic");
     if (topic !== null && topic.querySelector(".md-version") === null) {
-      injecting = true;
-      injectVersionSelector();
-      injecting = false;
+      clearTimeout(timer);
+      timer = setTimeout(injectVersionSelector, 50);
     }
   }).observe(document.querySelector(".md-header") || document.body, {
     childList: true,
