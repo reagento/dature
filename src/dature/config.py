@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypedDict, TypeVar, cast
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypedDict, cast
 
 from dature.types import NestedResolveStrategy, TypeLoaderMap
 from dature.validators.number import Ge
@@ -138,10 +138,8 @@ class _ConfigProxy:
 
 config: _ConfigProxy = _ConfigProxy()
 
-_D = TypeVar("_D", bound="DataclassInstance")
 
-
-def _merge_group(current: _D, options: Mapping[str, Any] | None, cls: type[_D]) -> _D:
+def _merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | None, cls: type[D]) -> D:
     if options is None:
         return current
     if not options:
@@ -172,4 +170,5 @@ def configure(
         ),
     )
     if type_loaders is not None:
+        config.set_type_loaders(type_loaders)
         config.set_type_loaders(type_loaders)
