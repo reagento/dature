@@ -78,7 +78,7 @@ def apply_merge_skip_invalid(
     source_meta: Source,
     merge_meta: _MergeConfig,
     loader_instance: LoaderProtocol,
-    dataclass_: type[DataclassInstance],
+    schema: type[DataclassInstance],
     source_index: int,
 ) -> FilterResult:
     skip_value = resolve_skip_invalid(source_meta, merge_meta)
@@ -89,8 +89,8 @@ def apply_merge_skip_invalid(
         raw=raw,
         skip_if_invalid=skip_value,
         loader_instance=loader_instance,
-        dataclass_=dataclass_,
-        log_prefix=f"[{dataclass_.__name__}] Source {source_index}:",
+        schema=schema,
+        log_prefix=f"[{schema.__name__}] Source {source_index}:",
     )
 
 
@@ -120,7 +120,7 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
     *,
     merge_meta: _MergeConfig,
     dataclass_name: str,
-    dataclass_: type[DataclassInstance],
+    schema: type[DataclassInstance],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     secret_paths: frozenset[str] = frozenset(),
     mask_secrets: bool = False,
@@ -216,7 +216,7 @@ def load_sources(  # noqa: C901, PLR0912, PLR0913, PLR0915
             source_meta=source_meta,
             merge_meta=merge_meta,
             loader_instance=loader_instance,
-            dataclass_=dataclass_,
+            schema=schema,
             source_index=i,
         )
 

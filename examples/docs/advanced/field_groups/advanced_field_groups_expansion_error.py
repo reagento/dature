@@ -29,7 +29,7 @@ try:
     dature.load(
         dature.Source(file=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
         dature.Source(file=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml"),
-        dataclass_=Config,
+        schema=Config,
         field_groups=((dature.F[Config].database, dature.F[Config].port),),
     )
 except FieldGroupError as exc:

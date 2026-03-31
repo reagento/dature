@@ -16,7 +16,7 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Source(file=SOURCES_DIR / "dynaconf_basic.toml"), dataclass_=Config)
+config = dature.load(dature.Source(file=SOURCES_DIR / "dynaconf_basic.toml"), schema=Config)
 # config.hostt → AttributeError immediately
 # config.port is always int — guaranteed
 # --8<-- [end:basic]

@@ -30,7 +30,7 @@ class TestGetLoadReportMergeFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             debug=True,
         )
 
@@ -88,7 +88,7 @@ class TestGetLoadReportMergeFunction:
         result = load(
             Source(file=first),
             Source(file=second),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_wins",
             debug=True,
         )
@@ -151,7 +151,7 @@ class TestGetLoadReportMergeFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             debug=True,
         )
 
@@ -187,7 +187,7 @@ class TestGetLoadReportSingleSource:
             name: str
             port: int
 
-        result = load(Source(file=json_file), dataclass_=Config, debug=True)
+        result = load(Source(file=json_file), schema=Config, debug=True)
 
         report = get_load_report(result)
 
@@ -279,7 +279,7 @@ class TestGetLoadReportWithoutDebug:
             host: str
             port: int
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -307,7 +307,7 @@ class TestDebugLogging:
             load(
                 Source(file=defaults),
                 Source(file=overrides),
-                dataclass_=Config,
+                schema=Config,
             )
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
@@ -340,7 +340,7 @@ class TestDebugLogging:
             port: int
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
-            load(Source(file=json_file), dataclass_=Config)
+            load(Source(file=json_file), schema=Config)
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
 
@@ -370,7 +370,7 @@ class TestLoadReportOnError:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 debug=True,
             )
 
@@ -410,7 +410,7 @@ class TestLoadReportOnError:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 debug=True,
             )
 
@@ -445,7 +445,7 @@ class TestLoadReportOnError:
             port: int
 
         with pytest.raises(DatureConfigError):
-            load(Source(file=json_file), dataclass_=Config, debug=True)
+            load(Source(file=json_file), schema=Config, debug=True)
 
         expected = LoadReport(
             dataclass_name="Config",
@@ -475,7 +475,7 @@ class TestLoadReportOnError:
             port: Annotated[int, Ge(0)]
 
         with pytest.raises(DatureConfigError):
-            load(Source(file=json_file), dataclass_=Config, debug=True)
+            load(Source(file=json_file), schema=Config, debug=True)
 
         expected = LoadReport(
             dataclass_name="Config",

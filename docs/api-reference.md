@@ -10,13 +10,13 @@
 
 Main entry point. Two calling patterns:
 
-**Function mode** — pass `dataclass_`, get an instance back:
+**Function mode** — pass `schema`, get an instance back:
 
 ```python
 --8<-- "examples/docs/api_reference/api_reference_function_mode.py"
 ```
 
-**Decorator mode** — omit `dataclass_`, get a decorator:
+**Decorator mode** — omit `schema`, get a decorator:
 
 ```python
 --8<-- "examples/docs/api_reference/api_reference_decorator_mode.py"
@@ -27,7 +27,7 @@ Main entry point. Two calling patterns:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `*sources` | `Source` | One or more source descriptors. No sources → `Source()` (env vars). Multiple sources → merge mode. |
-| `dataclass_` | `type[T] \| None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
+| `schema` | `type[T] \| None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
 | `cache` | `bool \| None` | Enable caching in decorator mode. Default from `configure()`. |
 | `debug` | `bool \| None` | Collect `LoadReport`. Default from `configure()`. |
 | `strategy` | `str` | Merge strategy: `"last_wins"` (default), `"first_wins"`, `"first_found"`, `"raise_on_conflict"`. Only used with multiple sources. |

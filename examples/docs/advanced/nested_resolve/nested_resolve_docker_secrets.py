@@ -31,7 +31,7 @@ with TemporaryDirectory() as secrets_dir:
             loader=DockerSecretsLoader,
             nested_resolve_strategy="json",
         ),
-        dataclass_=Config,
+        schema=Config,
     )
 
     assert config.database.host == "json-host"

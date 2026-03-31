@@ -19,7 +19,7 @@ config = dature.load(
     dature.Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
     dature.Source(file=SOURCES_DIR / "hydra_config.toml", skip_if_broken=True),
     dature.Source(prefix="APP_"),
-    dataclass_=Config,
+    schema=Config,
 )
 # --8<-- [end:merge]
 

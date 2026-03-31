@@ -27,7 +27,7 @@ try:
                 dature.F[Config].port: (Ge(1), Lt(65536)),
             },
         ),
-        dataclass_=Config,
+        schema=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "validation_metadata_invalid.yaml")

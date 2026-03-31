@@ -19,7 +19,7 @@ config = dature.load(
     dature.Source(file=SHARED_DIR / "nonexistent.yaml"),
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-    dataclass_=Config,
+    schema=Config,
     strategy="first_found",
 )
 

@@ -153,7 +153,7 @@ class TestLoadAsFunction:
             port: int
 
         metadata = Source(file=json_file)
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "FromFile"
         assert result.port == 9090
@@ -168,7 +168,7 @@ class TestLoadAsFunction:
             debug: bool
 
         metadata = Source(prefix="APP_")
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "EnvFunc"
         assert result.debug is True
@@ -180,7 +180,7 @@ class TestLoadAsFunction:
         class Config:
             my_var: str
 
-        result = load(Source(), dataclass_=Config)
+        result = load(Source(), schema=Config)
 
         assert result.my_var == "from_env"
 
@@ -199,7 +199,7 @@ class TestFileNotFoundWithLoad:
         metadata = Source(file="/non/existent/file.json", loader=loader_class)
 
         with pytest.raises(FileNotFoundError):
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
     @pytest.mark.parametrize(
         "loader_class",

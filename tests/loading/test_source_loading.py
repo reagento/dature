@@ -25,7 +25,7 @@ class TestSkipBrokenSources:
         result = load(
             Source(file=valid),
             Source(file=missing),
-            dataclass_=Config,
+            schema=Config,
             skip_broken_sources=True,
         )
 
@@ -47,7 +47,7 @@ class TestSkipBrokenSources:
         result = load(
             Source(file=valid),
             Source(file=broken),
-            dataclass_=Config,
+            schema=Config,
             skip_broken_sources=True,
         )
 
@@ -69,7 +69,7 @@ class TestSkipBrokenSources:
             load(
                 Source(file=broken_a),
                 Source(file=broken_b),
-                dataclass_=Config,
+                schema=Config,
                 skip_broken_sources=True,
             )
 
@@ -91,7 +91,7 @@ class TestSkipBrokenSources:
             load(
                 Source(file=valid),
                 Source(file=broken),
-                dataclass_=Config,
+                schema=Config,
             )
 
     def test_skip_middle_source(self, tmp_path: Path):
@@ -113,7 +113,7 @@ class TestSkipBrokenSources:
             Source(file=a),
             Source(file=broken),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             skip_broken_sources=True,
         )
 
@@ -135,7 +135,7 @@ class TestSkipBrokenSources:
         result = load(
             Source(file=valid),
             Source(file=broken, skip_if_broken=True),
-            dataclass_=Config,
+            schema=Config,
             skip_broken_sources=False,
         )
 
@@ -158,7 +158,7 @@ class TestSkipBrokenSources:
             load(
                 Source(file=valid),
                 Source(file=broken, skip_if_broken=False),
-                dataclass_=Config,
+                schema=Config,
                 skip_broken_sources=True,
             )
 
@@ -177,7 +177,7 @@ class TestSkipBrokenSources:
         result = load(
             Source(file=valid),
             Source(file=broken, skip_if_broken=None),
-            dataclass_=Config,
+            schema=Config,
             skip_broken_sources=True,
         )
 
@@ -186,7 +186,7 @@ class TestSkipBrokenSources:
 
     def test_empty_sources_raises(self):
         with pytest.raises(TypeError, match="load\\(\\) requires at least one Source"):
-            load(dataclass_=int)
+            load(schema=int)
 
     def test_all_sources_broken_mixed_errors(self, tmp_path: Path):
         missing = str(tmp_path / "does_not_exist.json")
@@ -202,7 +202,7 @@ class TestSkipBrokenSources:
             load(
                 Source(file=missing),
                 Source(file=broken),
-                dataclass_=Config,
+                schema=Config,
                 skip_broken_sources=True,
             )
 
@@ -223,7 +223,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Source(file=json_file),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "from-env"
@@ -240,7 +240,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Source(file=json_file),
-            dataclass_=Config,
+            schema=Config,
             expand_env_vars="disabled",
         )
 
@@ -259,7 +259,7 @@ class TestMergeExpandEnvVars:
         with pytest.raises(EnvVarExpandError):
             load(
                 Source(file=json_file),
-                dataclass_=Config,
+                schema=Config,
                 expand_env_vars="strict",
             )
 
@@ -275,7 +275,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Source(file=json_file, expand_env_vars="disabled"),
-            dataclass_=Config,
+            schema=Config,
             expand_env_vars="default",
         )
 
@@ -293,7 +293,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Source(file=json_file, expand_env_vars=None),
-            dataclass_=Config,
+            schema=Config,
             expand_env_vars="disabled",
         )
 
@@ -311,7 +311,7 @@ class TestMergeExpandEnvVars:
 
         result = load(
             Source(file=json_file),
-            dataclass_=Config,
+            schema=Config,
             expand_env_vars="empty",
         )
 
@@ -354,7 +354,7 @@ class TestEnvVarExpandErrorFormat:
         with pytest.raises(EnvVarExpandError) as exc_info:
             load(
                 Source(file=file, prefix=prefix, expand_env_vars="strict"),
-                dataclass_=StrictConfig,
+                schema=StrictConfig,
             )
 
         assert str(exc_info.value) == dedent(f"""\

@@ -21,7 +21,7 @@ try:
     config = dature.load(
         dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
         dature.Source(file=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
-        dataclass_=Config,
+        schema=Config,
         debug=True,
     )
 except DatureConfigError:

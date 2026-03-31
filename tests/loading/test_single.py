@@ -264,7 +264,7 @@ class TestLoadAsFunction:
         result = load_as_function(
             loader_instance=JsonLoader(),
             file_path=json_file,
-            dataclass_=Config,
+            schema=Config,
             metadata=metadata,
             debug=False,
         )
@@ -284,7 +284,7 @@ class TestLoadAsFunction:
         result = load_as_function(
             loader_instance=JsonLoader(prefix="app"),
             file_path=json_file,
-            dataclass_=Config,
+            schema=Config,
             metadata=metadata,
             debug=False,
         )
@@ -312,7 +312,7 @@ class TestCoerceFlagFieldsFunctionMode:
         result = load_as_function(
             loader_instance=EnvFileLoader(),
             file_path=env_file,
-            dataclass_=Config,
+            schema=Config,
             metadata=metadata,
             debug=False,
         )
@@ -332,7 +332,7 @@ class TestCoerceFlagFieldsFunctionMode:
         result = load_as_function(
             loader_instance=JsonLoader(),
             file_path=json_file,
-            dataclass_=Config,
+            schema=Config,
             metadata=metadata,
             debug=False,
         )
@@ -405,7 +405,7 @@ class TestFilelikeLoadAsFunction:
         result = load_as_function(
             loader_instance=JsonLoader(),
             file_path=stream,
-            dataclass_=Config,
+            schema=Config,
             metadata=metadata,
             debug=False,
         )
@@ -425,7 +425,7 @@ class TestFilelikeLoadAsFunction:
         result = load_as_function(
             loader_instance=JsonLoader(),
             file_path=json_file,
-            dataclass_=Config,
+            schema=Config,
             metadata=metadata,
             debug=False,
         )

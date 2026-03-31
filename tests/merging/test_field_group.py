@@ -27,7 +27,7 @@ class TestFieldGroupAllChanged:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             strategy="last_wins",
             field_groups=((F[Config].host, F[Config].port),),
         )
@@ -50,7 +50,7 @@ class TestFieldGroupAllChanged:
         result = load(
             Source(file=first),
             Source(file=second),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_wins",
             field_groups=((F[Config].host, F[Config].port),),
         )
@@ -75,7 +75,7 @@ class TestFieldGroupNoneChanged:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].host, F[Config].port),),
         )
 
@@ -98,7 +98,7 @@ class TestFieldGroupNoneChanged:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].host, F[Config].port),),
         )
 
@@ -127,7 +127,7 @@ class TestFieldGroupPartialChange:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
@@ -158,7 +158,7 @@ class TestFieldGroupPartialChange:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
@@ -186,7 +186,7 @@ class TestFieldGroupPartialChange:
             load(
                 Source(file=defaults),
                 Source(file=overrides),
-                dataclass_=Config,
+                schema=Config,
                 strategy="first_wins",
                 field_groups=((F[Config].host, F[Config].port),),
             )
@@ -207,7 +207,7 @@ class TestFieldGroupPartialChange:
             load(
                 Source(file=defaults),
                 Source(file=overrides),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
                 field_groups=((F[Config].host, F[Config].port),),
             )
@@ -237,7 +237,7 @@ class TestFieldGroupAutoExpand:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].database,),),
             )
 
@@ -268,7 +268,7 @@ class TestFieldGroupAutoExpand:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].database,),),
         )
 
@@ -301,7 +301,7 @@ class TestFieldGroupThreeSources:
                 a_meta,
                 b_meta,
                 c_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
@@ -332,7 +332,7 @@ class TestFieldGroupThreeSources:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].host, F[Config].port),),
         )
 
@@ -362,7 +362,7 @@ class TestFieldGroupMultipleGroups:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=(
                     (F[Config].host, F[Config].port),
                     (F[Config].user, F[Config].password),
@@ -395,7 +395,7 @@ class TestFieldGroupWithFieldMerges:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].tags: "append"},
             field_groups=((F[Config].host, F[Config].port),),
         )
@@ -469,7 +469,7 @@ class TestFieldGroupErrorFormat:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
@@ -502,7 +502,7 @@ class TestFieldGroupErrorFormat:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=(
                     (F[Config].host, F[Config].port),
                     (F[Config].user, F[Config].password),
@@ -547,7 +547,7 @@ class TestFieldGroupMixedExpandAndFlat:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].database, F[Config].timeout),),
         )
 
@@ -579,7 +579,7 @@ class TestFieldGroupMixedExpandAndFlat:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].database, F[Config].timeout),),
         )
 
@@ -613,7 +613,7 @@ class TestFieldGroupMixedExpandAndFlat:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].database, F[Config].timeout),),
             )
 
@@ -651,7 +651,7 @@ class TestFieldGroupMixedExpandAndFlat:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].database, F[Config].timeout),),
             )
 
@@ -691,7 +691,7 @@ class TestFieldGroupMixedExpandAndFlat:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].database, F[Config].timeout),),
             )
 
@@ -728,7 +728,7 @@ class TestFieldGroupSameFieldNameNested:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_groups=((F[Config].user_name, F[Config].inner.user_name),),
         )
 
@@ -760,7 +760,7 @@ class TestFieldGroupSameFieldNameNested:
             load(
                 defaults_meta,
                 overrides_meta,
-                dataclass_=Config,
+                schema=Config,
                 field_groups=((F[Config].user_name, F[Config].inner.user_name),),
             )
 

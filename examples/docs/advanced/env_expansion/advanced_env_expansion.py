@@ -25,7 +25,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "advanced_env_expansion.yaml", expand_env_vars="default"),
-    dataclass_=Config,
+    schema=Config,
 )
 
 assert config.simple == "https://api.example.com"

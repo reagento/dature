@@ -25,7 +25,7 @@ config = dature.load(
     dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_default.yaml"),  # uses global "default"
     dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_empty.yaml", expand_env_vars="empty"),
     dature.Source(file=SOURCES_DIR / "advanced_env_expansion_merge_disabled.yaml", expand_env_vars="disabled"),
-    dataclass_=Config,
+    schema=Config,
     expand_env_vars="default",  # global default for all sources
 )
 

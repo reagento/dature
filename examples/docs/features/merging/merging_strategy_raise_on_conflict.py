@@ -18,7 +18,7 @@ class Config:
 config = dature.load(
     dature.Source(file=SHARED_DIR / "common_raise_on_conflict_a.yaml"),
     dature.Source(file=SHARED_DIR / "common_raise_on_conflict_b.yaml"),
-    dataclass_=Config,
+    schema=Config,
     strategy="raise_on_conflict",
 )
 

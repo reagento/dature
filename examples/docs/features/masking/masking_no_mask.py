@@ -24,7 +24,7 @@ try:
             file=SOURCES_DIR / "masking_per_source.yaml",
             mask_secrets=False,
         ),
-        dataclass_=Config,
+        schema=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_per_source.yaml")

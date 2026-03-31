@@ -16,7 +16,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "merging_skip_invalid_defaults.yaml", skip_if_invalid=True),
-    dataclass_=Config,
+    schema=Config,
 )
 
 assert config.host == "localhost"

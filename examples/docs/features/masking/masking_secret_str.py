@@ -21,7 +21,7 @@ class Config:
 try:
     config = dature.load(
         dature.Source(file=SOURCES_DIR / "masking_secret_str.yaml"),
-        dataclass_=Config,
+        schema=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_secret_str.yaml")

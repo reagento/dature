@@ -34,7 +34,7 @@ try:
                 ),
             ),
         ),
-        dataclass_=Config,
+        schema=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "validation_root_invalid.yaml")

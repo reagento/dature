@@ -19,7 +19,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file=str(SOURCES_DIR / "config.$DATURE_APP_ENV.yaml")),
-    dataclass_=Config,
+    schema=Config,
 )
 
 assert config.host == "prod.example.com"

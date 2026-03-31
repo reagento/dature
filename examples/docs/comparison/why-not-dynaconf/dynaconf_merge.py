@@ -18,7 +18,7 @@ class Config:
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "dynaconf_merge_defaults.yaml"),
     dature.Source(file=SOURCES_DIR / "dynaconf_merge_local.yaml", skip_if_broken=True),
-    dataclass_=Config,
+    schema=Config,
     strategy="last_wins",
 )
 # --8<-- [end:merge]

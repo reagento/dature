@@ -265,7 +265,7 @@ class _MergedData[T: DataclassInstance]:
 def _load_and_merge[T: DataclassInstance](  # noqa: C901
     *,
     merge_meta: _MergeConfig,
-    dataclass_: type[T],
+    schema: type[T],
     loaders: tuple[LoaderProtocol, ...] | None = None,
     debug: bool = False,
     type_loaders: TypeLoaderMap | None = None,
@@ -273,30 +273,30 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     secret_paths: frozenset[str] = frozenset()
     if _resolve_merge_mask_secrets(merge_meta):
         extra_patterns = _collect_extra_secret_patterns(merge_meta)
-        secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
+        secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
     loaded = load_sources(
         merge_meta=merge_meta,
-        dataclass_name=dataclass_.__name__,
-        dataclass_=dataclass_,
+        dataclass_name=schema.__name__,
+        schema=schema,
         loaders=loaders,
         secret_paths=secret_paths,
         mask_secrets=_resolve_merge_mask_secrets(merge_meta),
         type_loaders=type_loaders,
     )
 
-    merge_maps = build_field_merge_map(merge_meta.field_merges, dataclass_)
+    merge_maps = build_field_merge_map(merge_meta.field_merges, schema)
 
     field_group_paths: tuple[ResolvedFieldGroup, ...] = ()
     if merge_meta.field_groups:
-        field_group_paths = build_field_group_paths(merge_meta.field_groups, dataclass_)
+        field_group_paths = build_field_group_paths(merge_meta.field_groups, schema)
 
     if field_group_paths:
         source_reprs = tuple(repr(merge_meta.sources[entry.index]) for entry in loaded.source_entries)
         _validate_all_field_groups(
             raw_dicts=loaded.raw_dicts,
             field_group_paths=field_group_paths,
-            dataclass_name=dataclass_.__name__,
+            dataclass_name=schema.__name__,
             source_reprs=source_reprs,
         )
 
@@ -304,7 +304,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
         raise_on_conflict(
             loaded.raw_dicts,
             loaded.source_ctxs,
-            dataclass_.__name__,
+            schema.__name__,
             field_merge_map=merge_maps.enum_map or None,
             callable_merge_paths=merge_maps.callable_paths or None,
         )
@@ -312,7 +312,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     merged = _merge_raw_dicts(
         raw_dicts=loaded.raw_dicts,
         strategy=merge_meta.strategy,
-        dataclass_name=dataclass_.__name__,
+        dataclass_name=schema.__name__,
         field_merge_map=merge_maps.enum_map or None,
         callable_merge_map=merge_maps.callable_map or None,
         secret_paths=secret_paths,
@@ -324,7 +324,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
         masked_merged = merged
     logger.debug(
         "[%s] Merged result (strategy=%s, %d sources): %s",
-        dataclass_.__name__,
+        schema.__name__,
         merge_meta.strategy,
         len(loaded.raw_dicts),
         masked_merged,
@@ -338,7 +338,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     )
 
     _log_field_origins(
-        dataclass_name=dataclass_.__name__,
+        dataclass_name=schema.__name__,
         field_origins=field_origins,
         secret_paths=secret_paths,
     )
@@ -346,7 +346,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     report: LoadReport | None = None
     if debug:
         report = _build_merge_report(
-            dataclass_name=dataclass_.__name__,
+            dataclass_name=schema.__name__,
             strategy=merge_meta.strategy,
             source_entries=frozen_entries,
             field_origins=field_origins,
@@ -355,15 +355,15 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
         )
 
     last_error_ctx = loaded.source_ctxs[-1].error_ctx
-    merged = coerce_flag_fields(merged, dataclass_)
+    merged = coerce_flag_fields(merged, schema)
     try:
         result = handle_load_errors(
-            func=lambda: loaded.last_loader.transform_to_dataclass(merged, dataclass_),
+            func=lambda: loaded.last_loader.transform_to_dataclass(merged, schema),
             ctx=last_error_ctx,
         )
     except DatureConfigError as exc:
         if report is not None:
-            attach_load_report(dataclass_, report)
+            attach_load_report(schema, report)
         if loaded.skipped_fields:
             raise enrich_skipped_errors(exc, loaded.skipped_fields) from exc
         raise
@@ -382,30 +382,30 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
 
 def merge_load_as_function[T: DataclassInstance](
     merge_meta: _MergeConfig,
-    dataclass_: type[T],
+    schema: type[T],
     *,
     debug: bool,
     type_loaders: TypeLoaderMap | None = None,
 ) -> T:
     data = _load_and_merge(
         merge_meta=merge_meta,
-        dataclass_=dataclass_,
+        schema=schema,
         debug=debug,
         type_loaders=type_loaders,
     )
 
-    validating_retort = data.last_loader.create_validating_retort(dataclass_)
-    validation_loader = validating_retort.get_loader(dataclass_)
+    validating_retort = data.last_loader.create_validating_retort(schema)
+    validation_loader = validating_retort.get_loader(schema)
 
     last_meta = data.last_source_meta
     mask_secrets = _resolve_merge_mask_secrets(merge_meta)
     secret_paths: frozenset[str] = frozenset()
     if mask_secrets:
         extra_patterns = _collect_extra_secret_patterns(merge_meta)
-        secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
+        secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
     last_error_ctx = build_error_ctx(
         last_meta,
-        dataclass_.__name__,
+        schema.__name__,
         secret_paths=secret_paths,
         mask_secrets=mask_secrets,
     )
@@ -418,7 +418,7 @@ def merge_load_as_function[T: DataclassInstance](
         if debug:
             report = get_load_report(data.result)
             if report is not None:
-                attach_load_report(dataclass_, report)
+                attach_load_report(schema, report)
         raise
 
     return data.result
@@ -512,7 +512,7 @@ def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
             try:
                 merged_data = _load_and_merge(
                     merge_meta=ctx.merge_meta,
-                    dataclass_=ctx.cls,
+                    schema=ctx.cls,
                     loaders=ctx.loaders,
                     debug=ctx.debug,
                     type_loaders=ctx.type_loaders,

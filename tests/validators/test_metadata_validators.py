@@ -27,7 +27,7 @@ class TestMetadataValidatorsSuccess:
                 F[Config].name: MinLength(3),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "Alice"
 
@@ -45,7 +45,7 @@ class TestMetadataValidatorsSuccess:
                 F[Config].port: (Gt(0), Lt(65536)),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.port == 8080
 
@@ -65,7 +65,7 @@ class TestMetadataValidatorsSuccess:
                 F[Config].port: Gt(0),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "Alice"
         assert result.port == 8080
@@ -89,7 +89,7 @@ class TestMetadataValidatorsFailure:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -118,7 +118,7 @@ class TestMetadataValidatorsFailure:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -152,7 +152,7 @@ class TestMetadataValidatorsNested:
                 F[Config].database.port: Gt(0),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.database.host == "localhost"
         assert result.database.port == 5432
@@ -179,7 +179,7 @@ class TestMetadataValidatorsNested:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -209,7 +209,7 @@ class TestMetadataValidatorsComplement:
                 F[Config].port: Gt(0),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "Alice"
         assert result.port == 8080
@@ -231,7 +231,7 @@ class TestMetadataValidatorsComplement:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -260,7 +260,7 @@ class TestMetadataValidatorsComplement:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -286,7 +286,7 @@ class TestMetadataValidatorsComplement:
                 F[Config].name: MaxLength(10),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "Alice"
 
@@ -307,7 +307,7 @@ class TestMetadataValidatorsComplement:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -333,7 +333,7 @@ class TestMetadataValidatorsComplement:
                 F[Config].port: Lt(65536),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.port == 8080
 
@@ -354,7 +354,7 @@ class TestMetadataValidatorsComplement:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -383,7 +383,7 @@ class TestMetadataValidatorsComplement:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -406,7 +406,7 @@ class TestMetadataValidatorsNone:
         json_file.write_text('{"name": "Alice"}')
 
         metadata = Source(file=json_file)
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.name == "Alice"
 
@@ -433,7 +433,7 @@ class TestMetadataValidatorsWithRootValidators:
                 F[Config].port: Ge(0),
             },
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.port == 8080
         assert result.user == "admin"

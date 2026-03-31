@@ -29,7 +29,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             strategy="last_wins",
             field_merges={F[Config].host: "first_wins"},
         )
@@ -52,7 +52,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=first),
             Source(file=second),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_wins",
             field_merges={F[Config].port: "last_wins"},
         )
@@ -75,7 +75,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].tags: "append"},
         )
 
@@ -96,7 +96,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].tags: "append_unique"},
         )
 
@@ -116,7 +116,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].tags: "prepend"},
         )
 
@@ -136,7 +136,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].tags: "prepend_unique"},
         )
 
@@ -161,7 +161,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].database.host: "first_wins"},
         )
 
@@ -183,7 +183,7 @@ class TestFieldMergesFunction:
             load(
                 Source(file=defaults),
                 Source(file=overrides),
-                dataclass_=Config,
+                schema=Config,
                 field_merges={F[Config].value: "append"},
             )
 
@@ -203,7 +203,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             strategy="last_wins",
             field_merges={
                 F[Config].host: "first_wins",
@@ -230,7 +230,7 @@ class TestFieldMergesFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={},
         )
 
@@ -282,7 +282,7 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].host: "last_wins"},
         )
@@ -305,7 +305,7 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].host: "first_wins"},
         )
@@ -329,7 +329,7 @@ class TestFieldMergesWithRaiseOnConflict:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
                 field_merges={F[Config].host: "last_wins"},
             )
@@ -353,7 +353,7 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].database.host: "last_wins"},
         )
@@ -376,7 +376,7 @@ class TestFieldMergesWithRaiseOnConflict:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
             field_merges={
                 F[Config].host: "first_wins",
@@ -434,7 +434,7 @@ class TestFieldMergesErrors:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 field_merges={F[Config].value: strategy},
             )
 
@@ -483,7 +483,7 @@ class TestFieldMergesErrors:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 field_merges={F[Config].value: strategy},
             )
 
@@ -522,7 +522,7 @@ class TestFieldMergesErrors:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 field_merges={F[Config].value: strategy},
             )
 
@@ -552,7 +552,7 @@ class TestFieldMergesErrors:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].value: strategy},
         )
 
@@ -585,7 +585,7 @@ class TestFieldMergesErrors:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 field_merges={F[Config].value: strategy},
             )
 
@@ -616,7 +616,7 @@ class TestFieldMergesErrors:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 field_merges={F[Config].value: strategy},
             )
 
@@ -635,7 +635,7 @@ class TestFieldMergesErrors:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].host: "first_wins"},
         )
 
@@ -660,7 +660,7 @@ class TestFieldMergesErrors:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].tags: "append"},
         )
 
@@ -684,7 +684,7 @@ class TestFieldMergesErrors:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].priority: max},
         )
 
@@ -708,7 +708,7 @@ class TestFieldMergesErrors:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].priority: min},
         )
 
@@ -735,7 +735,7 @@ class TestFieldMergesSameFieldNameNested:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={
                 F[Config].user_name: "first_wins",
                 F[Config].inner.user_name: "last_wins",
@@ -764,7 +764,7 @@ class TestFieldMergesSameFieldNameNested:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
             field_merges={
                 F[Config].user_name: "last_wins",
                 F[Config].inner.user_name: "first_wins",
@@ -790,7 +790,7 @@ class TestCallableMergeStrategy:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].score: sum},
         )
 
@@ -814,7 +814,7 @@ class TestCallableMergeStrategy:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].score: sum},
         )
 
@@ -838,7 +838,7 @@ class TestCallableMergeStrategy:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].weight: lambda vals: sum(vals) / len(vals)},
         )
 
@@ -862,7 +862,7 @@ class TestCallableMergeStrategy:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].priority: max},
         )
 
@@ -890,7 +890,7 @@ class TestCallableMergeStrategy:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].database.port: max},
         )
 
@@ -906,7 +906,7 @@ class TestCallableMergeStrategy:
 
         result = load(
             Source(file=a),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].score: sum},
         )
 
@@ -927,7 +927,7 @@ class TestCallableMergeStrategy:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].score: sum},
         )
@@ -951,7 +951,7 @@ class TestCallableMergeStrategy:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             field_merges={
                 F[Config].host: "first_wins",
                 F[Config].score: sum,
@@ -982,7 +982,7 @@ class TestCallableMergeStrategy:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
             field_merges={F[Config].score: sum},
         )
 

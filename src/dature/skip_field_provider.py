@@ -100,13 +100,13 @@ class FilterResult:
 def filter_invalid_fields(
     raw_dict: JSONValue,
     probe_retort: Retort,
-    dataclass_: type[DataclassInstance],
+    schema: type[DataclassInstance],
     allowed_fields: set[str] | None,
 ) -> FilterResult:
     if not isinstance(raw_dict, dict):
         return FilterResult(cleaned_dict=raw_dict, skipped_paths=[])
 
-    probed: ProbeDict = probe_retort.load(raw_dict, dataclass_)
+    probed: ProbeDict = probe_retort.load(raw_dict, schema)
     all_not_loaded = _collect_not_loaded_paths(probed, "")
 
     skipped: list[str] = []

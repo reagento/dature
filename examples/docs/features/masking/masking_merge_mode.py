@@ -26,7 +26,7 @@ try:
             file=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
             secret_field_names=("api_key",),
         ),
-        dataclass_=Config,
+        schema=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "masking_merge_mode_secrets.yaml")

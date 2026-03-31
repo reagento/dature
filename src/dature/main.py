@@ -7,10 +7,7 @@ from dature.loading.multi import merge_load_as_function, merge_make_decorator
 from dature.loading.resolver import resolve_loader
 from dature.loading.single import load_as_function, make_decorator
 from dature.merging.strategy import MergeStrategyEnum
-from dature.metadata import (
-    Source,
-    _MergeConfig,
-)
+from dature.metadata import Source, _MergeConfig
 from dature.protocols import DataclassInstance
 from dature.types import (
     FILE_LIKE_TYPES,
@@ -28,7 +25,7 @@ from dature.types import (
 @overload
 def load[T](
     *sources: Source,
-    dataclass_: type[T],
+    schema: type[T],
     debug: bool | None = None,
     strategy: MergeStrategyName = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -47,7 +44,7 @@ def load[T](
 @overload
 def load(
     *sources: Source,
-    dataclass_: None = None,
+    schema: None = None,
     cache: bool | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName = "last_wins",
@@ -67,7 +64,7 @@ def load(
 # --8<-- [start:load]
 def load(  # noqa: PLR0913
     *sources: Source,
-    dataclass_: type[Any] | None = None,
+    schema: type[Any] | None = None,
     cache: bool | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName = "last_wins",
@@ -93,7 +90,7 @@ def load(  # noqa: PLR0913
     if len(sources) > 1:
         return _load_multi(
             sources=sources,
-            dataclass_=dataclass_,
+            schema=schema,
             cache=cache,
             debug=debug,
             strategy=strategy,
@@ -128,11 +125,11 @@ def load(  # noqa: PLR0913
     else:
         fileor_path = Path()
 
-    if dataclass_ is not None:
+    if schema is not None:
         return load_as_function(
             loader_instance=loader_instance,
             file_path=fileor_path,
-            dataclass_=dataclass_,
+            schema=schema,
             metadata=metadata,
             debug=debug,
         )
@@ -160,7 +157,7 @@ def _validate_sources(sources: tuple[Source, ...]) -> None:
 def _load_multi(  # noqa: PLR0913
     *,
     sources: tuple[Source, ...],
-    dataclass_: type[DataclassInstance] | None,
+    schema: type[DataclassInstance] | None,
     cache: bool,
     debug: bool,
     strategy: MergeStrategyName,
@@ -190,6 +187,6 @@ def _load_multi(  # noqa: PLR0913
         nested_resolve=nested_resolve,
     )
     merge_type_loaders = {**(config.type_loaders or {}), **(merge_meta.type_loaders or {})}
-    if dataclass_ is not None:
-        return merge_load_as_function(merge_meta, dataclass_, debug=debug, type_loaders=merge_type_loaders or None)
+    if schema is not None:
+        return merge_load_as_function(merge_meta, schema, debug=debug, type_loaders=merge_type_loaders or None)
     return merge_make_decorator(merge_meta, cache=cache, debug=debug, type_loaders=merge_type_loaders or None)

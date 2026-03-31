@@ -21,7 +21,7 @@ config = dature.load(
         file=SOURCES_DIR / "merging_skip_invalid_per_field_overrides.yaml",
         skip_if_invalid=(dature.F[Config].port, dature.F[Config].timeout),
     ),
-    dataclass_=Config,
+    schema=Config,
 )
 
 assert config.host == "production.example.com"

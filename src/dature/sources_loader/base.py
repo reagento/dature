@@ -134,11 +134,11 @@ class BaseLoader(LoaderProtocol, abc.ABC):
 
         return providers
 
-    def _get_validator_providers(self, dataclass_: type[T]) -> list[Provider]:
+    def _get_validator_providers(self, schema: type[T]) -> list[Provider]:
         providers: list[Provider] = []
-        type_hints = get_type_hints(dataclass_, include_extras=True)
+        type_hints = get_type_hints(schema, include_extras=True)
 
-        for field in fields(cast("type[DataclassInstance]", dataclass_)):
+        for field in fields(cast("type[DataclassInstance]", schema)):
             if field.name not in type_hints:
                 continue
 
@@ -146,7 +146,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             validators = extract_validators_from_type(field_type)
 
             if validators:
-                field_providers = create_validator_providers(dataclass_, field.name, validators)
+                field_providers = create_validator_providers(schema, field.name, validators)
                 providers.extend(field_providers)
 
             for nested_dc in self._find_nested_dataclasses(field_type):
@@ -236,9 +236,9 @@ class BaseLoader(LoaderProtocol, abc.ABC):
             recipe=[SkipFieldProvider(), ModelToDictProvider(), *self._base_recipe()],
         )
 
-    def create_validating_retort(self, dataclass_: type[T]) -> Retort:
+    def create_validating_retort(self, schema: type[T]) -> Retort:
         root_validator_providers = create_root_validator_providers(
-            dataclass_,
+            schema,
             self._root_validators,
         )
         metadata_validator_providers = create_metadata_validator_providers(
@@ -247,7 +247,7 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         return Retort(
             strict_coercion=True,
             recipe=[
-                *self._get_validator_providers(dataclass_),
+                *self._get_validator_providers(schema),
                 *metadata_validator_providers,
                 *root_validator_providers,
                 *self._base_recipe(),
@@ -274,10 +274,10 @@ class BaseLoader(LoaderProtocol, abc.ABC):
         prefixed = self._apply_prefix(data)
         return expand_env_vars(prefixed, mode=self._expand_env_vars_mode)
 
-    def transform_to_dataclass(self, data: JSONValue, dataclass_: type[T]) -> T:
-        if dataclass_ not in self.retorts:
-            self.retorts[dataclass_] = self.create_retort()
-        return self.retorts[dataclass_].load(data, dataclass_)
+    def transform_to_dataclass(self, data: JSONValue, schema: type[T]) -> T:
+        if schema not in self.retorts:
+            self.retorts[schema] = self.create_retort()
+        return self.retorts[schema].load(data, schema)
 
     def load_raw(self, path: FileOrStream) -> LoadRawResult:
         data = self._load(path)

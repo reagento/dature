@@ -21,13 +21,13 @@ from dature.types import FILE_LIKE_TYPES, JSONValue, NestedConflicts
 logger = logging.getLogger("dature")
 
 
-def coerce_flag_fields[T](data: JSONValue, dataclass_: type[T]) -> JSONValue:
-    if not isinstance(data, dict) or not is_dataclass(dataclass_):
+def coerce_flag_fields[T](data: JSONValue, schema: type[T]) -> JSONValue:
+    if not isinstance(data, dict) or not is_dataclass(schema):
         return data
 
-    type_hints = get_type_hints(dataclass_)
+    type_hints = get_type_hints(schema)
     coerced = dict(data)
-    for field in fields(cast("type[DataclassInstance]", dataclass_)):
+    for field in fields(cast("type[DataclassInstance]", schema)):
         hint = type_hints.get(field.name)
         if hint is None:
             continue
@@ -71,12 +71,12 @@ def build_error_ctx(
 def get_allowed_fields(
     *,
     skip_value: bool | tuple[FieldPath, ...],
-    dataclass_: type[DataclassInstance] | None = None,
+    schema: type[DataclassInstance] | None = None,
 ) -> set[str] | None:
     if skip_value is True:
         return None
     if isinstance(skip_value, tuple):
-        return {extract_field_path(fp, dataclass_) for fp in skip_value}
+        return {extract_field_path(fp, schema) for fp in skip_value}
     return None
 
 
@@ -85,19 +85,19 @@ def apply_skip_invalid(
     raw: JSONValue,
     skip_if_invalid: bool | tuple[FieldPath, ...] | None,
     loader_instance: LoaderProtocol,
-    dataclass_: type[DataclassInstance],
+    schema: type[DataclassInstance],
     log_prefix: str,
     probe_retort: Retort | None = None,
 ) -> FilterResult:
     if not skip_if_invalid:
         return FilterResult(cleaned_dict=raw, skipped_paths=[])
 
-    allowed_fields = get_allowed_fields(skip_value=skip_if_invalid, dataclass_=dataclass_)
+    allowed_fields = get_allowed_fields(skip_value=skip_if_invalid, schema=schema)
 
     if probe_retort is None:
         probe_retort = loader_instance.create_probe_retort()
 
-    result = filter_invalid_fields(raw, probe_retort, dataclass_, allowed_fields)
+    result = filter_invalid_fields(raw, probe_retort, schema, allowed_fields)
     for path in result.skipped_paths:
         logger.warning(
             "%s Skipped invalid field '%s'",

@@ -24,7 +24,7 @@ try:
     dature.load(
         dature.Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
         dature.Source(file=SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml"),
-        dataclass_=Config,
+        schema=Config,
         field_groups=(
             (dature.F[Config].host, dature.F[Config].port),
             (dature.F[Config].user, dature.F[Config].password),

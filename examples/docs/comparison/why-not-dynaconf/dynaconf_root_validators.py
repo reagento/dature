@@ -35,7 +35,7 @@ try:
                 ),
             ),
         ),
-        dataclass_=Config,
+        schema=Config,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "dynaconf_root_validators_invalid.toml")

@@ -1,4 +1,4 @@
-"""Function mode — pass dataclass_, get an instance back."""
+"""Function mode — pass schema, get an instance back."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,7 +15,7 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), dataclass_=Config)
+config = dature.load(dature.Source(file=SHARED_DIR / "common_app.yaml"), schema=Config)
 
 assert config.host == "localhost"
 assert config.port == 8080

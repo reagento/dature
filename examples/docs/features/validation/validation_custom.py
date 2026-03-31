@@ -38,7 +38,7 @@ class ServiceConfig:
 try:
     dature.load(
         dature.Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),
-        dataclass_=ServiceConfig,
+        schema=ServiceConfig,
     )
 except DatureConfigError as exc:
     source = str(SOURCES_DIR / "validation_custom_invalid.json5")

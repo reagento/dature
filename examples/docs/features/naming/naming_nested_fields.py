@@ -30,7 +30,7 @@ config = dature.load(
             dature.F[Address].street: "streetName",
         },
     ),
-    dataclass_=User,
+    schema=User,
 )
 
 assert config.name == "Alice"

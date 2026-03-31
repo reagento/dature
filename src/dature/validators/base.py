@@ -23,7 +23,7 @@ def extract_validators_from_type(field_type: Any) -> list[ValidatorProtocol]:  #
 
 
 def create_validator_providers(
-    dataclass_: type,
+    schema: type,
     field_name: str,
     validators: list[ValidatorProtocol],
 ) -> list[Provider]:
@@ -33,7 +33,7 @@ def create_validator_providers(
         func = v.get_validator_func()
         error = v.get_error_message()
         provider = validator(
-            P[dataclass_][field_name],
+            P[schema][field_name],
             func,
             error,
         )
@@ -91,14 +91,14 @@ def create_metadata_validator_providers(
 
 
 def create_root_validator_providers(
-    dataclass_: type,
+    schema: type,
     root_validators: tuple[ValidatorProtocol, ...],
 ) -> list[Provider]:
     providers = []
 
     for root_validator in root_validators:
         provider = validator(
-            P[dataclass_],
+            P[schema],
             root_validator.get_validator_func(),
             root_validator.get_error_message(),
         )

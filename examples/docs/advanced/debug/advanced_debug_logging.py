@@ -26,7 +26,7 @@ class Config:
 config = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-    dataclass_=Config,
+    schema=Config,
 )
 
 log_lines = [line for line in log_stream.getvalue().splitlines() if "[Config]" in line]

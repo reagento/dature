@@ -31,7 +31,7 @@ config = dature.load(
         file=SOURCES_DIR / "custom_type_common.yaml",
         type_loaders={Rgb: rgb_from_string},
     ),
-    dataclass_=AppConfig,
+    schema=AppConfig,
 )
 
 assert config == AppConfig(name="my-app", color=Rgb(r=255, g=128, b=0))

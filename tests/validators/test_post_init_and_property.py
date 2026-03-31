@@ -21,7 +21,7 @@ class TestPostInitValidationFunctionMode:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 8080, "host": "localhost"}')
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         assert result.port == 8080
         assert result.host == "localhost"
@@ -41,7 +41,7 @@ class TestPostInitValidationFunctionMode:
         json_file.write_text('{"port": 99999, "host": "localhost"}')
 
         with pytest.raises(ValueError, match="Invalid port: 99999"):
-            load(Source(file=json_file), dataclass_=Config)
+            load(Source(file=json_file), schema=Config)
 
     def test_post_init_cross_field_validation(self, tmp_path: Path):
         @dataclass
@@ -58,7 +58,7 @@ class TestPostInitValidationFunctionMode:
         json_file.write_text('{"min_value": 100, "max_value": 10}')
 
         with pytest.raises(ValueError, match=r"min_value \(100\) must be less than max_value \(10\)"):
-            load(Source(file=json_file), dataclass_=Config)
+            load(Source(file=json_file), schema=Config)
 
     def test_post_init_cross_field_success(self, tmp_path: Path):
         @dataclass
@@ -74,7 +74,7 @@ class TestPostInitValidationFunctionMode:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"min_value": 1, "max_value": 100}')
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         assert result.min_value == 1
         assert result.max_value == 100
@@ -170,7 +170,7 @@ class TestPostInitComputedFields:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"host": "localhost", "port": 8080}')
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         assert result.base_url == "http://localhost:8080"
 
@@ -207,7 +207,7 @@ class TestPropertyValidation:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"host": "localhost", "port": 8080}')
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         assert result.address == "localhost:8080"
 
@@ -241,6 +241,6 @@ class TestPropertyValidation:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"_email": "  Admin@Example.COM  "}')
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         assert result.email == "admin@example.com"

@@ -17,7 +17,7 @@ class Config:
 
 config = dature.load(
     dature.Source(file=SOURCES_DIR / "intro_app.ini", prefix="app"),
-    dataclass_=Config,
+    schema=Config,
 )
 
 assert config.host == "localhost"

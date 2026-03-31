@@ -24,7 +24,7 @@ config = dature.load(
             dature.F[DbConfig].pool_size: "pool",
         },
     ),
-    dataclass_=DbConfig,
+    schema=DbConfig,
 )
 
 assert config.database_url == "postgresql://localhost:5432/mydb"

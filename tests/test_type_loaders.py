@@ -51,7 +51,7 @@ class TestTypeLoadersInSource:
                 file=yaml_with_rgb,
                 type_loaders={Rgb: rgb_from_string},
             ),
-            dataclass_=ConfigWithRgb,
+            schema=ConfigWithRgb,
         )
         assert result.name == "test"
         assert result.color == Rgb(r=255, g=128, b=0)
@@ -70,7 +70,7 @@ class TestTypeLoadersInSource:
                 file=p,
                 type_loaders={Rgb: rgb_from_string},
             ),
-            dataclass_=ConfigWithRgb,
+            schema=ConfigWithRgb,
         )
         assert result.color == Rgb(r=10, g=20, b=30)
 
@@ -81,7 +81,7 @@ class TestTypeLoadersInConfigure:
         configure(
             type_loaders={Rgb: rgb_from_string},
         )
-        result = load(Source(file=yaml_with_rgb), dataclass_=ConfigWithRgb)
+        result = load(Source(file=yaml_with_rgb), schema=ConfigWithRgb)
         assert result.color == Rgb(r=255, g=128, b=0)
 
 
@@ -95,7 +95,7 @@ class TestTypeLoadersInMerge:
         result = load(
             Source(file=base),
             Source(file=override),
-            dataclass_=ConfigWithRgb,
+            schema=ConfigWithRgb,
             type_loaders={Rgb: rgb_from_string},
         )
         assert result.name == "override"
@@ -125,7 +125,7 @@ class TestTypeLoadersMergedFromBoth:
                 file=p,
                 type_loaders={str: tag_upper},
             ),
-            dataclass_=TwoCustom,
+            schema=TwoCustom,
         )
         assert result.color == Rgb(r=10, g=20, b=30)
         assert result.tag == "HELLO"

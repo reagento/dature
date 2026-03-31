@@ -1,4 +1,4 @@
-"""Decorator mode — omit dataclass_, get a decorator."""
+"""Decorator mode — omit schema, get a decorator."""
 
 from dataclasses import dataclass
 from pathlib import Path

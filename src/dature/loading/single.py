@@ -172,7 +172,7 @@ def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
         raw=raw_data,
         skip_if_invalid=ctx.metadata.skip_if_invalid,
         loader_instance=ctx.loader_instance,
-        dataclass_=ctx.cls,
+        schema=ctx.cls,
         log_prefix=f"[{ctx.cls.__name__}]",
         probe_retort=ctx.probe_retort,
     )
@@ -254,7 +254,7 @@ def load_as_function(  # noqa: C901, PLR0912
     *,
     loader_instance: LoaderProtocol,
     file_path: FileOrStream,
-    dataclass_: type[DataclassInstance],
+    schema: type[DataclassInstance],
     metadata: Source,
     debug: bool,
 ) -> DataclassInstance:
@@ -265,8 +265,8 @@ def load_as_function(  # noqa: C901, PLR0912
     mask_secrets = _resolve_single_mask_secrets(metadata)
     if mask_secrets:
         extra_patterns = metadata.secret_field_names or ()
-        secret_paths = build_secret_paths(dataclass_, extra_patterns=extra_patterns)
-    error_ctx = build_error_ctx(metadata, dataclass_.__name__, secret_paths=secret_paths, mask_secrets=mask_secrets)
+        secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
+    error_ctx = build_error_ctx(metadata, schema.__name__, secret_paths=secret_paths, mask_secrets=mask_secrets)
 
     load_result = handle_load_errors(
         func=lambda: loader_instance.load_raw(file_path),
@@ -277,7 +277,7 @@ def load_as_function(  # noqa: C901, PLR0912
     if load_result.nested_conflicts:
         error_ctx = build_error_ctx(
             metadata,
-            dataclass_.__name__,
+            schema.__name__,
             secret_paths=secret_paths,
             mask_secrets=mask_secrets,
             nested_conflicts=load_result.nested_conflicts,
@@ -287,8 +287,8 @@ def load_as_function(  # noqa: C901, PLR0912
         raw=raw_data,
         skip_if_invalid=metadata.skip_if_invalid,
         loader_instance=loader_instance,
-        dataclass_=dataclass_,
-        log_prefix=f"[{dataclass_.__name__}]",
+        schema=schema,
+        log_prefix=f"[{schema.__name__}]",
     )
     raw_data = filter_result.cleaned_dict
 
@@ -308,7 +308,7 @@ def load_as_function(  # noqa: C901, PLR0912
         else:
             report_file_path = None
         report = _build_single_source_report(
-            dataclass_name=dataclass_.__name__,
+            dataclass_name=schema.__name__,
             loader_type=display_name,
             file_path=report_file_path,
             raw_data=raw_data,
@@ -316,16 +316,16 @@ def load_as_function(  # noqa: C901, PLR0912
         )
 
     _log_single_source_load(
-        dataclass_name=dataclass_.__name__,
+        dataclass_name=schema.__name__,
         loader_type=display_name,
         file_path="<stream>" if isinstance(file_path, FILE_LIKE_TYPES) else str(file_path),
         data=raw_data if isinstance(raw_data, dict) else {},
         secret_paths=secret_paths,
     )
 
-    validating_retort = loader_instance.create_validating_retort(dataclass_)
-    validation_loader = validating_retort.get_loader(dataclass_)
-    raw_data = coerce_flag_fields(raw_data, dataclass_)
+    validating_retort = loader_instance.create_validating_retort(schema)
+    validation_loader = validating_retort.get_loader(schema)
+    raw_data = coerce_flag_fields(raw_data, schema)
 
     try:
         handle_load_errors(
@@ -334,19 +334,19 @@ def load_as_function(  # noqa: C901, PLR0912
         )
     except DatureConfigError as exc:
         if report is not None:
-            attach_load_report(dataclass_, report)
+            attach_load_report(schema, report)
         if skipped_fields:
             raise enrich_skipped_errors(exc, skipped_fields) from exc
         raise
 
     try:
         result = handle_load_errors(
-            func=lambda: loader_instance.transform_to_dataclass(raw_data, dataclass_),
+            func=lambda: loader_instance.transform_to_dataclass(raw_data, schema),
             ctx=error_ctx,
         )
     except DatureConfigError as exc:
         if report is not None:
-            attach_load_report(dataclass_, report)
+            attach_load_report(schema, report)
         if skipped_fields:
             raise enrich_skipped_errors(exc, skipped_fields) from exc
         raise

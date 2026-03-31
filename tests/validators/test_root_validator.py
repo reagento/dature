@@ -27,7 +27,7 @@ class TestRootValidator:
             file=json_file,
             root_validators=(RootValidator(validate_config),),
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.port == 80
         assert result.user == "root"
@@ -52,7 +52,7 @@ class TestRootValidator:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -82,7 +82,7 @@ class TestRootValidator:
                 RootValidator(validate_step),
             ),
         )
-        result = load(metadata, dataclass_=Config)
+        result = load(metadata, schema=Config)
 
         assert result.min_value == 10
         assert result.max_value == 100
@@ -113,7 +113,7 @@ class TestRootValidator:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -138,7 +138,7 @@ class TestRootValidator:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1
@@ -198,7 +198,7 @@ class TestRootValidator:
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(metadata, dataclass_=Config)
+            load(metadata, schema=Config)
 
         e = exc_info.value
         assert len(e.exceptions) == 1

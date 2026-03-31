@@ -16,14 +16,14 @@ class Config:
 
 # From StringIO
 text_stream = StringIO('{"host": "localhost", "port": 8080, "debug": true}')
-config = dature.load(dature.Source(file=text_stream, loader=JsonLoader), dataclass_=Config)
+config = dature.load(dature.Source(file=text_stream, loader=JsonLoader), schema=Config)
 
 assert config.host == "localhost"
 assert config.port == 8080
 
 # From BytesIO
 binary_stream = BytesIO(b'{"host": "0.0.0.0", "port": 3000}')
-config = dature.load(dature.Source(file=binary_stream, loader=JsonLoader), dataclass_=Config)
+config = dature.load(dature.Source(file=binary_stream, loader=JsonLoader), schema=Config)
 
 assert config.host == "0.0.0.0"
 assert config.port == 3000

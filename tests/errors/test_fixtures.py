@@ -101,7 +101,7 @@ def test_load_error_types(
     metadata = Source(file=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
 
     with pytest.raises(DatureConfigError) as exc_info:
-        load(metadata, dataclass_=LoadErrorConfig)
+        load(metadata, schema=LoadErrorConfig)
 
     err = exc_info.value
     assert str(err) == f"LoadErrorConfig loading errors ({len(EXPECTED_LOAD_ERRORS)})"
@@ -116,7 +116,7 @@ def test_validation_error_types(
     metadata = Source(file=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
 
     with pytest.raises(DatureConfigError) as exc_info:
-        load(metadata, dataclass_=ValidationErrorConfig)
+        load(metadata, schema=ValidationErrorConfig)
 
     err = exc_info.value
     assert str(err) == f"ValidationErrorConfig loading errors ({len(EXPECTED_VALIDATION_ERRORS)})"

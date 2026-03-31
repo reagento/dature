@@ -18,7 +18,7 @@ class Config:
 config = dature.load(
     dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-    dataclass_=Config,
+    schema=Config,
     strategy="raise_on_conflict",
     field_merges={
         dature.F[Config].host: "last_wins",

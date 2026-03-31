@@ -16,9 +16,9 @@ class Config:
 
 # --8<-- [start:auto-detect]
 # Just change the file — dature picks the right loader
-yaml_config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_auto_detect.yaml"), dataclass_=Config)
-toml_config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_auto_detect.toml"), dataclass_=Config)
-json5_config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_auto_detect.json5"), dataclass_=Config)
+yaml_config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_auto_detect.yaml"), schema=Config)
+toml_config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_auto_detect.toml"), schema=Config)
+json5_config = dature.load(dature.Source(file=SOURCES_DIR / "pydantic_settings_auto_detect.json5"), schema=Config)
 # --8<-- [end:auto-detect]
 
 assert yaml_config.host == "localhost"

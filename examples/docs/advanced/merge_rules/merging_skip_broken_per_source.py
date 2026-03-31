@@ -26,7 +26,7 @@ config = dature.load(
         file=SHARED_DIR / "common_overrides.yaml",
         skip_if_broken=False,
     ),  # never skip, even if global is True
-    dataclass_=Config,
+    schema=Config,
     skip_broken_sources=True,  # global default
 )
 

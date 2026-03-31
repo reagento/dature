@@ -19,7 +19,7 @@ config = dature.load(
     dature.Source(file=SOURCES_DIR / "pydantic_settings_merge_defaults.yaml"),
     dature.Source(file=SOURCES_DIR / "pydantic_settings_merge_local.yaml", skip_if_broken=True),
     dature.Source(prefix="APP_"),
-    dataclass_=Config,
+    schema=Config,
 )
 # --8<-- [end:merge]
 

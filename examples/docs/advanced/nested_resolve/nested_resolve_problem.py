@@ -23,7 +23,7 @@ class Config:
 
 
 # Without nested_resolve_strategy, flat keys win by default
-config = dature.load(dature.Source(loader=EnvLoader, prefix="APP__"), dataclass_=Config)
+config = dature.load(dature.Source(loader=EnvLoader, prefix="APP__"), schema=Config)
 
 assert config.database.host == "flat-host"
 assert config.database.port == 3306

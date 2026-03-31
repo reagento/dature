@@ -29,7 +29,7 @@ class TestMergeLoadAsFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "localhost"
@@ -50,7 +50,7 @@ class TestMergeLoadAsFunction:
         result = load(
             Source(file=first),
             Source(file=second),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_wins",
         )
 
@@ -72,7 +72,7 @@ class TestMergeLoadAsFunction:
         result = load(
             Source(file=filea),
             Source(file=fileb),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "myhost"
@@ -97,7 +97,7 @@ class TestMergeLoadAsFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.database.host == "prod-host"
@@ -123,7 +123,7 @@ class TestMergeLoadAsFunction:
             Source(file=a),
             Source(file=b),
             Source(file=c),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "a-host"
@@ -145,7 +145,7 @@ class TestMergeLoadAsFunction:
         result = load(
             Source(file=defaults),
             Source(file=overrides),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "localhost"
@@ -166,7 +166,7 @@ class TestMergeLoadAsFunction:
         result = load(
             Source(file=defaults),
             Source(prefix="APP_"),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "env-host"
@@ -188,7 +188,7 @@ class TestMergeLoadAsFunction:
             load(
                 Source(file=defaults),
                 Source(prefix="APP_"),
-                dataclass_=Config,
+                schema=Config,
             )
 
         err = exc_info.value
@@ -212,7 +212,7 @@ class TestMergeLoadAsFunction:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
             )
 
         err = exc_info.value
@@ -229,7 +229,7 @@ class TestMergeLoadAsFunction:
             name: str
             port: int
 
-        result = load(Source(file=json_file), dataclass_=Config)
+        result = load(Source(file=json_file), schema=Config)
 
         assert result.name == "test"
         assert result.port == 8080
@@ -241,7 +241,7 @@ class TestMergeLoadAsFunction:
         class Config:
             my_var: str
 
-        result = load(Source(), dataclass_=Config)
+        result = load(Source(), schema=Config)
 
         assert result.my_var == "from_env"
 
@@ -381,7 +381,7 @@ class TestRaiseOnConflict:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
             )
 
@@ -410,7 +410,7 @@ class TestRaiseOnConflict:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
         )
 
@@ -432,7 +432,7 @@ class TestRaiseOnConflict:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
             strategy="raise_on_conflict",
         )
 
@@ -459,7 +459,7 @@ class TestRaiseOnConflict:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
             )
 
@@ -488,7 +488,7 @@ class TestRaiseOnConflict:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
             )
 
@@ -517,7 +517,7 @@ class TestRaiseOnConflict:
             load(
                 Source(file=a),
                 Source(prefix="APP_"),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
             )
 
@@ -546,7 +546,7 @@ class TestRaiseOnConflict:
             load(
                 Source(file=a),
                 Source(file=b),
-                dataclass_=Config,
+                schema=Config,
                 strategy="raise_on_conflict",
             )
 
@@ -587,7 +587,7 @@ class TestMergeWithYamlAndEnvFile:
         result = load(
             Source(file=yaml_file),
             Source(file=env_file),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.host == "localhost"
@@ -616,7 +616,7 @@ class TestCoerceFlagFieldsMergeMode:
         result = load(
             Source(file=json_file),
             Source(file=env_file),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.perms == _Permission.READ | _Permission.WRITE
@@ -635,7 +635,7 @@ class TestCoerceFlagFieldsMergeMode:
         result = load(
             Source(file=json_file),
             Source(prefix="APP_"),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.perms == _Permission.READ | _Permission.EXECUTE
@@ -655,7 +655,7 @@ class TestCoerceFlagFieldsMergeMode:
         result = load(
             Source(file=a),
             Source(file=b),
-            dataclass_=Config,
+            schema=Config,
         )
 
         assert result.perms == _Permission.READ | _Permission.WRITE | _Permission.EXECUTE
@@ -701,7 +701,7 @@ class TestFirstFound:
         result = load(
             Source(file=first),
             Source(file=second),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_found",
         )
 
@@ -721,7 +721,7 @@ class TestFirstFound:
         result = load(
             Source(file=missing),
             Source(file=fallback),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_found",
         )
 
@@ -743,7 +743,7 @@ class TestFirstFound:
         result = load(
             Source(file=broken),
             Source(file=fallback),
-            dataclass_=Config,
+            schema=Config,
             strategy="first_found",
         )
 
@@ -763,7 +763,7 @@ class TestFirstFound:
             load(
                 Source(file=missing1),
                 Source(file=missing2),
-                dataclass_=Config,
+                schema=Config,
                 strategy="first_found",
             )
 
@@ -788,7 +788,7 @@ class TestFirstFound:
             load(
                 Source(file=partial),
                 Source(file=full),
-                dataclass_=Config,
+                schema=Config,
                 strategy="first_found",
             )
 
@@ -813,7 +813,7 @@ class TestFirstFound:
             load(
                 Source(file=bad_type),
                 Source(file=fallback),
-                dataclass_=Config,
+                schema=Config,
                 strategy="first_found",
             )
 
@@ -843,7 +843,7 @@ class TestFirstFound:
             load(
                 Source(file=first),
                 Source(file=second),
-                dataclass_=Config,
+                schema=Config,
                 strategy="first_found",
             )
 
