@@ -13,7 +13,7 @@ Usage — add to your ``mypy`` configuration::
 
 from collections.abc import Callable
 
-from mypy.nodes import ARG_NAMED_OPT, ARG_STAR, ARG_STAR2
+from mypy.nodes import ARG_NAMED_OPT, ARG_STAR, ARG_STAR2, ArgKind
 from mypy.options import Options
 from mypy.plugin import ClassDefContext, FunctionSigContext, Plugin
 from mypy.types import CallableType, FunctionLike
@@ -27,7 +27,7 @@ _LOAD_FULLNAMES: frozenset[str] = frozenset(
 
 
 def _make_args_optional(sig: CallableType) -> CallableType:
-    new_arg_kinds = []
+    new_arg_kinds: list[ArgKind] = []
     for kind in sig.arg_kinds:
         if kind in (ARG_STAR, ARG_STAR2):
             new_arg_kinds.append(kind)

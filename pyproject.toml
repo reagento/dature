@@ -126,7 +126,7 @@ warn_unused_ignores = true
 warn_no_return = true
 strict_equality = true
 explicit_package_bases = true
-mypy_path = "src"
+mypy_path = "src:."
 plugins = ["dature.mypy_plugin"]
 
 [[tool.mypy.overrides]]
