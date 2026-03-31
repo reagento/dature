@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Protocol, TypeVar
 
 from adaptix import Retort
 
-from dature.errors.exceptions import SourceLocation
+from dature.errors import SourceLocation
 from dature.path_finders.base import PathFinder
 from dature.types import FileOrStream, JSONValue, LoadRawResult, NestedConflict
 

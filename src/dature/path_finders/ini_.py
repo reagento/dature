@@ -1,7 +1,7 @@
 import configparser
 import sys
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
 
 _MIN_INI_PATH_DEPTH = 2

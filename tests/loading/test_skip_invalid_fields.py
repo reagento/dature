@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from dature import F, Source, load
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 
 
 class TestMergeSkipInvalidFields:

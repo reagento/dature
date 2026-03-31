@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from dature.errors.exceptions import MergeConflictError, MergeConflictFieldError, SourceLocation
+from dature.errors import MergeConflictError, MergeConflictFieldError, SourceLocation
 from dature.errors.location import resolve_source_location
 from dature.loading.source_loading import SourceContext
 from dature.merging.strategy import FieldMergeStrategyEnum, MergeStrategyEnum

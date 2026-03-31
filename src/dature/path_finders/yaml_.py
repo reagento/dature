@@ -5,7 +5,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.docinfo import Version
 from ruamel.yaml.scalarstring import ScalarString
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
 
 

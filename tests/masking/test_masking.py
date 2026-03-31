@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from dature import Source, configure, get_load_report, load
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 from dature.fields.secret_str import SecretStr
 from dature.load_report import FieldOrigin, SourceEntry
 from dature.masking.masking import mask_env_line, mask_field_origins, mask_json_value, mask_source_entries, mask_value

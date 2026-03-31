@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError, FieldLoadError, LineRange, SourceLocation
+from dature.errors import DatureConfigError, FieldLoadError, LineRange, SourceLocation
 
 
 class TestDatureConfigErrorFormat:

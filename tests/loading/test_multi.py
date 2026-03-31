@@ -9,7 +9,7 @@ from typing import Annotated
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError, MergeConflictError
+from dature.errors import DatureConfigError, MergeConflictError
 from dature.validators.number import Ge
 
 

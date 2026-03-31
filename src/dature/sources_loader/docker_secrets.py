@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import ClassVar
 
-from dature.errors.exceptions import SourceLocation
+from dature.errors import SourceLocation
 from dature.sources_loader.flat_key import FlatKeyLoader
 from dature.types import FileOrStream, JSONValue, NestedConflict
 

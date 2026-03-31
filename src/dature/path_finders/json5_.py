@@ -1,7 +1,7 @@
 from json5.model import Identifier, JSONArray, JSONObject, String, Value
 from json5.parser import parse_source
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
 
 

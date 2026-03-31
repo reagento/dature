@@ -9,7 +9,7 @@ from typing import Annotated
 import pytest
 
 from dature import Source, get_load_report, load
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry
 from dature.validators.number import Ge
 

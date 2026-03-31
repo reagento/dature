@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 SHARED_DIR = Path(__file__).parents[2] / "shared"

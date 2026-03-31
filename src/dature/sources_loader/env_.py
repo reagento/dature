@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import ClassVar, cast
 
-from dature.errors.exceptions import LineRange, SourceLocation
+from dature.errors import LineRange, SourceLocation
 from dature.sources_loader.flat_key import FlatKeyLoader
 from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue, NestedConflict, NestedConflicts
 

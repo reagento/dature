@@ -7,7 +7,7 @@ from textwrap import dedent
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import FieldGroupError
+from dature.errors import FieldGroupError
 from dature.field_path import F
 
 

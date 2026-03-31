@@ -7,7 +7,7 @@ from textwrap import dedent
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError, EnvVarExpandError
+from dature.errors import DatureConfigError, EnvVarExpandError
 
 
 class TestSkipBrokenSources:

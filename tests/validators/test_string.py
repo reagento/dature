@@ -5,7 +5,7 @@ from typing import Annotated
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 from dature.validators.string import MaxLength, MinLength, RegexPattern
 
 

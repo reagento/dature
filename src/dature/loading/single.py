@@ -4,7 +4,7 @@ from dataclasses import asdict, fields, is_dataclass
 from typing import TYPE_CHECKING, Any
 
 from dature.config import config
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
 from dature.errors.location import read_filecontent
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry, attach_load_report

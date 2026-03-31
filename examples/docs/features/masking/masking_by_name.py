@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import dature
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 

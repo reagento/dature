@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from dature.errors.exceptions import FieldGroupError, FieldGroupViolationError
+from dature.errors import FieldGroupError, FieldGroupViolationError
 from dature.merging.predicate import ResolvedFieldGroup
 from dature.types import JSONValue
 

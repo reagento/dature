@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 

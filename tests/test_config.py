@@ -10,7 +10,7 @@ from dature.config import (
     config,
     configure,
 )
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 
 
 @pytest.mark.usefixtures("_reset_config")

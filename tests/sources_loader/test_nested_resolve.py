@@ -8,7 +8,7 @@ from typing import Any, Literal
 import pytest
 
 from dature import F, Source, load
-from dature.errors.exceptions import DatureConfigError, FieldLoadError
+from dature.errors import DatureConfigError, FieldLoadError
 from dature.sources_loader.docker_secrets import DockerSecretsLoader
 from dature.sources_loader.env_ import EnvFileLoader, EnvLoader
 

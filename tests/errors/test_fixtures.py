@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError, FieldLoadError
+from dature.errors import DatureConfigError, FieldLoadError
 from dature.sources_loader.yaml_ import Yaml11Loader, Yaml12Loader
 from dature.validators.number import Ge, Le
 from dature.validators.sequence import MinItems, UniqueItems

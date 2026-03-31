@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dature.config import config
-from dature.errors.exceptions import DatureConfigError, SourceLoadError, SourceLocation
+from dature.errors import DatureConfigError, SourceLoadError, SourceLocation
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import ErrorContext, read_filecontent
 from dature.field_path import FieldPath

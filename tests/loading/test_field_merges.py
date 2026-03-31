@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import MergeConflictError
+from dature.errors import MergeConflictError
 from dature.field_path import F
 from dature.types import FieldMergeStrategyName
 

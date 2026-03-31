@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError, FieldLoadError
+from dature.errors import DatureConfigError, FieldLoadError
 from dature.sources_loader.yaml_ import Yaml11Loader
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources_loader.checker import assert_all_types_equal

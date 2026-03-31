@@ -5,7 +5,7 @@ from json.decoder import JSONArray, JSONObject, scanstring  # type: ignore[attr-
 from json.scanner import py_make_scanner  # type: ignore[attr-defined]
 from typing import TYPE_CHECKING
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
 
 if TYPE_CHECKING:

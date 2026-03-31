@@ -5,7 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import dature
-from dature.errors.exceptions import FieldGroupError
+from dature.errors import FieldGroupError
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 

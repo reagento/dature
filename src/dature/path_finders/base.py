@@ -1,6 +1,6 @@
 import abc
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 
 
 class PathFinder(abc.ABC):

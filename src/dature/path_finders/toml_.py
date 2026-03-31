@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, cast
 import toml_rs
 from toml_rs._lib import TomlVersion
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
 
 if TYPE_CHECKING:

@@ -1,4 +1,4 @@
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.path_finders.yaml_ import Yaml11PathFinder, Yaml12PathFinder
 
 

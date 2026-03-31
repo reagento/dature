@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dature.errors.exceptions import LineRange
+from dature.errors import LineRange
 from dature.errors.location import ErrorContext, resolve_source_location
 from dature.sources_loader.env_ import EnvFileLoader, EnvLoader
 from dature.sources_loader.json_ import JsonLoader

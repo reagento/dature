@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from dature import Source, load
-from dature.errors.exceptions import DatureConfigError
+from dature.errors import DatureConfigError
 from dature.validators.root import RootValidator
 
 

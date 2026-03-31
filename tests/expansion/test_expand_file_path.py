@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature.errors.exceptions import EnvVarExpandError
+from dature.errors import EnvVarExpandError
 from dature.expansion.env_expand import expand_file_path
 from dature.metadata import Source
 
