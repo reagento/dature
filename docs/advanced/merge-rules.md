@@ -136,40 +136,6 @@ You can also pass a callable as the strategy:
 
 The callable receives a `list[JSONValue]` (one value per source) and returns the merged value.
 
-## Field Groups
-
-Ensure that related fields are always overridden together. If a source changes some fields in a group but not others, `FieldGroupError` is raised:
-
-=== "Python"
-
-    ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_groups.py"
-    ```
-
-=== "common_field_groups_defaults.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/shared/common_field_groups_defaults.yaml"
-    ```
-
-=== "common_field_groups_overrides.yaml"
-
-    ```yaml
-    --8<-- "examples/docs/shared/common_field_groups_overrides.yaml"
-    ```
-
-If `overrides.yaml` changes `host` and `port` together, the group constraint is satisfied. If it changed only `host` but not `port`, loading would fail:
-
-```
-Config field group errors (1)
-
-  Field group (host, port) partially overridden in source 1
-    changed:   host (from source yaml 'overrides.yaml')
-    unchanged: port (from source yaml 'defaults.yaml')
-```
-
-For nested dataclass expansion and multiple groups, see [Field Groups](field-groups.md).
-
 ## Skipping Broken Sources
 
 Skip sources that fail to load (missing file, invalid syntax):

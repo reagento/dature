@@ -1,6 +1,26 @@
 # Field Groups
 
-Ensure related fields are always overridden together. If a source partially overrides a group, `FieldGroupError` is raised:
+Ensure related fields are always overridden together:
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/advanced/field_groups/field_groups_basic.py"
+    ```
+
+=== "common_field_groups_defaults.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/shared/common_field_groups_defaults.yaml"
+    ```
+
+=== "common_field_groups_overrides.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/shared/common_field_groups_overrides.yaml"
+    ```
+
+If `overrides.yaml` changes `host` and `port` together, the group constraint is satisfied. If a source partially overrides a group, `FieldGroupError` is raised:
 
 === "Python"
 
