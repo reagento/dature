@@ -23,8 +23,8 @@ try:
         dature.Source(
             file=SOURCES_DIR / "validation_metadata_invalid.yaml",
             validators={
-                dature.F[Config].host: MinLength(value=1),
-                dature.F[Config].port: (Ge(value=1), Lt(value=65536)),
+                dature.F[Config].host: MinLength(1),
+                dature.F[Config].port: (Ge(1), Lt(65536)),
             },
         ),
         dataclass_=Config,

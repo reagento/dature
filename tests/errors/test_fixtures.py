@@ -14,8 +14,8 @@ from dature.validators.string import MaxLength, MinLength, RegexPattern
 
 @dataclass
 class Address:
-    city: Annotated[str, MinLength(value=2)]
-    zip_code: Annotated[str, RegexPattern(pattern=r"^\d{5}$")]
+    city: Annotated[str, MinLength(2)]
+    zip_code: Annotated[str, RegexPattern(r"^\d{5}$")]
 
 
 @dataclass
@@ -23,10 +23,10 @@ class ErrorConfig:
     port: int
     host: str
     status: Literal["active", "inactive"]
-    name: Annotated[str, MinLength(value=3), MaxLength(value=50)]
-    email: Annotated[str, RegexPattern(pattern=r"^[\w.-]+@[\w.-]+\.\w+$")]
-    age: Annotated[int, Ge(value=0), Le(value=150)]
-    tags: Annotated[list[str], MinItems(value=1), UniqueItems()]
+    name: Annotated[str, MinLength(3), MaxLength(50)]
+    email: Annotated[str, RegexPattern(r"^[\w.-]+@[\w.-]+\.\w+$")]
+    age: Annotated[int, Ge(0), Le(150)]
+    tags: Annotated[list[str], MinItems(1), UniqueItems()]
     address: Address
 
 
@@ -44,10 +44,10 @@ class LoadErrorConfig:
 
 @dataclass
 class ValidationErrorConfig:
-    name: Annotated[str, MinLength(value=3), MaxLength(value=50)]
-    email: Annotated[str, RegexPattern(pattern=r"^[\w.-]+@[\w.-]+\.\w+$")]
-    age: Annotated[int, Ge(value=0), Le(value=150)]
-    tags: Annotated[list[str], MinItems(value=1), UniqueItems()]
+    name: Annotated[str, MinLength(3), MaxLength(50)]
+    email: Annotated[str, RegexPattern(r"^[\w.-]+@[\w.-]+\.\w+$")]
+    age: Annotated[int, Ge(0), Le(150)]
+    tags: Annotated[list[str], MinItems(1), UniqueItems()]
     address: Address
 
 

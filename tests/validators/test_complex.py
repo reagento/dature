@@ -15,9 +15,9 @@ class TestMultipleFields:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=3), MaxLength(value=50)]
-            age: Annotated[int, Ge(value=0), Le(value=150)]
-            tags: Annotated[list[str], MinItems(value=1), UniqueItems()]
+            name: Annotated[str, MinLength(3), MaxLength(50)]
+            age: Annotated[int, Ge(0), Le(150)]
+            tags: Annotated[list[str], MinItems(1), UniqueItems()]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice", "age": 30, "tags": ["python", "coding"]}')
@@ -32,9 +32,9 @@ class TestMultipleFields:
     def test_all_invalid(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=3), MaxLength(value=50)]
-            age: Annotated[int, Ge(value=0), Le(value=150)]
-            tags: Annotated[list[str], MinItems(value=1), UniqueItems()]
+            name: Annotated[str, MinLength(3), MaxLength(50)]
+            age: Annotated[int, Ge(0), Le(150)]
+            tags: Annotated[list[str], MinItems(1), UniqueItems()]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "AB", "age": 200, "tags": []}'
@@ -72,13 +72,13 @@ class TestNestedDataclass:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Address:
-            city: Annotated[str, MinLength(value=2)]
-            zip_code: Annotated[str, RegexPattern(pattern=r"^\d{5}$")]
+            city: Annotated[str, MinLength(2)]
+            zip_code: Annotated[str, RegexPattern(r"^\d{5}$")]
 
         @dataclass
         class User:
-            name: Annotated[str, MinLength(value=3)]
-            age: Annotated[int, Ge(value=18)]
+            name: Annotated[str, MinLength(3)]
+            age: Annotated[int, Ge(18)]
             address: Address
 
         json_file = tmp_path / "config.json"
@@ -97,13 +97,13 @@ class TestNestedDataclass:
     def test_all_invalid(self, tmp_path: Path):
         @dataclass
         class Address:
-            city: Annotated[str, MinLength(value=2)]
-            zip_code: Annotated[str, RegexPattern(pattern=r"^\d{5}$")]
+            city: Annotated[str, MinLength(2)]
+            zip_code: Annotated[str, RegexPattern(r"^\d{5}$")]
 
         @dataclass
         class User:
-            name: Annotated[str, MinLength(value=3)]
-            age: Annotated[int, Ge(value=18)]
+            name: Annotated[str, MinLength(3)]
+            age: Annotated[int, Ge(18)]
             address: Address
 
         json_file = tmp_path / "config.json"
@@ -148,7 +148,7 @@ class TestCustomErrorMessage:
     def test_custom_error_message(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Ge(value=18, error_message="Age must be 18 or older")]
+            age: Annotated[int, Ge(18, error_message="Age must be 18 or older")]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 15}'
@@ -171,7 +171,7 @@ class TestDictListDict:
     def test_raw_dict_field_validator_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            groups: Annotated[dict[str, list[dict[str, Any]]], MinItems(value=1)]
+            groups: Annotated[dict[str, list[dict[str, Any]]], MinItems(1)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text(
@@ -186,7 +186,7 @@ class TestDictListDict:
     def test_raw_dict_field_validator_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            groups: Annotated[dict[str, list[dict[str, Any]]], MinItems(value=1)]
+            groups: Annotated[dict[str, list[dict[str, Any]]], MinItems(1)]
 
         json_file = tmp_path / "config.json"
         content = '{"groups": {}}'
@@ -210,8 +210,8 @@ class TestDictListDict:
     def test_nested_dataclass_in_dict_list_success(self, tmp_path: Path):
         @dataclass
         class Member:
-            name: Annotated[str, MinLength(value=2)]
-            role: Annotated[str, MinLength(value=3)]
+            name: Annotated[str, MinLength(2)]
+            role: Annotated[str, MinLength(3)]
 
         @dataclass
         class Config:
@@ -231,8 +231,8 @@ class TestDictListDict:
     def test_nested_dataclass_in_dict_list_validation_fails(self, tmp_path: Path):
         @dataclass
         class Member:
-            name: Annotated[str, MinLength(value=2)]
-            role: Annotated[str, MinLength(value=3)]
+            name: Annotated[str, MinLength(2)]
+            role: Annotated[str, MinLength(3)]
 
         @dataclass
         class Config:

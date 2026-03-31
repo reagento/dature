@@ -24,7 +24,7 @@ class TestMetadataValidatorsSuccess:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MinLength(value=3),
+                F[Config].name: MinLength(3),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -42,7 +42,7 @@ class TestMetadataValidatorsSuccess:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].port: (Gt(value=0), Lt(value=65536)),
+                F[Config].port: (Gt(0), Lt(65536)),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -61,8 +61,8 @@ class TestMetadataValidatorsSuccess:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MinLength(value=3),
-                F[Config].port: Gt(value=0),
+                F[Config].name: MinLength(3),
+                F[Config].port: Gt(0),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -84,7 +84,7 @@ class TestMetadataValidatorsFailure:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MinLength(value=3),
+                F[Config].name: MinLength(3),
             },
         )
 
@@ -113,7 +113,7 @@ class TestMetadataValidatorsFailure:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].port: (Gt(value=0), Lt(value=65536)),
+                F[Config].port: (Gt(0), Lt(65536)),
             },
         )
 
@@ -148,8 +148,8 @@ class TestMetadataValidatorsNested:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].database.host: MinLength(value=1),
-                F[Config].database.port: Gt(value=0),
+                F[Config].database.host: MinLength(1),
+                F[Config].database.port: Gt(0),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -174,7 +174,7 @@ class TestMetadataValidatorsNested:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].database.host: MinLength(value=1),
+                F[Config].database.host: MinLength(1),
             },
         )
 
@@ -196,7 +196,7 @@ class TestMetadataValidatorsComplement:
     def test_metadata_validators_complement_annotated(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=3)]
+            name: Annotated[str, MinLength(3)]
             port: int
 
         json_file = tmp_path / "config.json"
@@ -205,8 +205,8 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(value=50),
-                F[Config].port: Gt(value=0),
+                F[Config].name: MaxLength(50),
+                F[Config].port: Gt(0),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -217,7 +217,7 @@ class TestMetadataValidatorsComplement:
     def test_annotated_still_validates(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=5)]
+            name: Annotated[str, MinLength(5)]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "Al"}'
@@ -226,7 +226,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(value=50),
+                F[Config].name: MaxLength(50),
             },
         )
 
@@ -246,7 +246,7 @@ class TestMetadataValidatorsComplement:
     def test_metadata_validator_fails_with_annotated_present(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=3)]
+            name: Annotated[str, MinLength(3)]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "This is a very long name that exceeds the limit"}'
@@ -255,7 +255,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(value=10),
+                F[Config].name: MaxLength(10),
             },
         )
 
@@ -275,7 +275,7 @@ class TestMetadataValidatorsComplement:
     def test_both_annotated_and_metadata_on_same_field_pass(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=3)]
+            name: Annotated[str, MinLength(3)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice"}')
@@ -283,7 +283,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(value=10),
+                F[Config].name: MaxLength(10),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -293,7 +293,7 @@ class TestMetadataValidatorsComplement:
     def test_annotated_fails_while_metadata_would_pass(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=5)]
+            name: Annotated[str, MinLength(5)]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "AB"}'
@@ -302,7 +302,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(value=50),
+                F[Config].name: MaxLength(50),
             },
         )
 
@@ -322,7 +322,7 @@ class TestMetadataValidatorsComplement:
     def test_same_validator_type_in_annotated_and_metadata(self, tmp_path: Path):
         @dataclass
         class Config:
-            port: Annotated[int, Ge(value=0)]
+            port: Annotated[int, Ge(0)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 8080}')
@@ -330,7 +330,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].port: Lt(value=65536),
+                F[Config].port: Lt(65536),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -340,7 +340,7 @@ class TestMetadataValidatorsComplement:
     def test_same_validator_type_in_annotated_and_metadata_fails(self, tmp_path: Path):
         @dataclass
         class Config:
-            port: Annotated[int, Ge(value=1024)]
+            port: Annotated[int, Ge(1024)]
 
         json_file = tmp_path / "config.json"
         content = '{"port": 80}'
@@ -349,7 +349,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].port: Lt(value=65536),
+                F[Config].port: Lt(65536),
             },
         )
 
@@ -369,7 +369,7 @@ class TestMetadataValidatorsComplement:
     def test_metadata_fails_while_annotated_passes(self, tmp_path: Path):
         @dataclass
         class Config:
-            port: Annotated[int, Ge(value=0)]
+            port: Annotated[int, Ge(0)]
 
         json_file = tmp_path / "config.json"
         content = '{"port": 70000}'
@@ -378,7 +378,7 @@ class TestMetadataValidatorsComplement:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].port: Lt(value=65536),
+                F[Config].port: Lt(65536),
             },
         )
 
@@ -428,9 +428,9 @@ class TestMetadataValidatorsWithRootValidators:
 
         metadata = Source(
             file=json_file,
-            root_validators=(RootValidator(func=validate_config),),
+            root_validators=(RootValidator(validate_config),),
             validators={
-                F[Config].port: Ge(value=0),
+                F[Config].port: Ge(0),
             },
         )
         result = load(metadata, dataclass_=Config)
@@ -452,8 +452,8 @@ class TestMetadataValidatorsDecorator:
         metadata = Source(
             file=json_file,
             validators={
-                F[Config].name: MinLength(value=2),
-                F[Config].age: Ge(value=0),
+                F[Config].name: MinLength(2),
+                F[Config].age: Ge(0),
             },
         )
 

@@ -15,7 +15,7 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 @dataclass
 class Config:
     host: str
-    port: Annotated[int, Gt(value=0), Lt(value=65536)] = 8080
+    port: Annotated[int, Gt(0), Lt(65536)] = 8080
 
 
 try:

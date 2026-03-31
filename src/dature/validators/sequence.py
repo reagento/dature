@@ -1,12 +1,12 @@
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class MinItems:
     value: int
-    error_message: str = "Value must have at least {value} items"
+    error_message: str = field(default="Value must have at least {value} items", kw_only=True)
 
     def get_validator_func(self) -> Callable[[Sequence[Any]], bool]:
         def validate(val: Sequence[Any]) -> bool:
@@ -18,10 +18,10 @@ class MinItems:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class MaxItems:
     value: int
-    error_message: str = "Value must have at most {value} items"
+    error_message: str = field(default="Value must have at most {value} items", kw_only=True)
 
     def get_validator_func(self) -> Callable[[Sequence[Any]], bool]:
         def validate(val: Sequence[Any]) -> bool:
@@ -33,9 +33,9 @@ class MaxItems:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class UniqueItems:
-    error_message: str = "Value must contain unique items"
+    error_message: str = field(default="Value must contain unique items", kw_only=True)
 
     def get_validator_func(self) -> Callable[[Sequence[Any]], bool]:
         def validate(val: Sequence[Any]) -> bool:

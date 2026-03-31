@@ -12,7 +12,7 @@ from dature.validators.number import Ge
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class Divisible:
     value: int
     error_message: str = "Value must be divisible by {value}"
@@ -32,7 +32,7 @@ class ServiceConfig:
     port: int
     name: str
     tags: list[str]
-    workers: Annotated[int, Ge(value=1), Divisible(value=2)]
+    workers: Annotated[int, Ge(1), Divisible(2)]
 
 
 try:

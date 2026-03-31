@@ -24,32 +24,32 @@ Declare validators using `typing.Annotated`:
 
 | Validator | Description |
 |-----------|-------------|
-| `Gt(value=N)` | Greater than N |
-| `Ge(value=N)` | Greater than or equal to N |
-| `Lt(value=N)` | Less than N |
-| `Le(value=N)` | Less than or equal to N |
+| `Gt(N)` | Greater than N |
+| `Ge(N)` | Greater than or equal to N |
+| `Lt(N)` | Less than N |
+| `Le(N)` | Less than or equal to N |
 
 **Strings** (`dature.validators.string`):
 
 | Validator | Description |
 |-----------|-------------|
-| `MinLength(value=N)` | Minimum string length |
-| `MaxLength(value=N)` | Maximum string length |
-| `RegexPattern(pattern=r"...")` | Match regex pattern |
+| `MinLength(N)` | Minimum string length |
+| `MaxLength(N)` | Maximum string length |
+| `RegexPattern(r"...")` | Match regex pattern |
 
 **Sequences** (`dature.validators.sequence`):
 
 | Validator | Description |
 |-----------|-------------|
-| `MinItems(value=N)` | Minimum number of items |
-| `MaxItems(value=N)` | Maximum number of items |
+| `MinItems(N)` | Minimum number of items |
+| `MaxItems(N)` | Maximum number of items |
 | `UniqueItems()` | All items must be unique |
 
 Multiple validators can be combined:
 
 ```python
-port: Annotated[int, Ge(value=1), Le(value=65535)]
-tags: Annotated[list[str], MinItems(value=1), MaxItems(value=10), UniqueItems()]
+port: Annotated[int, Ge(1), Le(65535)]
+tags: Annotated[list[str], MinItems(1), MaxItems(10), UniqueItems()]
 ```
 
 ## Root Validators
@@ -90,8 +90,8 @@ A single validator can be passed directly. Multiple validators require a tuple:
 
 ```python
 validators={
-    dature.F[Config].port: (Gt(value=0), Lt(value=65536)),  # tuple for multiple
-    dature.F[Config].host: MinLength(value=1),               # single, no tuple needed
+    dature.F[Config].port: (Gt(0), Lt(65536)),  # tuple for multiple
+    dature.F[Config].host: MinLength(1),               # single, no tuple needed
 }
 ```
 
@@ -99,8 +99,8 @@ Nested fields are supported:
 
 ```python
 validators={
-    dature.F[Config].database.host: MinLength(value=1),
-    dature.F[Config].database.port: Gt(value=0),
+    dature.F[Config].database.host: MinLength(1),
+    dature.F[Config].database.port: Gt(0),
 }
 ```
 

@@ -15,10 +15,10 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 
 @dataclass
 class ServiceConfig:
-    port: Annotated[int, Ge(value=1), Le(value=65535)]
-    name: Annotated[str, MinLength(value=3), MaxLength(value=50)]
-    tags: Annotated[list[str], MinItems(value=1), UniqueItems()]
-    workers: Annotated[int, Ge(value=1)]
+    port: Annotated[int, Ge(1), Le(65535)]
+    name: Annotated[str, MinLength(3), MaxLength(50)]
+    tags: Annotated[list[str], MinItems(1), UniqueItems()]
+    workers: Annotated[int, Ge(1)]
 
 
 try:

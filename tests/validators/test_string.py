@@ -13,7 +13,7 @@ class TestMinLength:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=3)]
+            name: Annotated[str, MinLength(3)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice"}')
@@ -26,7 +26,7 @@ class TestMinLength:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(value=5)]
+            name: Annotated[str, MinLength(5)]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "Bob"}'
@@ -52,7 +52,7 @@ class TestMaxLength:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MaxLength(value=10)]
+            name: Annotated[str, MaxLength(10)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice"}')
@@ -65,7 +65,7 @@ class TestMaxLength:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MaxLength(value=5)]
+            name: Annotated[str, MaxLength(5)]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "Alexander"}'
@@ -91,7 +91,7 @@ class TestRegexPattern:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            email: Annotated[str, RegexPattern(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")]
+            email: Annotated[str, RegexPattern(r"^[\w\.-]+@[\w\.-]+\.\w+$")]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"email": "test@example.com"}')
@@ -104,7 +104,7 @@ class TestRegexPattern:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            email: Annotated[str, RegexPattern(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")]
+            email: Annotated[str, RegexPattern(r"^[\w\.-]+@[\w\.-]+\.\w+$")]
 
         json_file = tmp_path / "config.json"
         content = '{"email": "invalid-email"}'
@@ -130,7 +130,7 @@ class TestCombined:
     def test_combined_string_validators(self, tmp_path: Path):
         @dataclass
         class Config:
-            username: Annotated[str, MinLength(value=3), MaxLength(value=20)]
+            username: Annotated[str, MinLength(3), MaxLength(20)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"username": "john_doe"}')
@@ -143,7 +143,7 @@ class TestCombined:
     def test_combined_string_validators_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            username: Annotated[str, MinLength(value=3), MaxLength(value=20)]
+            username: Annotated[str, MinLength(3), MaxLength(20)]
 
         json_file = tmp_path / "config.json"
         content = '{"username": "this_is_a_very_long_username_that_exceeds_limit"}'

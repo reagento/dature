@@ -13,7 +13,7 @@ class TestMinItems:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            tags: Annotated[list[str], MinItems(value=2)]
+            tags: Annotated[list[str], MinItems(2)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing"]}')
@@ -26,7 +26,7 @@ class TestMinItems:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            tags: Annotated[list[str], MinItems(value=3)]
+            tags: Annotated[list[str], MinItems(3)]
 
         json_file = tmp_path / "config.json"
         content = '{"tags": ["python"]}'
@@ -52,7 +52,7 @@ class TestMaxItems:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            tags: Annotated[list[str], MaxItems(value=5)]
+            tags: Annotated[list[str], MaxItems(5)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing"]}')
@@ -65,7 +65,7 @@ class TestMaxItems:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            tags: Annotated[list[str], MaxItems(value=2)]
+            tags: Annotated[list[str], MaxItems(2)]
 
         json_file = tmp_path / "config.json"
         content = '{"tags": ["python", "typing", "validation"]}'
@@ -130,7 +130,7 @@ class TestCombined:
     def test_combined_list_validators(self, tmp_path: Path):
         @dataclass
         class Config:
-            tags: Annotated[list[str], MinItems(value=2), MaxItems(value=5), UniqueItems()]
+            tags: Annotated[list[str], MinItems(2), MaxItems(5), UniqueItems()]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing", "validation"]}')
@@ -143,7 +143,7 @@ class TestCombined:
     def test_combined_list_validators_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            tags: Annotated[list[str], MinItems(value=2), MaxItems(value=5), UniqueItems()]
+            tags: Annotated[list[str], MinItems(2), MaxItems(5), UniqueItems()]
 
         json_file = tmp_path / "config.json"
         content = '{"tags": ["python", "typing", "validation", "testing", "coding", "extra"]}'

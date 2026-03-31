@@ -13,7 +13,7 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 
 @dataclass
 class Config:
-    api_key: Annotated[str, MinLength(value=20)]
+    api_key: Annotated[str, MinLength(20)]
     host: str
 
 

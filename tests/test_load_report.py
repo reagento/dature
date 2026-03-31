@@ -404,7 +404,7 @@ class TestLoadReportOnError:
         @dataclass
         class Config:
             host: str
-            port: Annotated[int, Ge(value=0)]
+            port: Annotated[int, Ge(0)]
 
         with pytest.raises(DatureConfigError):
             load(
@@ -472,7 +472,7 @@ class TestLoadReportOnError:
 
         @dataclass
         class Config:
-            port: Annotated[int, Ge(value=0)]
+            port: Annotated[int, Ge(0)]
 
         with pytest.raises(DatureConfigError):
             load(Source(file=json_file), dataclass_=Config, debug=True)

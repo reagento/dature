@@ -25,7 +25,7 @@ class TestRootValidator:
 
         metadata = Source(
             file=json_file,
-            root_validators=(RootValidator(func=validate_config),),
+            root_validators=(RootValidator(validate_config),),
         )
         result = load(metadata, dataclass_=Config)
 
@@ -48,7 +48,7 @@ class TestRootValidator:
 
         metadata = Source(
             file=json_file,
-            root_validators=(RootValidator(func=validate_config),),
+            root_validators=(RootValidator(validate_config),),
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
@@ -78,8 +78,8 @@ class TestRootValidator:
         metadata = Source(
             file=json_file,
             root_validators=(
-                RootValidator(func=validate_min_max),
-                RootValidator(func=validate_step),
+                RootValidator(validate_min_max),
+                RootValidator(validate_step),
             ),
         )
         result = load(metadata, dataclass_=Config)
@@ -107,8 +107,8 @@ class TestRootValidator:
         metadata = Source(
             file=json_file,
             root_validators=(
-                RootValidator(func=validate_min_max),
-                RootValidator(func=validate_step),
+                RootValidator(validate_min_max),
+                RootValidator(validate_step),
             ),
         )
 
@@ -134,7 +134,7 @@ class TestRootValidator:
 
         metadata = Source(
             file=json_file,
-            root_validators=(RootValidator(func=validate_config),),
+            root_validators=(RootValidator(validate_config),),
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
@@ -156,7 +156,7 @@ class TestRootValidator:
 
         metadata = Source(
             file=json_file,
-            root_validators=(RootValidator(func=validate_credentials),),
+            root_validators=(RootValidator(validate_credentials),),
         )
 
         @load(metadata)

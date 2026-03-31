@@ -15,7 +15,7 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 @dataclass
 class Config:
     host: str
-    port: Annotated[int, Gt(value=0), Lt(value=65536)]
+    port: Annotated[int, Gt(0), Lt(65536)]
     debug: bool = False
 
 
@@ -30,7 +30,7 @@ try:
             file=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
             root_validators=(
                 RootValidator(
-                    func=check_debug_port,
+                    check_debug_port,
                     error_message="debug mode should not use port 80",
                 ),
             ),

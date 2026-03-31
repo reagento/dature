@@ -1,12 +1,12 @@
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class MinLength:
     value: int
-    error_message: str = "Value must have at least {value} characters"
+    error_message: str = field(default="Value must have at least {value} characters", kw_only=True)
 
     def get_validator_func(self) -> Callable[[str], bool]:
         def validate(val: str) -> bool:
@@ -18,10 +18,10 @@ class MinLength:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class MaxLength:
     value: int
-    error_message: str = "Value must have at most {value} characters"
+    error_message: str = field(default="Value must have at most {value} characters", kw_only=True)
 
     def get_validator_func(self) -> Callable[[str], bool]:
         def validate(val: str) -> bool:
@@ -33,10 +33,10 @@ class MaxLength:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class RegexPattern:
     pattern: str
-    error_message: str = "Value must match pattern '{pattern}'"
+    error_message: str = field(default="Value must match pattern '{pattern}'", kw_only=True)
 
     def get_validator_func(self) -> Callable[[str], bool]:
         def validate(val: str) -> bool:

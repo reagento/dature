@@ -13,7 +13,7 @@ class TestGt:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Gt(value=0)]
+            age: Annotated[int, Gt(0)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 25}')
@@ -26,7 +26,7 @@ class TestGt:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Gt(value=18)]
+            age: Annotated[int, Gt(18)]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 18}'
@@ -52,7 +52,7 @@ class TestGe:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Ge(value=18)]
+            age: Annotated[int, Ge(18)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 18}')
@@ -65,7 +65,7 @@ class TestGe:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Ge(value=18)]
+            age: Annotated[int, Ge(18)]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 17}'
@@ -91,7 +91,7 @@ class TestLt:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Lt(value=100)]
+            age: Annotated[int, Lt(100)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 99}')
@@ -104,7 +104,7 @@ class TestLt:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Lt(value=100)]
+            age: Annotated[int, Lt(100)]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 100}'
@@ -130,7 +130,7 @@ class TestLe:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Le(value=100)]
+            age: Annotated[int, Le(100)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 100}')
@@ -143,7 +143,7 @@ class TestLe:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Le(value=100)]
+            age: Annotated[int, Le(100)]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 101}'
@@ -169,7 +169,7 @@ class TestCombined:
     def test_combined_numeric_validators(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Ge(value=18), Le(value=65)]
+            age: Annotated[int, Ge(18), Le(65)]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"age": 30}')
@@ -182,7 +182,7 @@ class TestCombined:
     def test_combined_numeric_validators_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Ge(value=18), Le(value=65)]
+            age: Annotated[int, Ge(18), Le(65)]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 70}'

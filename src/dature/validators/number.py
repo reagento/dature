@@ -1,11 +1,11 @@
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class Gt:
     value: int | float
-    error_message: str = "Value must be greater than {value}"
+    error_message: str = field(default="Value must be greater than {value}", kw_only=True)
 
     def get_validator_func(self) -> Callable[[int | float], bool]:
         def validate(val: float) -> bool:
@@ -17,10 +17,10 @@ class Gt:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class Ge:
     value: int | float
-    error_message: str = "Value must be greater than or equal to {value}"
+    error_message: str = field(default="Value must be greater than or equal to {value}", kw_only=True)
 
     def get_validator_func(self) -> Callable[[int | float], bool]:
         def validate(val: float) -> bool:
@@ -32,10 +32,10 @@ class Ge:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class Lt:
     value: int | float
-    error_message: str = "Value must be less than {value}"
+    error_message: str = field(default="Value must be less than {value}", kw_only=True)
 
     def get_validator_func(self) -> Callable[[int | float], bool]:
         def validate(val: float) -> bool:
@@ -47,10 +47,10 @@ class Lt:
         return self.error_message.format(value=self.value)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True)
 class Le:
     value: int | float
-    error_message: str = "Value must be less than or equal to {value}"
+    error_message: str = field(default="Value must be less than or equal to {value}", kw_only=True)
 
     def get_validator_func(self) -> Callable[[int | float], bool]:
         def validate(val: float) -> bool:

@@ -15,7 +15,7 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 class Config:
     host: str
     port: int
-    api_key: Annotated[str, MinLength(value=20)] = ""
+    api_key: Annotated[str, MinLength(20)] = ""
 
 
 # --8<-- [start:merge-mode]

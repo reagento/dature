@@ -837,7 +837,7 @@ class TestFirstFound:
         @dataclass
         class Config:
             host: str
-            port: Annotated[int, Ge(value=1)]
+            port: Annotated[int, Ge(1)]
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
@@ -873,7 +873,7 @@ class TestFirstFound:
         @dataclass
         class Config:
             host: str
-            port: Annotated[int, Ge(value=1)]
+            port: Annotated[int, Ge(1)]
 
         with pytest.raises(DatureConfigError) as exc_info:
             Config()
