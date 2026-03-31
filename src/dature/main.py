@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, overload
@@ -20,6 +21,8 @@ from dature.types import (
     NestedResolveStrategy,
     TypeLoaderMap,
 )
+
+logger = logging.getLogger("dature")
 
 
 @overload
@@ -86,6 +89,17 @@ def load(  # noqa: PLR0913
         debug = config.loading.debug
 
     _validate_sources(sources)
+
+    if len(sources) == 1 and (
+        strategy != "last_wins"
+        or field_merges is not None
+        or field_groups != ()
+        or skip_broken_sources
+        or skip_invalid_fields
+        or secret_field_names is not None
+        or mask_secrets is not None
+    ):
+        logger.warning("Merge-related parameters have no effect with a single source")
 
     if len(sources) > 1:
         return _load_multi(

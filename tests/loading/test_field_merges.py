@@ -1,5 +1,6 @@
 """Tests for per-field merge strategies (field_merges)."""
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -911,6 +912,28 @@ class TestCallableMergeStrategy:
         )
 
         assert result.score == 42
+
+    def test_single_source_merge_params_warning(
+        self,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        a = tmp_path / "a.json"
+        a.write_text('{"score": 42}')
+
+        @dataclass
+        class Config:
+            score: int
+
+        with caplog.at_level(logging.WARNING, logger="dature"):
+            load(
+                Source(file=a),
+                schema=Config,
+                field_merges={F[Config].score: sum},
+            )
+
+        messages = [r.message for r in caplog.records if r.name == "dature"]
+        assert messages == ["Merge-related parameters have no effect with a single source"]
 
     def test_callable_with_raise_on_conflict(self, tmp_path: Path):
         a = tmp_path / "a.json"

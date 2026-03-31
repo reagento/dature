@@ -82,7 +82,3 @@ def build_field_group_paths(
                 paths.append(path)
         resolved.append(ResolvedFieldGroup(paths=tuple(paths)))
     return tuple(resolved)
-    return tuple(resolved)
-    return tuple(resolved)
-    return tuple(resolved)
-    return tuple(resolved)

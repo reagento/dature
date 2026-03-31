@@ -3,8 +3,8 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "cron"
-      cronjob: "0 9 1-7 * 6"
+      interval: "monthly"
+      time: "09:00"
       timezone: "Europe/Moscow"
     open-pull-requests-limit: 10
     labels:
@@ -15,8 +15,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "cron"
-      cronjob: "0 9 1-7 * 6"
+      interval: "monthly"
+      time: "09:00"
       timezone: "Europe/Moscow"
     labels:
       - "ci"

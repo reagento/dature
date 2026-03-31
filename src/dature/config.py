@@ -147,17 +147,17 @@ def configure(
     current = config.ensure_loaded()
 
     merged_masking = (
-        MaskingConfig(**cast("dict[str, Any]", asdict(MaskingConfig()) | masking))
+        MaskingConfig(**cast("dict[str, Any]", asdict(current.masking) | masking))
         if masking is not None
         else current.masking
     )
     merged_error = (
-        ErrorDisplayConfig(**cast("dict[str, Any]", asdict(ErrorDisplayConfig()) | error_display))
+        ErrorDisplayConfig(**cast("dict[str, Any]", asdict(current.error_display) | error_display))
         if error_display is not None
         else current.error_display
     )
     merged_loading = (
-        LoadingConfig(**cast("dict[str, Any]", asdict(LoadingConfig()) | loading))
+        LoadingConfig(**cast("dict[str, Any]", asdict(current.loading) | loading))
         if loading is not None
         else current.loading
     )
