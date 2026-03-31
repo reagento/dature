@@ -1,8 +1,8 @@
-# dature
+<div align="center">
+
+<img src="docs/assets/img/logo.svg" alt="dature" width="400">
 
 ---
-
-<div align="center">
 
 [![PyPI](https://img.shields.io/pypi/v/dature)](https://pypi.org/project/dature/)
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/dature)](https://pypi.org/project/dature/)
