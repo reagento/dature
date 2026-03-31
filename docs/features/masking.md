@@ -111,13 +111,15 @@ Control masking via `Source`:
     --8<-- "examples/docs/features/masking/masking_no_mask.py:no-mask"
     ```
 
+### Per-load
+
+`mask_secrets` and `secret_field_names` can be passed directly to `dature.load()`. They apply to both single-source and multi-source modes. `Source`-level values take priority: `Source.mask_secrets` overrides `load(mask_secrets=...)` when not `None`, and `Source.secret_field_names` overrides `load(secret_field_names=...)` when not `None`.
+
 ### In merge mode
 
 ```python
 --8<-- "examples/docs/features/masking/masking_merge_mode.py:merge-mode"
 ```
-
-`Source.mask_secrets` overrides the `mask_secrets` parameter of `dature.load()` when not `None`. `secret_field_names` from both source and load-level are combined.
 
 ### Global
 
