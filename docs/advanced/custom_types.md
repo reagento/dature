@@ -6,13 +6,17 @@ Use `type_loaders` to teach dature how to parse custom types from strings.
 
 Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion functions:
 
-```python
---8<-- "examples/docs/advanced/custom_types/custom_type.py"
-```
+=== "Python"
 
-```yaml title="custom_type_common.yaml"
---8<-- "examples/docs/advanced/custom_types/sources/custom_type_common.yaml"
-```
+    ```python
+    --8<-- "examples/docs/advanced/custom_types/custom_type.py"
+    ```
+
+=== "custom_type_common.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/advanced/custom_types/sources/custom_type_common.yaml"
+    ```
 
 ### Per-source vs Global
 

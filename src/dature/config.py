@@ -9,10 +9,10 @@ from dature.validators.string import MinLength
 # --8<-- [start:masking-config]
 @dataclass(frozen=True, slots=True)
 class MaskingConfig:
-    mask: Annotated[str, MinLength(value=1)] = "<REDACTED>"
-    visible_prefix: Annotated[int, Ge(value=0)] = 0
-    visible_suffix: Annotated[int, Ge(value=0)] = 0
-    min_heuristic_length: Annotated[int, Ge(value=1)] = 8
+    mask: Annotated[str, MinLength(1)] = "<REDACTED>"
+    visible_prefix: Annotated[int, Ge(0)] = 0
+    visible_suffix: Annotated[int, Ge(0)] = 0
+    min_heuristic_length: Annotated[int, Ge(1)] = 8
     heuristic_threshold: float = 0.5
     secret_field_names: tuple[str, ...] = (
         "password",
@@ -36,8 +36,8 @@ class MaskingConfig:
 # --8<-- [start:error-display-config]
 @dataclass(frozen=True, slots=True)
 class ErrorDisplayConfig:
-    max_visible_lines: Annotated[int, Ge(value=1)] = 3
-    max_line_length: Annotated[int, Ge(value=1)] = 80
+    max_visible_lines: Annotated[int, Ge(1)] = 3
+    max_line_length: Annotated[int, Ge(1)] = 80
 
 
 # --8<-- [end:error-display-config]
