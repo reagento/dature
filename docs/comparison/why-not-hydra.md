@@ -89,7 +89,11 @@ class Config:
 dature uses `Annotated` validators:
 
 ```python
---8<-- "examples/docs/comparison/why-not-hydra/hydra_validators.py:validators"
+--8<-- "examples/docs/comparison/why-not-hydra/hydra_validators.py"
+```
+
+```title="Error"
+--8<-- "examples/docs/comparison/why-not-hydra/hydra_validators.stderr"
 ```
 
 Plus root validators for cross-field checks, custom validators, and standard `__post_init__`.

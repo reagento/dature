@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Annotated
 
 import dature
-from dature.errors import DatureConfigError
 from dature.validators.number import Ge
 
 SOURCES_DIR = Path(__file__).parent / "sources"
@@ -35,18 +34,7 @@ class ServiceConfig:
     workers: Annotated[int, Ge(1), Divisible(2)]
 
 
-try:
-    dature.load(
-        dature.Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),
-        schema=ServiceConfig,
-    )
-except DatureConfigError as exc:
-    source = str(SOURCES_DIR / "validation_custom_invalid.json5")
-    assert str(exc) == "ServiceConfig loading errors (1)"
-    assert len(exc.exceptions) == 1
-    assert str(exc.exceptions[0]) == (
-        f"  [workers]  Value must be divisible by 2\n"
-        f"   ├── workers: 3,\n"
-        f"   │            ^\n"
-        f"   └── FILE '{source}', line 5"
-    )
+dature.load(
+    dature.Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),
+    schema=ServiceConfig,
+)

@@ -145,7 +145,7 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
         --8<-- "examples/docs/shared/common_raise_on_conflict_b.yaml"
         ```
 
-For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/merge-rules.md#field-groups).
+For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/field-groups.md).
 
 ## Merge Parameters
 
@@ -155,7 +155,7 @@ All merge-related parameters are passed directly to `dature.load()` as keyword a
 |-----------|-------------|
 | `strategy` | Global merge strategy. Default: `"last_wins"`. See [Merge Strategies](#merge-strategies) |
 | `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies) |
-| `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/merge-rules.md#field-groups) |
+| `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/field-groups.md) |
 | `skip_broken_sources` | Skip sources that fail to load. See [Skipping Broken Sources](../advanced/merge-rules.md#skipping-broken-sources) |
 | `skip_invalid_fields` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/merge-rules.md#skipping-invalid-fields) |
 | `expand_env_vars` | ENV variable expansion mode. See [ENV Expansion](../advanced/env-expansion.md) |

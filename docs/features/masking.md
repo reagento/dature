@@ -52,6 +52,10 @@ dature uses three methods to identify secrets:
     --8<-- "examples/docs/features/masking/sources/masking_secret_str.yaml"
     ```
 
+    ```title="Error"
+    --8<-- "examples/docs/features/masking/masking_secret_str.stderr"
+    ```
+
 === "By name"
 
     Fields whose names contain known patterns are automatically masked in error messages:
@@ -64,6 +68,10 @@ dature uses three methods to identify secrets:
     --8<-- "examples/docs/features/masking/sources/masking_by_name.yaml"
     ```
 
+    ```title="Error"
+    --8<-- "examples/docs/features/masking/masking_by_name.stderr"
+    ```
+
 === "Heuristic"
 
     With `dature[secure]`, values that look like random tokens are masked in error messages even if the field name is not a known secret pattern:
@@ -74,6 +82,10 @@ dature uses three methods to identify secrets:
 
     ```yaml title="masking_heuristic.yaml"
     --8<-- "examples/docs/features/masking/sources/masking_heuristic.yaml"
+    ```
+
+    ```title="Error"
+    --8<-- "examples/docs/features/masking/masking_heuristic.stderr"
     ```
 
 ## Mask Format
@@ -102,13 +114,21 @@ Control masking via `Source`:
 === "secret_field_names"
 
     ```python
-    --8<-- "examples/docs/features/masking/masking_per_source.py:per-source"
+    --8<-- "examples/docs/features/masking/masking_per_source.py"
+    ```
+
+    ```title="Error"
+    --8<-- "examples/docs/features/masking/masking_per_source.stderr"
     ```
 
 === "mask_secrets=False"
 
     ```python
-    --8<-- "examples/docs/features/masking/masking_no_mask.py:no-mask"
+    --8<-- "examples/docs/features/masking/masking_no_mask.py"
+    ```
+
+    ```title="Error"
+    --8<-- "examples/docs/features/masking/masking_no_mask.stderr"
     ```
 
 ### Per-load
@@ -118,7 +138,11 @@ Control masking via `Source`:
 ### In merge mode
 
 ```python
---8<-- "examples/docs/features/masking/masking_merge_mode.py:merge-mode"
+--8<-- "examples/docs/features/masking/masking_merge_mode.py"
+```
+
+```title="Error"
+--8<-- "examples/docs/features/masking/masking_merge_mode.stderr"
 ```
 
 ### Global

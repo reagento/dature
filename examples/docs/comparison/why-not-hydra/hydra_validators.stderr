@@ -1,0 +1,7 @@
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than 0
+    |    ├── port: -1
+    |    │         ^^
+    |    └── FILE '{SOURCES_DIR}/hydra_validators_invalid.yaml', line 2
+    +------------------------------------

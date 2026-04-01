@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Annotated
 
 import dature
-from dature.errors import DatureConfigError
 from dature.validators.number import Gt, Lt
 from dature.validators.root import RootValidator
 
@@ -19,33 +18,19 @@ class Config:
     debug: bool = False
 
 
-# --8<-- [start:root-validators]
 def check_debug_port(config: Config) -> bool:
     return not (config.debug and config.port == 80)
 
 
-try:
-    dature.load(
-        dature.Source(
-            file=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
-            root_validators=(
-                RootValidator(
-                    check_debug_port,
-                    error_message="debug mode should not use port 80",
-                ),
+dature.load(
+    dature.Source(
+        file=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
+        root_validators=(
+            RootValidator(
+                check_debug_port,
+                error_message="debug mode should not use port 80",
             ),
         ),
-        schema=Config,
-    )
-except DatureConfigError as exc:
-    source = str(SOURCES_DIR / "dynaconf_root_validators_invalid.toml")
-    assert str(exc) == "Config loading errors (1)"
-    # fmt: off
-    assert str(exc.exceptions[0]) == (
-        "  [<root>]  debug mode should not use port 80\n"
-        f"   └── FILE '{source}'"
-    )
-    # fmt: on
-else:
-    raise AssertionError("Expected DatureConfigError")
-# --8<-- [end:root-validators]
+    ),
+    schema=Config,
+)

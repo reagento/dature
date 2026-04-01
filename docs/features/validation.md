@@ -18,6 +18,12 @@ Declare validators using `typing.Annotated`:
     --8<-- "examples/docs/features/validation/sources/validation_annotated_invalid.json5"
     ```
 
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/validation_annotated.stderr"
+    ```
+
 ### Available Validators
 
 **Numbers** (`dature.validators.number`):
@@ -68,6 +74,12 @@ Validate the entire object after loading:
     --8<-- "examples/docs/features/validation/sources/validation_root_invalid.yaml"
     ```
 
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/validation_root.stderr"
+    ```
+
 Root validators receive the fully constructed dataclass instance and return `True` if valid.
 
 ## Metadata Validators
@@ -84,6 +96,12 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 
     ```yaml
     --8<-- "examples/docs/features/validation/sources/validation_metadata_invalid.yaml"
+    ```
+
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/validation_metadata.stderr"
     ```
 
 A single validator can be passed directly. Multiple validators require a tuple:
@@ -120,6 +138,12 @@ Create your own validators by implementing `get_validator_func()` and `get_error
     --8<-- "examples/docs/features/validation/sources/validation_custom_invalid.json5"
     ```
 
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/validation_custom.stderr"
+    ```
+
 Custom validators can be combined with built-in ones in `Annotated`.
 
 ## `__post_init__` and `@property`
@@ -136,6 +160,12 @@ Standard dataclass `__post_init__` and `@property` work as expected — dature p
 
     ```yaml
     --8<-- "examples/docs/features/validation/sources/validation_post_init_invalid.yaml"
+    ```
+
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/validation_post_init.stderr"
     ```
 
 Both approaches work in function mode and decorator mode.

@@ -76,13 +76,21 @@ This gives flexibility — validators can be defined in a different module, reus
 dature supports **both approaches**. Inline validators live with the type:
 
 ```python
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_validators.py:validators"
+--8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_validators.py"
+```
+
+```title="Error"
+--8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_validators.stderr"
 ```
 
 And separate validators when you need cross-field checks or decoupled validation logic:
 
 ```python
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_root_validators.py:root-validators"
+--8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_root_validators.py"
+```
+
+```title="Error"
+--8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_root_validators.stderr"
 ```
 
 You choose the style that fits — or mix them.

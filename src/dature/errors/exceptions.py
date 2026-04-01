@@ -344,8 +344,4 @@ class FieldGroupError(DatureConfigError):
         return super().__new__(cls, dataclass_name, errors)
 
     def __str__(self) -> str:
-        lines = [f"{self.dataclass_name} field group errors ({len(self.exceptions)})", ""]
-        for exc in self.exceptions:
-            lines.append(str(exc))
-            lines.append("")
-        return "\n".join(lines)
+        return f"{self.dataclass_name} field group errors ({len(self.exceptions)})"

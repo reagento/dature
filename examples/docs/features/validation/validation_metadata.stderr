@@ -1,0 +1,12 @@
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (2)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [host]  Value must have at least 1 characters
+    |    ├── host: ""
+    |    │         ^^
+    |    └── FILE '{SOURCES_DIR}/validation_metadata_invalid.yaml', line 1
+    +---------------- 2 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than or equal to 1
+    |    ├── port: 0
+    |    │         ^
+    |    └── FILE '{SOURCES_DIR}/validation_metadata_invalid.yaml', line 2
+    +------------------------------------

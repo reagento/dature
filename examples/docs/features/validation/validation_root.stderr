@@ -1,0 +1,5 @@
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [<root>]  debug=True is not allowed on non-localhost hosts
+    |    └── FILE '{SOURCES_DIR}/validation_root_invalid.yaml'
+    +------------------------------------

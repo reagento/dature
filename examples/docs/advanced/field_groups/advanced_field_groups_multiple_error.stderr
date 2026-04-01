@@ -1,0 +1,10 @@
+  | dature.errors.exceptions.FieldGroupError: Config field group errors (2)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldGroupViolationError:   Field group (host, port) partially overridden in source 1
+    |     changed:   host (from source yaml1.2 '{SOURCES_DIR}/advanced_field_groups_multiple_error_overrides.yaml')
+    |     unchanged: port (from source yaml1.2 '{SHARED_DIR}/common_field_groups_defaults.yaml')
+    +---------------- 2 ----------------
+    | dature.errors.exceptions.FieldGroupViolationError:   Field group (user, password) partially overridden in source 1
+    |     changed:   user (from source yaml1.2 '{SOURCES_DIR}/advanced_field_groups_multiple_error_overrides.yaml')
+    |     unchanged: password (from source yaml1.2 '{SHARED_DIR}/common_field_groups_defaults.yaml')
+    +------------------------------------

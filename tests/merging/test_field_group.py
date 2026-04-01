@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
@@ -131,13 +130,12 @@ class TestFieldGroupPartialChange:
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (host, port) partially overridden in source 1
-                changed:   host (from source {overrides_meta!r})
-                unchanged: port (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (host, port) partially overridden in source 1\n"
+            f"    changed:   host (from source {overrides_meta!r})\n"
+            f"    unchanged: port (from source {defaults_meta!r})"
+        )
 
     def test_partial_change_field_present_but_equal(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -162,13 +160,12 @@ class TestFieldGroupPartialChange:
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (host, port) partially overridden in source 1
-                changed:   host (from source {overrides_meta!r})
-                unchanged: port (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (host, port) partially overridden in source 1\n"
+            f"    changed:   host (from source {overrides_meta!r})\n"
+            f"    unchanged: port (from source {defaults_meta!r})"
+        )
 
     def test_partial_change_with_first_wins(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -241,13 +238,12 @@ class TestFieldGroupAutoExpand:
                 field_groups=((F[Config].database,),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (database.host, database.port) partially overridden in source 1
-                changed:   database.host (from source {overrides_meta!r})
-                unchanged: database.port (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (database.host, database.port) partially overridden in source 1\n"
+            f"    changed:   database.host (from source {overrides_meta!r})\n"
+            f"    unchanged: database.port (from source {defaults_meta!r})"
+        )
 
     def test_auto_expand_all_changed_ok(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -305,13 +301,12 @@ class TestFieldGroupThreeSources:
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (host, port) partially overridden in source 1
-                changed:   host (from source {b_meta!r})
-                unchanged: port (from source {a_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (host, port) partially overridden in source 1\n"
+            f"    changed:   host (from source {b_meta!r})\n"
+            f"    unchanged: port (from source {a_meta!r})"
+        )
 
     def test_three_sources_all_ok(self, tmp_path: Path):
         a = tmp_path / "a.json"
@@ -369,13 +364,12 @@ class TestFieldGroupMultipleGroups:
                 ),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (user, password) partially overridden in source 1
-                changed:   user (from source {overrides_meta!r})
-                unchanged: password (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (user, password) partially overridden in source 1\n"
+            f"    changed:   user (from source {overrides_meta!r})\n"
+            f"    unchanged: password (from source {defaults_meta!r})"
+        )
 
 
 class TestFieldGroupWithFieldMerges:
@@ -473,13 +467,12 @@ class TestFieldGroupErrorFormat:
                 field_groups=((F[Config].host, F[Config].port),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (host, port) partially overridden in source 1
-                changed:   host (from source {overrides_meta!r})
-                unchanged: port (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (host, port) partially overridden in source 1\n"
+            f"    changed:   host (from source {overrides_meta!r})\n"
+            f"    unchanged: port (from source {defaults_meta!r})"
+        )
 
     def test_multiple_violations_message(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -509,17 +502,17 @@ class TestFieldGroupErrorFormat:
                 ),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (2)
-
-              Field group (host, port) partially overridden in source 1
-                changed:   host (from source {overrides_meta!r})
-                unchanged: port (from source {defaults_meta!r})
-
-              Field group (user, password) partially overridden in source 1
-                changed:   user (from source {overrides_meta!r})
-                unchanged: password (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (2)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (host, port) partially overridden in source 1\n"
+            f"    changed:   host (from source {overrides_meta!r})\n"
+            f"    unchanged: port (from source {defaults_meta!r})"
+        )
+        assert str(exc_info.value.exceptions[1]) == (
+            f"  Field group (user, password) partially overridden in source 1\n"
+            f"    changed:   user (from source {overrides_meta!r})\n"
+            f"    unchanged: password (from source {defaults_meta!r})"
+        )
 
 
 class TestFieldGroupMixedExpandAndFlat:
@@ -617,13 +610,14 @@ class TestFieldGroupMixedExpandAndFlat:
                 field_groups=((F[Config].database, F[Config].timeout),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (database.host, database.port, timeout) partially overridden in source 1
-                changed:   timeout (from source {overrides_meta!r})
-                unchanged: database.host (from source {defaults_meta!r}), database.port (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        defaults_repr = repr(defaults_meta)
+        overrides_repr = repr(overrides_meta)
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (database.host, database.port, timeout) partially overridden in source 1\n"
+            f"    changed:   timeout (from source {overrides_repr})\n"
+            f"    unchanged: database.host (from source {defaults_repr}), database.port (from source {defaults_repr})"
+        )
 
     def test_nested_partial_flat_not(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -655,13 +649,12 @@ class TestFieldGroupMixedExpandAndFlat:
                 field_groups=((F[Config].database, F[Config].timeout),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (database.host, database.port, timeout) partially overridden in source 1
-                changed:   database.host (from source {overrides_meta!r})
-                unchanged: database.port (from source {defaults_meta!r}), timeout (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (database.host, database.port, timeout) partially overridden in source 1\n"
+            f"    changed:   database.host (from source {overrides_meta!r})\n"
+            f"    unchanged: database.port (from source {defaults_meta!r}), timeout (from source {defaults_meta!r})"
+        )
 
     def test_nested_all_changed_flat_not(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -674,8 +667,8 @@ class TestFieldGroupMixedExpandAndFlat:
 
         defaults_meta = Source(file=defaults)
         overrides_meta = Source(file=overrides)
-        d = repr(defaults_meta)
-        o = repr(overrides_meta)
+        defaults_repr = repr(defaults_meta)
+        overrides_repr = repr(overrides_meta)
 
         @dataclass
         class Database:
@@ -695,13 +688,13 @@ class TestFieldGroupMixedExpandAndFlat:
                 field_groups=((F[Config].database, F[Config].timeout),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (database.host, database.port, timeout) partially overridden in source 1
-                changed:   database.host (from source {o}), database.port (from source {o})
-                unchanged: timeout (from source {d})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        changed = f"database.host (from source {overrides_repr}), database.port (from source {overrides_repr})"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (database.host, database.port, timeout) partially overridden in source 1\n"
+            f"    changed:   {changed}\n"
+            f"    unchanged: timeout (from source {defaults_repr})"
+        )
 
 
 class TestFieldGroupSameFieldNameNested:
@@ -764,10 +757,9 @@ class TestFieldGroupSameFieldNameNested:
                 field_groups=((F[Config].user_name, F[Config].inner.user_name),),
             )
 
-        assert str(exc_info.value) == dedent(f"""\
-            Config field group errors (1)
-
-              Field group (user_name, inner.user_name) partially overridden in source 1
-                changed:   user_name (from source {overrides_meta!r})
-                unchanged: inner.user_name (from source {defaults_meta!r})
-            """)
+        assert str(exc_info.value) == "Config field group errors (1)"
+        assert str(exc_info.value.exceptions[0]) == (
+            f"  Field group (user_name, inner.user_name) partially overridden in source 1\n"
+            f"    changed:   user_name (from source {overrides_meta!r})\n"
+            f"    unchanged: inner.user_name (from source {defaults_meta!r})"
+        )
