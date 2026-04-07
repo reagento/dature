@@ -11,7 +11,7 @@ def find_nested_dataclasses(field_type: TypeAnnotation) -> list[type]:
     while queue:
         current = queue.pop()
 
-        if is_dataclass(current):
+        if is_dataclass(current) and isinstance(current, type):
             result.append(current)
             continue
 

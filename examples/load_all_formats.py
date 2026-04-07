@@ -26,4 +26,3 @@ for meta in FORMATS.values():
     config = dature.load(meta, schema=AllPythonTypesCompact)
     assert config.string_value == "hello world"
     assert config.integer_value == 42
-    assert config.integer_value == 42
