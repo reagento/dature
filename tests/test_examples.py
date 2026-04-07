@@ -1,6 +1,5 @@
 import os
 import pathlib
-import signal
 import subprocess
 import sys
 
@@ -10,26 +9,21 @@ examples_dir = pathlib.Path(__file__).parent.parent / "examples"
 example_scripts = sorted(examples_dir.rglob("*.py"))
 
 
-def _run_example(
-    script_path: pathlib.Path,
-    *,
-    retries: int = 3,
-) -> subprocess.CompletedProcess[str]:
+def _run_example(script_path: pathlib.Path) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
 
     project_root = pathlib.Path(__file__).parent.parent / "src"
     env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
 
-    for _ in range(retries):
-        result = subprocess.run(  # noqa: PLW1510, S603
-            [sys.executable, str(script_path)],
-            capture_output=True,
-            text=True,
-            env=env,
-        )
-        if result.returncode != -signal.SIGSEGV:
-            return result
-    return result
+    # process_group=0 forces posix_spawn instead of fork on macOS,
+    # avoiding segfaults in subprocess._execute_child (CPython + macOS CI)
+    return subprocess.run(  # noqa: PLW1510, S603
+        [sys.executable, str(script_path)],
+        capture_output=True,
+        text=True,
+        env=env,
+        process_group=0,
+    )
 
 
 def _resolve_stderr_placeholders(template: str, script_path: pathlib.Path) -> str:
