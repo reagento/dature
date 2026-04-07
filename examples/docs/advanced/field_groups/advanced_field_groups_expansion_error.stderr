@@ -1,6 +1,6 @@
   | dature.errors.exceptions.FieldGroupError: Config field group errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldGroupViolationError:   Field group (database.host, database.port, port) partially overridden in source 1
-    |     changed:   database.host (from source yaml1.2 '{SOURCES_DIR}/advanced_field_groups_expansion_error_overrides.yaml'), port (from source yaml1.2 '{SOURCES_DIR}/advanced_field_groups_expansion_error_overrides.yaml')
-    |     unchanged: database.port (from source yaml1.2 '{SOURCES_DIR}/field_groups_nested_defaults.yaml')
+    |     changed:   database.host (from source yaml1.2 '{SOURCES_DIR}advanced_field_groups_expansion_error_overrides.yaml'), port (from source yaml1.2 '{SOURCES_DIR}advanced_field_groups_expansion_error_overrides.yaml')
+    |     unchanged: database.port (from source yaml1.2 '{SOURCES_DIR}field_groups_nested_defaults.yaml')
     +------------------------------------

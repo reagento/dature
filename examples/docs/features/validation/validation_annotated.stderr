@@ -3,20 +3,20 @@
     | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than or equal to 1
     |    ├── port: 0,
     |    │         ^
-    |    └── FILE '{SOURCES_DIR}/validation_annotated_invalid.json5', line 3
+    |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 3
     +---------------- 2 ----------------
     | dature.errors.exceptions.FieldLoadError:   [name]  Value must have at least 3 characters
     |    ├── name: "ab",
     |    │          ^^
-    |    └── FILE '{SOURCES_DIR}/validation_annotated_invalid.json5', line 4
+    |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 4
     +---------------- 3 ----------------
     | dature.errors.exceptions.FieldLoadError:   [tags]  Value must contain unique items
     |    ├── tags: ["web", "web"],
     |    │         ^^^^^^^^^^^^^^
-    |    └── FILE '{SOURCES_DIR}/validation_annotated_invalid.json5', line 5
+    |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 5
     +---------------- 4 ----------------
     | dature.errors.exceptions.FieldLoadError:   [workers]  Value must be greater than or equal to 1
     |    ├── workers: 0,
     |    │            ^
-    |    └── FILE '{SOURCES_DIR}/validation_annotated_invalid.json5', line 6
+    |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 6
     +------------------------------------

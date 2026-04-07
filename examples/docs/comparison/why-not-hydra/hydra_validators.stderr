@@ -3,5 +3,5 @@
     | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than 0
     |    ├── port: -1
     |    │         ^^
-    |    └── FILE '{SOURCES_DIR}/hydra_validators_invalid.yaml', line 2
+    |    └── FILE '{SOURCES_DIR}hydra_validators_invalid.yaml', line 2
     +------------------------------------

@@ -3,5 +3,5 @@
     | dature.errors.exceptions.FieldLoadError:   [workers]  Value must be divisible by 2
     |    ├── workers: 3,
     |    │            ^
-    |    └── FILE '{SOURCES_DIR}/validation_custom_invalid.json5', line 5
+    |    └── FILE '{SOURCES_DIR}validation_custom_invalid.json5', line 5
     +------------------------------------

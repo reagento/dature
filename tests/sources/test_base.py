@@ -596,7 +596,7 @@ class TestFileFieldMixin:
         src = Src(file=Path("/data/test.json"))
         src._init_file_field()
 
-        assert src.file == "/data/test.json"
+        assert src.file == str(Path("/data/test.json"))
         assert isinstance(src.file, str)
 
     def test_init_file_field_none(self):

@@ -3,5 +3,5 @@
     | dature.errors.exceptions.FieldLoadError:   [connection_id]  Invalid variant: '<REDACTED>'
     |    ├── connection_id: "<REDACTED>"
     |    │                   ^^^^^^^^^^
-    |    └── FILE '{SOURCES_DIR}/masking_heuristic.yaml', line 1
+    |    └── FILE '{SOURCES_DIR}masking_heuristic.yaml', line 1
     +------------------------------------

@@ -69,8 +69,8 @@ def _run_example(script_path: pathlib.Path) -> ScriptResult:
 
 
 def _resolve_stderr_placeholders(template: str, script_path: pathlib.Path) -> str:
-    sources_dir = str(script_path.parent / "sources")
-    shared_dir = str(script_path.parents[2] / "shared")
+    sources_dir = str(script_path.parent / "sources") + os.sep
+    shared_dir = str(script_path.parents[2] / "shared") + os.sep
 
     return template.replace("{SOURCES_DIR}", sources_dir).replace("{SHARED_DIR}", shared_dir)
 
