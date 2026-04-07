@@ -6,8 +6,18 @@ from textwrap import dedent
 
 import pytest
 
-from dature import Source, load
+from dature import EnvFileSource, IniSource, JsonSource, Toml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, EnvVarExpandError
+from dature.loading.merge_config import MergeConfig
+from dature.loading.source_loading import (
+    apply_merge_skip_invalid,
+    resolve_expand_env_vars,
+    resolve_mask_secrets,
+    resolve_secret_field_names,
+    resolve_skip_invalid,
+    should_skip_broken,
+)
+from dature.sources.env_ import EnvSource
 
 
 class TestSkipBrokenSources:
@@ -23,8 +33,8 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Source(file=valid),
-            Source(file=missing),
+            JsonSource(file=valid),
+            JsonSource(file=missing),
             schema=Config,
             skip_broken_sources=True,
         )
@@ -45,8 +55,8 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Source(file=valid),
-            Source(file=broken),
+            JsonSource(file=valid),
+            JsonSource(file=broken),
             schema=Config,
             skip_broken_sources=True,
         )
@@ -67,8 +77,8 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=broken_a),
-                Source(file=broken_b),
+                JsonSource(file=broken_a),
+                JsonSource(file=broken_b),
                 schema=Config,
                 skip_broken_sources=True,
             )
@@ -89,8 +99,8 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError):
             load(
-                Source(file=valid),
-                Source(file=broken),
+                JsonSource(file=valid),
+                JsonSource(file=broken),
                 schema=Config,
             )
 
@@ -110,9 +120,9 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=broken),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=broken),
+            JsonSource(file=c),
             schema=Config,
             skip_broken_sources=True,
         )
@@ -133,8 +143,8 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Source(file=valid),
-            Source(file=broken, skip_if_broken=True),
+            JsonSource(file=valid),
+            JsonSource(file=broken, skip_if_broken=True),
             schema=Config,
             skip_broken_sources=False,
         )
@@ -156,8 +166,8 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError):
             load(
-                Source(file=valid),
-                Source(file=broken, skip_if_broken=False),
+                JsonSource(file=valid),
+                JsonSource(file=broken, skip_if_broken=False),
                 schema=Config,
                 skip_broken_sources=True,
             )
@@ -175,8 +185,8 @@ class TestSkipBrokenSources:
             port: int
 
         result = load(
-            Source(file=valid),
-            Source(file=broken, skip_if_broken=None),
+            JsonSource(file=valid),
+            JsonSource(file=broken, skip_if_broken=None),
             schema=Config,
             skip_broken_sources=True,
         )
@@ -200,8 +210,8 @@ class TestSkipBrokenSources:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=missing),
-                Source(file=broken),
+                JsonSource(file=missing),
+                JsonSource(file=broken),
                 schema=Config,
                 skip_broken_sources=True,
             )
@@ -222,7 +232,7 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Source(file=json_file),
+            JsonSource(file=json_file),
             schema=Config,
         )
 
@@ -239,7 +249,7 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Source(file=json_file),
+            JsonSource(file=json_file),
             schema=Config,
             expand_env_vars="disabled",
         )
@@ -258,7 +268,7 @@ class TestMergeExpandEnvVars:
 
         with pytest.raises(EnvVarExpandError):
             load(
-                Source(file=json_file),
+                JsonSource(file=json_file),
                 schema=Config,
                 expand_env_vars="strict",
             )
@@ -274,7 +284,7 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Source(file=json_file, expand_env_vars="disabled"),
+            JsonSource(file=json_file, expand_env_vars="disabled"),
             schema=Config,
             expand_env_vars="default",
         )
@@ -292,7 +302,7 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Source(file=json_file, expand_env_vars=None),
+            JsonSource(file=json_file, expand_env_vars=None),
             schema=Config,
             expand_env_vars="disabled",
         )
@@ -310,7 +320,7 @@ class TestMergeExpandEnvVars:
             port: int
 
         result = load(
-            Source(file=json_file),
+            JsonSource(file=json_file),
             schema=Config,
             expand_env_vars="empty",
         )
@@ -329,31 +339,43 @@ class StrictConfig:
 
 class TestEnvVarExpandErrorFormat:
     @pytest.mark.parametrize(
-        ("ext", "prefix", "source_label", "line", "line_content"),
+        ("source_cls", "source_kwargs", "source_label", "line", "line_content"),
         [
-            ("yaml", None, "FILE", 1, 'host: "$MISSING_HOST"'),
-            ("json", None, "FILE", 1, '{"host": "$MISSING_HOST", "port": 8080}'),
-            ("toml", None, "FILE", 1, 'host = "$MISSING_HOST"'),
-            ("ini", "section", "FILE", 2, "host = $MISSING_HOST"),
-            ("env", None, "ENV FILE", 1, "HOST=$MISSING_HOST"),
+            (Yaml12Source, {"file": FIXTURES_DIR / "env_expand_strict.yaml"}, "FILE", 1, 'host: "$MISSING_HOST"'),
+            (
+                JsonSource,
+                {"file": FIXTURES_DIR / "env_expand_strict.json"},
+                "FILE",
+                1,
+                '{"host": "$MISSING_HOST", "port": 8080}',
+            ),
+            (Toml11Source, {"file": FIXTURES_DIR / "env_expand_strict.toml"}, "FILE", 1, 'host = "$MISSING_HOST"'),
+            (
+                IniSource,
+                {"file": FIXTURES_DIR / "env_expand_strict.ini", "prefix": "section"},
+                "FILE",
+                2,
+                "host = $MISSING_HOST",
+            ),
+            (EnvFileSource, {"file": FIXTURES_DIR / "env_expand_strict.env"}, "ENV FILE", 1, "HOST=$MISSING_HOST"),
         ],
         ids=["yaml", "json", "toml", "ini", "env"],
     )
     def test_error_format(
         self,
         monkeypatch: pytest.MonkeyPatch,
-        ext: str,
-        prefix: str | None,
+        source_cls: type,
+        source_kwargs: dict[str, object],
         source_label: str,
         line: int,
         line_content: str,
     ) -> None:
         monkeypatch.delenv("MISSING_HOST", raising=False)
-        file = FIXTURES_DIR / f"env_expand_strict.{ext}"
+        file = source_kwargs["file"]
 
         with pytest.raises(EnvVarExpandError) as exc_info:
             load(
-                Source(file=file, prefix=prefix, expand_env_vars="strict"),
+                source_cls(**source_kwargs, expand_env_vars="strict"),
                 schema=StrictConfig,
             )
 
@@ -364,3 +386,170 @@ class TestEnvVarExpandErrorFormat:
                ├── {line_content}
                └── {source_label} '{file}', line {line}
         """)
+
+
+class TestShouldSkipBroken:
+    @pytest.mark.parametrize(
+        ("skip_if_broken", "skip_broken_sources", "expected"),
+        [
+            (True, False, True),
+            (False, True, False),
+            (None, True, True),
+        ],
+        ids=["source-true", "source-false", "source-none-uses-merge"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        skip_if_broken: bool | None,
+        skip_broken_sources: bool,
+        expected: bool,
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if skip_if_broken is None else {"skip_if_broken": skip_if_broken}
+        source = JsonSource(file=json_file, **kwargs)
+        merge = MergeConfig(sources=(source,), skip_broken_sources=skip_broken_sources)
+
+        assert should_skip_broken(source, merge) is expected
+
+    def test_env_source_warns(self, caplog: pytest.LogCaptureFixture):
+        source = EnvSource(skip_if_broken=True)
+        merge = MergeConfig(sources=(source,))
+
+        should_skip_broken(source, merge)
+
+        assert "skip_if_broken has no effect on environment variable sources" in caplog.text
+
+
+class TestResolveExpandEnvVars:
+    @pytest.mark.parametrize(
+        ("source_expand", "merge_expand", "expected"),
+        [
+            ("disabled", "strict", "disabled"),
+            (None, "strict", "strict"),
+        ],
+        ids=["source-overrides", "source-none-inherits"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        source_expand: str | None,
+        merge_expand: str,
+        expected: str,
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if source_expand is None else {"expand_env_vars": source_expand}
+        source = JsonSource(file=json_file, **kwargs)
+        merge = MergeConfig(sources=(source,), expand_env_vars=merge_expand)
+
+        assert resolve_expand_env_vars(source, merge) == expected
+
+
+class TestResolveSkipInvalid:
+    @pytest.mark.parametrize(
+        ("source_skip", "merge_skip", "expected"),
+        [
+            (True, False, True),
+            (None, True, True),
+        ],
+        ids=["source-overrides", "source-none-inherits"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        source_skip: bool | None,
+        merge_skip: bool,
+        expected: bool,
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if source_skip is None else {"skip_if_invalid": source_skip}
+        source = JsonSource(file=json_file, **kwargs)
+        merge = MergeConfig(sources=(source,), skip_invalid_fields=merge_skip)
+
+        assert resolve_skip_invalid(source, merge) is expected
+
+
+class TestResolveMaskSecrets:
+    @pytest.mark.usefixtures("_reset_config")
+    def test_source_overrides_all(self, tmp_path: Path):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        source = JsonSource(file=json_file, mask_secrets=False)
+        merge = MergeConfig(sources=(source,), mask_secrets=True)
+
+        assert resolve_mask_secrets(source, merge) is False
+
+    @pytest.mark.usefixtures("_reset_config")
+    def test_merge_overrides_config(self, tmp_path: Path):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        source = JsonSource(file=json_file)
+        merge = MergeConfig(sources=(source,), mask_secrets=False)
+
+        assert resolve_mask_secrets(source, merge) is False
+
+    @pytest.mark.usefixtures("_reset_config")
+    def test_falls_back_to_config(self, tmp_path: Path):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        source = JsonSource(file=json_file)
+        merge = MergeConfig(sources=(source,))
+
+        result = resolve_mask_secrets(source, merge)
+
+        assert isinstance(result, bool)
+
+
+class TestResolveSecretFieldNames:
+    @pytest.mark.parametrize(
+        ("source_names", "merge_names", "expected"),
+        [
+            (("api_key",), ("token",), ("api_key", "token")),
+            (None, ("token",), ("token",)),
+            (None, None, ()),
+        ],
+        ids=["combines-both", "source-none", "both-none"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        source_names: tuple[str, ...] | None,
+        merge_names: tuple[str, ...] | None,
+        expected: tuple[str, ...],
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if source_names is None else {"secret_field_names": source_names}
+        source = JsonSource(file=json_file, **kwargs)
+        merge_kwargs = {} if merge_names is None else {"secret_field_names": merge_names}
+        merge = MergeConfig(sources=(source,), **merge_kwargs)
+
+        assert resolve_secret_field_names(source, merge) == expected
+
+
+class TestApplyMergeSkipInvalid:
+    def test_skip_false_returns_raw(self, tmp_path: Path):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+
+        @dataclass
+        class Cfg:
+            name: str
+
+        source = JsonSource(file=json_file)
+        merge = MergeConfig(sources=(source,), skip_invalid_fields=False)
+        raw = {"name": "hello"}
+
+        result = apply_merge_skip_invalid(
+            raw=raw,
+            source=source,
+            merge_meta=merge,
+            schema=Cfg,
+            source_index=0,
+        )
+
+        assert result.cleaned_dict == raw
+        assert result.skipped_paths == []

@@ -27,8 +27,8 @@ class AppConfig:
 
 
 config = dature.load(
-    dature.Source(file=SOURCES_DIR / "custom_type_common.yaml"),
-    dature.Source(file=SOURCES_DIR / "custom_type_merge_override.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "custom_type_common.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "custom_type_merge_override.yaml"),
     schema=AppConfig,
     type_loaders={Rgb: rgb_from_string},
 )

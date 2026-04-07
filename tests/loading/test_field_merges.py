@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from dature import Source, load
+from dature import JsonSource, load
 from dature.errors import MergeConflictError
 from dature.field_path import F
 from dature.types import FieldMergeStrategyName
@@ -28,8 +28,8 @@ class TestFieldMergesFunction:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             strategy="last_wins",
             field_merges={F[Config].host: "first_wins"},
@@ -51,8 +51,8 @@ class TestFieldMergesFunction:
             port: int
 
         result = load(
-            Source(file=first),
-            Source(file=second),
+            JsonSource(file=first),
+            JsonSource(file=second),
             schema=Config,
             strategy="first_wins",
             field_merges={F[Config].port: "last_wins"},
@@ -74,8 +74,8 @@ class TestFieldMergesFunction:
             name: str
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={F[Config].tags: "append"},
         )
@@ -95,8 +95,8 @@ class TestFieldMergesFunction:
             tags: list[str]
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={F[Config].tags: "append_unique"},
         )
@@ -115,8 +115,8 @@ class TestFieldMergesFunction:
             tags: list[str]
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={F[Config].tags: "prepend"},
         )
@@ -135,8 +135,8 @@ class TestFieldMergesFunction:
             tags: list[str]
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={F[Config].tags: "prepend_unique"},
         )
@@ -160,8 +160,8 @@ class TestFieldMergesFunction:
             database: Database
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={F[Config].database.host: "first_wins"},
         )
@@ -182,8 +182,8 @@ class TestFieldMergesFunction:
 
         with pytest.raises(TypeError, match="APPEND strategy requires both values to be lists"):
             load(
-                Source(file=defaults),
-                Source(file=overrides),
+                JsonSource(file=defaults),
+                JsonSource(file=overrides),
                 schema=Config,
                 field_merges={F[Config].value: "append"},
             )
@@ -202,8 +202,8 @@ class TestFieldMergesFunction:
             tags: list[str]
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             strategy="last_wins",
             field_merges={
@@ -229,8 +229,8 @@ class TestFieldMergesFunction:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={},
         )
@@ -248,8 +248,8 @@ class TestFieldMergesDecorator:
         overrides.write_text('{"host": "override-host", "port": 9090, "tags": ["b"]}')
 
         @load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             field_merges={
                 F["Config"].host: "first_wins",
                 F["Config"].tags: "append",
@@ -281,8 +281,8 @@ class TestFieldMergesWithRaiseOnConflict:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].host: "last_wins"},
@@ -304,8 +304,8 @@ class TestFieldMergesWithRaiseOnConflict:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].host: "first_wins"},
@@ -328,8 +328,8 @@ class TestFieldMergesWithRaiseOnConflict:
 
         with pytest.raises(MergeConflictError):
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 strategy="raise_on_conflict",
                 field_merges={F[Config].host: "last_wins"},
@@ -352,8 +352,8 @@ class TestFieldMergesWithRaiseOnConflict:
             name: str
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].database.host: "last_wins"},
@@ -375,8 +375,8 @@ class TestFieldMergesWithRaiseOnConflict:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
             field_merges={
@@ -433,8 +433,8 @@ class TestFieldMergesErrors:
 
         with pytest.raises(TypeError, match=match):
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
@@ -482,8 +482,8 @@ class TestFieldMergesErrors:
 
         with pytest.raises(TypeError, match=match):
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
@@ -521,8 +521,8 @@ class TestFieldMergesErrors:
 
         with pytest.raises(TypeError, match=match):
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
@@ -551,8 +551,8 @@ class TestFieldMergesErrors:
             value: list[int]
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             field_merges={F[Config].value: strategy},
         )
@@ -584,8 +584,8 @@ class TestFieldMergesErrors:
 
         with pytest.raises(TypeError, match=match):
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
@@ -615,8 +615,8 @@ class TestFieldMergesErrors:
 
         with pytest.raises(TypeError, match=match):
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
@@ -634,8 +634,8 @@ class TestFieldMergesErrors:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             field_merges={F[Config].host: "first_wins"},
         )
@@ -658,9 +658,9 @@ class TestFieldMergesErrors:
             tags: list[str]
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].tags: "append"},
         )
@@ -682,9 +682,9 @@ class TestFieldMergesErrors:
             priority: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].priority: max},
         )
@@ -706,9 +706,9 @@ class TestFieldMergesErrors:
             priority: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].priority: min},
         )
@@ -734,8 +734,8 @@ class TestFieldMergesSameFieldNameNested:
             inner: Inner
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={
                 F[Config].user_name: "first_wins",
@@ -763,8 +763,8 @@ class TestFieldMergesSameFieldNameNested:
             inner: Inner
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={
                 F[Config].user_name: "last_wins",
@@ -789,8 +789,8 @@ class TestCallableMergeStrategy:
             score: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             field_merges={F[Config].score: sum},
         )
@@ -812,9 +812,9 @@ class TestCallableMergeStrategy:
             score: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].score: sum},
         )
@@ -836,9 +836,9 @@ class TestCallableMergeStrategy:
             weight: float
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].weight: lambda vals: sum(vals) / len(vals)},
         )
@@ -860,9 +860,9 @@ class TestCallableMergeStrategy:
             priority: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].priority: max},
         )
@@ -888,9 +888,9 @@ class TestCallableMergeStrategy:
             database: Database
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].database.port: max},
         )
@@ -906,7 +906,7 @@ class TestCallableMergeStrategy:
             score: int
 
         result = load(
-            Source(file=a),
+            JsonSource(file=a),
             schema=Config,
             field_merges={F[Config].score: sum},
         )
@@ -927,7 +927,7 @@ class TestCallableMergeStrategy:
 
         with caplog.at_level(logging.WARNING, logger="dature"):
             load(
-                Source(file=a),
+                JsonSource(file=a),
                 schema=Config,
                 field_merges={F[Config].score: sum},
             )
@@ -948,8 +948,8 @@ class TestCallableMergeStrategy:
             name: str
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
             field_merges={F[Config].score: sum},
@@ -972,8 +972,8 @@ class TestCallableMergeStrategy:
             tags: list[str]
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             field_merges={
                 F[Config].host: "first_wins",
@@ -1002,9 +1002,9 @@ class TestCallableMergeStrategy:
             name: str
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_merges={F[Config].score: sum},
         )

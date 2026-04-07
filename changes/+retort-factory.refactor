@@ -1,0 +1,1 @@
+Extracted retort factory methods from ``Source`` into free functions in ``sources/retort.py``. ``transform_to_dataclass`` is now a free function.

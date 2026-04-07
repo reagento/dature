@@ -9,7 +9,7 @@ os.environ["CACHE_HOST"] = "localhost"
 os.environ["CACHE_PORT"] = "6379"
 
 
-@dature.load(dature.Source(prefix="CACHE_"), cache=True)
+@dature.load(dature.EnvSource(prefix="CACHE_"), cache=True)
 @dataclass
 class CachedConfig:
     host: str

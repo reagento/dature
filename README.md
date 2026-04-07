@@ -53,7 +53,7 @@ class Config:
     port: int
     debug: bool = False
 
-config = dature.load(dature.Source(file="config.yaml"), Config)
+config = dature.load(dature.Yaml12Source(file="config.yaml"), Config)
 ```
 
 ## Key Features

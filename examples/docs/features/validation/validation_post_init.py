@@ -24,4 +24,4 @@ class Config:
         return f"{self.host}:{self.port}"
 
 
-dature.load(dature.Source(file=SOURCES_DIR / "validation_post_init_invalid.yaml"), schema=Config)
+dature.load(dature.Yaml12Source(file=SOURCES_DIR / "validation_post_init_invalid.yaml"), schema=Config)

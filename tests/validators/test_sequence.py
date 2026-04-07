@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-from dature import Source, load
+from dature import JsonSource, load
 from dature.errors import DatureConfigError
 from dature.validators.sequence import MaxItems, MinItems, UniqueItems
 
@@ -18,7 +18,7 @@ class TestMinItems:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing"]}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
         result = load(metadata, schema=Config)
 
         assert result.tags == ["python", "typing"]
@@ -32,7 +32,7 @@ class TestMinItems:
         content = '{"tags": ["python"]}'
         json_file.write_text(content)
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -57,7 +57,7 @@ class TestMaxItems:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing"]}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
         result = load(metadata, schema=Config)
 
         assert result.tags == ["python", "typing"]
@@ -71,7 +71,7 @@ class TestMaxItems:
         content = '{"tags": ["python", "typing", "validation"]}'
         json_file.write_text(content)
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -96,7 +96,7 @@ class TestUniqueItems:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing", "validation"]}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
         result = load(metadata, schema=Config)
 
         assert result.tags == ["python", "typing", "validation"]
@@ -110,7 +110,7 @@ class TestUniqueItems:
         content = '{"tags": ["python", "typing", "python"]}'
         json_file.write_text(content)
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -135,7 +135,7 @@ class TestCombined:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"tags": ["python", "typing", "validation"]}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
         result = load(metadata, schema=Config)
 
         assert result.tags == ["python", "typing", "validation"]
@@ -149,7 +149,7 @@ class TestCombined:
         content = '{"tags": ["python", "typing", "validation", "testing", "coding", "extra"]}'
         json_file.write_text(content)
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)

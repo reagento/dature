@@ -1,4 +1,4 @@
-"""Tests for custom loaders — subclassing BaseLoader."""
+"""Tests for custom sources — subclassing Source."""
 
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -7,24 +7,25 @@ from typing import ClassVar
 
 from adaptix import Provider, loader
 
-from dature import Source, load
-from dature.sources_loader.base import BaseLoader
-from dature.sources_loader.loaders import bool_loader, float_from_string
+from dature import FileSource, load
+from dature.loaders import bool_loader, float_from_string
 from dature.types import FileOrStream, JSONValue
 
 
-class XmlLoader(BaseLoader):
-    display_name: ClassVar[str] = "xml"
+@dataclass(kw_only=True)
+class XmlSource(FileSource):
+    format_name: ClassVar[str] = "xml"
+    path_finder_class = None
 
-    def _load(self, path: FileOrStream) -> JSONValue:
+    def _load_file(self, path: FileOrStream) -> JSONValue:
         if not isinstance(path, Path):
-            msg = "XmlLoader only supports file paths"
+            msg = "XmlSource only supports file paths"
             raise TypeError(msg)
         tree = ET.parse(path)  # noqa: S314
         root = tree.getroot()
         return {child.tag: child.text or "" for child in root}
 
-    def _additional_loaders(self) -> list[Provider]:
+    def additional_loaders(self) -> list[Provider]:
         return [
             loader(bool, bool_loader),
             loader(float, float_from_string),
@@ -46,7 +47,7 @@ class TestCustomLoader:
         )
 
         result = load(
-            Source(file=xml_file, loader=XmlLoader),
+            XmlSource(file=xml_file),
             schema=XmlConfig,
         )
 

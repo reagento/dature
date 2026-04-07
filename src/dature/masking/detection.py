@@ -5,6 +5,7 @@ from typing import Annotated, Union, get_args, get_origin, get_type_hints
 from dature.config import config
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
+from dature.type_utils import find_nested_dataclasses
 from dature.types import TypeAnnotation
 
 _secret_paths_cache: dict[tuple[type, tuple[str, ...]], frozenset[str]] = {}
@@ -59,7 +60,7 @@ def _walk_dataclass_fields(
         if _is_secret_type(field_type) or _matches_secret_pattern(field_name, all_patterns):
             result.add(full_path)
 
-        nested_types = _find_nested_dataclasses(field_type)
+        nested_types = find_nested_dataclasses(field_type)
         for nested_dc in nested_types:
             _walk_dataclass_fields(
                 nested_dc,
@@ -67,26 +68,6 @@ def _walk_dataclass_fields(
                 all_patterns=all_patterns,
                 result=result,
             )
-
-
-def _find_nested_dataclasses(field_type: TypeAnnotation) -> list[type]:
-    result: list[type] = []
-    queue: list[TypeAnnotation] = [field_type]
-
-    while queue:
-        current = queue.pop()
-
-        if is_dataclass(current) and isinstance(current, type):
-            result.append(current)
-            continue
-
-        origin = get_origin(current)
-        if origin is Annotated:
-            queue.append(get_args(current)[0])
-        elif origin is not None:
-            queue.extend(get_args(current))
-
-    return result
 
 
 def build_secret_paths(

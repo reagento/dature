@@ -18,7 +18,7 @@ class Config:
 
 
 dature.load(
-    dature.Source(
+    dature.Yaml12Source(
         file=SOURCES_DIR / "validation_metadata_invalid.yaml",
         validators={
             dature.F[Config].host: MinLength(1),

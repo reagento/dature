@@ -18,8 +18,8 @@ class Config:
 
 
 dature.load(
-    dature.Source(file=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
-    dature.Source(
+    dature.Yaml12Source(file=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
+    dature.Yaml12Source(
         file=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
         secret_field_names=("api_key",),
     ),

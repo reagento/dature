@@ -1,6 +1,6 @@
 # Nested Resolve
 
-Flat-key loaders (ENV, `.env` file, Docker secrets) store nested dataclasses as either a single JSON string or as separate flat keys:
+Flat-key sources (ENV, `.env` file, Docker secrets) store nested dataclasses as either a single JSON string or as separate flat keys:
 
 ```
 # JSON form
@@ -65,9 +65,9 @@ When both `nested_resolve_strategy` and `nested_resolve` are set, per-field take
 --8<-- "examples/docs/advanced/nested_resolve/nested_resolve_override.py"
 ```
 
-## All Flat-Key Loaders
+## All Flat-Key Sources
 
-The mechanism works identically across all flat-key loaders:
+The mechanism works identically across all flat-key sources:
 
 === "ENV"
 

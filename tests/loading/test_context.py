@@ -2,9 +2,24 @@
 
 from dataclasses import dataclass, fields
 from enum import Flag
+from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
-from dature.loading.context import coerce_flag_fields, merge_fields
+import pytest
+
+from dature.field_path import FieldPath
+from dature.loading.context import (
+    apply_skip_invalid,
+    build_error_ctx,
+    coerce_flag_fields,
+    get_allowed_fields,
+    make_validating_post_init,
+    merge_fields,
+)
+from dature.sources.env_ import EnvSource
+from dature.sources.json_ import JsonSource
+from dature.sources.retort import ensure_retort
 
 
 class TestMergeFields:
@@ -141,3 +156,133 @@ class TestCoerceFlagFields:
         result = coerce_flag_fields(data, self.FlagConfig)
 
         assert result == {"name": "test", "perms": 3}
+
+
+class TestBuildErrorCtx:
+    def test_file_source_no_split_symbols(self, tmp_path: Path):
+        json_file = tmp_path / "config.json"
+        json_file.write_text("{}")
+        source = JsonSource(file=json_file, prefix="app")
+
+        ctx = build_error_ctx(source, "MyConfig")
+
+        assert ctx.dataclass_name == "MyConfig"
+        assert ctx.source_class is JsonSource
+        assert ctx.prefix == "app"
+        assert ctx.split_symbols is None
+
+    def test_flat_key_source_has_split_symbols(self):
+        source = EnvSource(prefix="APP", split_symbols="__")
+
+        ctx = build_error_ctx(source, "MyConfig")
+
+        assert ctx.split_symbols == "__"
+
+
+class TestGetAllowedFields:
+    def test_bool_returns_none(self):
+        assert get_allowed_fields(skip_value=True) is None
+        assert get_allowed_fields(skip_value=False) is None
+
+    def test_tuple_of_field_paths(self):
+        @dataclass
+        class Cfg:
+            name: str
+            port: int
+
+        fp = FieldPath(owner=Cfg, parts=("name",))
+
+        result = get_allowed_fields(skip_value=(fp,), schema=Cfg)
+
+        assert result == {"name"}
+
+
+class TestApplySkipInvalid:
+    @pytest.mark.parametrize("skip_if_invalid", [False, None], ids=["false", "none"])
+    def test_falsy_returns_raw_unchanged(self, tmp_path: Path, skip_if_invalid):
+        json_file = tmp_path / "config.json"
+        json_file.write_text("{}")
+
+        @dataclass
+        class Cfg:
+            name: str
+
+        source = JsonSource(file=json_file)
+        raw = {"name": "hello"}
+
+        result = apply_skip_invalid(
+            raw=raw,
+            skip_if_invalid=skip_if_invalid,
+            source=source,
+            schema=Cfg,
+            log_prefix="[test]",
+        )
+
+        assert result.cleaned_dict == raw
+        assert result.skipped_paths == []
+
+
+class TestEnsureRetort:
+    def test_creates_and_caches_retort(self, tmp_path: Path):
+        json_file = tmp_path / "config.json"
+        json_file.write_text("{}")
+
+        @dataclass
+        class Cfg:
+            name: str
+
+        source = JsonSource(file=json_file)
+        assert Cfg not in source.retorts
+
+        ensure_retort(source, Cfg)
+        assert Cfg in source.retorts
+
+        first = source.retorts[Cfg]
+        ensure_retort(source, Cfg)
+        assert source.retorts[Cfg] is first
+
+
+class TestMakeValidatingPostInit:
+    @dataclass
+    class Cfg:
+        name: str
+
+    def test_loading_flag_skips_validation(self):
+        ctx = MagicMock()
+        ctx.loading = True
+        ctx.validating = False
+        ctx.original_post_init = None
+
+        post_init = make_validating_post_init(ctx)
+        instance = MagicMock()
+        post_init(instance)
+
+        ctx.validation_loader.assert_not_called()
+
+    def test_validating_flag_skips_reentrant(self):
+        ctx = MagicMock()
+        ctx.loading = False
+        ctx.validating = True
+        ctx.original_post_init = None
+
+        post_init = make_validating_post_init(ctx)
+        instance = MagicMock()
+        post_init(instance)
+
+        ctx.validation_loader.assert_not_called()
+
+    def test_calls_original_post_init(self):
+        original = MagicMock()
+        ctx = MagicMock()
+        ctx.loading = False
+        ctx.validating = False
+        ctx.original_post_init = original
+        ctx.cls = self.Cfg
+        ctx.validation_loader = MagicMock()
+        ctx.error_ctx = MagicMock()
+
+        post_init = make_validating_post_init(ctx)
+        instance = self.Cfg(name="test")
+        post_init(instance)
+
+        original.assert_called_once_with(instance)

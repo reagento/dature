@@ -54,8 +54,7 @@ Declare validators using `typing.Annotated`:
 Multiple validators can be combined:
 
 ```python
-port: Annotated[int, Ge(1), Le(65535)]
-tags: Annotated[list[str], MinItems(1), MaxItems(10), UniqueItems()]
+--8<-- "examples/docs/features/validation/validation_annotated_combined.py:combined"
 ```
 
 ## Root Validators
@@ -107,19 +106,13 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 A single validator can be passed directly. Multiple validators require a tuple:
 
 ```python
-validators={
-    dature.F[Config].port: (Gt(0), Lt(65536)),  # tuple for multiple
-    dature.F[Config].host: MinLength(1),               # single, no tuple needed
-}
+--8<-- "examples/docs/features/validation/validation_metadata_syntax.py:syntax"
 ```
 
 Nested fields are supported:
 
 ```python
-validators={
-    dature.F[Config].database.host: MinLength(1),
-    dature.F[Config].database.port: Gt(0),
-}
+--8<-- "examples/docs/features/validation/validation_metadata_nested.py:nested"
 ```
 
 ## Custom Validators

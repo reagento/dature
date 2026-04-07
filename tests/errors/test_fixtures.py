@@ -4,9 +4,8 @@ from typing import Annotated, Literal
 
 import pytest
 
-from dature import Source, load
+from dature import EnvFileSource, IniSource, Json5Source, JsonSource, Toml11Source, Yaml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, FieldLoadError
-from dature.sources_loader.yaml_ import Yaml11Loader, Yaml12Loader
 from dature.validators.number import Ge, Le
 from dature.validators.sequence import MinItems, UniqueItems
 from dature.validators.string import MaxLength, MinLength, RegexPattern
@@ -54,14 +53,13 @@ class ValidationErrorConfig:
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 ALL_SOURCES = [
-    ("errors.json", {}),
-    ("errors.json5", {}),
-    ("errors.yaml", {}),
-    ("errors.yaml", {"loader": Yaml11Loader}),
-    ("errors.yaml", {"loader": Yaml12Loader}),
-    ("errors.toml", {}),
-    ("errors.ini", {"prefix": "config"}),
-    ("errors.env", {}),
+    ("errors.json", JsonSource, {}),
+    ("errors.json5", Json5Source, {}),
+    ("errors.yaml", Yaml11Source, {}),
+    ("errors.yaml", Yaml12Source, {}),
+    ("errors.toml", Toml11Source, {}),
+    ("errors.ini", IniSource, {"prefix": "config"}),
+    ("errors.env", EnvFileSource, {}),
 ]
 
 EXPECTED_LOAD_ERRORS = [
@@ -93,12 +91,13 @@ def _assert_field_errors(
         assert exc.message == message
 
 
-@pytest.mark.parametrize(("fixture_file", "metadata_kwargs"), ALL_SOURCES)
+@pytest.mark.parametrize(("fixture_file", "source_class", "source_kwargs"), ALL_SOURCES)
 def test_load_error_types(
     fixture_file: str,
-    metadata_kwargs: dict[str, str],
+    source_class: type,
+    source_kwargs: dict[str, str],
 ) -> None:
-    metadata = Source(file=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
+    metadata = source_class(file=str(FIXTURES_DIR / fixture_file), **source_kwargs)
 
     with pytest.raises(DatureConfigError) as exc_info:
         load(metadata, schema=LoadErrorConfig)
@@ -108,12 +107,13 @@ def test_load_error_types(
     _assert_field_errors(err.exceptions, EXPECTED_LOAD_ERRORS)
 
 
-@pytest.mark.parametrize(("fixture_file", "metadata_kwargs"), ALL_SOURCES)
+@pytest.mark.parametrize(("fixture_file", "source_class", "source_kwargs"), ALL_SOURCES)
 def test_validation_error_types(
     fixture_file: str,
-    metadata_kwargs: dict[str, str],
+    source_class: type,
+    source_kwargs: dict[str, str],
 ) -> None:
-    metadata = Source(file=str(FIXTURES_DIR / fixture_file), **metadata_kwargs)
+    metadata = source_class(file=str(FIXTURES_DIR / fixture_file), **source_kwargs)
 
     with pytest.raises(DatureConfigError) as exc_info:
         load(metadata, schema=ValidationErrorConfig)

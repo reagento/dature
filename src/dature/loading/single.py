@@ -3,39 +3,47 @@ from collections.abc import Callable
 from dataclasses import asdict, fields, is_dataclass
 from typing import TYPE_CHECKING, Any
 
-from dature.config import config
 from dature.errors import DatureConfigError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
-from dature.errors.location import read_filecontent
+from dature.errors.location import read_file_content
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry, attach_load_report
+from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import (
     apply_skip_invalid,
     build_error_ctx,
     coerce_flag_fields,
-    ensure_retort,
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.resolver import resolve_loader_class
-from dature.loading.source_loading import SkippedFieldSource
+from dature.loading.source_loading import (
+    ResolvedSourceParams,
+    SkippedFieldSource,
+    load_source_raw,
+    resolve_source_params,
+)
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
-from dature.metadata import Source
-from dature.protocols import DataclassInstance, LoaderProtocol
-from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
+from dature.protocols import DataclassInstance
+from dature.sources.base import Source
+from dature.sources.retort import (
+    create_probe_retort,
+    create_validating_retort,
+    ensure_retort,
+    transform_to_dataclass,
+)
+from dature.types import JSONValue
 
 if TYPE_CHECKING:
     from adaptix import Retort
 
+    from dature.types import (
+        ExpandEnvVarsMode,
+        NestedResolve,
+        NestedResolveStrategy,
+        TypeLoaderMap,
+    )
+
 logger = logging.getLogger("dature")
-
-
-def _resolve_single_mask_secrets(metadata: Source, *, load_level: bool | None = None) -> bool:
-    if metadata.mask_secrets is not None:
-        return metadata.mask_secrets
-    if load_level is not None:
-        return load_level
-    return config.masking.mask_secrets
 
 
 def _log_single_source_load(
@@ -107,22 +115,24 @@ class _PatchContext:
     def __init__(  # noqa: PLR0913
         self,
         *,
-        loader_instance: LoaderProtocol,
-        file_path: FileOrStream,
+        source: Source,
         cls: type[DataclassInstance],
-        metadata: Source,
         cache: bool,
         debug: bool,
         secret_field_names: tuple[str, ...] | None = None,
         mask_secrets: bool | None = None,
+        resolved: ResolvedSourceParams,
     ) -> None:
-        ensure_retort(loader_instance, cls)
-        validating_retort = loader_instance.create_validating_retort(cls)
+        self.resolved = resolved
+        ensure_retort(source, cls, resolved_type_loaders=self.resolved.type_loaders)
+        validating_retort = create_validating_retort(
+            source,
+            cls,
+            resolved_type_loaders=self.resolved.type_loaders,
+        )
 
-        self.loader_instance = loader_instance
-        self.file_path = file_path
+        self.source = source
         self.cls = cls
-        self.metadata = metadata
         self.cache = cache
         self.debug = debug
         self.cached_data: DataclassInstance | None = None
@@ -133,17 +143,16 @@ class _PatchContext:
         self.validating = False
         self.loading = False
 
-        loader_class = resolve_loader_class(metadata.loader, metadata.file)
-        self.loader_type = loader_class.display_name
+        self.loader_type = source.format_name
 
-        resolved_mask_secrets = _resolve_single_mask_secrets(metadata, load_level=mask_secrets)
+        resolved_mask_secrets = resolve_mask_secrets(source_level=source.mask_secrets, load_level=mask_secrets)
         self.secret_paths: frozenset[str] = frozenset()
         if resolved_mask_secrets:
-            extra_patterns = (metadata.secret_field_names or ()) + (secret_field_names or ())
+            extra_patterns = (source.secret_field_names or ()) + (secret_field_names or ())
             self.secret_paths = build_secret_paths(cls, extra_patterns=extra_patterns)
 
         self.error_ctx = build_error_ctx(
-            metadata,
+            source,
             cls.__name__,
             secret_paths=self.secret_paths,
             mask_secrets=resolved_mask_secrets,
@@ -151,21 +160,21 @@ class _PatchContext:
 
         # probe_retort is created early so adaptix sees the original signature
         self.probe_retort: Retort | None = None
-        if metadata.skip_if_invalid:
-            self.probe_retort = loader_instance.create_probe_retort()
+        if source.skip_if_invalid:
+            self.probe_retort = create_probe_retort(source, resolved_type_loaders=self.resolved.type_loaders)
             self.probe_retort.get_loader(cls)
 
 
 def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
     load_result = handle_load_errors(
-        func=lambda: ctx.loader_instance.load_raw(ctx.file_path),
+        func=lambda: load_source_raw(ctx.source, ctx.resolved),
         ctx=ctx.error_ctx,
     )
     raw_data = load_result.data
 
     if load_result.nested_conflicts:
         ctx.error_ctx = build_error_ctx(
-            ctx.metadata,
+            ctx.source,
             ctx.cls.__name__,
             secret_paths=ctx.secret_paths,
             mask_secrets=ctx.error_ctx.mask_secrets,
@@ -174,8 +183,8 @@ def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
 
     filter_result = apply_skip_invalid(
         raw=raw_data,
-        skip_if_invalid=ctx.metadata.skip_if_invalid,
-        loader_instance=ctx.loader_instance,
+        skip_if_invalid=ctx.source.skip_if_invalid,
+        source=ctx.source,
         schema=ctx.cls,
         log_prefix=f"[{ctx.cls.__name__}]",
         probe_retort=ctx.probe_retort,
@@ -184,14 +193,14 @@ def _load_single_source(ctx: _PatchContext) -> DataclassInstance:
     raw_data = coerce_flag_fields(raw_data, ctx.cls)
 
     skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-    filecontent = read_filecontent(ctx.error_ctx.file_path)
+    file_content = read_file_content(ctx.error_ctx.file_path)
     for path in filter_result.skipped_paths:
         skipped_fields.setdefault(path, []).append(
-            SkippedFieldSource(metadata=ctx.metadata, error_ctx=ctx.error_ctx, filecontent=filecontent),
+            SkippedFieldSource(source=ctx.source, error_ctx=ctx.error_ctx, file_content=file_content),
         )
 
-    def _transform(rd: JSONValue = raw_data) -> DataclassInstance:
-        return ctx.loader_instance.transform_to_dataclass(rd, ctx.cls)
+    def _transform(data: JSONValue = raw_data) -> DataclassInstance:
+        return transform_to_dataclass(ctx.source, data, ctx.cls, resolved_type_loaders=ctx.resolved.type_loaders)
 
     try:
         loaded_data = handle_load_errors(
@@ -224,7 +233,7 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
             _log_single_source_load(
                 dataclass_name=ctx.cls.__name__,
                 loader_type=ctx.loader_type,
-                file_path="<stream>" if isinstance(ctx.file_path, FILE_LIKE_TYPES) else str(ctx.file_path),
+                file_path=ctx.source.file_display() or "<env>",
                 data=asdict(loaded_data),
                 secret_paths=ctx.secret_paths,
             )
@@ -240,9 +249,7 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
             report = _build_single_source_report(
                 dataclass_name=ctx.cls.__name__,
                 loader_type=ctx.loader_type,
-                file_path=str(ctx.file_path)
-                if not isinstance(ctx.metadata.file, (*FILE_LIKE_TYPES, type(None)))
-                else None,
+                file_path=str(path) if (path := ctx.source.file_path_for_errors()) else None,
                 raw_data=result_dict,
                 secret_paths=ctx.secret_paths,
             )
@@ -254,40 +261,48 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
     return new_init
 
 
-def load_as_function(  # noqa: C901, PLR0912, PLR0913
+def load_as_function(  # noqa: C901, PLR0913
     *,
-    loader_instance: LoaderProtocol,
-    file_path: FileOrStream,
+    source: Source,
     schema: type[DataclassInstance],
-    metadata: Source,
     debug: bool,
     secret_field_names: tuple[str, ...] | None = None,
     mask_secrets: bool | None = None,
+    expand_env_vars: "ExpandEnvVarsMode | None" = None,
+    type_loaders: "TypeLoaderMap | None" = None,
+    nested_resolve_strategy: "NestedResolveStrategy | None" = None,
+    nested_resolve: "NestedResolve | None" = None,
 ) -> DataclassInstance:
-    loader_class = resolve_loader_class(metadata.loader, metadata.file)
-    display_name = loader_class.display_name
+    resolved = resolve_source_params(
+        source,
+        load_expand_env_vars=expand_env_vars,
+        load_type_loaders=type_loaders,
+        load_nested_resolve_strategy=nested_resolve_strategy,
+        load_nested_resolve=nested_resolve,
+    )
+    format_name = source.format_name
 
     secret_paths: frozenset[str] = frozenset()
-    resolved_mask_secrets = _resolve_single_mask_secrets(metadata, load_level=mask_secrets)
+    resolved_mask_secrets = resolve_mask_secrets(source_level=source.mask_secrets, load_level=mask_secrets)
     if resolved_mask_secrets:
-        extra_patterns = (metadata.secret_field_names or ()) + (secret_field_names or ())
+        extra_patterns = (source.secret_field_names or ()) + (secret_field_names or ())
         secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
     error_ctx = build_error_ctx(
-        metadata,
+        source,
         schema.__name__,
         secret_paths=secret_paths,
         mask_secrets=resolved_mask_secrets,
     )
 
     load_result = handle_load_errors(
-        func=lambda: loader_instance.load_raw(file_path),
+        func=lambda: load_source_raw(source, resolved),
         ctx=error_ctx,
     )
     raw_data = load_result.data
 
     if load_result.nested_conflicts:
         error_ctx = build_error_ctx(
-            metadata,
+            source,
             schema.__name__,
             secret_paths=secret_paths,
             mask_secrets=resolved_mask_secrets,
@@ -296,31 +311,27 @@ def load_as_function(  # noqa: C901, PLR0912, PLR0913
 
     filter_result = apply_skip_invalid(
         raw=raw_data,
-        skip_if_invalid=metadata.skip_if_invalid,
-        loader_instance=loader_instance,
+        skip_if_invalid=source.skip_if_invalid,
+        source=source,
         schema=schema,
         log_prefix=f"[{schema.__name__}]",
     )
     raw_data = filter_result.cleaned_dict
 
     skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-    filecontent = read_filecontent(error_ctx.file_path)
+    file_content = read_file_content(error_ctx.file_path)
     for path in filter_result.skipped_paths:
         skipped_fields.setdefault(path, []).append(
-            SkippedFieldSource(metadata=metadata, error_ctx=error_ctx, filecontent=filecontent),
+            SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content),
         )
 
     report: LoadReport | None = None
     if debug:
-        if isinstance(metadata.file, FILE_LIKE_TYPES):
-            report_file_path = None
-        elif metadata.file is not None:
-            report_file_path = str(metadata.file)
-        else:
-            report_file_path = None
+        source_path = source.file_path_for_errors()
+        report_file_path = str(source_path) if source_path is not None else None
         report = _build_single_source_report(
             dataclass_name=schema.__name__,
-            loader_type=display_name,
+            loader_type=format_name,
             file_path=report_file_path,
             raw_data=raw_data,
             secret_paths=secret_paths,
@@ -328,13 +339,17 @@ def load_as_function(  # noqa: C901, PLR0912, PLR0913
 
     _log_single_source_load(
         dataclass_name=schema.__name__,
-        loader_type=display_name,
-        file_path="<stream>" if isinstance(file_path, FILE_LIKE_TYPES) else str(file_path),
+        loader_type=format_name,
+        file_path=source.file_display() or "<env>",
         data=raw_data if isinstance(raw_data, dict) else {},
         secret_paths=secret_paths,
     )
 
-    validating_retort = loader_instance.create_validating_retort(schema)
+    validating_retort = create_validating_retort(
+        source,
+        schema,
+        resolved_type_loaders=resolved.type_loaders,
+    )
     validation_loader = validating_retort.get_loader(schema)
     raw_data = coerce_flag_fields(raw_data, schema)
 
@@ -352,7 +367,12 @@ def load_as_function(  # noqa: C901, PLR0912, PLR0913
 
     try:
         result = handle_load_errors(
-            func=lambda: loader_instance.transform_to_dataclass(raw_data, schema),
+            func=lambda: transform_to_dataclass(
+                source,
+                raw_data,
+                schema,
+                resolved_type_loaders=resolved.type_loaders,
+            ),
             ctx=error_ctx,
         )
     except DatureConfigError as exc:
@@ -370,28 +390,37 @@ def load_as_function(  # noqa: C901, PLR0912, PLR0913
 
 def make_decorator(  # noqa: PLR0913
     *,
-    loader_instance: LoaderProtocol,
-    file_path: FileOrStream,
-    metadata: Source,
+    source: Source,
     cache: bool,
     debug: bool,
     secret_field_names: tuple[str, ...] | None = None,
     mask_secrets: bool | None = None,
+    expand_env_vars: "ExpandEnvVarsMode | None" = None,
+    type_loaders: "TypeLoaderMap | None" = None,
+    nested_resolve_strategy: "NestedResolveStrategy | None" = None,
+    nested_resolve: "NestedResolve | None" = None,
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
+    resolved = resolve_source_params(
+        source,
+        load_expand_env_vars=expand_env_vars,
+        load_type_loaders=type_loaders,
+        load_nested_resolve_strategy=nested_resolve_strategy,
+        load_nested_resolve=nested_resolve,
+    )
+
     def decorator(cls: type[DataclassInstance]) -> type[DataclassInstance]:
         if not is_dataclass(cls):
             msg = f"{cls.__name__} must be a dataclass"
             raise TypeError(msg)
 
         ctx = _PatchContext(
-            loader_instance=loader_instance,
-            file_path=file_path,
+            source=source,
             cls=cls,
-            metadata=metadata,
             cache=cache,
             debug=debug,
             secret_field_names=secret_field_names,
             mask_secrets=mask_secrets,
+            resolved=resolved,
         )
         cls.__init__ = _make_new_init(ctx)  # type: ignore[method-assign]
         cls.__post_init__ = make_validating_post_init(ctx)  # type: ignore[attr-defined]

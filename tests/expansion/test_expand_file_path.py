@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from dature import EnvSource, Toml11Source
 from dature.errors import EnvVarExpandError
 from dature.expansion.env_expand import expand_file_path
-from dature.metadata import Source
 
 SEP = os.sep
 
@@ -142,17 +142,17 @@ class TestSourceFileExpansion:
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
 
-        source = Source(file=file)
+        source = Toml11Source(file=file)
 
         assert source.file == expected
 
     def test_none_fileunchanged(self) -> None:
-        source = Source()
+        source = EnvSource()
 
-        assert source.file is None
+        assert not hasattr(source, "file")
 
     def test_missing_var_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("DATURE_MISSING", raising=False)
 
         with pytest.raises(EnvVarExpandError):
-            Source(file="$DATURE_MISSING/config.toml")
+            Toml11Source(file="$DATURE_MISSING/config.toml")

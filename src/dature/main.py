@@ -1,21 +1,18 @@
 import logging
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any, overload
 
 from dature.config import config
+from dature.loading.merge_config import MergeConfig
 from dature.loading.multi import merge_load_as_function, merge_make_decorator
-from dature.loading.resolver import resolve_loader
 from dature.loading.single import load_as_function, make_decorator
 from dature.merging.strategy import MergeStrategyEnum
-from dature.metadata import Source, _MergeConfig
 from dature.protocols import DataclassInstance
+from dature.sources.base import Source
 from dature.types import (
-    FILE_LIKE_TYPES,
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
-    FileOrStream,
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
@@ -118,44 +115,31 @@ def load(  # noqa: PLR0913
             nested_resolve=nested_resolve,
         )
 
-    metadata = sources[0]
-
-    source_type_loaders = {**(config.type_loaders or {}), **(type_loaders or {}), **(metadata.type_loaders or {})}
-    loader_instance = resolve_loader(
-        metadata,
-        expand_env_vars=expand_env_vars,
-        type_loaders=source_type_loaders or None,
-        nested_resolve_strategy=nested_resolve_strategy or config.loading.nested_resolve_strategy,
-        nested_resolve=nested_resolve,
-    )
-
-    fileor_path: FileOrStream
-    if isinstance(metadata.file, FILE_LIKE_TYPES):
-        fileor_path = metadata.file
-    elif metadata.file is not None:
-        fileor_path = Path(metadata.file)
-    else:
-        fileor_path = Path()
+    source = sources[0]
 
     if schema is not None:
         return load_as_function(
-            loader_instance=loader_instance,
-            file_path=fileor_path,
+            source=source,
             schema=schema,
-            metadata=metadata,
             debug=debug,
             secret_field_names=secret_field_names,
             mask_secrets=mask_secrets,
+            expand_env_vars=expand_env_vars,
+            type_loaders=type_loaders,
+            nested_resolve_strategy=nested_resolve_strategy,
+            nested_resolve=nested_resolve,
         )
 
     return make_decorator(
-        loader_instance=loader_instance,
-        file_path=fileor_path,
-        metadata=metadata,
+        source=source,
         cache=cache,
         debug=debug,
         secret_field_names=secret_field_names,
         mask_secrets=mask_secrets,
+        expand_env_vars=expand_env_vars,
+        type_loaders=type_loaders,
+        nested_resolve_strategy=nested_resolve_strategy,
+        nested_resolve=nested_resolve,
     )
 
 
@@ -188,7 +172,7 @@ def _load_multi(  # noqa: PLR0913
     nested_resolve_strategy: NestedResolveStrategy | None,
     nested_resolve: NestedResolve | None,
 ) -> DataclassInstance | Callable[[type[DataclassInstance]], type[DataclassInstance]]:
-    merge_meta = _MergeConfig(
+    merge_meta = MergeConfig(
         sources=sources,
         strategy=MergeStrategyEnum(strategy),
         field_merges=field_merges,
@@ -202,7 +186,6 @@ def _load_multi(  # noqa: PLR0913
         nested_resolve_strategy=nested_resolve_strategy,
         nested_resolve=nested_resolve,
     )
-    merge_type_loaders = {**(config.type_loaders or {}), **(merge_meta.type_loaders or {})}
     if schema is not None:
-        return merge_load_as_function(merge_meta, schema, debug=debug, type_loaders=merge_type_loaders or None)
-    return merge_make_decorator(merge_meta, cache=cache, debug=debug, type_loaders=merge_type_loaders or None)
+        return merge_load_as_function(merge_meta, schema, debug=debug)
+    return merge_make_decorator(merge_meta, cache=cache, debug=debug)

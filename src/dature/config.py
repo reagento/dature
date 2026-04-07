@@ -67,9 +67,9 @@ class DatureConfig:
 
 def _load_config() -> DatureConfig:
     from dature.main import load  # noqa: PLC0415
-    from dature.metadata import Source  # noqa: PLC0415
+    from dature.sources.env_ import EnvSource  # noqa: PLC0415
 
-    return load(Source(prefix="DATURE_"), schema=DatureConfig)
+    return load(EnvSource(prefix="DATURE_"), schema=DatureConfig)
 
 
 class MaskingOptions(TypedDict, total=False):

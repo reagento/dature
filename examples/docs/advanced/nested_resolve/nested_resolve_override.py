@@ -4,7 +4,6 @@ import os
 from dataclasses import dataclass
 
 import dature
-from dature.sources_loader.env_ import EnvLoader
 
 os.environ["APP__DATABASE"] = '{"host": "json-host", "port": "5432"}'
 os.environ["APP__DATABASE__HOST"] = "flat-host"
@@ -34,8 +33,7 @@ class Config:
 
 # Global: "flat" for everything, but database overridden to "json"
 config = dature.load(
-    dature.Source(
-        loader=EnvLoader,
+    dature.EnvSource(
         prefix="APP__",
         nested_resolve_strategy="flat",
         nested_resolve={"json": (dature.F[Config].database,)},

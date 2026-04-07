@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import Source, load
+from dature import EnvSource, JsonSource, Toml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, FieldLoadError, LineRange, SourceLocation
 
 
@@ -16,7 +16,7 @@ class TestDatureConfigErrorFormat:
                 input_value="30",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=2, end=2),
                         line_content=['timeout = "30"'],
@@ -42,7 +42,7 @@ class TestDatureConfigErrorFormat:
                 input_value="abc",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=2),
                         line_content=['"timeout": "abc"'],
@@ -56,7 +56,7 @@ class TestDatureConfigErrorFormat:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=None,
                         line_content=None,
@@ -83,7 +83,7 @@ class TestDatureConfigErrorFormat:
                 input_value="abc",
                 locations=[
                     SourceLocation(
-                        display_label="ENV",
+                        location_label="ENV",
                         file_path=None,
                         line_range=None,
                         line_content=None,
@@ -109,7 +109,7 @@ class TestCaretPointsToValue:
                 input_value="name",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=1, end=1),
                         line_content=['name = "name"'],
@@ -134,7 +134,7 @@ class TestCaretPointsToValue:
                 input_value="host",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=2),
                         line_content=['"host": "host"'],
@@ -157,7 +157,7 @@ class TestLoadIntegrationErrors:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"timeout": "abc", "name": "test"}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         @load(metadata)
         @dataclass
@@ -192,7 +192,7 @@ class TestLoadIntegrationErrors:
             name: str
             port: int
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -214,7 +214,7 @@ class TestLoadIntegrationErrors:
             timeout: int
             name: str
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -249,7 +249,7 @@ class TestLoadIntegrationErrors:
         class Config:
             db: DB
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -271,7 +271,7 @@ class TestLoadIntegrationErrors:
         monkeypatch.setenv("APP_TIMEOUT", "abc")
         monkeypatch.setenv("APP_NAME", "test")
 
-        metadata = Source(prefix="APP_")
+        metadata = EnvSource(prefix="APP_")
 
         @load(metadata)
         @dataclass
@@ -298,7 +298,7 @@ class TestLoadIntegrationErrors:
             name: str
             timeout: int
 
-        metadata = Source(file=toml_file)
+        metadata = Toml11Source(file=toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -326,7 +326,7 @@ class TestLoadIntegrationErrors:
             name: str
             timeout: int
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -378,7 +378,7 @@ class TestLineTruncation:
                 input_value="30",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=2, end=2),
                         line_content=[line_content],
@@ -425,7 +425,7 @@ class TestLineTruncation:
                 input_value="abc",
                 locations=[
                     SourceLocation(
-                        display_label="ENV FILE",
+                        location_label="ENV FILE",
                         file_path=Path(".env"),
                         line_range=LineRange(start=2, end=2),
                         line_content=[line_content],
@@ -452,7 +452,7 @@ class TestLineTruncation:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=4),
                         line_content=[line_long, line_short, line_long],
@@ -480,7 +480,7 @@ class TestLineTruncation:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=5),
                         line_content=["line1", "line2", "line3", "line4"],
@@ -507,7 +507,7 @@ class TestLineTruncation:
                 input_value=None,
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=2, end=6),
                         line_content=["line1", "line2", "line3", "line4", "line5"],
@@ -538,7 +538,7 @@ class TestCaretTruncation:
                 input_value=0,
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.json"),
                         line_range=LineRange(start=1, end=1),
                         line_content=[line],
@@ -564,7 +564,7 @@ class TestCaretTruncation:
                 input_value="abcdefghij",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=1, end=1),
                         line_content=[line],
@@ -591,7 +591,7 @@ class TestCaretTruncation:
                 input_value="30",
                 locations=[
                     SourceLocation(
-                        display_label="FILE",
+                        location_label="FILE",
                         file_path=Path("config.toml"),
                         line_range=LineRange(start=2, end=2),
                         line_content=[line],
@@ -619,7 +619,7 @@ class TestMultilineValueDisplay:
         class Config:
             db: int
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -643,7 +643,7 @@ class TestMultilineValueDisplay:
             db: int
             name: str
 
-        metadata = Source(file=yaml_file)
+        metadata = Yaml12Source(file=yaml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -666,7 +666,7 @@ class TestMultilineValueDisplay:
         class Config:
             tags: int
 
-        metadata = Source(file=toml_file)
+        metadata = Toml11Source(file=toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -689,7 +689,7 @@ class TestMultilineValueDisplay:
         class Config:
             tags: int
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -714,7 +714,7 @@ class TestMultilineValueDisplay:
         class Config:
             product: list[Product]
 
-        metadata = Source(file=array_of_tables_toml_file)
+        metadata = Toml11Source(file=array_of_tables_toml_file)
         result = load(metadata, schema=Config)
 
         assert result == Config(
@@ -735,7 +735,7 @@ class TestMultilineValueDisplay:
         class Config:
             product: list[Product]
 
-        metadata = Source(file=array_of_tables_error_first_toml_file)
+        metadata = Toml11Source(file=array_of_tables_error_first_toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
@@ -760,7 +760,7 @@ class TestMultilineValueDisplay:
         class Config:
             product: list[Product]
 
-        metadata = Source(file=array_of_tables_error_last_toml_file)
+        metadata = Toml11Source(file=array_of_tables_error_last_toml_file)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)

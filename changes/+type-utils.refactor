@@ -1,0 +1,1 @@
+Deduplicated ``_find_nested_dataclasses`` into shared ``type_utils.find_nested_dataclasses``.

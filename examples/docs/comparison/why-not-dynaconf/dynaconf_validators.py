@@ -17,4 +17,4 @@ class Config:
     debug: bool = False
 
 
-dature.load(dature.Source(file=SOURCES_DIR / "dynaconf_validators_invalid.toml"), schema=Config)
+dature.load(dature.Toml11Source(file=SOURCES_DIR / "dynaconf_validators_invalid.toml"), schema=Config)

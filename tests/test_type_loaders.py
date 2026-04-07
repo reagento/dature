@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import Source, configure, load
+from dature import Yaml12Source, configure, load
 from dature.config import _ConfigProxy
 
 
@@ -47,7 +47,7 @@ def yaml_with_rgb(tmp_path: Path) -> Path:
 class TestTypeLoadersInSource:
     def test_single_source_with_type_loader(self, yaml_with_rgb: Path) -> None:
         result = load(
-            Source(
+            Yaml12Source(
                 file=yaml_with_rgb,
                 type_loaders={Rgb: rgb_from_string},
             ),
@@ -66,7 +66,7 @@ class TestTypeLoadersInSource:
         p.write_text("name: app\ncolor: '10,20,30'\n")
 
         result = load(
-            Source(
+            Yaml12Source(
                 file=p,
                 type_loaders={Rgb: rgb_from_string},
             ),
@@ -81,7 +81,7 @@ class TestTypeLoadersInConfigure:
         configure(
             type_loaders={Rgb: rgb_from_string},
         )
-        result = load(Source(file=yaml_with_rgb), schema=ConfigWithRgb)
+        result = load(Yaml12Source(file=yaml_with_rgb), schema=ConfigWithRgb)
         assert result.color == Rgb(r=255, g=128, b=0)
 
 
@@ -93,8 +93,8 @@ class TestTypeLoadersInMerge:
         override.write_text("name: override\n")
 
         result = load(
-            Source(file=base),
-            Source(file=override),
+            Yaml12Source(file=base),
+            Yaml12Source(file=override),
             schema=ConfigWithRgb,
             type_loaders={Rgb: rgb_from_string},
         )
@@ -121,7 +121,7 @@ class TestTypeLoadersMergedFromBoth:
         p.write_text("color: '10,20,30'\ntag: hello\n")
 
         result = load(
-            Source(
+            Yaml12Source(
                 file=p,
                 type_loaders={str: tag_upper},
             ),

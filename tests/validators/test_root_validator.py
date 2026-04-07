@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import Source, load
+from dature import JsonSource, load
 from dature.errors import DatureConfigError
 from dature.validators.root import RootValidator
 
@@ -23,7 +23,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 80, "user": "root"}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(RootValidator(validate_config),),
         )
@@ -46,7 +46,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 80, "user": "admin"}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(RootValidator(validate_config),),
         )
@@ -75,7 +75,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"min_value": 10, "max_value": 100, "step": 5}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(
                 RootValidator(validate_min_max),
@@ -104,7 +104,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"min_value": 100, "max_value": 10, "step": -5}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(
                 RootValidator(validate_min_max),
@@ -132,7 +132,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 80, "host": "localhost"}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(RootValidator(validate_config),),
         )
@@ -154,7 +154,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"username": "admin", "password": "short"}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(RootValidator(validate_credentials),),
         )
@@ -187,7 +187,7 @@ class TestRootValidator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 80, "user": "admin"}')
 
-        metadata = Source(
+        metadata = JsonSource(
             file=json_file,
             root_validators=(
                 RootValidator(

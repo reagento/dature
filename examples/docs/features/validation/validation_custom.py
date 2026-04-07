@@ -35,6 +35,6 @@ class ServiceConfig:
 
 
 dature.load(
-    dature.Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),
+    dature.Json5Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),
     schema=ServiceConfig,
 )

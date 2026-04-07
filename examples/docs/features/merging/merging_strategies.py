@@ -16,15 +16,15 @@ class Config:
 
 
 last_wins = dature.load(
-    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
     schema=Config,
     strategy="last_wins",
 )
 
 first_wins = dature.load(
-    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-    dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
+    dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
     schema=Config,
     strategy="first_wins",
 )

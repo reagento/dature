@@ -4,7 +4,6 @@ from dataclasses import dataclass as stdlib_dataclass
 from dataclasses import fields, is_dataclass
 from typing import Any
 
-from dature.config import config
 from dature.errors import DatureConfigError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
 from dature.load_report import (
@@ -15,40 +14,39 @@ from dature.load_report import (
     compute_field_origins,
     get_load_report,
 )
+from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import (
     build_error_ctx,
     coerce_flag_fields,
-    ensure_retort,
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.resolver import resolve_loader
-from dature.loading.source_loading import load_sources, resolve_expand_env_vars
+from dature.loading.merge_config import MergeConfig
+from dature.loading.source_loading import ResolvedSourceParams, load_sources, resolve_source_params
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries, mask_value
 from dature.merging.deep_merge import deep_merge, deep_merge_last_wins, raise_on_conflict
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
 from dature.merging.strategy import FieldMergeStrategyEnum, MergeStrategyEnum
-from dature.metadata import Source, _MergeConfig
-from dature.protocols import DataclassInstance, LoaderProtocol
-from dature.types import FieldMergeCallable, JSONValue, TypeLoaderMap
+from dature.protocols import DataclassInstance
+from dature.sources.base import Source
+from dature.sources.retort import (
+    create_validating_retort,
+    ensure_retort,
+    transform_to_dataclass,
+)
+from dature.types import FieldMergeCallable, JSONValue
 
 logger = logging.getLogger("dature")
 
 
-def _resolve_merge_mask_secrets(merge_meta: _MergeConfig) -> bool:
-    if merge_meta.mask_secrets is not None:
-        return merge_meta.mask_secrets
-    return config.masking.mask_secrets
-
-
-def _collect_extra_secret_patterns(merge_meta: _MergeConfig) -> tuple[str, ...]:
+def _collect_extra_secret_patterns(merge_meta: MergeConfig) -> tuple[str, ...]:
     merge_names = merge_meta.secret_field_names or ()
     source_names: list[str] = []
-    for source_meta in merge_meta.sources:
-        if source_meta.secret_field_names is not None:
-            source_names.extend(source_meta.secret_field_names)
+    for source_item in merge_meta.sources:
+        if source_item.secret_field_names is not None:
+            source_names.extend(source_item.secret_field_names)
     return merge_names + tuple(source_names)
 
 
@@ -258,20 +256,18 @@ def _merge_raw_dicts(
 class _MergedData[T: DataclassInstance]:
     result: T
     merged_raw: JSONValue
-    last_loader: LoaderProtocol
-    last_source_meta: Source
+    last_source: Source
+    last_resolved: ResolvedSourceParams
 
 
 def _load_and_merge[T: DataclassInstance](  # noqa: C901
     *,
-    merge_meta: _MergeConfig,
+    merge_meta: MergeConfig,
     schema: type[T],
-    loaders: tuple[LoaderProtocol, ...] | None = None,
     debug: bool = False,
-    type_loaders: TypeLoaderMap | None = None,
 ) -> _MergedData[T]:
     secret_paths: frozenset[str] = frozenset()
-    if _resolve_merge_mask_secrets(merge_meta):
+    if resolve_mask_secrets(load_level=merge_meta.mask_secrets):
         extra_patterns = _collect_extra_secret_patterns(merge_meta)
         secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
@@ -279,10 +275,8 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
         merge_meta=merge_meta,
         dataclass_name=schema.__name__,
         schema=schema,
-        loaders=loaders,
         secret_paths=secret_paths,
-        mask_secrets=_resolve_merge_mask_secrets(merge_meta),
-        type_loaders=type_loaders,
+        mask_secrets=resolve_mask_secrets(load_level=merge_meta.mask_secrets),
     )
 
     merge_maps = build_field_merge_map(merge_meta.field_merges, schema)
@@ -354,11 +348,17 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
             secret_paths=secret_paths,
         )
 
+    last_resolved = loaded.last_resolved
     last_error_ctx = loaded.source_ctxs[-1].error_ctx
     merged = coerce_flag_fields(merged, schema)
     try:
         result = handle_load_errors(
-            func=lambda: loaded.last_loader.transform_to_dataclass(merged, schema),
+            func=lambda: transform_to_dataclass(
+                loaded.last_source,
+                merged,
+                schema,
+                resolved_type_loaders=last_resolved.type_loaders,
+            ),
             ctx=last_error_ctx,
         )
     except DatureConfigError as exc:
@@ -371,34 +371,36 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901
     if report is not None:
         attach_load_report(result, report)
 
-    last_source_idx = loaded.source_entries[-1].index
     return _MergedData(
         result=result,
         merged_raw=merged,
-        last_loader=loaded.last_loader,
-        last_source_meta=merge_meta.sources[last_source_idx],
+        last_source=loaded.last_source,
+        last_resolved=loaded.last_resolved,
     )
 
 
 def merge_load_as_function[T: DataclassInstance](
-    merge_meta: _MergeConfig,
+    merge_meta: MergeConfig,
     schema: type[T],
     *,
     debug: bool,
-    type_loaders: TypeLoaderMap | None = None,
 ) -> T:
     data = _load_and_merge(
         merge_meta=merge_meta,
         schema=schema,
         debug=debug,
-        type_loaders=type_loaders,
     )
 
-    validating_retort = data.last_loader.create_validating_retort(schema)
+    last_resolved = data.last_resolved
+    validating_retort = create_validating_retort(
+        data.last_source,
+        schema,
+        resolved_type_loaders=last_resolved.type_loaders,
+    )
     validation_loader = validating_retort.get_loader(schema)
 
-    last_meta = data.last_source_meta
-    mask_secrets = _resolve_merge_mask_secrets(merge_meta)
+    last_meta = data.last_source
+    mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
     secret_paths: frozenset[str] = frozenset()
     if mask_secrets:
         extra_patterns = _collect_extra_secret_patterns(merge_meta)
@@ -428,19 +430,17 @@ class _MergePatchContext:
     def __init__(
         self,
         *,
-        merge_meta: _MergeConfig,
+        merge_meta: MergeConfig,
         cls: type[DataclassInstance],
         cache: bool,
         debug: bool,
-        type_loaders: TypeLoaderMap | None = None,
     ) -> None:
-        self.loaders = self._prepare_loaders(merge_meta=merge_meta, cls=cls, type_loaders=type_loaders)
+        self._prepare_sources(merge_meta=merge_meta, cls=cls)
 
         self.merge_meta = merge_meta
         self.cls = cls
         self.cache = cache
         self.debug = debug
-        self.type_loaders = type_loaders
         self.cached_data: DataclassInstance | None = None
         self.field_list = fields(cls)
         self.original_init = cls.__init__
@@ -448,11 +448,23 @@ class _MergePatchContext:
         self.loading = False
         self.validating = False
 
-        last_loader = self.loaders[-1]
-        validating_retort = last_loader.create_validating_retort(cls)
+        last_source = merge_meta.sources[-1]
+        last_resolved = resolve_source_params(
+            last_source,
+            load_expand_env_vars=merge_meta.expand_env_vars,
+            load_type_loaders=merge_meta.type_loaders,
+            load_nested_resolve_strategy=merge_meta.nested_resolve_strategy,
+            load_nested_resolve=merge_meta.nested_resolve,
+        )
+        ensure_retort(last_source, cls, resolved_type_loaders=last_resolved.type_loaders)
+        validating_retort = create_validating_retort(
+            last_source,
+            cls,
+            resolved_type_loaders=last_resolved.type_loaders,
+        )
         self.validation_loader: Callable[[JSONValue], DataclassInstance] = validating_retort.get_loader(cls)
 
-        mask_secrets = _resolve_merge_mask_secrets(merge_meta)
+        mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
         self.secret_paths: frozenset[str] = frozenset()
         if mask_secrets:
             extra_patterns = _collect_extra_secret_patterns(merge_meta)
@@ -466,37 +478,21 @@ class _MergePatchContext:
             mask_secrets=mask_secrets,
         )
 
-    @staticmethod
-    def _prepare_loaders(
+    def _prepare_sources(
+        self,
         *,
-        merge_meta: _MergeConfig,
+        merge_meta: MergeConfig,
         cls: type[DataclassInstance],
-        type_loaders: TypeLoaderMap | None = None,
-    ) -> tuple[LoaderProtocol, ...]:
-        loaders: list[LoaderProtocol] = []
-        for source_meta in merge_meta.sources:
-            resolved_expand = resolve_expand_env_vars(source_meta, merge_meta)
-            source_type_loaders = {**(type_loaders or {}), **(source_meta.type_loaders or {})}
-            resolved_strategy = (
-                source_meta.nested_resolve_strategy
-                or merge_meta.nested_resolve_strategy
-                or config.loading.nested_resolve_strategy
+    ) -> None:
+        for source_item in merge_meta.sources:
+            resolved = resolve_source_params(
+                source_item,
+                load_expand_env_vars=merge_meta.expand_env_vars,
+                load_type_loaders=merge_meta.type_loaders,
+                load_nested_resolve_strategy=merge_meta.nested_resolve_strategy,
+                load_nested_resolve=merge_meta.nested_resolve,
             )
-            resolve_kwargs: dict[str, Any] = {
-                "expand_env_vars": resolved_expand,
-                "type_loaders": source_type_loaders,
-                "nested_resolve_strategy": resolved_strategy,
-            }
-            resolved_resolve = source_meta.nested_resolve or merge_meta.nested_resolve
-            if resolved_resolve is not None:
-                resolve_kwargs["nested_resolve"] = resolved_resolve
-            loader_instance = resolve_loader(
-                source_meta,
-                **resolve_kwargs,
-            )
-            ensure_retort(loader_instance, cls)
-            loaders.append(loader_instance)
-        return tuple(loaders)
+            ensure_retort(source_item, cls, resolved_type_loaders=resolved.type_loaders)
 
 
 def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
@@ -513,15 +509,13 @@ def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
                 merged_data = _load_and_merge(
                     merge_meta=ctx.merge_meta,
                     schema=ctx.cls,
-                    loaders=ctx.loaders,
                     debug=ctx.debug,
-                    type_loaders=ctx.type_loaders,
                 )
             finally:
                 ctx.loading = False
             loaded_data = merged_data.result
             ctx.error_ctx = build_error_ctx(
-                merged_data.last_source_meta,
+                merged_data.last_source,
                 ctx.cls.__name__,
                 secret_paths=ctx.secret_paths,
                 mask_secrets=ctx.error_ctx.mask_secrets,
@@ -544,11 +538,10 @@ def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
 
 
 def merge_make_decorator(
-    merge_meta: _MergeConfig,
+    merge_meta: MergeConfig,
     *,
     cache: bool,
     debug: bool,
-    type_loaders: TypeLoaderMap | None = None,
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
     def decorator(cls: type[DataclassInstance]) -> type[DataclassInstance]:
         if not is_dataclass(cls):
@@ -560,7 +553,6 @@ def merge_make_decorator(
             cls=cls,
             cache=cache,
             debug=debug,
-            type_loaders=type_loaders,
         )
         cls.__init__ = _make_merge_new_init(ctx)  # type: ignore[method-assign]
         cls.__post_init__ = make_validating_post_init(ctx)  # type: ignore[attr-defined]

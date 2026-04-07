@@ -17,7 +17,7 @@ class AppConfig:
     debug: bool = False
 
 
-config = dature.load(dature.Source(prefix="APP_"), schema=AppConfig)
+config = dature.load(dature.EnvSource(prefix="APP_"), schema=AppConfig)
 
 assert config.host == "0.0.0.0"
 assert config.port == 8080

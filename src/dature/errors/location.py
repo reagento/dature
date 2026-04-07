@@ -5,25 +5,26 @@ from typing import TYPE_CHECKING
 
 from dature.errors.exceptions import LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
+from dature.path_finders.base import PathFinder
 from dature.types import NestedConflict, NestedConflicts
 
 if TYPE_CHECKING:
-    from dature.protocols import LoaderProtocol
+    from dature.sources.base import Source
 
 
 @dataclass(frozen=True)
 class ErrorContext:
     dataclass_name: str
-    loader_class: "type[LoaderProtocol]"
+    source_class: "type[Source]"
     file_path: Path | None
     prefix: str | None
-    split_symbols: str
+    split_symbols: str | None = None
     secret_paths: frozenset[str] = frozenset()
     mask_secrets: bool = False
     nested_conflicts: NestedConflicts | None = None
 
 
-def read_filecontent(file_path: Path | None) -> str | None:
+def read_file_content(file_path: Path | None) -> str | None:
     if file_path is None:
         return None
 
@@ -46,13 +47,13 @@ def _ranges_overlap(a: LineRange, b: LineRange) -> bool:
 
 def _secret_overlaps_lines(
     *,
-    filecontent: str,
+    file_content: str,
     line_range: LineRange,
     secret_paths: frozenset[str],
     prefix: str | None,
-    path_finder_class: type,
+    path_finder_class: type[PathFinder],
 ) -> bool:
-    finder = path_finder_class(filecontent)
+    finder = path_finder_class(file_content)
     for secret_path in secret_paths:
         search_path = _build_search_path(secret_path.split("."), prefix)
         secret_range = finder.find_line_range(search_path)
@@ -74,7 +75,7 @@ def _resolve_conflict(
 def _apply_masking(
     locations: list[SourceLocation],
     ctx: ErrorContext,
-    filecontent: str | None,
+    file_content: str | None,
     *,
     is_secret: bool,
 ) -> list[SourceLocation]:
@@ -85,21 +86,21 @@ def _apply_masking(
             not should_mask
             and ctx.secret_paths
             and location.line_range is not None
-            and ctx.loader_class.path_finder_class is not None
-            and filecontent is not None
+            and ctx.source_class.path_finder_class is not None
+            and file_content is not None
         ):
             should_mask = _secret_overlaps_lines(
-                filecontent=filecontent,
+                file_content=file_content,
                 line_range=location.line_range,
                 secret_paths=ctx.secret_paths,
                 prefix=ctx.prefix,
-                path_finder_class=ctx.loader_class.path_finder_class,
+                path_finder_class=ctx.source_class.path_finder_class,
             )
         if should_mask and location.line_content is not None:
             masked_lines = [mask_env_line(line) for line in location.line_content]
             result.append(
                 SourceLocation(
-                    display_label=location.display_label,
+                    location_label=location.location_label,
                     file_path=location.file_path,
                     line_range=location.line_range,
                     line_content=masked_lines,
@@ -114,18 +115,18 @@ def _apply_masking(
 def resolve_source_location(
     field_path: list[str],
     ctx: ErrorContext,
-    filecontent: str | None,
+    file_content: str | None,
 ) -> list[SourceLocation]:
     is_secret = ".".join(field_path) in ctx.secret_paths
     conflict = _resolve_conflict(field_path, ctx)
 
-    locations = ctx.loader_class.resolve_location(
-        field_path,
-        ctx.file_path,
-        filecontent,
-        ctx.prefix,
-        ctx.split_symbols,
-        conflict,
+    locations = ctx.source_class.resolve_location(
+        field_path=field_path,
+        file_path=ctx.file_path,
+        file_content=file_content,
+        prefix=ctx.prefix,
+        nested_conflict=conflict,
+        split_symbols=ctx.split_symbols,
     )
 
-    return _apply_masking(locations, ctx, filecontent, is_secret=is_secret)
+    return _apply_masking(locations, ctx, file_content, is_secret=is_secret)

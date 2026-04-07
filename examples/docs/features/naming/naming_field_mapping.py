@@ -16,7 +16,7 @@ class DbConfig:
 
 
 config = dature.load(
-    dature.Source(
+    dature.Yaml12Source(
         file=SOURCES_DIR / "naming_field_mapping.yaml",
         field_mapping={
             dature.F[DbConfig].database_url: "db_url",

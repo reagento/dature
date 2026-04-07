@@ -16,6 +16,6 @@ class Config:
 
 
 dature.load(
-    dature.Source(file=SOURCES_DIR / "masking_heuristic.yaml", mask_secrets=True),
+    dature.Yaml12Source(file=SOURCES_DIR / "masking_heuristic.yaml", mask_secrets=True),
     schema=Config,
 )

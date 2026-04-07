@@ -9,7 +9,7 @@ os.environ["NOCACHE_HOST"] = "localhost"
 os.environ["NOCACHE_PORT"] = "6379"
 
 
-@dature.load(dature.Source(prefix="NOCACHE_"), cache=False)
+@dature.load(dature.EnvSource(prefix="NOCACHE_"), cache=False)
 @dataclass
 class UncachedConfig:
     host: str

@@ -1,0 +1,1 @@
+Renamed ``display_name`` to ``format_name`` and ``display_label`` to ``location_label`` across all source classes and error types.

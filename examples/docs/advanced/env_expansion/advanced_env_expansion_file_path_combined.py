@@ -19,7 +19,7 @@ class Config:
 
 
 config = dature.load(
-    dature.Source(file="$DATURE_SOURCES_DIR/config.$DATURE_APP_ENV.yaml"),
+    dature.Yaml12Source(file="$DATURE_SOURCES_DIR/config.$DATURE_APP_ENV.yaml"),
     schema=Config,
 )
 

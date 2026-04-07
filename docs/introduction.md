@@ -25,12 +25,12 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     Explicit arguments to `__init__` take priority over loaded values:
 
     ```python
-    config = Config(port=9090)  # host from source, port overridden
+    --8<-- "examples/docs/introduction/intro_decorator_override.py:override"
     ```
 
 ## All Formats
 
-dature auto-detects the format from the file extension. Here's the same config loaded from every supported format:
+Use the specific Source subclass for your format. Here's the same config loaded from every supported format:
 
 === "YAML"
 
@@ -105,39 +105,17 @@ dature auto-detects the format from the file extension. Here's the same config l
     --8<-- "examples/docs/introduction/format_docker.py"
     ```
 
-### Auto-Detection
-
-| Extension | Loader |
-|-----------|--------|
-| `.yaml`, `.yml` | `Yaml12Loader` (default) |
-| `.json` | `JsonLoader` |
-| `.json5` | `Json5Loader` |
-| `.toml` | `Toml11Loader` (default) |
-| `.ini`, `.cfg` | `IniLoader` |
-| `.env` | `EnvFileLoader` |
-| directory | `DockerSecretsLoader` |
-| not specified | `EnvLoader` (environment variables) |
-
-Override auto-detection with the `loader` parameter:
-
-```python
-from dature.sources_loader.yaml_ import Yaml11Loader
-
-dature.Source(file="config.yaml", loader=Yaml11Loader)
-```
+See the full list of Source classes and their extra dependencies on the [main page](index.md#supported-formats).
 
 ## Source Reference
 
 ```python
---8<-- "src/dature/metadata.py:load-metadata"
+--8<-- "src/dature/sources/base.py:load-metadata"
 ```
 
 | Parameter | Description |
 |-----------|-------------|
-| `file` | Path to config file (`str`, `Path`), file-like object (`BytesIO`, `StringIO`), or directory. `None` → environment variables. File-like objects require explicit `loader` |
-| `loader` | Explicit loader class. `None` → auto-detect from extension |
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
-| `split_symbols` | Delimiter for flat→nested conversion. Default: `"__"` |
 | `name_style` | Naming convention mapping. See [Naming](features/naming.md) |
 | `field_mapping` | Explicit field renaming with `F` objects. See [Naming](features/naming.md) |
 | `root_validators` | Post-load validation of the entire object. See [Validation](features/validation.md) |
@@ -148,19 +126,31 @@ dature.Source(file="config.yaml", loader=Yaml11Loader)
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](features/masking.md) |
 | `mask_secrets` | Enable/disable secret masking for this source. See [Masking](features/masking.md) |
 | `type_loaders` | Custom type converters for this source. See [Custom Types & Loaders](advanced/custom_types.md#custom-types) |
+
+**FileSource** subclasses (`JsonSource`, `Yaml*Source`, `Toml*Source`, `IniSource`, `Json5Source`) also have:
+
+| Parameter | Description |
+|-----------|-------------|
+| `file` | Path to config file (`str`, `Path`) or file-like object (`BytesIO`, `StringIO`). `None` → empty path |
+
+**FlatKeySource** subclasses (`EnvSource`, `EnvFileSource`, `DockerSecretsSource`) also have:
+
+| Parameter | Description |
+|-----------|-------------|
+| `split_symbols` | Delimiter for flat→nested conversion. Default: `"__"` |
 | `nested_resolve_strategy` | Priority when both JSON and flat keys exist for a nested field: `"flat"` (default) or `"json"`. See [Nested Resolve](advanced/nested-resolve.md) |
 | `nested_resolve` | Per-field strategy overrides using `F` objects. Takes priority over `nested_resolve_strategy`. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
 
 ### File-Like Objects
 
-`file` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass). The `loader` parameter is required since there is no file extension to auto-detect from:
+`file` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass):
 
 ```python
 --8<-- "examples/docs/introduction/intro_file_like.py"
 ```
 
 !!! note
-    `EnvLoader` and `DockerSecretsLoader` do not support file-like objects — they read from environment variables and directories respectively.
+    `EnvSource` and `DockerSecretsSource` do not support file-like objects — they read from environment variables and directories respectively.
 
 ## Type Coercion
 

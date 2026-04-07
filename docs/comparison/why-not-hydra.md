@@ -22,7 +22,7 @@ The trade-off is scope: Hydra is a **framework** that takes over your entry poin
 | **Error messages** | OmegaConf exceptions | Human-readable: source file, line number, context snippet |
 | **Secret masking** | No | Auto-masks secrets in errors and logs |
 | **Debug / audit** | Output dir with saved config + logs | `debug=True` — which source provided each value |
-| **Plugin system** | Sweepers, launchers, config sources, search path | Custom loaders via `BaseLoader` subclass |
+| **Plugin system** | Sweepers, launchers, config sources, search path | Custom loaders via `Source` subclass |
 | **Dependencies** | `hydra-core` + `omegaconf` + `antlr4-runtime` | `adaptix` (pure Python) |
 | **Config result** | `OmegaConf.DictConfig` (dict-like wrapper) | Your actual `@dataclass` instance |
 | **Maintenance** | Last release: Dec 2022. [Acknowledged as unmaintained](https://github.com/facebookresearch/xformers/issues/848) by other Meta teams | Active development |
@@ -36,7 +36,7 @@ Hydra reads YAML exclusively. You can reference env vars via OmegaConf's `${oc.e
 - **JSON / JSON5** — common in web services and JavaScript-adjacent tooling. Not supported.
 - **INI** — legacy format still common in enterprise. Not supported.
 
-dature handles all of these out of the box, with auto-detection from file extension:
+dature handles all of these out of the box:
 
 ```python
 --8<-- "examples/docs/comparison/why-not-hydra/hydra_merge.py:merge"

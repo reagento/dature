@@ -23,7 +23,7 @@ def check_debug_not_on_production(obj: Config) -> bool:
 
 
 dature.load(
-    dature.Source(
+    dature.Yaml12Source(
         file=SOURCES_DIR / "validation_root_invalid.yaml",
         root_validators=(
             RootValidator(

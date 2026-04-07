@@ -5,7 +5,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import dature
-from dature.sources_loader.docker_secrets import DockerSecretsLoader
 
 
 @dataclass
@@ -26,9 +25,8 @@ with TemporaryDirectory() as secrets_dir:
     (secrets_path / "database__port").write_text("3306")
 
     config = dature.load(
-        dature.Source(
-            file=secrets_path,
-            loader=DockerSecretsLoader,
+        dature.DockerSecretsSource(
+            dir_=secrets_path,
             nested_resolve_strategy="json",
         ),
         schema=Config,

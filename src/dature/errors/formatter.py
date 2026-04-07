@@ -23,7 +23,7 @@ from dature.errors.exceptions import (
     FieldLoadError,
     MissingEnvVarError,
 )
-from dature.errors.location import ErrorContext, read_filecontent, resolve_source_location
+from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
 from dature.masking.masking import is_random_string, mask_value
 
 if TYPE_CHECKING:
@@ -127,17 +127,17 @@ def handle_load_errors[T](
     try:
         return func()
     except EnvVarExpandError as exc:
-        filecontent = read_filecontent(ctx.file_path)
+        file_content = read_file_content(ctx.file_path)
         enriched_env: list[MissingEnvVarError] = []
         for e in exc.exceptions:
             if not isinstance(e, MissingEnvVarError):
                 continue
-            locations = resolve_source_location(e.field_path, ctx, filecontent)
+            locations = resolve_source_location(e.field_path, ctx, file_content)
             e.location = locations[0] if locations else None
             enriched_env.append(e)
         raise EnvVarExpandError(enriched_env, dataclass_name=ctx.dataclass_name) from exc
     except (AggregateLoadError, LoadError) as exc:
-        filecontent = read_filecontent(ctx.file_path)
+        file_content = read_file_content(ctx.file_path)
         heuristic_paths: set[str] = set()
         field_errors: list[FieldLoadError] = []
         _walk_exception(
@@ -153,7 +153,7 @@ def handle_load_errors[T](
             location_ctx = replace(ctx, secret_paths=ctx.secret_paths | heuristic_paths)
         enriched: list[FieldLoadError] = []
         for fe in field_errors:
-            locations = resolve_source_location(fe.field_path, location_ctx, filecontent)
+            locations = resolve_source_location(fe.field_path, location_ctx, file_content)
             enriched.append(
                 FieldLoadError(
                     field_path=fe.field_path,
@@ -186,9 +186,9 @@ def enrich_skipped_errors(
             updated.append(exc)
             continue
 
-        source_reprs = ", ".join(repr(s.metadata) for s in sources)
+        source_reprs = ", ".join(repr(s.source) for s in sources)
         locations = [
-            loc for s in sources for loc in resolve_source_location(exc.field_path, s.error_ctx, s.filecontent)
+            loc for s in sources for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content)
         ]
         updated.append(
             FieldLoadError(

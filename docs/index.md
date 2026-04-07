@@ -99,20 +99,20 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 
 ## Supported Formats
 
-| Format | Extension | Loader | Extra dependency |
-|--------|-----------|--------|------------------|
-| YAML 1.1 | `.yaml`, `.yml` | `Yaml11Loader` | `ruamel.yaml` |
-| YAML 1.2 | `.yaml`, `.yml` | `Yaml12Loader` | `ruamel.yaml` |
-| JSON | `.json` | `JsonLoader` | — |
-| JSON5 | `.json5` | `Json5Loader` | `json-five` |
-| TOML 1.0 | `.toml` | `Toml10Loader` | `toml-rs` |
-| TOML 1.1 | `.toml` | `Toml11Loader` | `toml-rs` |
-| INI | `.ini`, `.cfg` | `IniLoader` | — |
-| ENV file | `.env` | `EnvFileLoader` | — |
-| Environment variables | — | `EnvLoader` | — |
-| Docker secrets | directory | `DockerSecretsLoader` | — |
+| Format | Source Class | Extra dependency |
+|--------|--------------|------------------|
+| YAML 1.1 | `Yaml11Source` | `ruamel.yaml` |
+| YAML 1.2 | `Yaml12Source` | `ruamel.yaml` |
+| JSON | `JsonSource` | — |
+| JSON5 | `Json5Source` | `json-five` |
+| TOML 1.0 | `Toml10Source` | `toml-rs` |
+| TOML 1.1 | `Toml11Source` | `toml-rs` |
+| INI | `IniSource` | — |
+| ENV file | `EnvFileSource` | — |
+| Environment variables | `EnvSource` | — |
+| Docker secrets | `DockerSecretsSource` | — |
 
-The format is auto-detected from the file extension. When `file` is not specified, environment variables are used. When `file` points to a directory, `DockerSecretsLoader` is used. `file` also accepts `Path` objects and file-like objects (`BytesIO`, `StringIO`) — for file-like objects, the `loader` parameter is required.
+Use the specific Source subclass for your format. File-based sources (`FileSource` subclasses) accept `file` as `str`, `Path`, or file-like object (`BytesIO`, `StringIO`). `EnvSource` reads from environment variables (no `file` parameter). `DockerSecretsSource` accepts `dir` pointing to a secrets directory.
 
 ## mypy Plugin
 

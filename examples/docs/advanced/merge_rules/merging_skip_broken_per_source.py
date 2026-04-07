@@ -17,12 +17,12 @@ class Config:
 
 
 config = dature.load(
-    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),  # uses global
-    dature.Source(
+    dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),  # uses global
+    dature.Yaml12Source(
         file=SOURCES_DIR / "optional.yaml",
         skip_if_broken=True,
     ),  # always skip if broken
-    dature.Source(
+    dature.Yaml12Source(
         file=SHARED_DIR / "common_overrides.yaml",
         skip_if_broken=False,
     ),  # never skip, even if global is True

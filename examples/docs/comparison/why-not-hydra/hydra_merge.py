@@ -1,4 +1,4 @@
-"""dature vs Hydra — multi-format merge with auto-detection."""
+"""dature vs Hydra — multi-format merge."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,9 +16,9 @@ class Config:
 
 # --8<-- [start:merge]
 config = dature.load(
-    dature.Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
-    dature.Source(file=SOURCES_DIR / "hydra_config.toml", skip_if_broken=True),
-    dature.Source(prefix="APP_"),
+    dature.Yaml12Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
+    dature.Toml11Source(file=SOURCES_DIR / "hydra_config.toml", skip_if_broken=True),
+    dature.EnvSource(prefix="APP_"),
     schema=Config,
 )
 # --8<-- [end:merge]

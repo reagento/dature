@@ -14,8 +14,8 @@ class Config:
 
 
 config = dature.load(
-    dature.Source(file=SOURCES_DIR / "merging_field_base.yaml"),
-    dature.Source(file=SOURCES_DIR / "merging_field_override.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "merging_field_base.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "merging_field_override.yaml"),
     schema=Config,
     field_merges={dature.F[Config].tags: "prepend"},
 )

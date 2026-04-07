@@ -48,7 +48,7 @@ Explicit field renaming using `F` objects. Takes priority over `name_style`:
 A field can have multiple aliases — the first matching key in the source wins:
 
 ```python
-field_mapping={dature.F[Config].name: ("fullName", "userName")}
+--8<-- "examples/docs/features/naming/naming_field_mapping_aliases.py:aliases"
 ```
 
 ### Nested Fields
@@ -72,7 +72,7 @@ Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
 In decorator mode where the class is not yet defined, use a string:
 
 ```python
-F["Config"].name  # autocomplete doesn't work here
+--8<-- "examples/docs/features/naming/naming_field_mapping_decorator.py:decorator"
 ```
 
 ## prefix

@@ -19,8 +19,8 @@ class Config:
 
 try:
     config = dature.load(
-        dature.Source(file=SHARED_DIR / "common_overrides.yaml"),
-        dature.Source(file=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
+        dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
+        dature.Yaml12Source(file=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
         schema=Config,
         debug=True,
     )

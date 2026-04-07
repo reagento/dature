@@ -10,7 +10,7 @@ os.environ["APP_PORT"] = "8080"
 os.environ["APP_DEBUG"] = "true"
 
 
-@dature.load(dature.Source(prefix="APP_"))
+@dature.load(dature.EnvSource(prefix="APP_"))
 @dataclass
 class AppConfig:
     host: str

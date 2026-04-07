@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import Source, load
+from dature import JsonSource, load
 from dature.errors import FieldGroupError
 from dature.field_path import F
 
@@ -24,8 +24,8 @@ class TestFieldGroupAllChanged:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             strategy="last_wins",
             field_groups=((F[Config].host, F[Config].port),),
@@ -47,8 +47,8 @@ class TestFieldGroupAllChanged:
             port: int
 
         result = load(
-            Source(file=first),
-            Source(file=second),
+            JsonSource(file=first),
+            JsonSource(file=second),
             schema=Config,
             strategy="first_wins",
             field_groups=((F[Config].host, F[Config].port),),
@@ -72,8 +72,8 @@ class TestFieldGroupNoneChanged:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_groups=((F[Config].host, F[Config].port),),
         )
@@ -95,8 +95,8 @@ class TestFieldGroupNoneChanged:
             debug: bool
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_groups=((F[Config].host, F[Config].port),),
         )
@@ -114,8 +114,8 @@ class TestFieldGroupPartialChange:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote"}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Config:
@@ -144,8 +144,8 @@ class TestFieldGroupPartialChange:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote", "port": 3000}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Config:
@@ -181,8 +181,8 @@ class TestFieldGroupPartialChange:
 
         with pytest.raises(FieldGroupError):
             load(
-                Source(file=defaults),
-                Source(file=overrides),
+                JsonSource(file=defaults),
+                JsonSource(file=overrides),
                 schema=Config,
                 strategy="first_wins",
                 field_groups=((F[Config].host, F[Config].port),),
@@ -202,8 +202,8 @@ class TestFieldGroupPartialChange:
 
         with pytest.raises(FieldGroupError):
             load(
-                Source(file=defaults),
-                Source(file=overrides),
+                JsonSource(file=defaults),
+                JsonSource(file=overrides),
                 schema=Config,
                 strategy="raise_on_conflict",
                 field_groups=((F[Config].host, F[Config].port),),
@@ -218,8 +218,8 @@ class TestFieldGroupAutoExpand:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"database": {"host": "remote"}}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Database:
@@ -262,8 +262,8 @@ class TestFieldGroupAutoExpand:
             database: Database
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_groups=((F[Config].database,),),
         )
@@ -283,9 +283,9 @@ class TestFieldGroupThreeSources:
         c = tmp_path / "c.json"
         c.write_text('{"host": "c-host", "port": 3000}')
 
-        a_meta = Source(file=a)
-        b_meta = Source(file=b)
-        c_meta = Source(file=c)
+        a_meta = JsonSource(file=a)
+        b_meta = JsonSource(file=b)
+        c_meta = JsonSource(file=c)
 
         @dataclass
         class Config:
@@ -324,9 +324,9 @@ class TestFieldGroupThreeSources:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
             field_groups=((F[Config].host, F[Config].port),),
         )
@@ -343,8 +343,8 @@ class TestFieldGroupMultipleGroups:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote", "port": 9090, "user": "root"}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Config:
@@ -387,8 +387,8 @@ class TestFieldGroupWithFieldMerges:
             tags: list[str]
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_merges={F[Config].tags: "append"},
             field_groups=((F[Config].host, F[Config].port),),
@@ -408,8 +408,8 @@ class TestFieldGroupDecorator:
         overrides.write_text('{"host": "remote", "port": 9090}')
 
         @load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             field_groups=((F["Config"].host, F["Config"].port),),
         )
         @dataclass
@@ -429,8 +429,8 @@ class TestFieldGroupDecorator:
         overrides.write_text('{"host": "remote"}')
 
         @load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             field_groups=((F["Config"].host, F["Config"].port),),
         )
         @dataclass
@@ -450,8 +450,8 @@ class TestFieldGroupErrorFormat:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote", "debug": true}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Config:
@@ -481,8 +481,8 @@ class TestFieldGroupErrorFormat:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"host": "remote", "user": "root"}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Config:
@@ -538,8 +538,8 @@ class TestFieldGroupMixedExpandAndFlat:
             timeout: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_groups=((F[Config].database, F[Config].timeout),),
         )
@@ -570,8 +570,8 @@ class TestFieldGroupMixedExpandAndFlat:
             timeout: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_groups=((F[Config].database, F[Config].timeout),),
         )
@@ -589,8 +589,8 @@ class TestFieldGroupMixedExpandAndFlat:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"timeout": 60}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Database:
@@ -628,8 +628,8 @@ class TestFieldGroupMixedExpandAndFlat:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"database": {"host": "remote"}}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Database:
@@ -665,8 +665,8 @@ class TestFieldGroupMixedExpandAndFlat:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"database": {"host": "remote", "port": 3306}}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
         defaults_repr = repr(defaults_meta)
         overrides_repr = repr(overrides_meta)
 
@@ -719,8 +719,8 @@ class TestFieldGroupSameFieldNameNested:
             inner: Inner
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
             field_groups=((F[Config].user_name, F[Config].inner.user_name),),
         )
@@ -737,8 +737,8 @@ class TestFieldGroupSameFieldNameNested:
         overrides = tmp_path / "overrides.json"
         overrides.write_text('{"user_name": "root-new"}')
 
-        defaults_meta = Source(file=defaults)
-        overrides_meta = Source(file=overrides)
+        defaults_meta = JsonSource(file=defaults)
+        overrides_meta = JsonSource(file=overrides)
 
         @dataclass
         class Inner:

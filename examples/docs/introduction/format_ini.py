@@ -16,7 +16,7 @@ class Config:
 
 
 config = dature.load(
-    dature.Source(file=SOURCES_DIR / "intro_app.ini", prefix="app"),
+    dature.IniSource(file=SOURCES_DIR / "intro_app.ini", prefix="app"),
     schema=Config,
 )
 

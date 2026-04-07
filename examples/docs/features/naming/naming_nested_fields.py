@@ -21,7 +21,7 @@ class User:
 
 
 config = dature.load(
-    dature.Source(
+    dature.Yaml12Source(
         file=SOURCES_DIR / "naming_nested_fields.yaml",
         field_mapping={
             dature.F[User].name: "fullName",

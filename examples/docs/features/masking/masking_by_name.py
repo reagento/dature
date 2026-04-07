@@ -15,4 +15,4 @@ class Config:
     host: str
 
 
-dature.load(dature.Source(file=SOURCES_DIR / "masking_by_name.yaml"), schema=Config)
+dature.load(dature.Yaml12Source(file=SOURCES_DIR / "masking_by_name.yaml"), schema=Config)

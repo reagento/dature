@@ -1,0 +1,1 @@
+Source objects are no longer mutated during ``load()``. All parameter resolution happens via ``resolve_source_params()`` in ``source_loading.py``.

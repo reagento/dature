@@ -21,7 +21,7 @@ class LineRange:
 
 @dataclass(frozen=True, slots=True)
 class SourceLocation:
-    display_label: str
+    location_label: str
     file_path: Path | None
     line_range: LineRange | None
     line_content: list[str] | None
@@ -88,7 +88,7 @@ def _format_location(
     suffix = f" ({loc.annotation})" if loc.annotation is not None else ""
 
     if loc.env_var_name is not None and loc.file_path is None:
-        main = f"   {connector} {loc.display_label} '{loc.env_var_name}'"
+        main = f"   {connector} {loc.location_label} '{loc.env_var_name}'"
         if loc.env_var_value is not None:
             main += f" = '{loc.env_var_value}'"
         return [main + suffix]
@@ -118,7 +118,7 @@ def _format_location(
 
 
 def _format_fileline(loc: SourceLocation, *, connector: str, suffix: str = "") -> list[str]:
-    filemain = f"   {connector} {loc.display_label} '{loc.file_path}'"
+    filemain = f"   {connector} {loc.location_label} '{loc.file_path}'"
     if loc.line_range is not None:
         filemain += f", {loc.line_range!r}"
     return [filemain + suffix]

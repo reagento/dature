@@ -18,6 +18,6 @@ class Config:
 
 
 dature.load(
-    dature.Source(file=SOURCES_DIR / "masking_secret_str.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "masking_secret_str.yaml"),
     schema=Config,
 )

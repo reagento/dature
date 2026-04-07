@@ -1,0 +1,1 @@
+Renamed internal package ``sources_loader`` to ``sources`` (source classes) and ``loaders`` (type conversion). All public imports from ``dature`` are unchanged.

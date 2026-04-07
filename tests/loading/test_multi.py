@@ -8,7 +8,7 @@ from typing import Annotated
 
 import pytest
 
-from dature import Source, load
+from dature import EnvFileSource, EnvSource, JsonSource, Yaml12Source, load
 from dature.errors import DatureConfigError, MergeConflictError
 from dature.validators.number import Ge
 
@@ -27,8 +27,8 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
         )
 
@@ -48,8 +48,8 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Source(file=first),
-            Source(file=second),
+            JsonSource(file=first),
+            JsonSource(file=second),
             schema=Config,
             strategy="first_wins",
         )
@@ -70,8 +70,8 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Source(file=filea),
-            Source(file=fileb),
+            JsonSource(file=filea),
+            JsonSource(file=fileb),
             schema=Config,
         )
 
@@ -95,8 +95,8 @@ class TestMergeLoadAsFunction:
             database: Database
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
         )
 
@@ -120,9 +120,9 @@ class TestMergeLoadAsFunction:
             debug: bool
 
         result = load(
-            Source(file=a),
-            Source(file=b),
-            Source(file=c),
+            JsonSource(file=a),
+            JsonSource(file=b),
+            JsonSource(file=c),
             schema=Config,
         )
 
@@ -143,8 +143,8 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Config,
         )
 
@@ -164,8 +164,8 @@ class TestMergeLoadAsFunction:
             port: int
 
         result = load(
-            Source(file=defaults),
-            Source(prefix="APP_"),
+            JsonSource(file=defaults),
+            EnvSource(prefix="APP_"),
             schema=Config,
         )
 
@@ -186,8 +186,8 @@ class TestMergeLoadAsFunction:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=defaults),
-                Source(prefix="APP_"),
+                JsonSource(file=defaults),
+                EnvSource(prefix="APP_"),
                 schema=Config,
             )
 
@@ -210,8 +210,8 @@ class TestMergeLoadAsFunction:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
             )
 
@@ -229,7 +229,7 @@ class TestMergeLoadAsFunction:
             name: str
             port: int
 
-        result = load(Source(file=json_file), schema=Config)
+        result = load(JsonSource(file=json_file), schema=Config)
 
         assert result.name == "test"
         assert result.port == 8080
@@ -241,7 +241,7 @@ class TestMergeLoadAsFunction:
         class Config:
             my_var: str
 
-        result = load(Source(), schema=Config)
+        result = load(EnvSource(), schema=Config)
 
         assert result.my_var == "from_env"
 
@@ -255,8 +255,8 @@ class TestMergeAsDecorator:
         overrides.write_text('{"port": 9090}')
 
         @load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
         )
         @dataclass
         class Config:
@@ -271,7 +271,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        @load(Source(file=defaults))
+        @load(JsonSource(file=defaults))
         @dataclass
         class Config:
             host: str
@@ -288,7 +288,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        @load(Source(file=defaults), cache=False)
+        @load(JsonSource(file=defaults), cache=False)
         @dataclass
         class Config:
             host: str
@@ -309,8 +309,8 @@ class TestMergeAsDecorator:
         overrides.write_text('{"port": 8080}')
 
         @load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
         )
         @dataclass
         class Config:
@@ -325,7 +325,7 @@ class TestMergeAsDecorator:
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "localhost", "port": 3000}')
 
-        @load(Source(file=defaults))
+        @load(JsonSource(file=defaults))
         @dataclass
         class Config:
             host: str
@@ -338,7 +338,7 @@ class TestMergeAsDecorator:
     def test_decorator_not_dataclass(self):
         with pytest.raises(TypeError, match="must be a dataclass"):
 
-            @load(Source())
+            @load(EnvSource())
             class NotDataclass:
                 pass
 
@@ -350,8 +350,8 @@ class TestMergeAsDecorator:
         second.write_text('{"host": "second-host", "port": 2000}')
 
         @load(
-            Source(file=first),
-            Source(file=second),
+            JsonSource(file=first),
+            JsonSource(file=second),
             strategy="first_wins",
         )
         @dataclass
@@ -379,8 +379,8 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 strategy="raise_on_conflict",
             )
@@ -408,8 +408,8 @@ class TestRaiseOnConflict:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
         )
@@ -430,8 +430,8 @@ class TestRaiseOnConflict:
             port: int
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
             strategy="raise_on_conflict",
         )
@@ -457,8 +457,8 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 strategy="raise_on_conflict",
             )
@@ -486,8 +486,8 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 strategy="raise_on_conflict",
             )
@@ -515,8 +515,8 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Source(file=a),
-                Source(prefix="APP_"),
+                JsonSource(file=a),
+                EnvSource(prefix="APP_"),
                 schema=Config,
                 strategy="raise_on_conflict",
             )
@@ -544,8 +544,8 @@ class TestRaiseOnConflict:
 
         with pytest.raises(MergeConflictError) as exc_info:
             load(
-                Source(file=a),
-                Source(file=b),
+                JsonSource(file=a),
+                JsonSource(file=b),
                 schema=Config,
                 strategy="raise_on_conflict",
             )
@@ -585,8 +585,8 @@ class TestMergeWithYamlAndEnvFile:
             port: int
 
         result = load(
-            Source(file=yaml_file),
-            Source(file=env_file),
+            Yaml12Source(file=yaml_file),
+            EnvFileSource(file=env_file),
             schema=Config,
         )
 
@@ -614,8 +614,8 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         result = load(
-            Source(file=json_file),
-            Source(file=env_file),
+            JsonSource(file=json_file),
+            EnvFileSource(file=env_file),
             schema=Config,
         )
 
@@ -633,8 +633,8 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         result = load(
-            Source(file=json_file),
-            Source(prefix="APP_"),
+            JsonSource(file=json_file),
+            EnvSource(prefix="APP_"),
             schema=Config,
         )
 
@@ -653,8 +653,8 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         result = load(
-            Source(file=a),
-            Source(file=b),
+            JsonSource(file=a),
+            JsonSource(file=b),
             schema=Config,
         )
 
@@ -673,8 +673,8 @@ class TestCoerceFlagFieldsMergeMode:
             perms: _Permission
 
         @load(
-            Source(file=json_file),
-            Source(file=env_file),
+            JsonSource(file=json_file),
+            EnvFileSource(file=env_file),
         )
         @dataclass
         class MergedConfig:
@@ -699,8 +699,8 @@ class TestFirstFound:
             port: int
 
         result = load(
-            Source(file=first),
-            Source(file=second),
+            Yaml12Source(file=first),
+            Yaml12Source(file=second),
             schema=Config,
             strategy="first_found",
         )
@@ -719,8 +719,8 @@ class TestFirstFound:
             port: int
 
         result = load(
-            Source(file=missing),
-            Source(file=fallback),
+            Yaml12Source(file=missing),
+            Yaml12Source(file=fallback),
             schema=Config,
             strategy="first_found",
         )
@@ -741,8 +741,8 @@ class TestFirstFound:
             port: int
 
         result = load(
-            Source(file=broken),
-            Source(file=fallback),
+            Yaml12Source(file=broken),
+            Yaml12Source(file=fallback),
             schema=Config,
             strategy="first_found",
         )
@@ -761,8 +761,8 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=missing1),
-                Source(file=missing2),
+                Yaml12Source(file=missing1),
+                Yaml12Source(file=missing2),
                 schema=Config,
                 strategy="first_found",
             )
@@ -786,8 +786,8 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=partial),
-                Source(file=full),
+                Yaml12Source(file=partial),
+                Yaml12Source(file=full),
                 schema=Config,
                 strategy="first_found",
             )
@@ -811,8 +811,8 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=bad_type),
-                Source(file=fallback),
+                Yaml12Source(file=bad_type),
+                Yaml12Source(file=fallback),
                 schema=Config,
                 strategy="first_found",
             )
@@ -841,8 +841,8 @@ class TestFirstFound:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                Source(file=first),
-                Source(file=second),
+                Yaml12Source(file=first),
+                Yaml12Source(file=second),
                 schema=Config,
                 strategy="first_found",
             )
@@ -865,8 +865,8 @@ class TestFirstFound:
         second.write_text("host: second-host\nport: 5000\n")
 
         @load(
-            Source(file=first),
-            Source(file=second),
+            Yaml12Source(file=first),
+            Yaml12Source(file=second),
             strategy="first_found",
             cache=False,
         )

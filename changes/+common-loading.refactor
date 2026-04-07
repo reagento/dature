@@ -1,0 +1,1 @@
+Extracted shared ``resolve_mask_secrets`` logic from ``single.py`` and ``multi.py`` into ``loading/common.py``.

@@ -1,0 +1,1 @@
+Fixed attribute name typo (``filecontent`` → ``file_content``) in ``raise_on_conflict`` merge strategy that caused ``AttributeError`` when conflicting fields were detected.

@@ -1,0 +1,1 @@
+Renamed ``metadata``/``source_meta`` parameters to ``source`` throughout the loading module.

@@ -16,7 +16,7 @@ class Config:
 
 
 config = dature.load(
-    dature.Source(file=SOURCES_DIR / "intro_app_docker_secrets"),
+    dature.DockerSecretsSource(dir_=SOURCES_DIR / "intro_app_docker_secrets"),
     schema=Config,
 )
 

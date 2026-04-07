@@ -17,7 +17,7 @@ class Config:
 
 
 dature.load(
-    dature.Source(
+    dature.Yaml12Source(
         file=SOURCES_DIR / "masking_per_source.yaml",
         secret_field_names=("api_key",),
     ),

@@ -16,9 +16,9 @@ class Config:
 
 # --8<-- [start:merge]
 config = dature.load(
-    dature.Source(file=SOURCES_DIR / "pydantic_settings_merge_defaults.yaml"),
-    dature.Source(file=SOURCES_DIR / "pydantic_settings_merge_local.yaml", skip_if_broken=True),
-    dature.Source(prefix="APP_"),
+    dature.Yaml12Source(file=SOURCES_DIR / "pydantic_settings_merge_defaults.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "pydantic_settings_merge_local.yaml", skip_if_broken=True),
+    dature.EnvSource(prefix="APP_"),
     schema=Config,
 )
 # --8<-- [end:merge]

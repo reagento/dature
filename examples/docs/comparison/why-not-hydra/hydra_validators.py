@@ -16,4 +16,4 @@ class Config:
     port: Annotated[int, Gt(0), Lt(65536)] = 8080
 
 
-dature.load(dature.Source(file=SOURCES_DIR / "hydra_validators_invalid.yaml"), schema=Config)
+dature.load(dature.Yaml12Source(file=SOURCES_DIR / "hydra_validators_invalid.yaml"), schema=Config)

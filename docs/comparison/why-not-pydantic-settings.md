@@ -9,14 +9,14 @@ The trade-off is coupling: your config must be a Pydantic model, custom types ne
 | | pydantic-settings | dature |
 |---|---|---|
 | **Base class** | `BaseSettings` (Pydantic model) | stdlib `@dataclass` |
-| **Formats** | `.env`, env vars, JSON, YAML, TOML + custom sources | YAML (1.1/1.2), JSON, JSON5, TOML (1.0/1.1), INI, `.env`, env vars, Docker secrets — auto-detected |
+| **Formats** | `.env`, env vars, JSON, YAML, TOML + custom sources | YAML (1.1/1.2), JSON, JSON5, TOML (1.0/1.1), INI, `.env`, env vars, Docker secrets |
 | **Merging** | Fixed priority order (init > env > dotenv > secrets > defaults) | 4 strategies + per-field rules (`"append"`, `"prepend"`, field groups, etc.) |
 | **Skip broken sources** | No | Yes — `skip_if_broken`, `skip_if_invalid` |
 | **Field groups** | No | Yes — enforce related fields are overridden together |
 | **Naming conventions** | `alias` / `alias_generator` (`to_camel`, `to_pascal`, `to_snake`) | Built-in `name_style` (6 conventions) + explicit `field_mapping` with multiple aliases |
 | **CLI** | Built-in `CliSettingsSource` with subcommands, async support | No CLI |
 | **Secrets** | `SecretStr`, `secrets_dir`, nested secrets directories | `SecretStr`, auto-masking in errors/logs (by type, name pattern, or heuristic) |
-| **ENV expansion** | No | `${VAR:-default}` syntax in all file formats + file paths (`Source(file="$DIR/config.toml")`) |
+| **ENV expansion** | No | `${VAR:-default}` syntax in all file formats + file paths (`Toml11Source(file="$DIR/config.toml")`) |
 | **Error messages** | Pydantic `ValidationError` | Human-readable: source file, line number, context snippet |
 | **Debug / audit** | No | `debug=True` — which source provided each value |
 | **Validation** | Pydantic `field_validator`, `model_validator` (pre/post), constraints | `Annotated` validators, root validators, custom validators, `__post_init__` |
@@ -73,15 +73,15 @@ class Settings(BaseSettings):
         )
 ```
 
-dature **auto-detects** the format from the file extension — no boilerplate:
+dature uses explicit Source subclasses — no boilerplate:
 
 ```python
---8<-- "examples/docs/comparison/why-not-pydantic-settings/pydantic_settings_auto_detect.py:auto-detect"
+--8<-- "examples/docs/comparison/why-not-pydantic-settings/pydantic_settings_formats.py:formats"
 ```
 
 dature also supports INI, JSON5, and YAML 1.1/1.2 + TOML 1.0/1.1 version variants — formats that pydantic-settings doesn't cover.
 
-Need a custom format? Subclass `BaseLoader` — one method to implement, not an entire `SettingsSource`.
+Need a custom format? Subclass `Source` — one method to implement, not an entire `SettingsSource`.
 
 ## Error Messages You Can Actually Read
 

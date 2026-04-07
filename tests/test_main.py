@@ -5,17 +5,23 @@ from pathlib import Path
 
 import pytest
 
-from dature import Source, load
-from dature.sources_loader.env_ import EnvFileLoader
-from dature.sources_loader.ini_ import IniLoader
-from dature.sources_loader.json5_ import Json5Loader
-from dature.sources_loader.json_ import JsonLoader
-from dature.sources_loader.toml_ import Toml10Loader, Toml11Loader
-from dature.sources_loader.yaml_ import Yaml11Loader, Yaml12Loader
+from dature import (
+    EnvFileSource,
+    EnvSource,
+    IniSource,
+    Json5Source,
+    JsonSource,
+    Source,
+    Toml10Source,
+    Toml11Source,
+    Yaml11Source,
+    Yaml12Source,
+    load,
+)
 
 
-def _all_fileloaders() -> list[type]:
-    return [EnvFileLoader, Yaml11Loader, Yaml12Loader, JsonLoader, Json5Loader, Toml10Loader, Toml11Loader, IniLoader]
+def _all_file_sources() -> list[type[Source]]:
+    return [EnvFileSource, Yaml11Source, Yaml12Source, JsonSource, Json5Source, Toml10Source, Toml11Source, IniSource]
 
 
 class TestLoadAsDecorator:
@@ -23,7 +29,7 @@ class TestLoadAsDecorator:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "FromFile", "port": 8080}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         @load(metadata)
         @dataclass
@@ -39,7 +45,7 @@ class TestLoadAsDecorator:
         monkeypatch.setenv("APP_NAME", "EnvApp")
         monkeypatch.setenv("APP_PORT", "3000")
 
-        metadata = Source(prefix="APP_")
+        metadata = EnvSource(prefix="APP_")
 
         @load(metadata)
         @dataclass
@@ -54,7 +60,7 @@ class TestLoadAsDecorator:
     def test_default_metadata(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("MY_VAR", "test_value")
 
-        @load(Source())
+        @load(EnvSource())
         @dataclass
         class Config:
             my_var: str
@@ -66,7 +72,7 @@ class TestLoadAsDecorator:
         txt_file = tmp_path / "config.txt"
         txt_file.write_text('{"app_name": "OverrideApp"}')
 
-        metadata = Source(file=txt_file, loader=JsonLoader)
+        metadata = JsonSource(file=txt_file)
 
         @load(metadata)
         @dataclass
@@ -80,7 +86,7 @@ class TestLoadAsDecorator:
         monkeypatch.setenv("LOADED_VAR", "loaded")
         monkeypatch.setenv("OVERRIDDEN_VAR", "loaded")
 
-        @load(Source())
+        @load(EnvSource())
         @dataclass
         class Config:
             overridden_var: str
@@ -97,7 +103,7 @@ class TestLoadAsDecorator:
         with pytest.raises(TypeError, match="Config must be a dataclass"):
 
             @dataclass
-            @load(Source())
+            @load(EnvSource())
             class Config:
                 pass
 
@@ -107,7 +113,7 @@ class TestCache:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         @load(metadata)
         @dataclass
@@ -126,7 +132,7 @@ class TestCache:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
 
         @load(metadata, cache=False)
         @dataclass
@@ -152,7 +158,7 @@ class TestLoadAsFunction:
             name: str
             port: int
 
-        metadata = Source(file=json_file)
+        metadata = JsonSource(file=json_file)
         result = load(metadata, schema=Config)
 
         assert result.name == "FromFile"
@@ -167,7 +173,7 @@ class TestLoadAsFunction:
             name: str
             debug: bool
 
-        metadata = Source(prefix="APP_")
+        metadata = EnvSource(prefix="APP_")
         result = load(metadata, schema=Config)
 
         assert result.name == "EnvFunc"
@@ -180,33 +186,33 @@ class TestLoadAsFunction:
         class Config:
             my_var: str
 
-        result = load(Source(), schema=Config)
+        result = load(EnvSource(), schema=Config)
 
         assert result.my_var == "from_env"
 
 
 class TestFileNotFoundWithLoad:
     @pytest.mark.parametrize(
-        "loader_class",
-        _all_fileloaders(),
+        "source_class",
+        _all_file_sources(),
     )
-    def test_load_function_single_source_filenot_found(self, loader_class: type) -> None:
+    def test_load_function_single_source_filenot_found(self, source_class: type[Source]) -> None:
 
         @dataclass
         class Config:
             name: str
 
-        metadata = Source(file="/non/existent/file.json", loader=loader_class)
+        metadata = source_class(file="/non/existent/file.json")
 
         with pytest.raises(FileNotFoundError):
             load(metadata, schema=Config)
 
     @pytest.mark.parametrize(
-        "loader_class",
-        _all_fileloaders(),
+        "source_class",
+        _all_file_sources(),
     )
-    def test_load_decorator_single_source_filenot_found(self, loader_class: type) -> None:
-        metadata = Source(file="/non/existent/config.json", loader=loader_class)
+    def test_load_decorator_single_source_filenot_found(self, source_class: type[Source]) -> None:
+        metadata = source_class(file="/non/existent/config.json")
 
         @load(metadata)
         @dataclass

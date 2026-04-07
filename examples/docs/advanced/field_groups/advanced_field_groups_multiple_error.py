@@ -19,8 +19,8 @@ class Config:
 
 
 dature.load(
-    dature.Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
-    dature.Source(file=SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml"),
+    dature.Yaml12Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
+    dature.Yaml12Source(file=SOURCES_DIR / "advanced_field_groups_multiple_error_overrides.yaml"),
     schema=Config,
     field_groups=(
         (dature.F[Config].host, dature.F[Config].port),

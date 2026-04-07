@@ -12,8 +12,8 @@ os.environ["APP_HOST"] = "env_localhost"
 
 
 @dature.load(
-    dature.Source(file=SHARED_DIR / "common_defaults.yaml"),
-    dature.Source(prefix="APP_"),
+    dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
+    dature.EnvSource(prefix="APP_"),
 )
 @dataclass
 class Config:

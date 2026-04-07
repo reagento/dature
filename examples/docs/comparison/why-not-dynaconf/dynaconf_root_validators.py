@@ -23,7 +23,7 @@ def check_debug_port(config: Config) -> bool:
 
 
 dature.load(
-    dature.Source(
+    dature.Toml11Source(
         file=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
         root_validators=(
             RootValidator(

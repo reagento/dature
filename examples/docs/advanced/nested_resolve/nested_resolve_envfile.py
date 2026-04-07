@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from dature.sources_loader.env_ import EnvFileLoader
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
@@ -21,9 +20,8 @@ class Config:
 
 
 config = dature.load(
-    dature.Source(
+    dature.EnvFileSource(
         file=SOURCES_DIR / "nested_resolve.env",
-        loader=EnvFileLoader,
         prefix="APP__",
         nested_resolve_strategy="json",
     ),

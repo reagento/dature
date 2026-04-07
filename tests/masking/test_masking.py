@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dature import Source, configure, get_load_report, load
+from dature import JsonSource, configure, get_load_report, load
 from dature.errors import DatureConfigError
 from dature.fields.secret_str import SecretStr
 from dature.load_report import FieldOrigin, SourceEntry
@@ -215,7 +215,7 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        result = load(Source(file=json_file), schema=Cfg, debug=True)
+        result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -240,8 +240,8 @@ class TestSecretMaskingIntegration:
             host: str
 
         result = load(
-            Source(file=defaults),
-            Source(file=overrides),
+            JsonSource(file=defaults),
+            JsonSource(file=overrides),
             schema=Cfg,
             debug=True,
         )
@@ -266,7 +266,7 @@ class TestSecretMaskingIntegration:
             api_key: SecretStr
             host: str
 
-        result = load(Source(file=json_file), schema=Cfg, debug=True)
+        result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -287,7 +287,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with caplog.at_level("DEBUG", logger="dature"):
-            load(Source(file=json_file), schema=Cfg, debug=True)
+            load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         assert _SECRET_VALUE not in caplog.text
 
@@ -305,8 +305,8 @@ class TestSecretMaskingIntegration:
 
         with caplog.at_level("DEBUG", logger="dature"):
             load(
-                Source(file=defaults),
-                Source(file=overrides),
+                JsonSource(file=defaults),
+                JsonSource(file=overrides),
                 schema=Cfg,
                 debug=True,
             )
@@ -323,7 +323,7 @@ class TestSecretMaskingIntegration:
             port: int
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file=json_file), schema=Cfg)
+            load(JsonSource(file=json_file), schema=Cfg)
 
         assert _SECRET_VALUE not in str(exc_info.value)
 
@@ -331,7 +331,7 @@ class TestSecretMaskingIntegration:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"password": "allowed", "host": "prod"}')
 
-        @load(Source(file=json_file))
+        @load(JsonSource(file=json_file))
         @dataclass
         class Cfg:
             password: Literal["allowed"]
@@ -354,7 +354,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file=json_file, mask_secrets=True), schema=Cfg)
+            load(JsonSource(file=json_file, mask_secrets=True), schema=Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
@@ -376,7 +376,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with patch("dature.masking.masking._heuristic_detector", None), pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file=json_file, mask_secrets=True), schema=Cfg)
+            load(JsonSource(file=json_file, mask_secrets=True), schema=Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
@@ -409,7 +409,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         configure(masking={"mask_secrets": mask_secrets})
-        result = load(Source(file=json_file), schema=Cfg, debug=True)
+        result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -442,7 +442,7 @@ class TestSecretMaskingIntegration:
         configure(masking={"mask_secrets": mask_secrets})
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(Source(file=json_file), schema=Cfg)
+            load(JsonSource(file=json_file), schema=Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         content = f'{{"password": "{expected_password}", "port": "not_a_number"}}'
@@ -466,7 +466,7 @@ class TestLoadLevelMaskingParams:
             password: str
             host: str
 
-        result = load(Source(file=json_file), schema=Cfg, debug=True, mask_secrets=True)
+        result = load(JsonSource(file=json_file), schema=Cfg, debug=True, mask_secrets=True)
 
         report = get_load_report(result)
         assert report is not None
@@ -482,7 +482,7 @@ class TestLoadLevelMaskingParams:
             host: str
 
         result = load(
-            Source(file=json_file),
+            JsonSource(file=json_file),
             schema=Cfg,
             debug=True,
             mask_secrets=True,
@@ -503,7 +503,7 @@ class TestLoadLevelMaskingParams:
             host: str
 
         result = load(
-            Source(file=json_file, mask_secrets=False),
+            JsonSource(file=json_file, mask_secrets=False),
             schema=Cfg,
             debug=True,
             mask_secrets=True,
@@ -526,7 +526,7 @@ class TestLoadLevelMaskingParams:
             host: str
 
         result = load(
-            Source(file=json_file, secret_field_names=("label",)),
+            JsonSource(file=json_file, secret_field_names=("label",)),
             schema=Cfg,
             debug=True,
             mask_secrets=True,

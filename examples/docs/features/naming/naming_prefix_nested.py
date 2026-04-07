@@ -15,7 +15,7 @@ class Database:
 
 
 db = dature.load(
-    dature.Source(file=SOURCES_DIR / "naming_prefix_nested.yaml", prefix="app.database"),
+    dature.Yaml12Source(file=SOURCES_DIR / "naming_prefix_nested.yaml", prefix="app.database"),
     schema=Database,
 )
 
