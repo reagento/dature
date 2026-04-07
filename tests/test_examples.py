@@ -2,42 +2,70 @@ import os
 import pathlib
 import subprocess
 import sys
-import tempfile
+from dataclasses import dataclass
 
 import pytest
 
 examples_dir = pathlib.Path(__file__).parent.parent / "examples"
 example_scripts = sorted(examples_dir.rglob("*.py"))
 
+_IS_POSIX = hasattr(os, "posix_spawn")
 
-def _run_example(script_path: pathlib.Path) -> subprocess.CompletedProcess[str]:
-    env = os.environ.copy()
 
+@dataclass
+class ScriptResult:
+    returncode: int
+    stderr: str
+
+
+def _run_via_posix_spawn(script_path: pathlib.Path, env: dict[str, str]) -> ScriptResult:
+    """Use posix_spawn to avoid fork() segfaults on macOS CI."""
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    stderr_r, stderr_w = os.pipe()
+
+    file_actions = [
+        (os.POSIX_SPAWN_CLOSE, 0),
+        (os.POSIX_SPAWN_DUP2, devnull, 1),
+        (os.POSIX_SPAWN_DUP2, stderr_w, 2),
+    ]
+
+    pid = os.posix_spawn(
+        sys.executable,
+        [sys.executable, str(script_path)],
+        env,
+        file_actions=file_actions,
+    )
+
+    os.close(devnull)
+    os.close(stderr_w)
+
+    with os.fdopen(stderr_r) as stderr_f:
+        stderr = stderr_f.read()
+
+    _, wait_status = os.waitpid(pid, 0)
+    returncode = os.waitstatus_to_exitcode(wait_status)
+
+    return ScriptResult(returncode=returncode, stderr=stderr)
+
+
+def _run_via_subprocess(script_path: pathlib.Path, env: dict[str, str]) -> ScriptResult:
+    result = subprocess.run(  # noqa: PLW1510, S603
+        [sys.executable, str(script_path)],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    return ScriptResult(returncode=result.returncode, stderr=result.stderr)
+
+
+def _run_example(script_path: pathlib.Path) -> ScriptResult:
     project_root = pathlib.Path(__file__).parent.parent / "src"
+    env = os.environ.copy()
     env["PYTHONPATH"] = str(project_root) + os.pathsep + env.get("PYTHONPATH", "")
 
-    # Redirect to temp files instead of pipes (capture_output=True).
-    # Pipes force CPython to use fork() instead of posix_spawn(),
-    # which causes segfaults on macOS CI (Python 3.12-3.14).
-    with (
-        tempfile.TemporaryFile(mode="w+") as stdout_f,
-        tempfile.TemporaryFile(mode="w+") as stderr_f,
-    ):
-        result = subprocess.run(  # noqa: PLW1510, S603
-            [sys.executable, str(script_path)],
-            stdout=stdout_f,
-            stderr=stderr_f,
-            text=True,
-            env=env,
-        )
-        stdout_f.seek(0)
-        stderr_f.seek(0)
-        return subprocess.CompletedProcess(
-            args=result.args,
-            returncode=result.returncode,
-            stdout=stdout_f.read(),
-            stderr=stderr_f.read(),
-        )
+    if _IS_POSIX:
+        return _run_via_posix_spawn(script_path, env)
+    return _run_via_subprocess(script_path, env)
 
 
 def _resolve_stderr_placeholders(template: str, script_path: pathlib.Path) -> str:
