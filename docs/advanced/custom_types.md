@@ -102,5 +102,5 @@ For sources that don't read files — e.g. an API, a database, or an in-memory d
 ### Tips
 
 - All built-in features (type coercion, validation, prefix extraction, ENV expansion, merge support) work automatically with any custom source.
-- Override `additional_loaders()` to return `_string_value_loaders()` from `dature.sources.base` if your format stores everything as strings (like INI or ENV).
+- Override `additional_loaders()` to return `string_value_loaders()` from `dature.sources.retort` if your format stores everything as strings (like INI or ENV).
 - Pass your custom source to `dature.load()` the same way as any built-in source.

@@ -2,28 +2,14 @@ import abc
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, cast
-
-from adaptix import Retort, loader
-from adaptix.provider import Provider
 
 from dature.errors import LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars, expand_file_path
 from dature.field_path import FieldPath
-from dature.loaders import (
-    bool_loader,
-    bytearray_from_json_string,
-    date_from_string,
-    datetime_from_string,
-    float_from_string,
-    none_from_empty_string,
-    optional_from_empty_string,
-    str_from_scalar,
-    time_from_string,
-)
 from dature.path_finders.base import PathFinder
+from dature.sources.retort import string_value_loaders
 from dature.types import (
     FILE_LIKE_TYPES,
     DotSeparatedPath,
@@ -38,6 +24,9 @@ from dature.types import (
 )
 
 if TYPE_CHECKING:
+    from adaptix import Retort
+    from adaptix.provider import Provider
+
     from dature.protocols import ValidatorProtocol
     from dature.types import (
         FieldMapping,
@@ -49,20 +38,6 @@ if TYPE_CHECKING:
     )
 
 logger = logging.getLogger("dature")
-
-
-def _string_value_loaders() -> list[Provider]:
-    return [
-        loader(str, str_from_scalar),
-        loader(float, float_from_string),
-        loader(date, date_from_string),
-        loader(datetime, datetime_from_string),
-        loader(time, time_from_string),
-        loader(bytearray, bytearray_from_json_string),
-        loader(type(None), none_from_empty_string),
-        loader(str | None, optional_from_empty_string),
-        loader(bool, bool_loader),
-    ]
 
 
 # --8<-- [start:load-metadata]
@@ -85,7 +60,7 @@ class Source(abc.ABC):
     location_label: ClassVar[str]
     path_finder_class: ClassVar[type[PathFinder] | None] = None
 
-    retorts: dict[tuple[type, frozenset[tuple[type, Any]]], Retort] = field(
+    retorts: "dict[tuple[type, frozenset[tuple[type, Any]]], Retort]" = field(
         default_factory=dict,
         init=False,
         repr=False,
@@ -103,7 +78,7 @@ class Source(abc.ABC):
     def display_name(self) -> str:
         return self.file_display() or self.format_name
 
-    def additional_loaders(self) -> list[Provider]:
+    def additional_loaders(self) -> "list[Provider]":
         return []
 
     @staticmethod
@@ -386,8 +361,8 @@ class FlatKeySource(Source, abc.ABC):
             return True
         return field_path.parts[0] == field_name
 
-    def additional_loaders(self) -> list[Provider]:
-        return _string_value_loaders()
+    def additional_loaders(self) -> "list[Provider]":
+        return string_value_loaders()
 
     @staticmethod
     def _resolve_var_name(

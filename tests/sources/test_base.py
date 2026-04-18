@@ -9,8 +9,8 @@ from dature.errors import EnvVarExpandError
 from dature.field_path import F
 from dature.loading.merge_config import SourceParams
 from dature.loading.source_loading import _apply_source_init_params
-from dature.sources.base import FileFieldMixin, _string_value_loaders
-from dature.sources.retort import transform_to_dataclass
+from dature.sources.base import FileFieldMixin
+from dature.sources.retort import string_value_loaders, transform_to_dataclass
 from dature.types import JSONValue
 
 
@@ -734,7 +734,7 @@ class TestFileFieldMixin:
 
 class TestStringValueLoaders:
     def test_returns_nine_providers(self):
-        loaders = _string_value_loaders()
+        loaders = string_value_loaders()
 
         assert len(loaders) == 9
 
