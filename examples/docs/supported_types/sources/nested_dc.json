@@ -1,0 +1,11 @@
+{
+  "address": {"city": "Moscow", "zip_code": "101000"},
+  "tags": [
+    {"name": "urgent", "priority": 1},
+    {"name": "low", "priority": 5}
+  ],
+  "addrs": {
+    "home": {"city": "Berlin", "zip_code": "10115"},
+    "work": {"city": "Paris", "zip_code": "75001"}
+  }
+}
