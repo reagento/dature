@@ -53,7 +53,7 @@ class TestResolveSourceLocation:
     def test_env_source_custom_split_symbols(self):
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=EnvSource(prefix="APP_", split_symbols="_"),
+            source=EnvSource(prefix="APP_", nested_sep="_"),
         )
         locs = resolve_source_location(["database", "port"], ctx, file_content=None)
         assert locs[0].env_var_name == "APP_DATABASE_PORT"

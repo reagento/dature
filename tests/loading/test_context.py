@@ -170,7 +170,7 @@ class TestBuildErrorCtx:
         assert ctx.source is source
 
     def test_flat_key_source(self):
-        source = EnvSource(prefix="APP", split_symbols="__")
+        source = EnvSource(prefix="APP", nested_sep="__")
 
         ctx = build_error_ctx(source, "MyConfig")
 

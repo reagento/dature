@@ -126,7 +126,7 @@ plugins = ["dature.mypy_plugin"]
 ## What's Next
 
 - [Introduction](introduction.md) — function vs decorator mode, all formats, Source reference
-- [Naming](features/naming.md) — name_style, field_mapping, prefix, split_symbols
+- [Naming](features/naming.md) — name_style, field_mapping, prefix, nested_sep
 - [Validation](features/validation.md) — Annotated validators, root validators, custom validators
 - [Merging](features/merging.md) — multiple sources, strategies, field groups
 - [Masking](features/masking.md) — SecretStr, auto-detection, configuration

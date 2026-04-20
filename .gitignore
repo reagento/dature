@@ -64,3 +64,6 @@ htmlcov/
 uv.lock
 tmp/
 site/
+
+# LLM
+.nessy

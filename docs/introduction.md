@@ -137,7 +137,7 @@ See the full list of Source classes and their extra dependencies on the [main pa
 
 | Parameter | Description |
 |-----------|-------------|
-| `split_symbols` | Delimiter for flat→nested conversion. Default: `"__"` |
+| `nested_sep` | Delimiter for flat→nested conversion. Default: `"__"` |
 | `nested_resolve_strategy` | Priority when both JSON and flat keys exist for a nested field: `"flat"` (default) or `"json"`. See [Nested Resolve](advanced/nested-resolve.md) |
 | `nested_resolve` | Per-field strategy overrides using `F` objects. Takes priority over `nested_resolve_strategy`. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
 

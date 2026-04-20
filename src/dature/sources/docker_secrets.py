@@ -40,13 +40,13 @@ class DockerSecretsSource(FlatKeySource):
         input_value: JSONValue = None,
     ) -> list[SourceLocation]:
         if nested_conflict is not None:
-            json_var = self._resolve_var_name(field_path[:1], self.prefix, self.split_symbols, None)
+            json_var = self._resolve_var_name(field_path[:1], self.prefix, self.nested_sep, None)
             if nested_conflict.used_var == json_var:
                 secret_name = field_path[0]
             else:
-                secret_name = self.split_symbols.join(field_path)
+                secret_name = self.nested_sep.join(field_path)
         else:
-            secret_name = self.split_symbols.join(field_path)
+            secret_name = self.nested_sep.join(field_path)
         if self.prefix is not None:
             secret_name = self.prefix + secret_name
         secret_file = Path(self.dir_) / secret_name

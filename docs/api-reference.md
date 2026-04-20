@@ -124,7 +124,7 @@ Base class for flat key=value sources (`EnvSource`, `EnvFileSource`, `DockerSecr
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `split_symbols` | `str` | `"__"` | Separator for nested key splitting. `APP__DB__HOST` → `{"db": {"host": ...}}` |
+| `nested_sep` | `str` | `"__"` | Separator for nested key splitting. `APP__DB__HOST` → `{"db": {"host": ...}}` |
 | `nested_resolve_strategy` | `NestedResolveStrategy` | `"flat"` | Default priority when both flat and JSON keys exist: `"flat"` or `"json"`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
 
@@ -502,11 +502,11 @@ Section headers become top-level dict keys. Dotted sections (`database.pool`) cr
 
 ### Flat key-value sources (inherit `FlatKeySource`)
 
-All flat key-value sources accept `split_symbols`, `nested_resolve_strategy` and `nested_resolve` from [`FlatKeySource`](#flatkeysourcesource) plus all common parameters from [`Source`](#source).
+All flat key-value sources accept `nested_sep`, `nested_resolve_strategy` and `nested_resolve` from [`FlatKeySource`](#flatkeysourcesource) plus all common parameters from [`Source`](#source).
 
 All values are strings. Automatic parsing of `str`, `float`, `date`, `datetime`, `time`, `bytearray`, `bool`, `None`, `str | None`. Nested JSON in values (`[...]`, `{...}`) is inferred.
 
-Nesting is built from `split_symbols` (default `"__"`): `APP__DB__HOST=x` → `{"db": {"host": "x"}}`.
+Nesting is built from `nested_sep` (default `"__"`): `APP__DB__HOST=x` → `{"db": {"host": "x"}}`.
 
 #### `EnvSource(FlatKeySource)`
 

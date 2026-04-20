@@ -1,0 +1,1 @@
+Renamed ``split_symbols`` parameter to ``nested_sep`` in :class:`.FlatKeySource` and all subclasses (``EnvSource``, ``EnvFileSource``, ``DockerSecretsSource``). The old parameter name is no longer supported.

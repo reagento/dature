@@ -30,7 +30,7 @@ class TestEnvFileSource:
 
     def test_custom_split_symbols(self, custom_separator_env_file: Path):
         """Test custom separator for nested keys."""
-        loader = EnvFileSource(file=custom_separator_env_file, prefix="APP_", split_symbols=".")
+        loader = EnvFileSource(file=custom_separator_env_file, prefix="APP_", nested_sep=".")
         result = loader.load_raw()
 
         assert result.data == {
@@ -294,7 +294,7 @@ class TestEnvSource:
         expected_data = TestConfig(db=TestData(host="localhost", port="5432"))
 
         data = load(
-            EnvSource(prefix="APP_", split_symbols="."),
+            EnvSource(prefix="APP_", nested_sep="."),
             schema=TestConfig,
         )
 
@@ -349,7 +349,7 @@ class TestEnvSourceResolveLocation:
         assert locations[0].env_var_name == "DATABASE__HOST"
 
     def test_resolve_with_custom_split_symbols(self):
-        locations = EnvSource(split_symbols=".").resolve_location(
+        locations = EnvSource(nested_sep=".").resolve_location(
             field_path=["database", "host"],
             file_content=None,
             nested_conflict=None,

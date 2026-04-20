@@ -377,7 +377,7 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
 # --8<-- [start:flat-key-source]
 @dataclass(kw_only=True, repr=False)
 class FlatKeySource(Source, abc.ABC):
-    split_symbols: str = "__"
+    nested_sep: str = "__"
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: NestedResolve | None = None
     # --8<-- [end:flat-key-source]
@@ -419,11 +419,11 @@ class FlatKeySource(Source, abc.ABC):
     def _resolve_var_name(
         field_path: list[str],
         prefix: str | None,
-        split_symbols: str,
+        nested_sep: str,
         conflict: NestedConflict | None,
     ) -> str:
         def _build_name(parts: list[str]) -> str:
-            var_name = split_symbols.join(part.upper() for part in parts)
+            var_name = nested_sep.join(part.upper() for part in parts)
             if prefix is not None:
                 return prefix + var_name
             return var_name
@@ -440,7 +440,7 @@ class FlatKeySource(Source, abc.ABC):
 
     def _build_nested_var_name(self, top_field: str, nested: dict[str, JSONValue]) -> str:
         for sub_key in nested:
-            full_key = f"{top_field}{self.split_symbols}{sub_key}"
+            full_key = f"{top_field}{self.nested_sep}{sub_key}"
             return self._build_var_name(full_key)
         return self._build_var_name(top_field)
 
@@ -454,7 +454,7 @@ class FlatKeySource(Source, abc.ABC):
         resolved_nested_strategy: NestedResolveStrategy = "flat",
         resolved_nested_resolve: NestedResolve | None = None,
     ) -> None:
-        parts = key.split(self.split_symbols)
+        parts = key.split(self.nested_sep)
         self._process_key_value(
             parts=parts,
             value=value,
@@ -503,7 +503,7 @@ class FlatKeySource(Source, abc.ABC):
             )
             existing = result.get(top_field)
             if isinstance(existing, str):
-                flat_var = self._build_var_name(self.split_symbols.join(parts))
+                flat_var = self._build_var_name(self.nested_sep.join(parts))
                 json_var = self._build_var_name(top_field)
                 if strategy == "flat":
                     result.pop(top_field)

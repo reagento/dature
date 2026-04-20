@@ -1,4 +1,4 @@
-"""split_symbols — build nested structures from flat ENV variables."""
+"""nested_sep — build nested structures from flat ENV variables."""
 
 import os
 from dataclasses import dataclass
@@ -21,7 +21,7 @@ class Config:
 
 
 config = dature.load(
-    dature.EnvSource(prefix="NS_", split_symbols="__"),
+    dature.EnvSource(prefix="NS_", nested_sep="__"),
     schema=Config,
 )
 

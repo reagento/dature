@@ -660,7 +660,7 @@ class TestCustomSplitSymbolsConflict:
         monkeypatch.setenv("APP_VAR_BAR", "from_flat")
 
         result = load(
-            EnvSource(prefix="APP_", split_symbols="_", nested_resolve_strategy="flat"),
+            EnvSource(prefix="APP_", nested_sep="_", nested_resolve_strategy="flat"),
             schema=NestedConfig,
         )
 
@@ -673,7 +673,7 @@ class TestCustomSplitSymbolsConflict:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                EnvSource(prefix="APP_", split_symbols="_", nested_resolve_strategy="json"),
+                EnvSource(prefix="APP_", nested_sep="_", nested_resolve_strategy="json"),
                 schema=NestedIntConfig,
             )
 
@@ -694,7 +694,7 @@ class TestCustomSplitSymbolsConflict:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                EnvSource(prefix="APP_", split_symbols="_", nested_resolve_strategy="flat"),
+                EnvSource(prefix="APP_", nested_sep="_", nested_resolve_strategy="flat"),
                 schema=NestedIntConfig,
             )
 

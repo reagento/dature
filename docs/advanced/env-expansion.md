@@ -35,6 +35,8 @@ String values in all file formats support environment variable expansion:
 | `"strict"` | Raises `EnvVarExpandError` |
 | `"disabled"` | No expansion at all |
 
+The `"default"` mode is named so because it matches the behavior of Python's built-in `os.path.expandvars()` — missing variables are kept as-is rather than being replaced with empty strings or raising errors.
+
 Set the mode on `Source`:
 
 === "Python"

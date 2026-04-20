@@ -33,10 +33,10 @@ class EnvSource(FlatKeySource):
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
-        var_name = self._resolve_var_name(field_path, self.prefix, self.split_symbols, nested_conflict)
+        var_name = self._resolve_var_name(field_path, self.prefix, self.nested_sep, nested_conflict)
         env_var_value: str | None = None
         if nested_conflict is not None:
-            json_var = self._resolve_var_name(field_path[:1], self.prefix, self.split_symbols, None)
+            json_var = self._resolve_var_name(field_path[:1], self.prefix, self.nested_sep, None)
             if nested_conflict.used_var == json_var:
                 env_var_value = nested_conflict.json_raw_value
         else:
@@ -77,7 +77,7 @@ class EnvSource(FlatKeySource):
         processed_key = key[len(self.prefix) :] if self.prefix else key
         processed_key = processed_key.lower()
 
-        parts = processed_key.split(self.split_symbols)
+        parts = processed_key.split(self.nested_sep)
         self._process_key_value(
             parts=parts,
             value=value,
@@ -111,7 +111,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,
     ) -> list[SourceLocation]:
-        var_name = self._resolve_var_name(field_path, self.prefix, self.split_symbols, nested_conflict)
+        var_name = self._resolve_var_name(field_path, self.prefix, self.nested_sep, nested_conflict)
         file_path = self.file_path_for_errors()
         line_range: LineRange | None = None
         line_content: list[str] | None = None
