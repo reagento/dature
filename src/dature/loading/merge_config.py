@@ -5,15 +5,13 @@ from dature.merging.strategy import MergeStrategyEnum
 from dature.sources.base import Source
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-    from pathlib import Path
-
     from dature.types import (
         ExpandEnvVarsMode,
         FieldGroupTuple,
         FieldMergeMap,
         NestedResolve,
         NestedResolveStrategy,
+        SystemConfigDirsArg,
         TypeLoaderMap,
     )
 
@@ -26,7 +24,7 @@ class SourceParams:
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: "NestedResolve | None" = None
     search_system_paths: "bool | None" = None
-    system_config_dirs: "Iterable[Path] | None" = None
+    system_config_dirs: "SystemConfigDirsArg | None" = None
 
 
 @dataclass(slots=True, kw_only=True)

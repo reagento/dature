@@ -1,55 +1,74 @@
+import logging
 import os
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+from dature.expansion.env_expand import _expand_string_collect
+
+if TYPE_CHECKING:
+    from dature.types import SystemConfigDirsArg
+
+logger = logging.getLogger("dature")
 
 
-def get_system_config_dirs() -> Iterator[Path]:
-    """Yield system config directories for current platform in priority order.
+def _expand_entry(entry: Path | str) -> Iterator[Path]:
+    """Expand one ``system_config_dirs`` entry into zero or more ``Path``s.
 
-    User-specific directories first, then system-wide. On Windows only
-    ``%APPDATA%`` (if set) is yielded.
+    ``Path`` entries are yielded as-is with ``~`` expanded. ``str`` entries
+    additionally undergo ``$VAR`` / ``${VAR}`` / ``${VAR:-default}`` expansion
+    and are split by ``os.pathsep`` so a ``PATH``-style env var (such as
+    ``XDG_CONFIG_DIRS=/a:/b``) resolves to multiple directories. If the entry
+    references an undefined environment variable without a fallback, it is
+    skipped and a warning is logged.
     """
-    home = Path.home()
-
-    if sys.platform == "win32":
-        appdata = os.environ.get("APPDATA")
-        if appdata:
-            yield Path(appdata)
+    if isinstance(entry, Path):
+        yield entry.expanduser()
         return
 
-    if sys.platform == "darwin":
-        yield home / "Library" / "Application Support"
+    expanded, errors = _expand_string_collect(entry, mode="strict")
+    if errors:
+        for err in errors:
+            logger.warning(
+                "system_config_dirs: environment variable %r is not set; skipping entry %r",
+                err.var_name,
+                entry,
+            )
+        return
 
-    xdg_home = os.environ.get("XDG_CONFIG_HOME")
-    yield Path(xdg_home) if xdg_home else home / ".config"
+    for part in expanded.split(os.pathsep):
+        if part:
+            yield Path(part).expanduser()
 
-    yield Path("/etc")
 
-    xdg_dirs = os.environ.get("XDG_CONFIG_DIRS")
-    if xdg_dirs:
-        for d in xdg_dirs.split(os.pathsep):
-            yield Path(d)
+def _resolve_dirs(system_config_dirs: "SystemConfigDirsArg | None") -> Iterator[Path]:
+    """Resolve ``system_config_dirs`` into concrete ``Path``s for the current platform."""
+    if system_config_dirs is None:
+        return
+
+    if isinstance(system_config_dirs, Mapping):
+        entries = system_config_dirs.get(sys.platform)
+        if entries is None:
+            return
     else:
-        yield Path("/etc/xdg")
+        entries = system_config_dirs
+
+    for entry in entries:
+        yield from _expand_entry(entry)
 
 
 def find_config(
     filename: str,
-    system_config_dirs: Iterable[Path] | None = None,
+    system_config_dirs: "SystemConfigDirsArg | None",
 ) -> Path | None:
-    """Find first existing config file in standard locations.
+    """Find the first existing ``filename`` in ``system_config_dirs``.
 
-    Args:
-        filename: Config filename to search for.
-        system_config_dirs: Optional custom directories. If ``None``,
-            auto-detects based on platform.
-
-    Returns:
-        Path to first existing config file, or ``None`` if not found.
+    Returns ``None`` when no match is found or when ``system_config_dirs`` is
+    ``None`` (which happens for a ``FileFieldMixin`` accessed before
+    ``_apply_source_init_params`` has merged defaults from ``LoadingConfig``).
     """
-    dirs = system_config_dirs if system_config_dirs is not None else get_system_config_dirs()
-    for d in dirs:
+    for d in _resolve_dirs(system_config_dirs):
         candidate = d / filename
         if candidate.exists():
             return candidate

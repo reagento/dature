@@ -1,0 +1,1 @@
+Removed ``dature.config_paths.get_system_config_dirs``. System search directories are now fully defined in ``LoadingConfig.system_config_dirs`` (accessible as ``dature.config.loading.system_config_dirs`` at runtime).

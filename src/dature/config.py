@@ -1,9 +1,8 @@
-from collections.abc import Iterable, Mapping
-from dataclasses import asdict, dataclass
-from pathlib import Path
+from collections.abc import Mapping
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypedDict, cast
 
-from dature.types import ExpandEnvVarsMode, NestedResolveStrategy, TypeLoaderMap
+from dature.types import ExpandEnvVarsMode, NestedResolveStrategy, SystemConfigDirsArg, TypeLoaderMap
 from dature.validators.number import Ge
 from dature.validators.string import MinLength
 
@@ -48,6 +47,23 @@ class ErrorDisplayConfig:
 # --8<-- [end:error-display-config]
 
 
+def _default_system_config_dirs() -> dict[str, tuple[str, ...]]:
+    return {
+        "linux": (
+            "${XDG_CONFIG_HOME:-$HOME/.config}",
+            "/etc",
+            "${XDG_CONFIG_DIRS:-/etc/xdg}",
+        ),
+        "darwin": (
+            "$HOME/Library/Application Support",
+            "${XDG_CONFIG_HOME:-$HOME/.config}",
+            "/etc",
+            "${XDG_CONFIG_DIRS:-/etc/xdg}",
+        ),
+        "win32": ("$APPDATA",),
+    }
+
+
 # --8<-- [start:loading-config]
 @dataclass(frozen=True, slots=True)
 class LoadingConfig:
@@ -56,7 +72,7 @@ class LoadingConfig:
     nested_resolve_strategy: NestedResolveStrategy = "flat"
     expand_env_vars: ExpandEnvVarsMode = "default"
     search_system_paths: bool = True
-    system_config_dirs: Iterable[Path] | None = None
+    system_config_dirs: SystemConfigDirsArg = field(default_factory=_default_system_config_dirs)
 
 
 # --8<-- [end:loading-config]
@@ -97,7 +113,7 @@ class LoadingOptions(TypedDict, total=False):
     nested_resolve_strategy: NestedResolveStrategy
     expand_env_vars: ExpandEnvVarsMode
     search_system_paths: bool
-    system_config_dirs: Iterable[Path] | None
+    system_config_dirs: SystemConfigDirsArg
 
 
 class _ConfigProxy:

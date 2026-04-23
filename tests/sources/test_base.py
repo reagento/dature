@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -768,7 +769,7 @@ class TestFileSourceSearch:
 
     @pytest.fixture(autouse=True)
     def _reset_config(self):
-        dature.configure(loading={"search_system_paths": True, "system_config_dirs": None})
+        dature.configure(loading={})
 
     @dataclass
     class _Cfg:
@@ -891,3 +892,45 @@ class TestFileSourceSearch:
 
         assert result.host == "enabled"
         assert result.port == 6000
+
+    def test_uses_default_loading_config_mapping(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+
+        xdg_dir = tmp_path / "xdg"
+        xdg_dir.mkdir()
+        (xdg_dir / "config.yaml").write_text("host: default\nport: 7000")
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(xdg_dir))
+        monkeypatch.setattr(sys, "platform", "linux")
+
+        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "default"
+        assert result.port == 7000
+
+    def test_user_override_via_platform_mapping(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: mapped\nport: 8000")
+
+        dature.configure(
+            loading={"system_config_dirs": {sys.platform: (system_dir,)}},
+        )
+
+        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "mapped"
+        assert result.port == 8000

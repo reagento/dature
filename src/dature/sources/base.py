@@ -26,8 +26,6 @@ from dature.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from adaptix import Retort
     from adaptix.provider import Provider
 
@@ -38,6 +36,7 @@ if TYPE_CHECKING:
         FileLike,
         FilePath,
         NameStyle,
+        SystemConfigDirsArg,
         TypeLoaderMap,
     )
 
@@ -320,7 +319,7 @@ class Source(abc.ABC):
 class FileFieldMixin:
     file: "FileLike | FilePath | None" = None
     search_system_paths: bool | None = None
-    system_config_dirs: "Iterable[Path] | None" = None
+    system_config_dirs: "SystemConfigDirsArg | None" = None
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:

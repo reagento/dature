@@ -1,5 +1,5 @@
 import types
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from io import BufferedIOBase, RawIOBase, TextIOBase
 from pathlib import Path
@@ -67,6 +67,10 @@ type Base64UrlBytes = bytes
 type Base64UrlStr = str
 
 type ExpandEnvVarsMode = Literal["disabled", "default", "empty", "strict"]
+
+type SystemConfigDirsEntry = Path | str
+type SystemConfigDirsList = Iterable[SystemConfigDirsEntry]
+type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsList]
 
 type NestedResolveStrategy = Literal["flat", "json"]
 # Values are FieldPath at runtime, but F[Type] returns the dataclass type itself
