@@ -96,9 +96,6 @@ class EnvFileSource(FileFieldMixin, EnvSource):
     location_label: ClassVar[str] = "ENV FILE"
     file: "FileLike | FilePath" = ".env"
 
-    def __post_init__(self) -> None:
-        self._init_file_field()
-
     def __repr__(self) -> str:
         display = self.format_name
         file_path_display = self.file_display()

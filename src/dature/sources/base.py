@@ -2,11 +2,11 @@ import abc
 import json
 import logging
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from dature.config import config
-from dature.config_paths import iter_config_paths
+from dature.config_paths import find_config
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars, expand_file_path
 from dature.field_path import FieldPath
@@ -26,6 +26,8 @@ from dature.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from adaptix import Retort
     from adaptix.provider import Provider
 
@@ -318,26 +320,18 @@ class Source(abc.ABC):
 class FileFieldMixin:
     file: "FileLike | FilePath | None" = None
     search_system_paths: bool | None = None
-    system_config_dirs: "tuple[Path, ...] | None" = None
+    system_config_dirs: "Iterable[Path] | None" = None
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:
         if isinstance(self.file, (str, Path)):
             self.file = expand_file_path(str(self.file), mode="strict")
 
-    def _search_in_system(self, filename: str) -> Path | None:
-        """Search for file in system directories."""
-        for candidate in iter_config_paths(filename, self.system_config_dirs):
-            if candidate.exists():
-                return candidate
-        return None
-
-    def _resolve_file_path(self) -> Path | None:
+    @cached_property
+    def _resolved_file_path(self) -> Path | None:
         """Resolve file path with optional system path search.
 
-        Search order:
-        1. file as-is (relative or absolute path)
-        2. If search_system_paths is True, search in system_config_dirs
+        Cached to avoid re-traversing system directories on repeated access
         """
         if self.file is None or isinstance(self.file, FILE_LIKE_TYPES):
             return None
@@ -347,7 +341,7 @@ class FileFieldMixin:
             return file_path
 
         if self.search_system_paths:
-            return self._search_in_system(file_path.name)
+            return find_config(file_path.name, self.system_config_dirs)
 
         return None
 
@@ -376,21 +370,20 @@ class FileFieldMixin:
         return None
 
     def file_display(self) -> str | None:
-        resolved = self._resolve_file_path()
-        if resolved is not None:
-            return str(resolved)
+        if self._resolved_file_path is not None:
+            return str(self._resolved_file_path)
         return self.file_field_display(self.file)
 
     def file_path_for_errors(self) -> Path | None:
-        resolved = self._resolve_file_path()
-        if resolved is not None:
-            return resolved
+        if self._resolved_file_path is not None:
+            return self._resolved_file_path
         return self.file_field_path_for_errors(self.file)
 
 
 @dataclass(kw_only=True, repr=False)
 class FileSource(FileFieldMixin, Source, abc.ABC):
     location_label: ClassVar[str] = "FILE"
+
     def __repr__(self) -> str:
         display = self.format_name
         file_path_display = self.file_display()
@@ -399,15 +392,14 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
         return display
 
     def _load(self) -> JSONValue:
-        path = self._resolve_file_path()
+        if isinstance(self.file, FILE_LIKE_TYPES):
+            return self._load_file(self.file)
+
+        path = self._resolved_file_path
         if path is None:
-            # Fallback to original behavior for streams or when no file specified
-            resolved = self.resolve_file_field(self.file)
-            if isinstance(resolved, Path) and not resolved.exists():
-                # File not found anywhere, raise error
-                msg = f"Config file not found: {resolved}"
-                raise FileNotFoundError(msg)
-            return self._load_file(resolved)
+            msg = f"Config file not found: {self.file}"
+            raise FileNotFoundError(msg)
+
         return self._load_file(path)
 
     @abc.abstractmethod

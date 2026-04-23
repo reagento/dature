@@ -16,9 +16,8 @@ class Config:
     port: int
 
 
-# Get first system config directory (platform-specific: ~/.config, %APPDATA%, etc.)
-system_dirs = get_system_config_dirs()
-config_dir = system_dirs[0]
+# Get first system config dir (platform-specific: ~/.config, %APPDATA%, etc.)
+config_dir = next(get_system_config_dirs())
 config_dir.mkdir(parents=True, exist_ok=True)
 
 with tempfile.NamedTemporaryFile(
@@ -37,4 +36,3 @@ with tempfile.NamedTemporaryFile(
 
     assert config.host == "localhost"
     assert config.port == 8080
-

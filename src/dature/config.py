@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypedDict, cast
@@ -56,7 +56,7 @@ class LoadingConfig:
     nested_resolve_strategy: NestedResolveStrategy = "flat"
     expand_env_vars: ExpandEnvVarsMode = "default"
     search_system_paths: bool = True
-    system_config_dirs: tuple[Path, ...] | None = None
+    system_config_dirs: Iterable[Path] | None = None
 
 
 # --8<-- [end:loading-config]
@@ -97,7 +97,7 @@ class LoadingOptions(TypedDict, total=False):
     nested_resolve_strategy: NestedResolveStrategy
     expand_env_vars: ExpandEnvVarsMode
     search_system_paths: bool
-    system_config_dirs: tuple[Path, ...] | None
+    system_config_dirs: Iterable[Path] | None
 
 
 class _ConfigProxy:
