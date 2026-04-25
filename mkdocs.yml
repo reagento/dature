@@ -53,6 +53,7 @@ nav:
   - Getting Started:
     - Home: index.md
     - Introduction: introduction.md
+    - Loading: loading.md
     - Supported Types: supported_types.md
   - Features:
     - Naming: features/naming.md
@@ -102,6 +103,7 @@ plugins:
       sections:
         Getting Started:
           - introduction.md
+          - loading.md
           - supported_types.md
         Features:
           - features/naming.md

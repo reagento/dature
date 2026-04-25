@@ -1,0 +1,2 @@
+ruamel.yaml.scanner.ScannerError: mapping values are not allowed here
+  in "{SOURCES_DIR}broken.yaml", line 3, column 13

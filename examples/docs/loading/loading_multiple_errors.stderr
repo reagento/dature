@@ -1,0 +1,12 @@
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (2)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [port]  invalid literal for int() with base 10: 'not_a_number'
+    |    ├── port: not_a_number
+    |    │         ^^^^^^^^^^^^
+    |    └── FILE '{SOURCES_DIR}multiple_errors.yaml', line 2
+    +---------------- 2 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [debug]  Expected bool, got str
+    |    ├── debug: maybe
+    |    │          ^^^^^
+    |    └── FILE '{SOURCES_DIR}multiple_errors.yaml', line 3
+    +------------------------------------
