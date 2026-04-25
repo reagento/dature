@@ -16,7 +16,10 @@ class Config:
 
 
 config = dature.load(
-    dature.Yaml12Source(file=SOURCES_DIR / "does_not_exist.yaml", skip_if_broken=True),
+    dature.Yaml12Source(
+        file=SOURCES_DIR / "does_not_exist.yaml",
+        skip_if_broken=True,
+    ),
     dature.Yaml12Source(file=SOURCES_DIR / "fallback.yaml"),
     schema=Config,
 )

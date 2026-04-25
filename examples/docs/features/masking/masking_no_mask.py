@@ -1,4 +1,4 @@
-"""Per-source masking — mask_secrets=False exposes values in errors."""
+"""Disable masking — mask_secrets=False exposes values in errors."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,9 +17,7 @@ class Config:
 
 
 dature.load(
-    dature.Yaml12Source(
-        file=SOURCES_DIR / "masking_per_source.yaml",
-        mask_secrets=False,
-    ),
+    dature.Yaml12Source(file=SOURCES_DIR / "masking_per_source.yaml"),
     schema=Config,
+    mask_secrets=False,
 )

@@ -81,20 +81,6 @@ def resolve_skip_invalid(
     return merge_meta.skip_invalid_fields
 
 
-def resolve_mask_secrets(source: Source, merge_meta: MergeConfig) -> bool:
-    if source.mask_secrets is not None:
-        return source.mask_secrets
-    if merge_meta.mask_secrets is not None:
-        return merge_meta.mask_secrets
-    return config.masking.mask_secrets
-
-
-def resolve_secret_field_names(source: Source, merge_meta: MergeConfig) -> tuple[str, ...]:
-    source_names = source.secret_field_names or ()
-    merge_names = merge_meta.secret_field_names or ()
-    return source_names + merge_names
-
-
 def apply_merge_skip_invalid(
     *,
     raw: JSONValue,

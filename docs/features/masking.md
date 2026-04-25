@@ -107,19 +107,9 @@ Classic `ab*****cd` style:
 
 ## Configuration
 
-### Per-source
+### Per-load
 
-Control masking via `Source`:
-
-=== "secret_field_names"
-
-    ```python
-    --8<-- "examples/docs/features/masking/masking_per_source.py"
-    ```
-
-    ```title="Error"
-    --8<-- "examples/docs/features/masking/masking_per_source.stderr"
-    ```
+`mask_secrets` and `secret_field_names` are passed directly to `dature.load()`. They apply to both single-source and multi-source modes.
 
 === "mask_secrets=False"
 
@@ -130,10 +120,6 @@ Control masking via `Source`:
     ```title="Error"
     --8<-- "examples/docs/features/masking/masking_no_mask.stderr"
     ```
-
-### Per-load
-
-`mask_secrets` and `secret_field_names` can be passed directly to `dature.load()`. They apply to both single-source and multi-source modes. `Source.mask_secrets` overrides `load(mask_secrets=...)` when not `None`. `Source.secret_field_names` and `load(secret_field_names=...)` are combined.
 
 ### In merge mode
 

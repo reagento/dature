@@ -12,8 +12,6 @@ from dature.loading.merge_config import MergeConfig, SourceParams
 from dature.loading.source_loading import (
     _apply_source_init_params,
     apply_merge_skip_invalid,
-    resolve_mask_secrets,
-    resolve_secret_field_names,
     resolve_skip_invalid,
     should_skip_broken,
 )
@@ -449,64 +447,6 @@ class TestResolveSkipInvalid:
         merge = MergeConfig(sources=(source,), skip_invalid_fields=merge_skip)
 
         assert resolve_skip_invalid(source, merge) is expected
-
-
-class TestResolveMaskSecrets:
-    @pytest.mark.usefixtures("_reset_config")
-    def test_source_overrides_all(self, tmp_path: Path):
-        json_file = tmp_path / "c.json"
-        json_file.write_text("{}")
-        source = JsonSource(file=json_file, mask_secrets=False)
-        merge = MergeConfig(sources=(source,), mask_secrets=True)
-
-        assert resolve_mask_secrets(source, merge) is False
-
-    @pytest.mark.usefixtures("_reset_config")
-    def test_merge_overrides_config(self, tmp_path: Path):
-        json_file = tmp_path / "c.json"
-        json_file.write_text("{}")
-        source = JsonSource(file=json_file)
-        merge = MergeConfig(sources=(source,), mask_secrets=False)
-
-        assert resolve_mask_secrets(source, merge) is False
-
-    @pytest.mark.usefixtures("_reset_config")
-    def test_falls_back_to_config(self, tmp_path: Path):
-        json_file = tmp_path / "c.json"
-        json_file.write_text("{}")
-        source = JsonSource(file=json_file)
-        merge = MergeConfig(sources=(source,))
-
-        result = resolve_mask_secrets(source, merge)
-
-        assert isinstance(result, bool)
-
-
-class TestResolveSecretFieldNames:
-    @pytest.mark.parametrize(
-        ("source_names", "merge_names", "expected"),
-        [
-            (("api_key",), ("token",), ("api_key", "token")),
-            (None, ("token",), ("token",)),
-            (None, None, ()),
-        ],
-        ids=["combines-both", "source-none", "both-none"],
-    )
-    def test_resolve(
-        self,
-        tmp_path: Path,
-        source_names: tuple[str, ...] | None,
-        merge_names: tuple[str, ...] | None,
-        expected: tuple[str, ...],
-    ):
-        json_file = tmp_path / "c.json"
-        json_file.write_text("{}")
-        kwargs = {} if source_names is None else {"secret_field_names": source_names}
-        source = JsonSource(file=json_file, **kwargs)
-        merge_kwargs = {} if merge_names is None else {"secret_field_names": merge_names}
-        merge = MergeConfig(sources=(source,), **merge_kwargs)
-
-        assert resolve_secret_field_names(source, merge) == expected
 
 
 class TestApplyMergeSkipInvalid:

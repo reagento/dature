@@ -1,4 +1,4 @@
-"""Merge mode masking — Source.secret_field_names combined with Merge."""
+"""Merge mode masking — secret_field_names applied across all sources."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,9 +19,7 @@ class Config:
 
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_merge_mode_defaults.yaml"),
-    dature.Yaml12Source(
-        file=SOURCES_DIR / "masking_merge_mode_secrets.yaml",
-        secret_field_names=("api_key",),
-    ),
+    dature.Yaml12Source(file=SOURCES_DIR / "masking_merge_mode_secrets.yaml"),
     schema=Config,
+    secret_field_names=("api_key",),
 )

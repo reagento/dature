@@ -56,8 +56,6 @@ class Source(abc.ABC):
     expand_env_vars: "ExpandEnvVarsMode | None" = None
     skip_if_broken: bool | None = None
     skip_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
-    secret_field_names: tuple[str, ...] | None = None
-    mask_secrets: bool | None = None
     type_loaders: "TypeLoaderMap | None" = None
     # --8<-- [end:load-metadata]
 

@@ -77,8 +77,6 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | ENV variable expansion: `"disabled"`, `"default"`, `"empty"`, `"strict"`. |
 | `skip_if_broken` | `bool \| None` | `None` | Skip this source if it fails to load. |
 | `skip_if_invalid` | `bool \| tuple[FieldPath, ...] \| None` | `None` | Skip invalid fields from this source. `True` for all, or a tuple of specific fields. |
-| `secret_field_names` | `tuple[str, ...] \| None` | `None` | Extra secret name patterns for masking. |
-| `mask_secrets` | `bool \| None` | `None` | Enable/disable secret masking for this source. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type converters `{type: callable}` for this source. |
 
 **Public methods:**

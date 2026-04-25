@@ -46,12 +46,7 @@ logger = logging.getLogger("dature")
 
 
 def _collect_extra_secret_patterns(merge_meta: MergeConfig) -> tuple[str, ...]:
-    merge_names = merge_meta.secret_field_names or ()
-    source_names: list[str] = []
-    for source_item in merge_meta.sources:
-        if source_item.secret_field_names is not None:
-            source_names.extend(source_item.secret_field_names)
-    return merge_names + tuple(source_names)
+    return merge_meta.secret_field_names or ()
 
 
 def _log_merge_step(  # noqa: PLR0913

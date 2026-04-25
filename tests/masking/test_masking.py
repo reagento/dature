@@ -354,7 +354,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(JsonSource(file=json_file, mask_secrets=True), schema=Cfg)
+            load(JsonSource(file=json_file), mask_secrets=True, schema=Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
@@ -376,7 +376,7 @@ class TestSecretMaskingIntegration:
             host: str
 
         with patch("dature.masking.masking._heuristic_detector", None), pytest.raises(DatureConfigError) as exc_info:
-            load(JsonSource(file=json_file, mask_secrets=True), schema=Cfg)
+            load(JsonSource(file=json_file), mask_secrets=True, schema=Cfg)
 
         assert str(exc_info.value) == "Cfg loading errors (1)"
         assert str(exc_info.value.exceptions[0]) == (
@@ -492,49 +492,3 @@ class TestLoadLevelMaskingParams:
         report = get_load_report(result)
         assert report is not None
         assert report.merged_data == {"my_token": _MASKED_SECRET, "host": _PUBLIC_VALUE}
-
-    def test_source_mask_secrets_overrides_load_level(self, tmp_path: Path):
-        json_file = tmp_path / "config.json"
-        json_file.write_text(f'{{"password": "{_SECRET_VALUE}", "host": "{_PUBLIC_VALUE}"}}')
-
-        @dataclass
-        class Cfg:
-            password: str
-            host: str
-
-        result = load(
-            JsonSource(file=json_file, mask_secrets=False),
-            schema=Cfg,
-            debug=True,
-            mask_secrets=True,
-        )
-
-        report = get_load_report(result)
-        assert report is not None
-        assert report.merged_data == {"password": _SECRET_VALUE, "host": _PUBLIC_VALUE}
-
-    def test_source_and_load_secret_field_names_combined(self, tmp_path: Path):
-        json_file = tmp_path / "config.json"
-        json_file.write_text(
-            f'{{"nickname": "{_SECRET_VALUE}", "label": "{_SECRET_VALUE}", "host": "{_PUBLIC_VALUE}"}}',
-        )
-
-        @dataclass
-        class Cfg:
-            nickname: str
-            label: str
-            host: str
-
-        result = load(
-            JsonSource(file=json_file, secret_field_names=("label",)),
-            schema=Cfg,
-            debug=True,
-            mask_secrets=True,
-            secret_field_names=("nickname",),
-        )
-
-        report = get_load_report(result)
-        assert report is not None
-        assert report.merged_data["label"] == _MASKED_SECRET
-        assert report.merged_data["nickname"] == _MASKED_SECRET
-        assert report.merged_data["host"] == _PUBLIC_VALUE
