@@ -1,0 +1,1 @@
+``apply_source_init_params`` is now invoked exactly once per source — inside ``MergeConfig.__post_init__`` — instead of being re-applied at each downstream call site (retort warmup, validating retort, ``LoadCtx.load``). The function moved to ``loading/merge_config.py``; ``MergeConfig.sources`` now stores prepared sources after construction.

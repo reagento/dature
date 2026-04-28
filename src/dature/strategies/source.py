@@ -12,7 +12,6 @@ from dature.loading.source_loading import (
     SkippedFieldSource,
     SourceContext,
     apply_merge_skip_invalid,
-    apply_source_init_params,
     resolve_type_loaders,
     should_skip_broken,
 )
@@ -212,32 +211,31 @@ class LoadCtx:
         i = self._next_index
         self._next_index += 1
 
-        prepared = apply_source_init_params(source, self._merge_meta.source_params)
-        type_loaders = resolve_type_loaders(prepared, self._merge_meta.type_loaders)
+        type_loaders = resolve_type_loaders(source, self._merge_meta.type_loaders)
         error_ctx = build_error_ctx(
-            prepared,
+            source,
             self._dataclass_name,
             secret_paths=self._secret_paths,
             mask_secrets=self._mask_secrets,
         )
 
         try:
-            load_result = handle_load_errors(func=prepared.load_raw, ctx=error_ctx)
+            load_result = handle_load_errors(func=source.load_raw, ctx=error_ctx)
         except (DatureConfigError, FileNotFoundError):
-            if not (skip_on_error or should_skip_broken(prepared, self._merge_meta)):
+            if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 raise
             logger.warning(
                 "[%s] Source %d skipped (broken): file=%s",
                 self._dataclass_name,
                 i,
-                prepared.display_name(),
+                source.display_name(),
             )
             self._cache[cache_key] = None
             return None
         except Exception as exc:
-            if not (skip_on_error or should_skip_broken(prepared, self._merge_meta)):
+            if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 location = SourceLocation(
-                    location_label=prepared.location_label,
+                    location_label=source.location_label,
                     file_path=error_ctx.source.file_path_for_errors(),
                     line_range=None,
                     line_content=None,
@@ -252,7 +250,7 @@ class LoadCtx:
                 "[%s] Source %d skipped (broken): file=%s",
                 self._dataclass_name,
                 i,
-                prepared.display_name(),
+                source.display_name(),
             )
             self._cache[cache_key] = None
             return None
@@ -260,7 +258,7 @@ class LoadCtx:
         raw = load_result.data
         if load_result.nested_conflicts:
             error_ctx = build_error_ctx(
-                prepared,
+                source,
                 self._dataclass_name,
                 secret_paths=self._secret_paths,
                 mask_secrets=self._mask_secrets,
@@ -271,7 +269,7 @@ class LoadCtx:
 
         filter_result = apply_merge_skip_invalid(
             raw=raw,
-            source=prepared,
+            source=source,
             merge_meta=self._merge_meta,
             schema=self._schema,
             source_index=i,
@@ -279,19 +277,19 @@ class LoadCtx:
 
         for path in filter_result.skipped_paths:
             self._skipped_fields.setdefault(path, []).append(
-                SkippedFieldSource(source=prepared, error_ctx=error_ctx, file_content=file_content),
+                SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content),
             )
 
         raw = filter_result.cleaned_dict
 
-        format_name = type(prepared).format_name
+        format_name = type(source).format_name
 
         logger.debug(
             "[%s] Source %d loaded: loader=%s, file=%s, keys=%s",
             self._dataclass_name,
             i,
             format_name,
-            prepared.display_name(),
+            source.display_name(),
             sorted(raw.keys()) if isinstance(raw, dict) else "<non-dict>",
         )
         if self._secret_paths:
@@ -310,15 +308,15 @@ class LoadCtx:
             SourceEntry(
                 index=i,
                 file_path=str(src_path)
-                if (src_path := prepared.file_path_for_errors()) is not None
-                else prepared.display_name(),
+                if (src_path := source.file_path_for_errors()) is not None
+                else source.display_name(),
                 loader_type=format_name,
                 raw_data=raw,
             ),
         )
         self._source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
         self._raw_dicts.append(raw)
-        self._last_source = prepared
+        self._last_source = source
         self._last_type_loaders = type_loaders
 
         self._cache[cache_key] = raw

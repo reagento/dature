@@ -1,5 +1,3 @@
-import copy
-import dataclasses
 import logging
 from dataclasses import dataclass
 
@@ -7,7 +5,7 @@ from dature.config import config
 from dature.errors.location import ErrorContext
 from dature.field_path import FieldPath
 from dature.loading.context import apply_skip_invalid
-from dature.loading.merge_config import MergeConfig, SourceParams
+from dature.loading.merge_config import MergeConfig
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult
 from dature.sources.base import Source
@@ -17,36 +15,6 @@ from dature.types import (
 )
 
 logger = logging.getLogger("dature")
-
-
-def apply_source_init_params(source: Source, params: SourceParams) -> Source:
-    """Inject load-level params into source fields (source > load > config).
-
-    Iterates SourceParams fields by name and matches them against the source's
-    dataclass fields. For each matching field currently None: applies
-    load-level value, or falls back to config.loading.<same_name> if available.
-    """
-    source_field_names = {f.name for f in dataclasses.fields(source) if f.init}
-    overrides: dict[str, object] = {}
-
-    for f in dataclasses.fields(params):
-        name = f.name
-        if name not in source_field_names:
-            continue
-        if getattr(source, name, None) is not None:
-            continue  # source-level takes priority
-        load_val = getattr(params, name)
-        config_val = getattr(config.loading, name, None)
-        effective = load_val if load_val is not None else config_val
-        if effective is not None:
-            overrides[name] = effective
-
-    if not overrides:
-        return source
-
-    new_source = copy.copy(source)
-    vars(new_source).update(overrides)
-    return new_source
 
 
 def resolve_type_loaders(

@@ -8,10 +8,9 @@ import pytest
 
 from dature import EnvFileSource, IniSource, JsonSource, Toml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, EnvVarExpandError
-from dature.loading.merge_config import MergeConfig, SourceParams
+from dature.loading.merge_config import MergeConfig, SourceParams, apply_source_init_params
 from dature.loading.source_loading import (
     apply_merge_skip_invalid,
-    apply_source_init_params,
     resolve_skip_invalid,
     should_skip_broken,
 )

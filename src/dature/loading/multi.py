@@ -21,10 +21,7 @@ from dature.loading.context import (
     merge_fields,
 )
 from dature.loading.merge_config import MergeConfig
-from dature.loading.source_loading import (
-    apply_source_init_params,
-    resolve_type_loaders,
-)
+from dature.loading.source_loading import resolve_type_loaders
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries, mask_value
 from dature.merging.deep_merge import deep_merge_last_wins, raise_on_conflict
@@ -447,9 +444,8 @@ class _MergePatchContext:
         self.loading = False
         self.validating = False
 
-        last_source = apply_source_init_params(merge_meta.sources[-1], merge_meta.source_params)
+        last_source = merge_meta.sources[-1]
         last_type_loaders = resolve_type_loaders(last_source, merge_meta.type_loaders)
-        ensure_retort(last_source, cls, resolved_type_loaders=last_type_loaders)
         validating_retort = create_validating_retort(
             last_source,
             cls,
@@ -463,9 +459,8 @@ class _MergePatchContext:
             extra_patterns = _collect_extra_secret_patterns(merge_meta)
             self.secret_paths = build_secret_paths(cls, extra_patterns=extra_patterns)
 
-        last_meta = merge_meta.sources[-1]
         self.error_ctx = build_error_ctx(
-            last_meta,
+            last_source,
             cls.__name__,
             secret_paths=self.secret_paths,
             mask_secrets=mask_secrets,
@@ -477,10 +472,9 @@ class _MergePatchContext:
         merge_meta: MergeConfig,
         cls: type[DataclassInstance],
     ) -> None:
-        for raw_source in merge_meta.sources:
-            source_item = apply_source_init_params(raw_source, merge_meta.source_params)
-            type_loaders = resolve_type_loaders(source_item, merge_meta.type_loaders)
-            ensure_retort(source_item, cls, resolved_type_loaders=type_loaders)
+        for source in merge_meta.sources:
+            type_loaders = resolve_type_loaders(source, merge_meta.type_loaders)
+            ensure_retort(source, cls, resolved_type_loaders=type_loaders)
 
 
 def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:

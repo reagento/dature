@@ -15,10 +15,9 @@ from dature.loading.context import (
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.merge_config import SourceParams
+from dature.loading.merge_config import SourceParams, apply_source_init_params
 from dature.loading.source_loading import (
     SkippedFieldSource,
-    apply_source_init_params,
     resolve_type_loaders,
 )
 from dature.masking.detection import build_secret_paths
