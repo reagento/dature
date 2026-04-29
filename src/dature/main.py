@@ -21,6 +21,8 @@ from dature.types import (
 
 logger = logging.getLogger("dature")
 
+_DEFAULT_STRATEGY: Any = object()
+
 
 @overload
 def load[T](
@@ -67,7 +69,7 @@ def load(  # noqa: PLR0913
     schema: type[Any] | None = None,
     cache: bool | None = None,
     debug: bool | None = None,
-    strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
+    strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
     skip_broken_sources: bool = False,
@@ -85,10 +87,14 @@ def load(  # noqa: PLR0913
     if debug is None:
         debug = config.loading.debug
 
+    user_set_strategy = strategy is not _DEFAULT_STRATEGY
+    if not user_set_strategy:
+        strategy = "last_wins"
+
     _validate_sources(sources)
 
     if len(sources) == 1 and (
-        strategy != "last_wins"
+        user_set_strategy
         or field_merges is not None
         or field_groups != ()
         or skip_broken_sources

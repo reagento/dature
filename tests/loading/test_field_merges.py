@@ -11,6 +11,7 @@ import pytest
 from dature import JsonSource, load
 from dature.errors import MergeConflictError
 from dature.field_path import F
+from dature.strategies import SourceFirstWins, SourceLastWins
 from dature.types import FieldMergeStrategyName
 
 
@@ -934,6 +935,37 @@ class TestCallableMergeStrategy:
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
         assert messages == ["Merge-related parameters have no effect with a single source"]
+
+    @pytest.mark.parametrize(
+        ("strategy_kwarg", "expect_warning"),
+        [
+            ({}, False),
+            ({"strategy": "last_wins"}, True),
+            ({"strategy": SourceLastWins()}, True),
+            ({"strategy": "first_wins"}, True),
+            ({"strategy": SourceFirstWins()}, True),
+        ],
+    )
+    def test_single_source_strategy_warning(
+        self,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+        strategy_kwarg: dict[str, Any],
+        expect_warning: bool,
+    ) -> None:
+        a = tmp_path / "a.json"
+        a.write_text('{"score": 42}')
+
+        @dataclass
+        class Config:
+            score: int
+
+        with caplog.at_level(logging.WARNING, logger="dature"):
+            load(JsonSource(file=a), schema=Config, **strategy_kwarg)
+
+        messages = [r.message for r in caplog.records if r.name == "dature"]
+        warning = "Merge-related parameters have no effect with a single source"
+        assert (warning in messages) is expect_warning
 
     def test_callable_with_raise_on_conflict(self, tmp_path: Path):
         a = tmp_path / "a.json"
