@@ -73,7 +73,7 @@ def _resolve_stderr_placeholders(template: str, script_path: pathlib.Path) -> st
     sources_dir = str(script_path.parent / "sources") + os.sep
     shared_dir = str(script_path.parents[2] / "shared") + os.sep
 
-    return template.replace("{SOURCES_DIR}", sources_dir).replace("{SHARED_DIR}", shared_dir)
+    return template.replace("{SOURCES_DIR}", sources_dir).replace("{SHARED_DIR}", shared_dir).replace("{SEP}", os.sep)
 
 
 def _normalize_trailing_whitespace(text: str) -> str:

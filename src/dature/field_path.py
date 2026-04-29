@@ -74,6 +74,15 @@ def validate_field_path_owner(field_path: FieldPath, schema: type[DataclassInsta
         raise TypeError(msg)
 
 
+def extract_field_path(predicate: Any, schema: type[DataclassInstance] | None = None) -> str:  # noqa: ANN401
+    if not isinstance(predicate, FieldPath):
+        msg = f"Expected FieldPath, got {type(predicate).__name__}"
+        raise TypeError(msg)
+    if schema is not None:
+        validate_field_path_owner(predicate, schema)
+    return predicate.as_path()
+
+
 # --8<-- [start:field-path-factory]
 class _FieldPathFactory:
     @overload

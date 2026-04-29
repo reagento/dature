@@ -1,10 +1,12 @@
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from dature.merging.strategy import MergeStrategyEnum
 from dature.types import JSONValue
+
+if TYPE_CHECKING:
+    from dature.strategies.source import SourceMergeStrategy
 
 logger = logging.getLogger("dature")
 
@@ -32,70 +34,13 @@ class FieldOrigin:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LoadReport:
     dataclass_name: str
-    strategy: MergeStrategyEnum | None
+    strategy: "SourceMergeStrategy | None"
     sources: tuple[SourceEntry, ...]
     field_origins: tuple[FieldOrigin, ...]
     merged_data: JSONValue
 
 
 # --8<-- [end:report-structure]
-def compute_field_origins(
-    *,
-    raw_dicts: list[JSONValue],
-    source_entries: tuple[SourceEntry, ...],
-    strategy: MergeStrategyEnum,
-) -> tuple[FieldOrigin, ...]:
-    first_source: dict[str, int] = {}
-    last_source: dict[str, int] = {}
-    last_value: dict[str, JSONValue] = {}
-
-    for i, raw in enumerate(raw_dicts):
-        if not isinstance(raw, dict):
-            continue
-        for key, value in _flatten_dict(raw, prefix=""):
-            if key not in first_source:
-                first_source[key] = i
-            last_source[key] = i
-            last_value[key] = value
-
-    origins: list[FieldOrigin] = []
-    for key in sorted(last_source):
-        if strategy in (MergeStrategyEnum.FIRST_WINS, MergeStrategyEnum.FIRST_FOUND):
-            winner_idx = first_source[key]
-        else:
-            winner_idx = last_source[key]
-
-        winner = source_entries[winner_idx]
-        origins.append(
-            FieldOrigin(
-                key=key,
-                value=last_value[key],
-                source_index=winner_idx,
-                source_file=winner.file_path,
-                source_loader_type=winner.loader_type,
-            ),
-        )
-
-    return tuple(origins)
-
-
-def _flatten_dict(
-    data: JSONValue,
-    *,
-    prefix: str,
-) -> list[tuple[str, JSONValue]]:
-    """Flatten nested dicts into dot-separated key-value pairs (leaf nodes only)."""
-    if not isinstance(data, dict):
-        return []
-
-    result: list[tuple[str, JSONValue]] = []
-    for key, value in data.items():
-        full_key = f"{prefix}.{key}" if prefix else key
-        if isinstance(value, dict):
-            result.extend(_flatten_dict(value, prefix=full_key))
-        else:
-            result.append((full_key, value))
-    return result
 
 
 # --8<-- [start:get-load-report]

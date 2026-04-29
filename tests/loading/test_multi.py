@@ -8,9 +8,9 @@ from typing import Annotated
 
 import pytest
 
-from dature import EnvFileSource, EnvSource, JsonSource, Yaml12Source, load
-from dature.errors import DatureConfigError, MergeConflictError
-from dature.validators.number import Ge
+from dature import EnvFileSource, EnvSource, JsonSource, V, Yaml12Source, load
+from dature.errors import DatureConfigError, FieldGroupError, MergeConflictError
+from dature.field_path import F
 
 
 class TestMergeLoadAsFunction:
@@ -390,8 +390,10 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "host-a",
+               │   ^^^^^^^^^^^^^^^^^
                └── FILE '{a}', line 2
                ├── "host": "host-b"
+               │   ^^^^^^^^^^^^^^^^
                └── FILE '{b}', line 2
             """)
 
@@ -468,8 +470,10 @@ class TestRaiseOnConflict:
 
               [database.host]  Conflicting values in multiple sources
                ├── "host": "a-host",
+               │   ^^^^^^^^^^^^^^^^^
                └── FILE '{a}', line 3
                ├── "host": "b-host"
+               │   ^^^^^^^^^^^^^^^^
                └── FILE '{b}', line 3
             """)
 
@@ -497,8 +501,10 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "a-host"
+               │   ^^^^^^^^^^^^^^^^
                └── FILE '{a}', line 2
                ├── "host": "b-host"
+               │   ^^^^^^^^^^^^^^^^
                └── FILE '{b}', line 2
             """)
 
@@ -526,7 +532,10 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "json-host",
+               │   ^^^^^^^^^^^^^^^^^^^^
                └── FILE '{a}', line 2
+               ├── APP_HOST=env-host
+               │            ^^^^^^^^
                └── ENV 'APP_HOST'
             """)
 
@@ -556,14 +565,18 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "a-host",
+               │   ^^^^^^^^^^^^^^^^^
                └── FILE '{a}', line 2
                ├── "host": "b-host",
+               │   ^^^^^^^^^^^^^^^^^
                └── FILE '{b}', line 2
 
               [port]  Conflicting values in multiple sources
                ├── "port": 1000
+               │   ^^^^^^^^^^^^
                └── FILE '{a}', line 3
                ├── "port": 2000
+               │   ^^^^^^^^^^^^
                └── FILE '{b}', line 3
             """)
 
@@ -837,7 +850,7 @@ class TestFirstFound:
         @dataclass
         class Config:
             host: str
-            port: Annotated[int, Ge(1)]
+            port: Annotated[int, V >= 1]
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
@@ -873,7 +886,7 @@ class TestFirstFound:
         @dataclass
         class Config:
             host: str
-            port: Annotated[int, Ge(1)]
+            port: Annotated[int, V >= 1]
 
         with pytest.raises(DatureConfigError) as exc_info:
             Config()
@@ -881,6 +894,134 @@ class TestFirstFound:
         err = exc_info.value
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
+        assert str(err.exceptions[0]) == (
+            f"  [port]  Value must be greater than or equal to 1\n"
+            f"   ├── port: 0\n"
+            f"   │         ^\n"
+            f"   └── FILE '{first}', line 2"
+        )
+
+
+class TestFirstFoundWithFieldFeatures:
+    """Regression tests for first_found combined with field_groups / field_merges.
+
+    Before the fix, field_groups triggered a pre-load of every source, which
+    silently broke first_found's short-circuit semantics: field_merges
+    aggregated over sources the strategy never selected, last_source pointed
+    at the wrong source, and broken sources stopped being silently skipped.
+    """
+
+    def test_field_merges_only_aggregates_chosen_source(self, tmp_path: Path):
+        first = tmp_path / "first.json"
+        first.write_text('{"host": "h1", "port": 1, "tags": ["a"]}')
+        second = tmp_path / "second.json"
+        second.write_text('{"host": "h2", "port": 2, "tags": ["b"]}')
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+            tags: list[str]
+
+        result = load(
+            JsonSource(file=first),
+            JsonSource(file=second),
+            schema=Config,
+            strategy="first_found",
+            field_groups=((F[Config].host, F[Config].port),),
+            field_merges={F[Config].tags: "append"},
+        )
+
+        assert result.host == "h1"
+        assert result.port == 1
+        assert result.tags == ["a"]
+
+    def test_field_groups_validates_only_chosen_source(self, tmp_path: Path):
+        first = tmp_path / "first.json"
+        first.write_text('{"host": "h1", "port": 1}')
+        second = tmp_path / "second.json"
+        second.write_text('{"host": "h2"}')
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            JsonSource(file=first),
+            JsonSource(file=second),
+            schema=Config,
+            strategy="first_found",
+            field_groups=((F[Config].host, F[Config].port),),
+        )
+
+        assert result.host == "h1"
+        assert result.port == 1
+
+    def test_field_groups_partial_in_chosen_source_raises(self, tmp_path: Path):
+        first = tmp_path / "first.json"
+        first.write_text('{"host": "h1"}')
+        second = tmp_path / "second.json"
+        second.write_text('{"host": "h2", "port": 2}')
+
+        @dataclass
+        class Config:
+            host: str
+            port: int = 0
+
+        with pytest.raises(FieldGroupError):
+            load(
+                JsonSource(file=first),
+                JsonSource(file=second),
+                schema=Config,
+                strategy="first_found",
+                field_groups=((F[Config].host, F[Config].port),),
+            )
+
+    def test_field_groups_silently_skips_broken_first_source(self, tmp_path: Path):
+        broken = tmp_path / "broken.yaml"
+        broken.write_text(": invalid: yaml: [")
+        fallback = tmp_path / "fallback.yaml"
+        fallback.write_text("host: fallback-host\nport: 5000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            Yaml12Source(file=broken),
+            Yaml12Source(file=fallback),
+            schema=Config,
+            strategy="first_found",
+            field_groups=((F[Config].host, F[Config].port),),
+        )
+
+        assert result.host == "fallback-host"
+        assert result.port == 5000
+
+    def test_validation_error_references_chosen_source(self, tmp_path: Path):
+        first = tmp_path / "first.yaml"
+        first.write_text("host: first-host\nport: 0\n")
+        second = tmp_path / "second.yaml"
+        second.write_text("host: second-host\nport: 5000\n")
+
+        @dataclass
+        class Config:
+            host: str
+            port: Annotated[int, V >= 1]
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                Yaml12Source(file=first),
+                Yaml12Source(file=second),
+                schema=Config,
+                strategy="first_found",
+                field_groups=((F[Config].host, F[Config].port),),
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
         assert str(err.exceptions[0]) == (
             f"  [port]  Value must be greater than or equal to 1\n"
             f"   ├── port: 0\n"

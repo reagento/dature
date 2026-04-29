@@ -1,10 +1,11 @@
-"""Report on error — dature.get_load_report() from the dataclass type after a failed load."""
+"""Report on error — get_load_report() from the type after a failed load."""
 
 from dataclasses import dataclass
 from pathlib import Path
 
 import dature
 from dature.errors import DatureConfigError
+from dature.strategies.source import SourceLastWins
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 SHARED_DIR = Path(__file__).parents[2] / "shared"
@@ -20,7 +21,9 @@ class Config:
 try:
     config = dature.load(
         dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
-        dature.Yaml12Source(file=SOURCES_DIR / "advanced_debug_error_defaults.yaml"),
+        dature.Yaml12Source(
+            file=SOURCES_DIR / "advanced_debug_error_defaults.yaml",
+        ),
         schema=Config,
         debug=True,
     )
@@ -29,7 +32,7 @@ except DatureConfigError:
     assert report is not None
 
     assert report.dataclass_name == "Config"
-    assert report.strategy == "last_wins"
+    assert isinstance(report.strategy, SourceLastWins)
     assert report.merged_data == {
         "host": "localhost",
         "port": "not_a_number",

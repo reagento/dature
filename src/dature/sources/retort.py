@@ -1,5 +1,5 @@
 from dataclasses import fields
-from datetime import timedelta
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, cast, get_type_hints
 
 from adaptix import NameStyle as AdaptixNameStyle
@@ -11,6 +11,17 @@ from dature.field_path import FieldPath
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
+from dature.loaders import (
+    bool_loader,
+    bytearray_from_json_string,
+    date_from_string,
+    datetime_from_string,
+    float_from_string,
+    none_from_empty_string,
+    optional_from_empty_string,
+    str_from_scalar,
+    time_from_string,
+)
 from dature.loaders.base import (
     base64url_bytes_from_string,
     base64url_str_from_string,
@@ -34,7 +45,7 @@ from dature.validators.base import (
     create_metadata_validator_providers,
     create_root_validator_providers,
     create_validator_providers,
-    extract_validators_from_type,
+    extract_and_check_validators,
 )
 
 if TYPE_CHECKING:
@@ -46,6 +57,20 @@ if TYPE_CHECKING:
         NameStyle,
         TypeLoaderMap,
     )
+
+
+def string_value_loaders() -> list[Provider]:
+    return [
+        loader(str, str_from_scalar),
+        loader(float, float_from_string),
+        loader(date, date_from_string),
+        loader(datetime, datetime_from_string),
+        loader(time, time_from_string),
+        loader(bytearray, bytearray_from_json_string),
+        loader(type(None), none_from_empty_string),
+        loader(str | None, optional_from_empty_string),
+        loader(bool, bool_loader),
+    ]
 
 
 def get_adaptix_name_style(name_style: "NameStyle | None") -> AdaptixNameStyle | None:
@@ -106,7 +131,7 @@ def get_validator_providers[T](schema: type[T]) -> list[Provider]:
             continue
 
         field_type = type_hints[f.name]
-        validators_list = extract_validators_from_type(field_type)
+        validators_list = extract_and_check_validators(field_type, field_path=[f.name])
 
         if validators_list:
             field_providers = create_validator_providers(schema, f.name, validators_list)

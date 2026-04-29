@@ -1,13 +1,20 @@
+"""Root validator: ``V.root(func)`` — cross-field checks.
+
+``RootPredicate`` is intentionally **not** a :class:`Predicate`. Placing it in
+``Annotated[...]`` metadata raises a ``TypeError`` at retort-build time — it may
+only appear in ``Source.root_validators``.
+"""
+
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import final
 
 
-# --8<-- [start:root-validator]
+@final
 @dataclass(frozen=True, slots=True)
-class RootValidator:
+class RootPredicate:
     func: Callable[..., bool]
-    error_message: str = field(default="Root validation failed", kw_only=True)
-    # --8<-- [end:root-validator]
+    error_message: str = "Root validation failed"
 
     def get_validator_func(self) -> Callable[..., bool]:
         return self.func

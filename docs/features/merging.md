@@ -145,6 +145,8 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
         --8<-- "examples/docs/shared/common_raise_on_conflict_b.yaml"
         ```
 
+`strategy` is not limited to the names above — any object implementing the `SourceMergeStrategy` `Protocol` is accepted, so you can plug in your own merge logic (e.g. let env sources override files unconditionally) while still composing the built-in strategies. See [Custom Source Strategy](../advanced/merge-rules.md#custom-source-strategy).
+
 For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/field-groups.md).
 
 ## Merge Parameters

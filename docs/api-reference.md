@@ -30,8 +30,8 @@ Main entry point. Two calling patterns:
 | `schema` | `type[T] \| None` | `None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
 | `cache` | `bool \| None` | `None` | Enable caching in decorator mode. Default from `configure()`. Ignored in function mode. |
 | `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `configure()`. Retrieve with `get_load_report()`. |
-| `strategy` | `MergeStrategyName` | `"last_wins"` | Merge strategy. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
-| `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy string or callable. See [Field Merge Strategies](#field-merge-strategies). |
+| `strategy` | `MergeStrategyName \| SourceMergeStrategy` | `"last_wins"` | Merge strategy: a built-in name or a custom object implementing `SourceMergeStrategy`. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
+| `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy name, callable, or any object implementing `FieldMergeStrategy`. See [Field Merge Strategies](#field-merge-strategies). |
 | `field_groups` | `tuple[FieldGroupTuple, ...]` | `()` | Groups of fields that must change together. Each group is a tuple of `F[Config].field` references. |
 | `skip_broken_sources` | `bool` | `False` | Skip sources that fail to load instead of raising. |
 | `skip_invalid_fields` | `bool` | `False` | Skip fields that fail validation instead of raising. |
@@ -76,9 +76,7 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | `validators` | `FieldValidators \| None` | `None` | Per-field validators via `Annotated` metadata or explicit mapping. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | ENV variable expansion: `"disabled"`, `"default"`, `"empty"`, `"strict"`. |
 | `skip_if_broken` | `bool \| None` | `None` | Skip this source if it fails to load. |
-| `skip_if_invalid` | `bool \| tuple[FieldPath, ...] \| None` | `None` | Skip invalid fields from this source. `True` for all, or a tuple of specific fields. |
-| `secret_field_names` | `tuple[str, ...] \| None` | `None` | Extra secret name patterns for masking. |
-| `mask_secrets` | `bool \| None` | `None` | Enable/disable secret masking for this source. |
+| `skip_field_if_invalid` | `bool \| tuple[FieldPath, ...] \| None` | `None` | Skip invalid fields from this source. `True` for all, or a tuple of specific fields. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type converters `{type: callable}` for this source. |
 
 **Public methods:**
@@ -92,7 +90,7 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | `create_probe_retort()` | `Retort` | Retort that skips missing fields — used internally for partial loading in merge mode. |
 | `file_display()` | `str \| None` | Human-readable file identifier for logging. Returns `None` by default. |
 | `file_path_for_errors()` | `Path \| None` | File path used in error messages. Returns `None` by default. |
-| `resolve_location(...)` | `list[SourceLocation]` | Locate a field in the source content for error reporting. Class method. Returns `SourceLocation` with line range, env var name, etc. |
+| `resolve_location(...)` | `list[SourceLocation]` | Locate a field in the source content for error reporting. Returns `SourceLocation` with line range, env var name, etc. |
 
 ### `FileSource(Source)`
 
@@ -124,7 +122,7 @@ Base class for flat key=value sources (`EnvSource`, `EnvFileSource`, `DockerSecr
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `split_symbols` | `str` | `"__"` | Separator for nested key splitting. `APP__DB__HOST` → `{"db": {"host": ...}}` |
+| `nested_sep` | `str` | `"__"` | Separator for nested key splitting. `APP__DB__HOST` → `{"db": {"host": ...}}` |
 | `nested_resolve_strategy` | `NestedResolveStrategy` | `"flat"` | Default priority when both flat and JSON keys exist: `"flat"` or `"json"`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
 
@@ -143,9 +141,11 @@ Strategies for resolving field values across multiple sources. Set via `strategy
 | `"first_found"` | Uses the first source that loads successfully. |
 | `"raise_on_conflict"` | Raises `MergeConflictError` on conflicting values. |
 
+The built-ins are also exposed as classes from `dature.strategies.source` (`SourceLastWins`, `SourceFirstWins`, `SourceFirstFound`, `SourceRaiseOnConflict`) implementing the public `SourceMergeStrategy` `Protocol`. Pass any object satisfying that protocol as `strategy` for custom merge logic — see [Custom Source Strategy](advanced/merge-rules.md#custom-source-strategy).
+
 ### Field Merge Strategies
 
-Per-field overrides via `field_merges` parameter. Maps `F[Config].field` to a strategy name or a `Callable[[list[JSONValue]], JSONValue]`.
+Per-field overrides via `field_merges` parameter. Maps `F[Config].field` to a strategy name, a plain `Callable[[list[JSONValue]], JSONValue]`, or any object implementing the public `FieldMergeStrategy` `Protocol`.
 
 | Strategy | Behavior |
 |----------|----------|
@@ -156,13 +156,15 @@ Per-field overrides via `field_merges` parameter. Maps `F[Config].field` to a st
 | `"prepend"` | Concatenate lists: `override + base`. |
 | `"prepend_unique"` | Concatenate lists in reverse order, removing duplicates. |
 
+The built-ins are also exposed as classes from `dature.strategies.field` (`FieldFirstWins`, `FieldLastWins`, `FieldAppend`, `FieldAppendUnique`, `FieldPrepend`, `FieldPrependUnique`). See [Custom Field Strategy](advanced/merge-rules.md#custom-field-strategy) for examples.
+
 ---
 
 ## Field Path
 
 ### `F`
 
-Factory for building type-safe field paths. Used for `field_mapping`, `field_merges`, `field_groups`, `validators`, `skip_if_invalid`, and `nested_resolve`.
+Factory for building type-safe field paths. Used for `field_mapping`, `field_merges`, `field_groups`, `validators`, `skip_field_if_invalid`, and `nested_resolve`.
 
 ```python
 --8<-- "examples/docs/api_reference/api_reference_field_path.py"
@@ -306,6 +308,7 @@ Frozen dataclass controlling load behavior defaults.
 | `cache` | `bool` | `True` | Default caching in decorator mode. |
 | `debug` | `bool` | `False` | Default debug mode (collect `LoadReport`). |
 | `nested_resolve_strategy` | `NestedResolveStrategy` | `"flat"` | Default nested resolve strategy for `FlatKeySource`. |
+| `expand_env_vars` | `ExpandEnvVarsMode` | `"default"` | Default env var expansion mode applied when neither source nor load-level value is set. |
 
 ---
 
@@ -501,11 +504,11 @@ Section headers become top-level dict keys. Dotted sections (`database.pool`) cr
 
 ### Flat key-value sources (inherit `FlatKeySource`)
 
-All flat key-value sources accept `split_symbols`, `nested_resolve_strategy` and `nested_resolve` from [`FlatKeySource`](#flatkeysourcesource) plus all common parameters from [`Source`](#source).
+All flat key-value sources accept `nested_sep`, `nested_resolve_strategy` and `nested_resolve` from [`FlatKeySource`](#flatkeysourcesource) plus all common parameters from [`Source`](#source).
 
 All values are strings. Automatic parsing of `str`, `float`, `date`, `datetime`, `time`, `bytearray`, `bool`, `None`, `str | None`. Nested JSON in values (`[...]`, `{...}`) is inferred.
 
-Nesting is built from `split_symbols` (default `"__"`): `APP__DB__HOST=x` → `{"db": {"host": "x"}}`.
+Nesting is built from `nested_sep` (default `"__"`): `APP__DB__HOST=x` → `{"db": {"host": "x"}}`.
 
 #### `EnvSource(FlatKeySource)`
 
@@ -676,9 +679,13 @@ Frozen dataclass for file line ranges.
 | `FieldMergeMap` | `dict[FieldRef, FieldMergeStrategyName \| Callable[..., Any]]` | `dature.types` |
 | `FieldMergeCallable` | `Callable[[list[JSONValue]], JSONValue]` | `dature.types` |
 | `FieldMergeStrategyName` | `Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]` | `dature.types` |
+| `FieldMergeStrategy` | `Protocol` with `__call__(values: list[JSONValue]) -> JSONValue` | `dature.strategies.field` |
 | `FieldGroupTuple` | `tuple[FieldRef, ...]` | `dature.types` |
 | `TypeLoaderMap` | `dict[type, Callable[..., Any]]` | `dature.types` |
 | `MergeStrategyName` | `Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]` | `dature.types` |
+| `SourceMergeStrategy` | `Protocol` with `__call__(sources: Sequence[Source], ctx: LoadCtx) -> JSONValue` | `dature.strategies.source` |
+| `LoadCtx` | Helper passed to `SourceMergeStrategy.__call__`. Primary API: `ctx.merge(source=src, base=base, op=deep_merge_last_wins)` — applies one source to the running base, drives debug logs and `field_origins` automatically. Also: `ctx.load(src)` for raw access (cached), `ctx.field_origins()` for the accumulated `tuple[FieldOrigin, ...]`. | `dature.strategies.source` |
+| `MergeStepEvent` | Frozen dataclass: `step_idx: int`, `source: Source`, `source_data: JSONValue`, `before: JSONValue`, `after: JSONValue`. Delivered to `LoadCtx(on_merge_step=...)` callback for each `ctx.merge` call. | `dature.strategies.source` |
 | `NestedResolveStrategy` | `Literal["flat", "json"]` | `dature.types` |
 | `NestedResolve` | `dict[NestedResolveStrategy, tuple[FieldPath \| Any, ...]]` | `dature.types` |
 | `JSONValue` | `dict[str, JSONValue] \| list[JSONValue] \| str \| int \| float \| bool \| None` | `dature.types` |

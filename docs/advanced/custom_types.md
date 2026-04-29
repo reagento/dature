@@ -52,7 +52,7 @@ For formats that dature doesn't support out of the box, you can create your own 
 |------------|----------|---------------|------------------|
 | [`Source`](../api-reference.md#source) | Non-file data (API, database, custom protocol) | `format_name`, `_load() -> JSONValue` | Prefix filtering, env var expansion, type coercion, validation, merge support |
 | [`FileSource`](../api-reference.md#filesourcesource) | File-based format (XML, CSV, HCL, …) | `format_name`, `_load_file(path: FileOrStream) -> JSONValue` | Everything from `Source` + `file` parameter, stream support, `file_display()`, `file_path_for_errors()`, `__repr__` |
-| [`FlatKeySource`](../api-reference.md#flatkeysourcesource) | Flat key=value data (custom env store, Consul KV, …) | `format_name`, `_load() -> JSONValue` (flat `dict[str, str]`) | Everything from `Source` + `split_symbols` nesting, `nested_resolve`, automatic string→type parsing (`int`, `bool`, `date`, …) |
+| [`FlatKeySource`](../api-reference.md#flatkeysourcesource) | Flat key=value data (custom env store, Consul KV, …) | `format_name`, `_load() -> JSONValue` (flat `dict[str, str]`) | Everything from `Source` + `nested_sep` nesting, `nested_resolve`, automatic string→type parsing (`int`, `bool`, `date`, …) |
 
 All base classes are in `dature.sources.base`:
 
@@ -102,5 +102,5 @@ For sources that don't read files — e.g. an API, a database, or an in-memory d
 ### Tips
 
 - All built-in features (type coercion, validation, prefix extraction, ENV expansion, merge support) work automatically with any custom source.
-- Override `additional_loaders()` to return `_string_value_loaders()` from `dature.sources.base` if your format stores everything as strings (like INI or ENV).
+- Override `additional_loaders()` to return `string_value_loaders()` from `dature.sources.retort` if your format stores everything as strings (like INI or ENV).
 - Pass your custom source to `dature.load()` the same way as any built-in source.

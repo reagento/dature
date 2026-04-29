@@ -18,7 +18,9 @@ class Config:
 
 
 config = dature.load(
-    dature.Yaml12Source(file="$DATURE_SOURCES_DIR/advanced_env_expansion_file_path.yaml"),
+    dature.Yaml12Source(
+        file="$DATURE_SOURCES_DIR/advanced_env_expansion_file_path.yaml",
+    ),
     schema=Config,
 )
 

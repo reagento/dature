@@ -1,4 +1,4 @@
-"""Custom type loader — teach dature to parse 'r,g,b' strings into an Rgb dataclass."""
+"""Custom type loader — parse 'r,g,b' strings into an Rgb dataclass."""
 
 from dataclasses import dataclass
 from pathlib import Path

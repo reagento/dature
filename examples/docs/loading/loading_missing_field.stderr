@@ -1,0 +1,5 @@
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [port]  Missing required field
+    |    └── FILE '{SOURCES_DIR}missing_field.yaml'
+    +------------------------------------

@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(prek:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv build:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run mkdocs:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(uv publish:*)",
+      "Bash(sudo:*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'changed=$(git diff --name-only HEAD 2>/dev/null); src_changed=$(echo \"$changed\" | grep -c \"^src/\" || true); if [ \"$src_changed\" -gt 0 ]; then fragment_count=$(ls changes/ 2>/dev/null | grep -cE \"\\.(feature|bugfix|doc|refactor|removal|misc)(\\.(md))?$\" || true); if [ \"$fragment_count\" -eq 0 ]; then echo \"[dature checklist] src/ was modified but no changes/ fragment found — add one before finishing (towncrier)\"; fi; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'src_changed=$(git diff --name-only HEAD 2>/dev/null | grep -c \"^src/\" || true); claude_changed=$(git diff --name-only HEAD 2>/dev/null | grep -c \"^\\.claude/\" || true); if [ \"$src_changed\" -gt 0 ] && [ \"$claude_changed\" -eq 0 ]; then echo \"[claude-docs] src/ was modified but .claude/ was not — did you introduce new patterns, conventions, or commands worth documenting in CLAUDE.md or commands/?\" ; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}

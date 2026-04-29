@@ -15,7 +15,10 @@ class Config:
 
 
 # --8<-- [start:dataclass]
-config = dature.load(dature.Yaml12Source(file=SOURCES_DIR / "hydra_defaults.yaml"), schema=Config)
+config = dature.load(
+    dature.Yaml12Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
+    schema=Config,
+)
 assert isinstance(config, Config)
 # Full IDE support, type safety, __post_init__ works
 # --8<-- [end:dataclass]

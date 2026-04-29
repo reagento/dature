@@ -4,6 +4,7 @@ import pytest
 from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort
 
+from dature import V
 from dature.field_path import F
 from dature.sources.base import Source
 from dature.sources.retort import (
@@ -199,15 +200,9 @@ class TestCreateValidatingRetort:
         class Config:
             name: str
 
-        @dataclass(frozen=True, slots=True)
-        class AlwaysTrue:
-            def get_validator_func(self):
-                return lambda _: True
-
-            def get_error_message(self):
-                return "always true"
-
-        source = MockSource(root_validators=(AlwaysTrue(),))
+        source = MockSource(
+            root_validators=(V.root(lambda _: True, error_message="always true"),),
+        )
 
         result = create_validating_retort(source, Config)
 

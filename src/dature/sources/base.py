@@ -2,28 +2,16 @@ import abc
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, time
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from adaptix import Retort, loader
-from adaptix.provider import Provider
-
-from dature.errors import LineRange, SourceLocation
+from dature.config_paths import find_config
+from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars, expand_file_path
 from dature.field_path import FieldPath
-from dature.loaders import (
-    bool_loader,
-    bytearray_from_json_string,
-    date_from_string,
-    datetime_from_string,
-    float_from_string,
-    none_from_empty_string,
-    optional_from_empty_string,
-    str_from_scalar,
-    time_from_string,
-)
 from dature.path_finders.base import PathFinder
+from dature.sources.retort import string_value_loaders
 from dature.types import (
     FILE_LIKE_TYPES,
     DotSeparatedPath,
@@ -38,31 +26,23 @@ from dature.types import (
 )
 
 if TYPE_CHECKING:
-    from dature.protocols import ValidatorProtocol
+    from collections.abc import Iterable
+
+    from adaptix import Retort
+    from adaptix.provider import Provider
+
     from dature.types import (
         FieldMapping,
         FieldValidators,
         FileLike,
         FilePath,
         NameStyle,
+        SystemConfigDirsArg,
         TypeLoaderMap,
     )
+    from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
-
-
-def _string_value_loaders() -> list[Provider]:
-    return [
-        loader(str, str_from_scalar),
-        loader(float, float_from_string),
-        loader(date, date_from_string),
-        loader(datetime, datetime_from_string),
-        loader(time, time_from_string),
-        loader(bytearray, bytearray_from_json_string),
-        loader(type(None), none_from_empty_string),
-        loader(str | None, optional_from_empty_string),
-        loader(bool, bool_loader),
-    ]
 
 
 # --8<-- [start:load-metadata]
@@ -71,13 +51,11 @@ class Source(abc.ABC):
     prefix: "DotSeparatedPath | None" = None
     name_style: "NameStyle | None" = None
     field_mapping: "FieldMapping | None" = None
-    root_validators: "tuple[ValidatorProtocol, ...] | None" = None
+    root_validators: "Iterable[RootPredicate] | None" = None
     validators: "FieldValidators | None" = None
     expand_env_vars: "ExpandEnvVarsMode | None" = None
     skip_if_broken: bool | None = None
-    skip_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
-    secret_field_names: tuple[str, ...] | None = None
-    mask_secrets: bool | None = None
+    skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
     # --8<-- [end:load-metadata]
 
@@ -85,7 +63,7 @@ class Source(abc.ABC):
     location_label: ClassVar[str]
     path_finder_class: ClassVar[type[PathFinder] | None] = None
 
-    retorts: dict[tuple[type, frozenset[tuple[type, Any]]], Retort] = field(
+    retorts: "dict[tuple[type, frozenset[tuple[type, Any]]], Retort]" = field(
         default_factory=dict,
         init=False,
         repr=False,
@@ -100,7 +78,10 @@ class Source(abc.ABC):
     def file_path_for_errors(self) -> Path | None:
         return None
 
-    def additional_loaders(self) -> list[Provider]:
+    def display_name(self) -> str:
+        return self.file_display() or self.format_name
+
+    def additional_loaders(self) -> "list[Provider]":
         return []
 
     @staticmethod
@@ -153,13 +134,13 @@ class Source(abc.ABC):
         prefixed = self._apply_prefix(data)
         return expand_env_vars(prefixed, mode=resolved_expand)
 
-    def load_raw(self, *, resolved_expand: ExpandEnvVarsMode = "default") -> LoadRawResult:
+    def load_raw(self) -> LoadRawResult:
         data = self._load()
-        processed = self._pre_processing(data, resolved_expand=resolved_expand)
+        processed = self._pre_processing(data, resolved_expand=self.expand_env_vars)  # type: ignore[arg-type]
         logger.debug(
             "[%s] load_raw: source=%s, raw_keys=%s, after_preprocessing_keys=%s",
             type(self).__name__,
-            self.file_display() or "<env>",
+            self.display_name(),
             sorted(data.keys()) if isinstance(data, dict) else "<non-dict>",
             sorted(processed.keys()) if isinstance(processed, dict) else "<non-dict>",
         )
@@ -192,8 +173,8 @@ class Source(abc.ABC):
             path = path[:-1]
         return None
 
-    @staticmethod
-    def _strip_common_indent(raw_lines: list[str]) -> list[str]:
+    @classmethod
+    def _strip_common_indent(cls, raw_lines: list[str]) -> list[str]:
         indents = [len(line) - len(line.lstrip()) for line in raw_lines if line.strip()]
         if not indents:
             return raw_lines
@@ -201,44 +182,134 @@ class Source(abc.ABC):
         return [line[min_indent:] for line in raw_lines]
 
     @classmethod
-    def resolve_location(
+    def _build_value_candidates(cls, input_value: JSONValue) -> list[str]:
+        if isinstance(input_value, (list, dict)):
+            return [json.dumps(input_value, ensure_ascii=False)]
+        if isinstance(input_value, str) and input_value == "":
+            return ['""', "''"]
+        text = str(input_value)
+        lower = text.lower()
+        if lower == text:
+            return [text]
+        return [text, lower]
+
+    @classmethod
+    def _find_value_in_line(
         cls,
+        line: str,
+        *,
+        input_value: JSONValue,
+        field_key: str | None = None,
+        search_from: int = 0,
+    ) -> "CaretSpan | None":
+        candidates = cls._build_value_candidates(input_value)
+        if field_key is not None:
+            key_marker = f'"{field_key}":'
+            key_pos = line.find(key_marker)
+            if key_pos != -1:
+                after_key = key_pos + len(key_marker)
+                for candidate in candidates:
+                    pos = line.find(candidate, after_key)
+                    if pos != -1:
+                        return CaretSpan(start=pos, end=pos + len(candidate))
+        for candidate in candidates:
+            pos = line.rfind(candidate, search_from)
+            if pos != -1:
+                return CaretSpan(start=pos, end=pos + len(candidate))
+        return None
+
+    @classmethod
+    def _nonwhitespace_span(cls, line: str) -> "CaretSpan":
+        stripped = line.lstrip()
+        if not stripped:
+            return CaretSpan(start=0, end=0)
+        pos = len(line) - len(stripped)
+        return CaretSpan(start=pos, end=len(line))
+
+    @classmethod
+    def _caret_for_key_line(cls, line: str) -> "CaretSpan":
+        sep_pos = max(line.rfind(":"), line.rfind("="))
+        if sep_pos != -1:
+            after = sep_pos + 1
+            while after < len(line) and line[after] == " ":
+                after += 1
+            if after < len(line):
+                return CaretSpan(start=after, end=len(line))
+        return cls._nonwhitespace_span(line)
+
+    @classmethod
+    def _caret_after_equals(cls, line: str) -> "CaretSpan":
+        eq_pos = line.find("=")
+        if eq_pos != -1:
+            return CaretSpan(start=eq_pos + 1, end=len(line))
+        return CaretSpan(start=0, end=len(line))
+
+    @classmethod
+    def _compute_line_carets(
+        cls,
+        content_lines: list[str],
+        *,
+        input_value: JSONValue,
+        field_key: str | None,
+    ) -> "list[CaretSpan]":
+        if len(content_lines) == 1:
+            if input_value is None:
+                return [cls._caret_after_equals(content_lines[0])]
+            found = cls._find_value_in_line(
+                content_lines[0],
+                input_value=input_value,
+                field_key=field_key,
+            )
+            return [found if found is not None else CaretSpan(start=0, end=0)]
+        result: list[CaretSpan] = [cls._caret_for_key_line(content_lines[0])]
+        result.extend(cls._nonwhitespace_span(line) for line in content_lines[1:])
+        return result
+
+    def resolve_location(
+        self,
         *,
         field_path: list[str],
-        file_path: Path | None,
         file_content: str | None,
-        prefix: str | None,
-        nested_conflict: NestedConflict | None,  # noqa: ARG003
-        split_symbols: str | None = None,  # noqa: ARG003
+        nested_conflict: NestedConflict | None,  # noqa: ARG002
+        input_value: JSONValue = None,
     ) -> list[SourceLocation]:
+        file_path = self.file_path_for_errors()
         if file_content is None or not field_path:
-            return [cls._empty_location(cls.location_label, file_path)]
+            return [self._empty_location(self.location_label, file_path)]
 
-        if cls.path_finder_class is None:
-            return [cls._empty_location(cls.location_label, file_path)]
+        if self.path_finder_class is None:
+            return [self._empty_location(self.location_label, file_path)]
 
-        search_path = cls._build_search_path(field_path, prefix)
-        finder = cls.path_finder_class(file_content)
+        search_path = self._build_search_path(field_path, self.prefix)
+        finder = self.path_finder_class(file_content)
         line_range = finder.find_line_range(search_path)
         if line_range is None:
-            line_range = cls._find_parent_line_range(finder, search_path)
+            line_range = self._find_parent_line_range(finder, search_path)
         if line_range is None:
-            return [cls._empty_location(cls.location_label, file_path)]
+            return [self._empty_location(self.location_label, file_path)]
 
         lines = file_content.splitlines()
         content_lines: list[str] | None = None
+        line_carets: list[CaretSpan] | None = None
         if 0 < line_range.start <= len(lines):
             end = min(line_range.end, len(lines))
             raw = lines[line_range.start - 1 : end]
-            content_lines = cls._strip_common_indent(raw)
+            content_lines = self._strip_common_indent(raw)
+            field_key = field_path[-1] if field_path else None
+            line_carets = self._compute_line_carets(
+                content_lines,
+                input_value=input_value,
+                field_key=field_key,
+            )
 
         return [
             SourceLocation(
-                location_label=cls.location_label,
+                location_label=self.location_label,
                 file_path=file_path,
                 line_range=line_range,
                 line_content=content_lines,
                 env_var_name=None,
+                line_carets=line_carets,
             ),
         ]
 
@@ -247,11 +318,31 @@ class Source(abc.ABC):
 @dataclass(kw_only=True, repr=False)
 class FileFieldMixin:
     file: "FileLike | FilePath | None" = None
+    search_system_paths: bool | None = None
+    system_config_dirs: "SystemConfigDirsArg | None" = None
     # --8<-- [end:file-source]
 
-    def _init_file_field(self) -> None:
+    def __post_init__(self) -> None:
         if isinstance(self.file, (str, Path)):
             self.file = expand_file_path(str(self.file), mode="strict")
+
+    @cached_property
+    def _resolved_file_path(self) -> Path | None:
+        """Resolve file path with optional system path search.
+
+        Cached to avoid re-traversing system directories on repeated access
+        """
+        if self.file is None or isinstance(self.file, FILE_LIKE_TYPES):
+            return None
+
+        file_path = self.file if isinstance(self.file, Path) else Path(self.file)
+        if file_path.exists():
+            return file_path
+
+        if self.search_system_paths:
+            return find_config(file_path.name, self.system_config_dirs)
+
+        return None
 
     @staticmethod
     def resolve_file_field(file: "FileLike | FilePath | None") -> FileOrStream:
@@ -278,18 +369,19 @@ class FileFieldMixin:
         return None
 
     def file_display(self) -> str | None:
+        if self._resolved_file_path is not None:
+            return str(self._resolved_file_path)
         return self.file_field_display(self.file)
 
     def file_path_for_errors(self) -> Path | None:
+        if self._resolved_file_path is not None:
+            return self._resolved_file_path
         return self.file_field_path_for_errors(self.file)
 
 
 @dataclass(kw_only=True, repr=False)
 class FileSource(FileFieldMixin, Source, abc.ABC):
     location_label: ClassVar[str] = "FILE"
-
-    def __post_init__(self) -> None:
-        self._init_file_field()
 
     def __repr__(self) -> str:
         display = self.format_name
@@ -299,7 +391,14 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
         return display
 
     def _load(self) -> JSONValue:
-        path = self.resolve_file_field(self.file)
+        if isinstance(self.file, FILE_LIKE_TYPES):
+            return self._load_file(self.file)
+
+        path = self._resolved_file_path
+        if path is None:
+            msg = f"Config file not found: {self.file}"
+            raise FileNotFoundError(msg)
+
         return self._load_file(path)
 
     @abc.abstractmethod
@@ -309,7 +408,7 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
 # --8<-- [start:flat-key-source]
 @dataclass(kw_only=True, repr=False)
 class FlatKeySource(Source, abc.ABC):
-    split_symbols: str = "__"
+    nested_sep: str = "__"
     nested_resolve_strategy: "NestedResolveStrategy | None" = None
     nested_resolve: NestedResolve | None = None
     # --8<-- [end:flat-key-source]
@@ -320,7 +419,7 @@ class FlatKeySource(Source, abc.ABC):
             target = cast("dict[str, JSONValue]", target.setdefault(key, {}))
         target[keys[-1]] = value
 
-    def _resolve_field_strategy(
+    def _resolve_nested_strategy(
         self,
         field_name: str,
         *,
@@ -344,18 +443,18 @@ class FlatKeySource(Source, abc.ABC):
             return True
         return field_path.parts[0] == field_name
 
-    def additional_loaders(self) -> list[Provider]:
-        return _string_value_loaders()
+    def additional_loaders(self) -> "list[Provider]":
+        return string_value_loaders()
 
     @staticmethod
     def _resolve_var_name(
         field_path: list[str],
         prefix: str | None,
-        split_symbols: str,
+        nested_sep: str,
         conflict: NestedConflict | None,
     ) -> str:
         def _build_name(parts: list[str]) -> str:
-            var_name = split_symbols.join(part.upper() for part in parts)
+            var_name = nested_sep.join(part.upper() for part in parts)
             if prefix is not None:
                 return prefix + var_name
             return var_name
@@ -372,7 +471,7 @@ class FlatKeySource(Source, abc.ABC):
 
     def _build_nested_var_name(self, top_field: str, nested: dict[str, JSONValue]) -> str:
         for sub_key in nested:
-            full_key = f"{top_field}{self.split_symbols}{sub_key}"
+            full_key = f"{top_field}{self.nested_sep}{sub_key}"
             return self._build_var_name(full_key)
         return self._build_var_name(top_field)
 
@@ -386,7 +485,7 @@ class FlatKeySource(Source, abc.ABC):
         resolved_nested_strategy: NestedResolveStrategy = "flat",
         resolved_nested_resolve: NestedResolve | None = None,
     ) -> None:
-        parts = key.split(self.split_symbols)
+        parts = key.split(self.nested_sep)
         self._process_key_value(
             parts=parts,
             value=value,
@@ -396,13 +495,7 @@ class FlatKeySource(Source, abc.ABC):
             resolved_nested_resolve=resolved_nested_resolve,
         )
 
-    def load_raw(
-        self,
-        *,
-        resolved_expand: ExpandEnvVarsMode = "default",
-        resolved_nested_strategy: NestedResolveStrategy = "flat",
-        resolved_nested_resolve: NestedResolve | None = None,
-    ) -> LoadRawResult:
+    def load_raw(self) -> LoadRawResult:
         data = self._load()
         data_dict = cast("dict[str, str]", data)
         result: dict[str, JSONValue] = {}
@@ -414,11 +507,11 @@ class FlatKeySource(Source, abc.ABC):
                 value=value,
                 result=result,
                 conflicts=conflicts,
-                resolved_nested_strategy=resolved_nested_strategy,
-                resolved_nested_resolve=resolved_nested_resolve,
+                resolved_nested_strategy=self.nested_resolve_strategy,  # type: ignore[arg-type]
+                resolved_nested_resolve=self.nested_resolve,
             )
 
-        expanded = expand_env_vars(result, mode=resolved_expand)
+        expanded = expand_env_vars(result, mode=self.expand_env_vars)  # type: ignore[arg-type]
         processed = self._parse_string_values(expanded)
         return LoadRawResult(data=processed, nested_conflicts=conflicts)
 
@@ -434,14 +527,14 @@ class FlatKeySource(Source, abc.ABC):
     ) -> None:
         if len(parts) > 1:
             top_field = parts[0]
-            strategy = self._resolve_field_strategy(
+            strategy = self._resolve_nested_strategy(
                 top_field,
                 resolved_nested_strategy=resolved_nested_strategy,
                 resolved_nested_resolve=resolved_nested_resolve,
             )
             existing = result.get(top_field)
             if isinstance(existing, str):
-                flat_var = self._build_var_name(self.split_symbols.join(parts))
+                flat_var = self._build_var_name(self.nested_sep.join(parts))
                 json_var = self._build_var_name(top_field)
                 if strategy == "flat":
                     result.pop(top_field)
@@ -453,7 +546,7 @@ class FlatKeySource(Source, abc.ABC):
                 self._set_nested(result, parts, value)
         else:
             top_field = parts[0]
-            strategy = self._resolve_field_strategy(
+            strategy = self._resolve_nested_strategy(
                 top_field,
                 resolved_nested_strategy=resolved_nested_strategy,
                 resolved_nested_resolve=resolved_nested_resolve,

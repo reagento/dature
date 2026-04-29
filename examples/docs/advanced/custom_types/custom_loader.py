@@ -4,9 +4,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
-from adaptix import Provider, loader
-
 import dature
+from adaptix import Provider, loader
 from dature.loaders import bool_loader, float_from_string
 from dature.sources.base import FileSource
 from dature.types import FileOrStream, JSONValue

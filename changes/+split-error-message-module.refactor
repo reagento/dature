@@ -1,0 +1,1 @@
+Error message formatting helpers extracted from ``dature.errors.exceptions`` into a new ``dature.errors.message`` module. Exception classes now contain only data and delegate rendering to ``format_location`` / ``format_path``.

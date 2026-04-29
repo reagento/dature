@@ -97,10 +97,10 @@ For file-based sources, `prefix` navigates into nested objects using dot notatio
     --8<-- "examples/docs/features/naming/sources/naming_prefix_nested.yaml"
     ```
 
-## split_symbols
+## nested_sep
 
 Delimiter for building nested structures from flat ENV variables and Docker secrets file names. Default: `"__"`.
 
 ```python
---8<-- "examples/docs/features/naming/naming_split_symbols.py"
+--8<-- "examples/docs/features/naming/naming_nested_sep.py"
 ```

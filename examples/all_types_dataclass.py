@@ -7,7 +7,14 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, Flag
 from fractions import Fraction
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Literal
 from urllib.parse import urlparse
@@ -173,7 +180,14 @@ EXPECTED_ALL_TYPES = AllPythonTypesCompact(
     # Date/time
     date_value=date(2024, 1, 15),
     datetime_value=datetime(2024, 1, 15, 10, 30),
-    datetime_value_with_timezone=datetime(2024, 1, 15, 10, 30, tzinfo=ZoneInfo("Europe/Moscow")),
+    datetime_value_with_timezone=datetime(
+        2024,
+        1,
+        15,
+        10,
+        30,
+        tzinfo=ZoneInfo("Europe/Moscow"),
+    ),
     datetime_value_with_z_timezone=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
     time_value=time(10, 30),
     timedelta_value_with_day=timedelta(days=1, hours=2, minutes=30),
@@ -256,12 +270,18 @@ EXPECTED_ALL_TYPES = AllPythonTypesCompact(
     range_values=[0, 2, 4, 6, 8],
     # Nested dataclasses in collections
     nested_dc_single=NestedAddress(city="Moscow", zip_code="101000"),
-    nested_dc_list=[NestedTag(name="urgent", priority=1), NestedTag(name="low", priority=5)],
+    nested_dc_list=[
+        NestedTag(name="urgent", priority=1),
+        NestedTag(name="low", priority=5),
+    ],
     nested_dc_dict={
         "home": NestedAddress(city="Berlin", zip_code="10115"),
         "work": NestedAddress(city="Paris", zip_code="75001"),
     },
-    nested_dc_tuple=(NestedTag(name="bug", priority=2), NestedTag(name="feature", priority=3)),
+    nested_dc_tuple=(
+        NestedTag(name="bug", priority=2),
+        NestedTag(name="feature", priority=3),
+    ),
     # Enum/Flag/Literal
     enum_value=Color.GREEN,
     flag_value=Permission.READ | Permission.WRITE,

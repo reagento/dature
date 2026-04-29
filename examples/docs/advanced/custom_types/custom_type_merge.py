@@ -1,4 +1,4 @@
-"""Per-merge type_loaders — set type_loaders on load() for multi-source loads."""
+"""Per-merge type_loaders — set on load() for multi-source loads."""
 
 from dataclasses import dataclass
 from pathlib import Path

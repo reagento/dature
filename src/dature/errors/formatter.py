@@ -127,7 +127,7 @@ def handle_load_errors[T](
     try:
         return func()
     except EnvVarExpandError as exc:
-        file_content = read_file_content(ctx.file_path)
+        file_content = read_file_content(ctx.source.file_path_for_errors())
         enriched_env: list[MissingEnvVarError] = []
         for e in exc.exceptions:
             if not isinstance(e, MissingEnvVarError):
@@ -137,7 +137,7 @@ def handle_load_errors[T](
             enriched_env.append(e)
         raise EnvVarExpandError(enriched_env, dataclass_name=ctx.dataclass_name) from exc
     except (AggregateLoadError, LoadError) as exc:
-        file_content = read_file_content(ctx.file_path)
+        file_content = read_file_content(ctx.source.file_path_for_errors())
         heuristic_paths: set[str] = set()
         field_errors: list[FieldLoadError] = []
         _walk_exception(
@@ -153,7 +153,7 @@ def handle_load_errors[T](
             location_ctx = replace(ctx, secret_paths=ctx.secret_paths | heuristic_paths)
         enriched: list[FieldLoadError] = []
         for fe in field_errors:
-            locations = resolve_source_location(fe.field_path, location_ctx, file_content)
+            locations = resolve_source_location(fe.field_path, location_ctx, file_content, input_value=fe.input_value)
             enriched.append(
                 FieldLoadError(
                     field_path=fe.field_path,
@@ -188,7 +188,9 @@ def enrich_skipped_errors(
 
         source_reprs = ", ".join(repr(s.source) for s in sources)
         locations = [
-            loc for s in sources for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content)
+            loc
+            for s in sources
+            for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content, input_value=exc.input_value)
         ]
         updated.append(
             FieldLoadError(

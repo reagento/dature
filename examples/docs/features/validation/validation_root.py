@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from dature.validators.root import RootValidator
+from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
@@ -26,9 +26,11 @@ dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "validation_root_invalid.yaml",
         root_validators=(
-            RootValidator(
-                func=check_debug_not_on_production,
-                error_message="debug=True is not allowed on non-localhost hosts",
+            V.root(
+                check_debug_not_on_production,
+                error_message=(
+                    "debug=True is not allowed on non-localhost hosts"
+                ),
             ),
         ),
     ),

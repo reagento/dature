@@ -9,11 +9,10 @@ from adaptix import Retort
 
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import ErrorContext
-from dature.field_path import FieldPath
-from dature.merging.predicate import extract_field_path
+from dature.field_path import FieldPath, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
-from dature.sources.base import FlatKeySource, Source
+from dature.sources.base import Source
 from dature.sources.retort import create_probe_retort
 from dature.types import JSONValue, NestedConflicts
 
@@ -48,15 +47,9 @@ def build_error_ctx(
     mask_secrets: bool = False,
     nested_conflicts: NestedConflicts | None = None,
 ) -> ErrorContext:
-    error_file_path = metadata.file_path_for_errors()
-
-    split_symbols = metadata.split_symbols if isinstance(metadata, FlatKeySource) else None
     return ErrorContext(
         dataclass_name=dataclass_name,
-        source_class=type(metadata),
-        file_path=error_file_path,
-        prefix=metadata.prefix,
-        split_symbols=split_symbols,
+        source=metadata,
         secret_paths=secret_paths,
         mask_secrets=mask_secrets,
         nested_conflicts=nested_conflicts,
@@ -78,16 +71,16 @@ def get_allowed_fields(
 def apply_skip_invalid(
     *,
     raw: JSONValue,
-    skip_if_invalid: bool | tuple[FieldPath, ...] | None,
+    skip_field_if_invalid: bool | tuple[FieldPath, ...] | None,
     source: Source,
     schema: type[DataclassInstance],
     log_prefix: str,
     probe_retort: Retort | None = None,
 ) -> FilterResult:
-    if not skip_if_invalid:
+    if not skip_field_if_invalid:
         return FilterResult(cleaned_dict=raw, skipped_paths=[])
 
-    allowed_fields = get_allowed_fields(skip_value=skip_if_invalid, schema=schema)
+    allowed_fields = get_allowed_fields(skip_value=skip_field_if_invalid, schema=schema)
 
     if probe_retort is None:
         probe_retort = create_probe_retort(source)

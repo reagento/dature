@@ -3,13 +3,15 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from dature.validators.number import Ge, Le
-from dature.validators.sequence import MaxItems, MinItems, UniqueItems
+from dature import V
 
 
 @dataclass
 class Config:
     # --8<-- [start:combined]
-    port: Annotated[int, Ge(1), Le(65535)]
-    tags: Annotated[list[str], MinItems(1), MaxItems(10), UniqueItems()]
+    port: Annotated[int, (V >= 1) & (V <= 65535)]
+    tags: Annotated[
+        list[str],
+        (V.len() >= 1) & (V.len() <= 10) & V.unique_items(),
+    ]
     # --8<-- [end:combined]

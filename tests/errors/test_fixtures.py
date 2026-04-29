@@ -4,17 +4,14 @@ from typing import Annotated, Literal
 
 import pytest
 
-from dature import EnvFileSource, IniSource, Json5Source, JsonSource, Toml11Source, Yaml11Source, Yaml12Source, load
+from dature import EnvFileSource, IniSource, Json5Source, JsonSource, Toml11Source, V, Yaml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, FieldLoadError
-from dature.validators.number import Ge, Le
-from dature.validators.sequence import MinItems, UniqueItems
-from dature.validators.string import MaxLength, MinLength, RegexPattern
 
 
 @dataclass
 class Address:
-    city: Annotated[str, MinLength(2)]
-    zip_code: Annotated[str, RegexPattern(r"^\d{5}$")]
+    city: Annotated[str, V.len() >= 2]
+    zip_code: Annotated[str, V.matches(r"^\d{5}$")]
 
 
 @dataclass
@@ -22,10 +19,10 @@ class ErrorConfig:
     port: int
     host: str
     status: Literal["active", "inactive"]
-    name: Annotated[str, MinLength(3), MaxLength(50)]
-    email: Annotated[str, RegexPattern(r"^[\w.-]+@[\w.-]+\.\w+$")]
-    age: Annotated[int, Ge(0), Le(150)]
-    tags: Annotated[list[str], MinItems(1), UniqueItems()]
+    name: Annotated[str, (V.len() >= 3) & (V.len() <= 50)]
+    email: Annotated[str, V.matches(r"^[\w.-]+@[\w.-]+\.\w+$")]
+    age: Annotated[int, (V >= 0) & (V <= 150)]
+    tags: Annotated[list[str], (V.len() >= 1) & V.unique_items()]
     address: Address
 
 
@@ -43,10 +40,10 @@ class LoadErrorConfig:
 
 @dataclass
 class ValidationErrorConfig:
-    name: Annotated[str, MinLength(3), MaxLength(50)]
-    email: Annotated[str, RegexPattern(r"^[\w.-]+@[\w.-]+\.\w+$")]
-    age: Annotated[int, Ge(0), Le(150)]
-    tags: Annotated[list[str], MinItems(1), UniqueItems()]
+    name: Annotated[str, (V.len() >= 3) & (V.len() <= 50)]
+    email: Annotated[str, V.matches(r"^[\w.-]+@[\w.-]+\.\w+$")]
+    age: Annotated[int, (V >= 0) & (V <= 150)]
+    tags: Annotated[list[str], (V.len() >= 1) & V.unique_items()]
     address: Address
 
 
@@ -66,16 +63,16 @@ EXPECTED_LOAD_ERRORS = [
     (["port"], "invalid literal for int() with base 10: 'abc'"),
     (["host"], "Missing required field"),
     (["status"], "Invalid variant: 'unknown'"),
-    (["address", "city"], "Value must have at least 2 characters"),
+    (["address", "city"], "Value length must be greater than or equal to 2"),
     (["address", "zip_code"], r"Value must match pattern '^\d{5}$'"),
 ]
 
 EXPECTED_VALIDATION_ERRORS = [
-    (["name"], "Value must have at least 3 characters"),
+    (["name"], "Value length must be greater than or equal to 3"),
     (["email"], r"Value must match pattern '^[\w.-]+@[\w.-]+\.\w+$'"),
     (["age"], "Value must be less than or equal to 150"),
-    (["tags"], "Value must have at least 1 items"),
-    (["address", "city"], "Value must have at least 2 characters"),
+    (["tags"], "Value length must be greater than or equal to 1"),
+    (["address", "city"], "Value length must be greater than or equal to 2"),
     (["address", "zip_code"], r"Value must match pattern '^\d{5}$'"),
 ]
 

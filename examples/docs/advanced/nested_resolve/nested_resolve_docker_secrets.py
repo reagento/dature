@@ -20,7 +20,9 @@ class Config:
 
 with TemporaryDirectory() as secrets_dir:
     secrets_path = Path(secrets_dir)
-    (secrets_path / "database").write_text('{"host": "json-host", "port": "5432"}')
+    (secrets_path / "database").write_text(
+        '{"host": "json-host", "port": "5432"}',
+    )
     (secrets_path / "database__host").write_text("flat-host")
     (secrets_path / "database__port").write_text("3306")
 

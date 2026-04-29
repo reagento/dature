@@ -1,4 +1,4 @@
-"""Decorator mode — explicit __init__ arguments take priority over loaded values."""
+"""Decorator mode — explicit __init__ args override loaded values."""
 
 from dataclasses import dataclass
 from pathlib import Path

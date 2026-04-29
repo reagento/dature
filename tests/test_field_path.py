@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from dature.field_path import F, FieldPath, validate_field_path_owner
+from dature.field_path import F, FieldPath, extract_field_path, validate_field_path_owner
 
 
 @dataclass
@@ -89,3 +89,27 @@ class TestValidateFieldPathOwner:
 
     def test_string_owner_valid_nested_path(self):
         validate_field_path_owner(F["_Cfg"].database.uri, _Cfg)
+
+
+class TestExtractFieldPath:
+    @pytest.mark.parametrize(
+        ("field_path", "expected"),
+        [
+            pytest.param(F[_Cfg].host, "host", id="single_field"),
+            pytest.param(F[_Cfg].database.uri, "database.uri", id="nested_field"),
+        ],
+    )
+    def test_path(self, field_path: FieldPath, expected: str):
+        assert extract_field_path(field_path) == expected
+
+    def test_no_fields_raises_value_error(self):
+        with pytest.raises(ValueError, match="at least one field name"):
+            extract_field_path(F[_Cfg])
+
+    def test_validates_owner_mismatch(self):
+        with pytest.raises(TypeError) as exc_info:
+            extract_field_path(F["Other"].host, schema=_Cfg)
+        assert str(exc_info.value) == "FieldPath owner 'Other' does not match target dataclass '_Cfg'"
+
+    def test_passes_with_correct_string_owner(self):
+        assert extract_field_path(F["_Cfg"].host, schema=_Cfg) == "host"

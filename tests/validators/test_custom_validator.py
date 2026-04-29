@@ -1,49 +1,26 @@
-from collections.abc import Callable
+"""Tests for V.check — escape-hatch for arbitrary user predicates.
+
+Previously, users defined custom dataclass validators with ``get_validator_func``
+and ``get_error_message`` methods. After the V DSL refactor that pattern is
+no longer supported — ``V.check(func, error_message=...)`` is the sanctioned way
+to express validation logic not covered by built-in predicates.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
 import pytest
 
-from dature import JsonSource, load
+from dature import JsonSource, V, load
 from dature.errors import DatureConfigError
 
 
-@dataclass(frozen=True, slots=True)
-class Divisible:
-    value: int
-    error_message: str = "Value must be divisible by {value}"
-
-    def get_validator_func(self) -> Callable[[int], bool]:
-        def validate(val: int) -> bool:
-            return val % self.value == 0
-
-        return validate
-
-    def get_error_message(self) -> str:
-        return self.error_message.format(value=self.value)
-
-
-@dataclass(frozen=True, slots=True)
-class StartsWith:
-    prefix: str
-    error_message: str = "Value must start with '{prefix}'"
-
-    def get_validator_func(self) -> Callable[[str], bool]:
-        def validate(val: str) -> bool:
-            return val.startswith(self.prefix)
-
-        return validate
-
-    def get_error_message(self) -> str:
-        return self.error_message.format(prefix=self.prefix)
-
-
-class TestCustomFieldValidator:
+class TestVCheckAnnotated:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            count: Annotated[int, Divisible(5)]
+            count: Annotated[int, V.check(lambda v: v % 5 == 0, error_message="Value must be divisible by 5")]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"count": 10}')
@@ -56,7 +33,7 @@ class TestCustomFieldValidator:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            count: Annotated[int, Divisible(5)]
+            count: Annotated[int, V.check(lambda v: v % 5 == 0, error_message="Value must be divisible by 5")]
 
         json_file = tmp_path / "config.json"
         content = '{"count": 7}'
@@ -80,7 +57,7 @@ class TestCustomFieldValidator:
     def test_custom_error_message(self, tmp_path: Path):
         @dataclass
         class Config:
-            count: Annotated[int, Divisible(3, error_message="Must be a multiple of {value}")]
+            count: Annotated[int, V.check(lambda v: v % 3 == 0, error_message="Must be a multiple of 3")]
 
         json_file = tmp_path / "config.json"
         content = '{"count": 7}'
@@ -102,11 +79,14 @@ class TestCustomFieldValidator:
         )
 
 
-class TestCustomStringValidator:
+class TestVCheckOnStrings:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            url: Annotated[str, StartsWith("https://")]
+            url: Annotated[
+                str,
+                V.check(lambda v: v.startswith("https://"), error_message="Value must start with 'https://'"),
+            ]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"url": "https://example.com"}')
@@ -119,7 +99,10 @@ class TestCustomStringValidator:
     def test_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            url: Annotated[str, StartsWith("https://")]
+            url: Annotated[
+                str,
+                V.check(lambda v: v.startswith("https://"), error_message="Value must start with 'https://'"),
+            ]
 
         json_file = tmp_path / "config.json"
         content = '{"url": "http://example.com"}'
@@ -141,7 +124,7 @@ class TestCustomStringValidator:
         )
 
 
-class TestCustomValidatorWithDecorator:
+class TestVCheckWithDecorator:
     def test_success(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 8080}')
@@ -149,7 +132,7 @@ class TestCustomValidatorWithDecorator:
         @load(JsonSource(file=json_file))
         @dataclass
         class Config:
-            port: Annotated[int, Divisible(10)]
+            port: Annotated[int, V.check(lambda v: v % 10 == 0, error_message="Value must be divisible by 10")]
 
         config = Config()
         assert config.port == 8080
@@ -162,7 +145,7 @@ class TestCustomValidatorWithDecorator:
         @load(JsonSource(file=json_file))
         @dataclass
         class Config:
-            port: Annotated[int, Divisible(10)]
+            port: Annotated[int, V.check(lambda v: v % 10 == 0, error_message="Value must be divisible by 10")]
 
         with pytest.raises(DatureConfigError) as exc_info:
             Config()
@@ -185,7 +168,7 @@ class TestCustomValidatorWithDecorator:
         @load(JsonSource(file=json_file))
         @dataclass
         class Config:
-            port: Annotated[int, Divisible(10)]
+            port: Annotated[int, V.check(lambda v: v % 10 == 0, error_message="Value must be divisible by 10")]
 
         with pytest.raises(DatureConfigError) as exc_info:
             Config(port=8081)
@@ -198,12 +181,15 @@ class TestCustomValidatorWithDecorator:
         )
 
 
-class TestMultipleCustomValidators:
+class TestMultipleVCheckPredicates:
     def test_combined_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            count: Annotated[int, Divisible(5)]
-            url: Annotated[str, StartsWith("https://")]
+            count: Annotated[int, V.check(lambda v: v % 5 == 0, error_message="Value must be divisible by 5")]
+            url: Annotated[
+                str,
+                V.check(lambda v: v.startswith("https://"), error_message="Value must start with 'https://'"),
+            ]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"count": 15, "url": "https://example.com"}')
@@ -217,8 +203,11 @@ class TestMultipleCustomValidators:
     def test_all_fail(self, tmp_path: Path):
         @dataclass
         class Config:
-            count: Annotated[int, Divisible(5)]
-            url: Annotated[str, StartsWith("https://")]
+            count: Annotated[int, V.check(lambda v: v % 5 == 0, error_message="Value must be divisible by 5")]
+            url: Annotated[
+                str,
+                V.check(lambda v: v.startswith("https://"), error_message="Value must start with 'https://'"),
+            ]
 
         json_file = tmp_path / "config.json"
         content = '{"count": 7, "url": "http://example.com"}'

@@ -1,15 +1,24 @@
+import sys
 from dataclasses import dataclass
 from io import BytesIO, StringIO
 from pathlib import Path
 
 import pytest
 
+import dature
 from dature import JsonSource, Source, load
 from dature.errors import EnvVarExpandError
 from dature.field_path import F
-from dature.sources.base import FileFieldMixin, _string_value_loaders
-from dature.sources.retort import transform_to_dataclass
+from dature.loading.merge_config import SourceParams, apply_source_init_params
+from dature.sources.base import FileFieldMixin
+from dature.sources.retort import string_value_loaders, transform_to_dataclass
+from dature.sources.yaml_ import Yaml12Source
 from dature.types import JSONValue
+
+
+@pytest.fixture(params=[StringIO("data"), BytesIO(b"data")])
+def stream_fixture(request):
+    return request.param
 
 
 @dataclass(kw_only=True)
@@ -520,7 +529,7 @@ class TestExpandEnvVars:
     def test_default_expands_existing(self, monkeypatch):
         monkeypatch.setenv("DATURE_TEST_HOST", "localhost")
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
-        loader = MockSource(test_data=data)
+        loader = apply_source_init_params(MockSource(test_data=data), SourceParams())
 
         load_result = loader.load_raw()
         result = transform_to_dataclass(loader, load_result.data, dict)
@@ -530,7 +539,7 @@ class TestExpandEnvVars:
     def test_default_keeps_missing(self, monkeypatch):
         monkeypatch.delenv("DATURE_MISSING", raising=False)
         data = {"host": "$DATURE_MISSING", "port": 8080}
-        loader = MockSource(test_data=data)
+        loader = apply_source_init_params(MockSource(test_data=data), SourceParams())
 
         load_result = loader.load_raw()
         result = transform_to_dataclass(loader, load_result.data, dict)
@@ -540,9 +549,9 @@ class TestExpandEnvVars:
     def test_disabled(self, monkeypatch):
         monkeypatch.setenv("DATURE_TEST_HOST", "localhost")
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
-        loader = MockSource(test_data=data)
+        loader = MockSource(test_data=data, expand_env_vars="disabled")
 
-        load_result = loader.load_raw(resolved_expand="disabled")
+        load_result = loader.load_raw()
         result = transform_to_dataclass(loader, load_result.data, dict)
 
         assert result == {"host": "$DATURE_TEST_HOST", "port": 8080}
@@ -550,9 +559,9 @@ class TestExpandEnvVars:
     def test_empty_replaces_missing_with_empty_string(self, monkeypatch):
         monkeypatch.delenv("DATURE_MISSING", raising=False)
         data = {"host": "$DATURE_MISSING", "port": 8080}
-        loader = MockSource(test_data=data)
+        loader = MockSource(test_data=data, expand_env_vars="empty")
 
-        load_result = loader.load_raw(resolved_expand="empty")
+        load_result = loader.load_raw()
         result = transform_to_dataclass(loader, load_result.data, dict)
 
         assert result == {"host": "", "port": 8080}
@@ -560,65 +569,49 @@ class TestExpandEnvVars:
     def test_strict_raises_on_missing(self, monkeypatch):
         monkeypatch.delenv("DATURE_MISSING", raising=False)
         data = {"host": "$DATURE_MISSING", "port": 8080}
-        loader = MockSource(test_data=data)
+        loader = MockSource(test_data=data, expand_env_vars="strict")
 
         with pytest.raises(EnvVarExpandError):
-            loader.load_raw(resolved_expand="strict")
+            loader.load_raw()
 
     def test_strict_expands_existing(self, monkeypatch):
         monkeypatch.setenv("DATURE_TEST_HOST", "localhost")
         data = {"host": "$DATURE_TEST_HOST", "port": 8080}
-        loader = MockSource(test_data=data)
+        loader = MockSource(test_data=data, expand_env_vars="strict")
 
-        load_result = loader.load_raw(resolved_expand="strict")
+        load_result = loader.load_raw()
         result = transform_to_dataclass(loader, load_result.data, dict)
 
         assert result == {"host": "localhost", "port": 8080}
 
 
 class TestFileFieldMixin:
-    def test_init_file_field_str(self):
+    @pytest.mark.parametrize(
+        ("file_input", "expected_file", "expected_type"),
+        [
+            ("/data/test.json", "/data/test.json", str),
+            (Path("/data/test.json"), str(Path("/data/test.json")), str),
+            (None, None, type(None)),
+        ],
+    )
+    def test_post_init_file_field(self, file_input, expected_file, expected_type):
         @dataclass
         class Src(FileFieldMixin):
             pass
 
-        src = Src(file="/data/test.json")
-        src._init_file_field()
+        src = Src(file=file_input)
 
-        assert src.file == "/data/test.json"
-        assert isinstance(src.file, str)
+        assert src.file == expected_file
+        assert isinstance(src.file, expected_type)
 
-    def test_init_file_field_path(self):
+    def test_post_init_file_field_stream(self, stream_fixture):
         @dataclass
         class Src(FileFieldMixin):
             pass
 
-        src = Src(file=Path("/data/test.json"))
-        src._init_file_field()
+        src = Src(file=stream_fixture)
 
-        assert src.file == str(Path("/data/test.json"))
-        assert isinstance(src.file, str)
-
-    def test_init_file_field_none(self):
-        @dataclass
-        class Src(FileFieldMixin):
-            pass
-
-        src = Src(file=None)
-        src._init_file_field()
-
-        assert src.file is None
-
-    def test_init_file_field_stream(self):
-        @dataclass
-        class Src(FileFieldMixin):
-            pass
-
-        stream = StringIO("data")
-        src = Src(file=stream)
-        src._init_file_field()
-
-        assert src.file is stream
+        assert src.file is stream_fixture
 
     @pytest.mark.parametrize(
         ("file_input", "expected_type"),
@@ -633,26 +626,20 @@ class TestFileFieldMixin:
 
         assert isinstance(result, expected_type)
 
-    def test_resolve_file_field_stream(self):
-        stream = StringIO("data")
+    def test_resolve_file_field_stream(self, stream_fixture):
+        result = FileFieldMixin.resolve_file_field(stream_fixture)
 
-        result = FileFieldMixin.resolve_file_field(stream)
-
-        assert result is stream
-
-    def test_resolve_file_field_binary_stream(self):
-        stream = BytesIO(b"data")
-
-        result = FileFieldMixin.resolve_file_field(stream)
-
-        assert result is stream
+        assert result is stream_fixture
 
     @pytest.mark.parametrize(
         ("file_input", "expected"),
         [
             ("config.json", "config.json"),
             (Path("config.json"), "config.json"),
+            ("", ""),
             (None, None),
+            (StringIO("data"), "<stream>"),
+            (BytesIO(b"data"), "<stream>"),
         ],
     )
     def test_file_field_display(self, file_input, expected):
@@ -660,22 +647,15 @@ class TestFileFieldMixin:
 
         assert result == expected
 
-    def test_file_field_display_stream(self):
-        result = FileFieldMixin.file_field_display(StringIO("data"))
-
-        assert result == "<stream>"
-
-    def test_file_field_display_binary_stream(self):
-        result = FileFieldMixin.file_field_display(BytesIO(b"data"))
-
-        assert result == "<stream>"
-
     @pytest.mark.parametrize(
         ("file_input", "expected"),
         [
             ("config.json", Path("config.json")),
             (Path("config.json"), Path("config.json")),
+            ("", Path()),
             (None, None),
+            (StringIO("data"), None),
+            (BytesIO(b"data"), None),
         ],
     )
     def test_file_field_path_for_errors(self, file_input, expected):
@@ -683,67 +663,41 @@ class TestFileFieldMixin:
 
         assert result == expected
 
-    def test_file_field_path_for_errors_stream(self):
-        result = FileFieldMixin.file_field_path_for_errors(StringIO("data"))
-
-        assert result is None
-
-    def test_file_field_path_for_errors_binary_stream(self):
-        result = FileFieldMixin.file_field_path_for_errors(BytesIO(b"data"))
-
-        assert result is None
-
-    def test_file_display_delegates(self):
+    def test_file_display_with_resolved_path(self, tmp_path: Path):
         @dataclass
         class Src(FileFieldMixin):
             pass
 
-        src = Src(file="config.json")
+        config_file = tmp_path / "config.json"
+        config_file.write_text("{}")
 
-        assert src.file_display() == "config.json"
+        src = Src(file=config_file)
+        assert src.file_display() == str(config_file)
 
-    def test_file_display_none(self):
+    def test_file_path_for_errors_with_resolved_path(self, tmp_path: Path):
         @dataclass
         class Src(FileFieldMixin):
             pass
 
-        src = Src(file=None)
+        config_file = tmp_path / "config.json"
+        config_file.write_text("{}")
 
-        assert src.file_display() is None
-
-    def test_file_path_for_errors_delegates(self):
-        @dataclass
-        class Src(FileFieldMixin):
-            pass
-
-        src = Src(file=Path("config.json"))
-
-        assert src.file_path_for_errors() == Path("config.json")
-
-    def test_file_path_for_errors_none(self):
-        @dataclass
-        class Src(FileFieldMixin):
-            pass
-
-        src = Src(file=None)
-
-        assert src.file_path_for_errors() is None
+        src = Src(file=config_file)
+        assert src.file_path_for_errors() == config_file
 
 
 class TestStringValueLoaders:
     def test_returns_nine_providers(self):
-        loaders = _string_value_loaders()
+        loaders = string_value_loaders()
 
         assert len(loaders) == 9
 
 
 class TestResolveLocation:
     def test_file_content_none_returns_empty(self):
-        locations = MockSource.resolve_location(
+        locations = MockSource().resolve_location(
             field_path=["name"],
-            file_path=Path("config.json"),
             file_content=None,
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -752,11 +706,9 @@ class TestResolveLocation:
         assert locations[0].line_content is None
 
     def test_empty_field_path_returns_empty(self):
-        locations = MockSource.resolve_location(
+        locations = MockSource().resolve_location(
             field_path=[],
-            file_path=Path("config.json"),
             file_content='{"name": "test"}',
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -764,11 +716,9 @@ class TestResolveLocation:
         assert locations[0].line_range is None
 
     def test_path_finder_none_returns_empty(self):
-        locations = MockSource.resolve_location(
+        locations = MockSource().resolve_location(
             field_path=["name"],
-            file_path=Path("config.json"),
             file_content='{"name": "test"}',
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -778,11 +728,9 @@ class TestResolveLocation:
     def test_json_source_finds_line_range(self, tmp_path):
         content = '{\n  "name": "test",\n  "port": 8080\n}'
 
-        locations = JsonSource.resolve_location(
+        locations = JsonSource(file=tmp_path / "config.json").resolve_location(
             field_path=["name"],
-            file_path=tmp_path / "config.json",
             file_content=content,
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -793,11 +741,9 @@ class TestResolveLocation:
     def test_json_source_with_prefix(self, tmp_path):
         content = '{\n  "app": {\n    "name": "test"\n  }\n}'
 
-        locations = JsonSource.resolve_location(
+        locations = JsonSource(file=tmp_path / "config.json", prefix="app").resolve_location(
             field_path=["name"],
-            file_path=tmp_path / "config.json",
             file_content=content,
-            prefix="app",
             nested_conflict=None,
         )
 
@@ -807,13 +753,183 @@ class TestResolveLocation:
     def test_json_source_field_not_found_returns_empty(self, tmp_path):
         content = '{\n  "name": "test"\n}'
 
-        locations = JsonSource.resolve_location(
+        locations = JsonSource(file=tmp_path / "config.json").resolve_location(
             field_path=["nonexistent"],
-            file_path=tmp_path / "config.json",
             file_content=content,
-            prefix=None,
             nested_conflict=None,
         )
 
         assert len(locations) == 1
         assert locations[0].line_range is None
+
+
+class TestFileSourceSearch:
+    """Tests for FileSource system path search (FileFieldMixin._resolved_file_path)."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_config(self):
+        dature.configure(loading={})
+
+    @dataclass
+    class _Cfg:
+        host: str
+        port: int
+
+    def test_finds_file_in_cwd(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "config.yaml").write_text("host: localhost\nport: 8080")
+
+        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "localhost"
+        assert result.port == 8080
+
+    def test_search_system_paths_disabled(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system_config"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: system\nport: 9000")
+        (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
+
+        dature.configure(
+            loading={"search_system_paths": False, "system_config_dirs": (system_dir,)},
+        )
+
+        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "cwd"
+        assert result.port == 1000
+
+    def test_finds_in_custom_dirs(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        custom_dir = tmp_path / "custom_config"
+        custom_dir.mkdir()
+        (custom_dir / "app.yaml").write_text("host: custom\nport: 3000")
+
+        result = dature.load(
+            Yaml12Source(file="app.yaml", system_config_dirs=(custom_dir,)),
+            schema=self._Cfg,
+        )
+
+        assert result.host == "custom"
+        assert result.port == 3000
+
+    def test_priority_cwd_before_system(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "config.json").write_text('{"host": "cwd", "port": 1111}')
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.json").write_text('{"host": "system", "port": 2222}')
+
+        result = dature.load(
+            JsonSource(file="config.json", system_config_dirs=(system_dir,)),
+            schema=self._Cfg,
+        )
+
+        assert result.host == "cwd"
+        assert result.port == 1111
+
+    def test_disable_search_per_source(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: system\nport: 5000")
+        (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
+
+        result = dature.load(
+            Yaml12Source(
+                file="config.yaml",
+                search_system_paths=False,
+                system_config_dirs=(system_dir,),
+            ),
+            schema=self._Cfg,
+        )
+
+        assert result.host == "cwd"
+        assert result.port == 1000
+
+    def test_enable_search_per_source_when_global_disabled(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        dature.configure(loading={"search_system_paths": False})
+
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: enabled\nport: 6000")
+
+        result = dature.load(
+            Yaml12Source(
+                file="config.yaml",
+                search_system_paths=True,
+                system_config_dirs=(system_dir,),
+            ),
+            schema=self._Cfg,
+        )
+
+        assert result.host == "enabled"
+        assert result.port == 6000
+
+    def test_uses_default_loading_config_mapping(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+
+        xdg_dir = tmp_path / "xdg"
+        xdg_dir.mkdir()
+        (xdg_dir / "config.yaml").write_text("host: default\nport: 7000")
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(xdg_dir))
+        monkeypatch.setattr(sys, "platform", "linux")
+
+        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "default"
+        assert result.port == 7000
+
+    def test_user_override_via_platform_mapping(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: mapped\nport: 8000")
+
+        dature.configure(
+            loading={"system_config_dirs": {sys.platform: (system_dir,)}},
+        )
+
+        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "mapped"
+        assert result.port == 8000

@@ -1,0 +1,11 @@
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [endpoint]  Endpoint host must not be empty
+    |    ├── endpoint:
+    |    │   ^^^^^^^^^
+    |    ├──   host: ""
+    |    │     ^^^^^^^^
+    |    ├──   port: 8080
+    |    │     ^^^^^^^^^^
+    |    └── FILE '{SOURCES_DIR}error_format_dataclass.yaml', line 1-3
+    +------------------------------------

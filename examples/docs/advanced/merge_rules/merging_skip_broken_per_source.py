@@ -17,7 +17,9 @@ class Config:
 
 
 config = dature.load(
-    dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),  # uses global
+    dature.Yaml12Source(
+        file=SHARED_DIR / "common_defaults.yaml",
+    ),  # uses global
     dature.Yaml12Source(
         file=SOURCES_DIR / "optional.yaml",
         skip_if_broken=True,

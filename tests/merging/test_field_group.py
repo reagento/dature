@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from dature import JsonSource, load
-from dature.errors import FieldGroupError
+from dature.errors import FieldGroupError, MergeConflictError
 from dature.field_path import F
 
 
@@ -189,6 +189,10 @@ class TestFieldGroupPartialChange:
             )
 
     def test_partial_change_with_raise_on_conflict(self, tmp_path: Path):
+        # When raise_on_conflict and field_groups are both violated,
+        # MergeConflictError surfaces first because the strategy performs its
+        # conflict pass internally before the loader runs field-group
+        # validation. Both errors require user action either way.
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "localhost", "port": 3000}')
 
@@ -200,7 +204,7 @@ class TestFieldGroupPartialChange:
             host: str
             port: int
 
-        with pytest.raises(FieldGroupError):
+        with pytest.raises(MergeConflictError):
             load(
                 JsonSource(file=defaults),
                 JsonSource(file=overrides),

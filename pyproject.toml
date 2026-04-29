@@ -71,6 +71,7 @@ ignore = [
     "D",      # pydocstyle
     "ANN204", # missing return type for __init__
     "SIM108", # ternary operator
+    "COM812", # disable the conflicting rule with formatter
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -103,9 +104,8 @@ ignore = [
     "ERA001",  # commented-out code
     "S101",    # assert
     "PT017",   # assertion on exception in except block
-    "E501",    # line too long
     "TRY003",  # raise-vanilla-args
-    "EM101",   # raw-string-in-exception 
+    "EM101",   # raw-string-in-exception
 ]
 
 [tool.ruff.lint.pylint]

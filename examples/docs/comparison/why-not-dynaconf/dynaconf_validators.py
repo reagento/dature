@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Annotated
 
 import dature
-from dature.validators.number import Gt, Lt
+from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
@@ -13,8 +13,11 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 @dataclass
 class Config:
     host: str
-    port: Annotated[int, Gt(0), Lt(65536)]
+    port: Annotated[int, (V > 0) & (V < 65536)]
     debug: bool = False
 
 
-dature.load(dature.Toml11Source(file=SOURCES_DIR / "dynaconf_validators_invalid.toml"), schema=Config)
+dature.load(
+    dature.Toml11Source(file=SOURCES_DIR / "dynaconf_validators_invalid.toml"),
+    schema=Config,
+)

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Annotated
 
 import dature
-from dature.validators.number import Gt, Lt
+from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
@@ -13,7 +13,10 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 @dataclass
 class Config:
     host: str
-    port: Annotated[int, Gt(0), Lt(65536)] = 8080
+    port: Annotated[int, (V > 0) & (V < 65536)] = 8080
 
 
-dature.load(dature.Yaml12Source(file=SOURCES_DIR / "hydra_validators_invalid.yaml"), schema=Config)
+dature.load(
+    dature.Yaml12Source(file=SOURCES_DIR / "hydra_validators_invalid.yaml"),
+    schema=Config,
+)

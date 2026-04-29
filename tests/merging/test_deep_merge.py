@@ -2,7 +2,12 @@
 
 import pytest
 
-from dature.merging.deep_merge import deep_merge, deep_merge_first_wins, deep_merge_last_wins
+from dature.merging.deep_merge import deep_merge_first_wins, deep_merge_last_wins
+
+_DISPATCH = {
+    "last_wins": deep_merge_last_wins,
+    "first_wins": deep_merge_first_wins,
+}
 
 
 class TestDeepMerge:
@@ -124,11 +129,7 @@ class TestDeepMerge:
         ],
     )
     def test_merge(self, base, override, strategy, expected):
-        assert deep_merge(base, override, strategy=strategy) == expected
-
-    def test_raise_on_conflict_strategy_raises_value_error(self):
-        with pytest.raises(ValueError, match="RAISE_ON_CONFLICT"):
-            deep_merge({"a": 1}, {"a": 2}, strategy="raise_on_conflict")
+        assert _DISPATCH[strategy](base, override) == expected
 
 
 class TestDeepMergeLastWins:

@@ -4,20 +4,17 @@ from typing import Annotated, Any
 
 import pytest
 
-from dature import JsonSource, load
+from dature import JsonSource, V, load
 from dature.errors import DatureConfigError
-from dature.validators.number import Ge, Le
-from dature.validators.sequence import MinItems, UniqueItems
-from dature.validators.string import MaxLength, MinLength, RegexPattern
 
 
 class TestMultipleFields:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(3), MaxLength(50)]
-            age: Annotated[int, Ge(0), Le(150)]
-            tags: Annotated[list[str], MinItems(1), UniqueItems()]
+            name: Annotated[str, (V.len() >= 3) & (V.len() <= 50)]
+            age: Annotated[int, (V >= 0) & (V <= 150)]
+            tags: Annotated[list[str], (V.len() >= 1) & V.unique_items()]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice", "age": 30, "tags": ["python", "coding"]}')
@@ -32,9 +29,9 @@ class TestMultipleFields:
     def test_all_invalid(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(3), MaxLength(50)]
-            age: Annotated[int, Ge(0), Le(150)]
-            tags: Annotated[list[str], MinItems(1), UniqueItems()]
+            name: Annotated[str, (V.len() >= 3) & (V.len() <= 50)]
+            age: Annotated[int, (V >= 0) & (V <= 150)]
+            tags: Annotated[list[str], (V.len() >= 1) & V.unique_items()]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "AB", "age": 200, "tags": []}'
@@ -49,21 +46,21 @@ class TestMultipleFields:
         assert len(e.exceptions) == 3
         assert str(e) == "Config loading errors (3)"
         assert str(e.exceptions[0]) == (
-            f"  [name]  Value must have at least 3 characters\n"
+            "  [name]  Value length must be greater than or equal to 3\n"
             f"   ├── {content}\n"
-            f"   │             ^^\n"
+            "   │             ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
-            f"  [age]  Value must be less than or equal to 150\n"
+            "  [age]  Value must be less than or equal to 150\n"
             f"   ├── {content}\n"
-            f"   │                         ^^^\n"
+            "   │                         ^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[2]) == (
-            f"  [tags]  Value must have at least 1 items\n"
+            "  [tags]  Value length must be greater than or equal to 1\n"
             f"   ├── {content}\n"
-            f"   │                                      ^^\n"
+            "   │                                      ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -72,13 +69,13 @@ class TestNestedDataclass:
     def test_success(self, tmp_path: Path):
         @dataclass
         class Address:
-            city: Annotated[str, MinLength(2)]
-            zip_code: Annotated[str, RegexPattern(r"^\d{5}$")]
+            city: Annotated[str, V.len() >= 2]
+            zip_code: Annotated[str, V.matches(r"^\d{5}$")]
 
         @dataclass
         class User:
-            name: Annotated[str, MinLength(3)]
-            age: Annotated[int, Ge(18)]
+            name: Annotated[str, V.len() >= 3]
+            age: Annotated[int, V >= 18]
             address: Address
 
         json_file = tmp_path / "config.json"
@@ -97,13 +94,13 @@ class TestNestedDataclass:
     def test_all_invalid(self, tmp_path: Path):
         @dataclass
         class Address:
-            city: Annotated[str, MinLength(2)]
-            zip_code: Annotated[str, RegexPattern(r"^\d{5}$")]
+            city: Annotated[str, V.len() >= 2]
+            zip_code: Annotated[str, V.matches(r"^\d{5}$")]
 
         @dataclass
         class User:
-            name: Annotated[str, MinLength(3)]
-            age: Annotated[int, Ge(18)]
+            name: Annotated[str, V.len() >= 3]
+            age: Annotated[int, V >= 18]
             address: Address
 
         json_file = tmp_path / "config.json"
@@ -119,27 +116,27 @@ class TestNestedDataclass:
         assert len(e.exceptions) == 4
         assert str(e) == "User loading errors (4)"
         assert str(e.exceptions[0]) == (
-            f"  [name]  Value must have at least 3 characters\n"
+            "  [name]  Value length must be greater than or equal to 3\n"
             f"   ├── {content}\n"
-            f"   │             ^^\n"
+            "   │             ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
-            f"  [age]  Value must be greater than or equal to 18\n"
+            "  [age]  Value must be greater than or equal to 18\n"
             f"   ├── {content}\n"
-            f"   │                         ^^\n"
+            "   │                         ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[2]) == (
-            "  [address.city]  Value must have at least 2 characters\n"
+            "  [address.city]  Value length must be greater than or equal to 2\n"
             f"   ├── {content}\n"
-            f"   │                                                  ^\n"
+            "   │                                                  ^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[3]) == (
             "  [address.zip_code]  Value must match pattern '^\\d{5}$'\n"
             f"   ├── {content}\n"
-            f"   │                                                                   ^^^^^\n"
+            "   │                                                                   ^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -148,7 +145,7 @@ class TestCustomErrorMessage:
     def test_custom_error_message(self, tmp_path: Path):
         @dataclass
         class Config:
-            age: Annotated[int, Ge(18, error_message="Age must be 18 or older")]
+            age: Annotated[int, (V >= 18).with_error_message("Age must be 18 or older")]
 
         json_file = tmp_path / "config.json"
         content = '{"age": 15}'
@@ -171,7 +168,7 @@ class TestDictListDict:
     def test_raw_dict_field_validator_success(self, tmp_path: Path):
         @dataclass
         class Config:
-            groups: Annotated[dict[str, list[dict[str, Any]]], MinItems(1)]
+            groups: Annotated[dict[str, list[dict[str, Any]]], V.len() >= 1]
 
         json_file = tmp_path / "config.json"
         json_file.write_text(
@@ -186,7 +183,7 @@ class TestDictListDict:
     def test_raw_dict_field_validator_failure(self, tmp_path: Path):
         @dataclass
         class Config:
-            groups: Annotated[dict[str, list[dict[str, Any]]], MinItems(1)]
+            groups: Annotated[dict[str, list[dict[str, Any]]], V.len() >= 1]
 
         json_file = tmp_path / "config.json"
         content = '{"groups": {}}'
@@ -201,17 +198,17 @@ class TestDictListDict:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [groups]  Value must have at least 1 items\n"
+            "  [groups]  Value length must be greater than or equal to 1\n"
             f"   ├── {content}\n"
-            f"   │              ^^\n"
+            "   │              ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
     def test_nested_dataclass_in_dict_list_success(self, tmp_path: Path):
         @dataclass
         class Member:
-            name: Annotated[str, MinLength(2)]
-            role: Annotated[str, MinLength(3)]
+            name: Annotated[str, V.len() >= 2]
+            role: Annotated[str, V.len() >= 3]
 
         @dataclass
         class Config:
@@ -231,8 +228,8 @@ class TestDictListDict:
     def test_nested_dataclass_in_dict_list_validation_fails(self, tmp_path: Path):
         @dataclass
         class Member:
-            name: Annotated[str, MinLength(2)]
-            role: Annotated[str, MinLength(3)]
+            name: Annotated[str, V.len() >= 2]
+            role: Annotated[str, V.len() >= 3]
 
         @dataclass
         class Config:
@@ -251,14 +248,14 @@ class TestDictListDict:
         assert len(e.exceptions) == 2
         assert str(e) == "Config loading errors (2)"
         assert str(e.exceptions[0]) == (
-            "  [teams.backend.0.name]  Value must have at least 2 characters\n"
+            "  [teams.backend.0.name]  Value length must be greater than or equal to 2\n"
             f"   ├── {content}\n"
-            f"   │                                    ^\n"
+            "   │                                    ^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
-            "  [teams.backend.0.role]  Value must have at least 3 characters\n"
+            "  [teams.backend.0.role]  Value length must be greater than or equal to 3\n"
             f"   ├── {content}\n"
-            f"   │                                                 ^^\n"
+            "   │                                                 ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )

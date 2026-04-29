@@ -1,25 +1,23 @@
-"""Per-source masking — mask_secrets=False exposes values in errors."""
+"""Disable masking — mask_secrets=False exposes values in errors."""
 
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
 import dature
-from dature.validators.string import MinLength
+from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
 class Config:
-    api_key: Annotated[str, MinLength(20)]
+    api_key: Annotated[str, V.len() >= 20]
     host: str
 
 
 dature.load(
-    dature.Yaml12Source(
-        file=SOURCES_DIR / "masking_per_source.yaml",
-        mask_secrets=False,
-    ),
+    dature.Yaml12Source(file=SOURCES_DIR / "masking_per_source.yaml"),
     schema=Config,
+    mask_secrets=False,
 )

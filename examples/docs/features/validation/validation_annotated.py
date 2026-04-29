@@ -5,19 +5,17 @@ from pathlib import Path
 from typing import Annotated
 
 import dature
-from dature.validators.number import Ge, Le
-from dature.validators.sequence import MinItems, UniqueItems
-from dature.validators.string import MaxLength, MinLength
+from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
 class ServiceConfig:
-    port: Annotated[int, Ge(1), Le(65535)]
-    name: Annotated[str, MinLength(3), MaxLength(50)]
-    tags: Annotated[list[str], MinItems(1), UniqueItems()]
-    workers: Annotated[int, Ge(1)]
+    port: Annotated[int, (V >= 1) & (V <= 65535)]
+    name: Annotated[str, (V.len() >= 3) & (V.len() <= 50)]
+    tags: Annotated[list[str], (V.len() >= 1) & V.unique_items()]
+    workers: Annotated[int, V >= 1]
 
 
 dature.load(

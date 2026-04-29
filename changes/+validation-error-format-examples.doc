@@ -1,0 +1,1 @@
+Validation docs now use real runnable examples for every source format in the Error Format section (YAML, JSON, JSON5, TOML, INI, ENV, ENV file, Docker Secrets), plus new examples for multi-line and dataclass-typed values. Removed duplicated "Error Messages" section from the Introduction page.

@@ -156,12 +156,18 @@ class TestPartialNestedResolveEnv:
             (
                 "json",
                 False,
-                "  [var.bar]  Missing required field\n   └── ENV 'MYAPP__VAR' = '{\"foo\": \"from_json\"}'",
+                "  [var.bar]  Missing required field\n"
+                '   ├── MYAPP__VAR={"foo": "from_json"}\n'
+                "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+                "   └── ENV 'MYAPP__VAR'",
             ),
             (
                 "json",
                 True,
-                "  [var.bar]  Missing required field\n   └── ENV 'MYAPP__VAR' = '{\"foo\": \"from_json\"}'",
+                "  [var.bar]  Missing required field\n"
+                '   ├── MYAPP__VAR={"foo": "from_json"}\n'
+                "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+                "   └── ENV 'MYAPP__VAR'",
             ),
         ],
         ids=["flat-global", "flat-local", "json-global", "json-local"],
@@ -238,6 +244,7 @@ class TestPartialNestedResolveEnvFile:
         assert str(field_err) == (
             "  [var.bar]  Missing required field\n"
             '   ├── MYAPP__VAR={"foo": "from_json"}\n'
+            "   │              ^^^^^^^^^^^^^^^^^^^^\n"
             f"   └── ENV FILE '{env_file}', line 1"
         )
 
@@ -279,7 +286,12 @@ class TestPartialNestedResolveDockerSecrets:
         assert len(err.exceptions) == 1
         field_err = err.exceptions[0]
         assert isinstance(field_err, FieldLoadError)
-        assert str(field_err) == f"  [var.bar]  Missing required field\n   └── SECRET FILE '{tmp_path / 'var'}'"
+        assert str(field_err) == (
+            "  [var.bar]  Missing required field\n"
+            '   ├── var = {"foo": "from_json"}\n'
+            "   │         ^^^^^^^^^^^^^^^^^^^^\n"
+            f"   └── SECRET FILE '{tmp_path / 'var'}'"
+        )
 
 
 class TestInvalidDataNestedResolveEnv:
@@ -297,7 +309,8 @@ class TestInvalidDataNestedResolveEnv:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    def test_json_invalid_json_strategy_errors(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    @pytest.mark.parametrize("field_name", ["foo", "bar"])
+    def test_json_invalid_json_strategy_errors(self, monkeypatch: pytest.MonkeyPatch, field_name: str) -> None:
         monkeypatch.setenv("MYAPP__VAR", '{"foo": "not_a_number", "bar": "not_a_number"}')
         monkeypatch.setenv("MYAPP__VAR__FOO", "10")
         monkeypatch.setenv("MYAPP__VAR__BAR", "20")
@@ -309,19 +322,15 @@ class TestInvalidDataNestedResolveEnv:
             )
 
         err = exc_info.value
-        assert str(err) == "NestedIntConfig loading errors (2)"
         assert len(err.exceptions) == 2
-        first = err.exceptions[0]
-        assert isinstance(first, FieldLoadError)
-        assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   └── ENV \'MYAPP__VAR\' = \'{"foo": "not_a_number", "bar": "not_a_number"}\''
+        field_err = next(
+            e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
-        second = err.exceptions[1]
-        assert isinstance(second, FieldLoadError)
-        assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   └── ENV \'MYAPP__VAR\' = \'{"foo": "not_a_number", "bar": "not_a_number"}\''
+        assert str(field_err) == (
+            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
+            '   ├── MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\n'
+            "   │              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            "   └── ENV 'MYAPP__VAR'"
         )
 
     def test_flat_invalid_json_strategy_succeeds(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -336,7 +345,8 @@ class TestInvalidDataNestedResolveEnv:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    def test_flat_invalid_flat_strategy_errors(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    @pytest.mark.parametrize("field_name", ["foo", "bar"])
+    def test_flat_invalid_flat_strategy_errors(self, monkeypatch: pytest.MonkeyPatch, field_name: str) -> None:
         monkeypatch.setenv("MYAPP__VAR", '{"foo": 10, "bar": 20}')
         monkeypatch.setenv("MYAPP__VAR__FOO", "not_a_number")
         monkeypatch.setenv("MYAPP__VAR__BAR", "not_a_number")
@@ -348,17 +358,13 @@ class TestInvalidDataNestedResolveEnv:
             )
 
         err = exc_info.value
-        assert str(err) == "NestedIntConfig loading errors (2)"
         assert len(err.exceptions) == 2
-        first = err.exceptions[0]
-        assert isinstance(first, FieldLoadError)
-        assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n   └── ENV 'MYAPP__VAR__FOO'"
+        field_err = next(
+            e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
-        second = err.exceptions[1]
-        assert isinstance(second, FieldLoadError)
-        assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n   └── ENV 'MYAPP__VAR__BAR'"
+        assert str(field_err) == (
+            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
+            f"   └── ENV 'MYAPP__VAR__{field_name.upper()}'"
         )
 
 
@@ -378,7 +384,8 @@ class TestInvalidDataNestedResolveEnvFile:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    def test_json_invalid_json_strategy_errors(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(("field_name", "caret_pos"), [("foo", 20), ("bar", 43)])
+    def test_json_invalid_json_strategy_errors(self, tmp_path: Path, field_name: str, caret_pos: int) -> None:
         env_file = tmp_path / ".env"
         env_file.write_text(
             'MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\nMYAPP__VAR__FOO=10\nMYAPP__VAR__BAR=20',
@@ -391,22 +398,14 @@ class TestInvalidDataNestedResolveEnvFile:
             )
 
         err = exc_info.value
-        assert str(err) == "NestedIntConfig loading errors (2)"
         assert len(err.exceptions) == 2
-        first = err.exceptions[0]
-        assert isinstance(first, FieldLoadError)
-        assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   ├── MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\n'
-            f"   │   {' ' * 43}^^^^^^^^^^^^\n"
-            f"   └── ENV FILE '{env_file}', line 1"
+        field_err = next(
+            e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
-        second = err.exceptions[1]
-        assert isinstance(second, FieldLoadError)
-        assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
+        assert str(field_err) == (
+            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
             '   ├── MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\n'
-            f"   │   {' ' * 43}^^^^^^^^^^^^\n"
+            f"   │   {' ' * caret_pos}^^^^^^^^^^^^\n"
             f"   └── ENV FILE '{env_file}', line 1"
         )
 
@@ -423,7 +422,8 @@ class TestInvalidDataNestedResolveEnvFile:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    def test_flat_invalid_flat_strategy_errors(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(("field_name", "line_num"), [("foo", 2), ("bar", 3)])
+    def test_flat_invalid_flat_strategy_errors(self, tmp_path: Path, field_name: str, line_num: int) -> None:
         env_file = tmp_path / ".env"
         env_file.write_text(
             'MYAPP__VAR={"foo": 10, "bar": 20}\nMYAPP__VAR__FOO=not_a_number\nMYAPP__VAR__BAR=not_a_number',
@@ -436,23 +436,15 @@ class TestInvalidDataNestedResolveEnvFile:
             )
 
         err = exc_info.value
-        assert str(err) == "NestedIntConfig loading errors (2)"
         assert len(err.exceptions) == 2
-        first = err.exceptions[0]
-        assert isinstance(first, FieldLoadError)
-        assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── MYAPP__VAR__FOO=not_a_number\n"
-            "   │                   ^^^^^^^^^^^^\n"
-            f"   └── ENV FILE '{env_file}', line 2"
+        field_err = next(
+            e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
-        second = err.exceptions[1]
-        assert isinstance(second, FieldLoadError)
-        assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── MYAPP__VAR__BAR=not_a_number\n"
+        assert str(field_err) == (
+            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
+            f"   ├── MYAPP__VAR__{field_name.upper()}=not_a_number\n"
             "   │                   ^^^^^^^^^^^^\n"
-            f"   └── ENV FILE '{env_file}', line 3"
+            f"   └── ENV FILE '{env_file}', line {line_num}"
         )
 
 
@@ -471,7 +463,8 @@ class TestInvalidDataNestedResolveDockerSecrets:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    def test_json_invalid_json_strategy_errors(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(("field_name", "caret_pos"), [("foo", 15), ("bar", 38)])
+    def test_json_invalid_json_strategy_errors(self, tmp_path: Path, field_name: str, caret_pos: int) -> None:
         (tmp_path / "var").write_text('{"foo": "not_a_number", "bar": "not_a_number"}')
         (tmp_path / "var__foo").write_text("10")
         (tmp_path / "var__bar").write_text("20")
@@ -483,18 +476,14 @@ class TestInvalidDataNestedResolveDockerSecrets:
             )
 
         err = exc_info.value
-        assert str(err) == "NestedIntConfig loading errors (2)"
         assert len(err.exceptions) == 2
-        first = err.exceptions[0]
-        assert isinstance(first, FieldLoadError)
-        assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            f"   └── SECRET FILE '{tmp_path / 'var'}'"
+        field_err = next(
+            e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
-        second = err.exceptions[1]
-        assert isinstance(second, FieldLoadError)
-        assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
+        assert str(field_err) == (
+            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
+            '   ├── var = {"foo": "not_a_number", "bar": "not_a_number"}\n'
+            f"   │   {' ' * caret_pos}^^^^^^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / 'var'}'"
         )
 
@@ -510,7 +499,8 @@ class TestInvalidDataNestedResolveDockerSecrets:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    def test_flat_invalid_flat_strategy_errors(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("field_name", ["foo", "bar"])
+    def test_flat_invalid_flat_strategy_errors(self, tmp_path: Path, field_name: str) -> None:
         (tmp_path / "var").write_text('{"foo": 10, "bar": 20}')
         (tmp_path / "var__foo").write_text("not_a_number")
         (tmp_path / "var__bar").write_text("not_a_number")
@@ -522,19 +512,15 @@ class TestInvalidDataNestedResolveDockerSecrets:
             )
 
         err = exc_info.value
-        assert str(err) == "NestedIntConfig loading errors (2)"
         assert len(err.exceptions) == 2
-        first = err.exceptions[0]
-        assert isinstance(first, FieldLoadError)
-        assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            f"   └── SECRET FILE '{tmp_path / 'var__foo'}'"
+        field_err = next(
+            e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
-        second = err.exceptions[1]
-        assert isinstance(second, FieldLoadError)
-        assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
-            f"   └── SECRET FILE '{tmp_path / 'var__bar'}'"
+        assert str(field_err) == (
+            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
+            f"   ├── var__{field_name} = not_a_number\n"
+            "   │              ^^^^^^^^^^^^\n"
+            f"   └── SECRET FILE '{tmp_path / f'var__{field_name}'}'"
         )
 
 
@@ -560,15 +546,21 @@ class TestMultilineJsonNestedResolveEnv:
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
             "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   └── ENV \'MYAPP__VAR\' = \'{"foo": "not_a_number",\n'
-            '"bar": "not_a_number"}\''
+            '   ├── MYAPP__VAR={"foo": "not_a_number",\n'
+            "   │              ^^^^^^^^^^^^^^^^^^^^^^^\n"
+            '   ├── "bar": "not_a_number"}\n'
+            "   │   ^^^^^^^^^^^^^^^^^^^^^^\n"
+            "   └── ENV 'MYAPP__VAR'"
         )
         second = err.exceptions[1]
         assert isinstance(second, FieldLoadError)
         assert str(second) == (
             "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   └── ENV \'MYAPP__VAR\' = \'{"foo": "not_a_number",\n'
-            '"bar": "not_a_number"}\''
+            '   ├── MYAPP__VAR={"foo": "not_a_number",\n'
+            "   │              ^^^^^^^^^^^^^^^^^^^^^^^\n"
+            '   ├── "bar": "not_a_number"}\n'
+            "   │   ^^^^^^^^^^^^^^^^^^^^^^\n"
+            "   └── ENV 'MYAPP__VAR'"
         )
 
     def test_multiline_flat_strategy_ignores_json(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -668,7 +660,7 @@ class TestCustomSplitSymbolsConflict:
         monkeypatch.setenv("APP_VAR_BAR", "from_flat")
 
         result = load(
-            EnvSource(prefix="APP_", split_symbols="_", nested_resolve_strategy="flat"),
+            EnvSource(prefix="APP_", nested_sep="_", nested_resolve_strategy="flat"),
             schema=NestedConfig,
         )
 
@@ -681,7 +673,7 @@ class TestCustomSplitSymbolsConflict:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                EnvSource(prefix="APP_", split_symbols="_", nested_resolve_strategy="json"),
+                EnvSource(prefix="APP_", nested_sep="_", nested_resolve_strategy="json"),
                 schema=NestedIntConfig,
             )
 
@@ -690,7 +682,9 @@ class TestCustomSplitSymbolsConflict:
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
             "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n"
-            '   └── ENV \'APP_VAR\' = \'{"foo": "not_int", "bar": "not_int"}\''
+            '   ├── APP_VAR={"foo": "not_int", "bar": "not_int"}\n'
+            "   │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            "   └── ENV 'APP_VAR'"
         )
 
     def test_flat_strategy_single_underscore_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -700,7 +694,7 @@ class TestCustomSplitSymbolsConflict:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                EnvSource(prefix="APP_", split_symbols="_", nested_resolve_strategy="flat"),
+                EnvSource(prefix="APP_", nested_sep="_", nested_resolve_strategy="flat"),
                 schema=NestedIntConfig,
             )
 
@@ -810,6 +804,8 @@ class TestPrefixDockerSecretsConflict:
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
             "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n"
+            "   ├── myapp__var__foo = not_int\n"
+            "   │                     ^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / 'myapp__var__foo'}'"
         )
 
@@ -830,6 +826,8 @@ class TestPrefixDockerSecretsConflict:
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
             "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n"
+            '   ├── myapp__var = {"foo": "not_int", "bar": "not_int"}\n'
+            "   │                         ^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / 'myapp__var'}'"
         )
 

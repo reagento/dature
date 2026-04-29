@@ -165,84 +165,130 @@ Both approaches work in function mode and decorator mode.
 
 ## Error Format
 
-Validation errors include source location and context. The format varies by source type:
+Validation errors include field path, source location, and the offending value. The format varies by source type:
 
 === "YAML"
 
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_yaml.py"
     ```
-    Config loading errors (1)
 
-      [port]  Value must be >= 1
-       └── FILE 'config.yaml', line 1
-           port: -1
+    ```
+    --8<-- "examples/docs/features/validation/error_format_yaml.stderr"
     ```
 
 === "JSON"
 
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_json.py"
     ```
-    Config loading errors (1)
 
-      [port]  Value must be >= 1
-       └── FILE 'config.json', line 1
-           {"port": -1}
+    ```
+    --8<-- "examples/docs/features/validation/error_format_json.stderr"
     ```
 
 === "JSON5"
 
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_json5.py"
     ```
-    Config loading errors (1)
 
-      [port]  Value must be >= 1
-       └── FILE 'config.json5', line 1
-           {port: -1}
+    ```
+    --8<-- "examples/docs/features/validation/error_format_json5.stderr"
     ```
 
 === "TOML"
 
-    ```
-    Config loading errors (1)
-
-      [port]  Value must be >= 1
-       └── FILE 'config.toml', line 1
-           port = -1
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_toml.py"
     ```
 
-=== "ENV file"
-
     ```
-    Config loading errors (1)
-
-      [port]  Value must be >= 1
-       └── ENV FILE '.env', line 1
-           PORT=-1
-    ```
-
-=== "ENV"
-
-    ```
-    Config loading errors (1)
-
-      [port]  Value must be >= 1
-       └── ENV 'APP_PORT'
+    --8<-- "examples/docs/features/validation/error_format_toml.stderr"
     ```
 
 === "INI"
 
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_ini.py"
     ```
-    Config loading errors (1)
 
-      [port]  Value must be >= 1
-       └── FILE 'config.ini', line 2
-           port = -1
+    ```
+    --8<-- "examples/docs/features/validation/error_format_ini.stderr"
+    ```
+
+=== "ENV"
+
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_env.py"
+    ```
+
+    ```
+    --8<-- "examples/docs/features/validation/error_format_env.stderr"
+    ```
+
+=== "ENV file"
+
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_env_file.py"
+    ```
+
+    ```
+    --8<-- "examples/docs/features/validation/error_format_env_file.stderr"
     ```
 
 === "Docker Secrets"
 
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_docker.py"
     ```
-    Config loading errors (1)
 
-      [port]  Value must be >= 1
-       └── SECRET FILE '/run/secrets/port'
+    ```
+    --8<-- "examples/docs/features/validation/error_format_docker.stderr"
+    ```
+
+### Multi-line value
+
+When a value spans multiple source lines, each visible line is shown under the `├──` prefix with a caret underlining it so the whole offending block is visible at a glance. Long values are truncated after a few lines:
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_multiline.py"
+    ```
+
+=== "multiline.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/features/validation/sources/error_format_multiline.yaml"
+    ```
+
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/error_format_multiline.stderr"
+    ```
+
+### Dataclass value
+
+A custom validator can be attached to a dataclass-typed field via `Annotated`. The error shows the whole nested block from the source:
+
+=== "Python"
+
+    ```python
+    --8<-- "examples/docs/features/validation/error_format_dataclass.py"
+    ```
+
+=== "dataclass.yaml"
+
+    ```yaml
+    --8<-- "examples/docs/features/validation/sources/error_format_dataclass.yaml"
+    ```
+
+=== "Error"
+
+    ```
+    --8<-- "examples/docs/features/validation/error_format_dataclass.stderr"
     ```
 
 All field errors are collected and reported together — dature doesn't stop at the first error.

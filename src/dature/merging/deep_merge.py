@@ -1,130 +1,29 @@
-from dataclasses import dataclass
-
 from dature.errors import MergeConflictError, MergeConflictFieldError, SourceLocation
 from dature.errors.location import resolve_source_location
 from dature.loading.source_loading import SourceContext
-from dature.merging.strategy import FieldMergeStrategyEnum, MergeStrategyEnum
 from dature.types import JSONValue
 
 _MIN_CONFLICT_SOURCES = 2
 
 
-def _deduplicate_list(items: list[JSONValue]) -> list[JSONValue]:
-    seen: list[JSONValue] = []
-    for item in items:
-        found = False
-        for s in seen:
-            if s == item:
-                found = True
-                break
-        if not found:
-            seen.append(item)
-    return seen
-
-
-@dataclass(frozen=True, slots=True)
-class ListPair:
-    base: list[JSONValue]
-    override: list[JSONValue]
-
-
-def _ensure_both_lists(
-    base: JSONValue,
-    override: JSONValue,
-    strategy_name: str,
-) -> ListPair:
-    if not isinstance(base, list) or not isinstance(override, list):
-        base_type = type(base).__name__
-        override_type = type(override).__name__
-        msg = f"{strategy_name} strategy requires both values to be lists, got {base_type} and {override_type}"
-        raise TypeError(msg)
-    return ListPair(base=base, override=override)
-
-
-def _apply_list_merge(
-    base: JSONValue,
-    override: JSONValue,
-    strategy: FieldMergeStrategyEnum,
-) -> list[JSONValue]:
-    if strategy == FieldMergeStrategyEnum.APPEND:
-        pair = _ensure_both_lists(base, override, "APPEND")
-        return list(pair.base) + list(pair.override)
-
-    if strategy == FieldMergeStrategyEnum.APPEND_UNIQUE:
-        pair = _ensure_both_lists(base, override, "APPEND_UNIQUE")
-        return _deduplicate_list(list(pair.base) + list(pair.override))
-
-    if strategy == FieldMergeStrategyEnum.PREPEND:
-        pair = _ensure_both_lists(base, override, "PREPEND")
-        return list(pair.override) + list(pair.base)
-
-    # prepend_unique
-    pair = _ensure_both_lists(base, override, "PREPEND_UNIQUE")
-    return _deduplicate_list(list(pair.override) + list(pair.base))
-
-
-def apply_field_merge(
-    base: JSONValue,
-    override: JSONValue,
-    strategy: FieldMergeStrategyEnum,
-) -> JSONValue:
-    if strategy == FieldMergeStrategyEnum.FIRST_WINS:
-        return base
-
-    if strategy == FieldMergeStrategyEnum.LAST_WINS:
-        return override
-
-    return _apply_list_merge(base, override, strategy)
-
-
-def deep_merge_last_wins(
-    base: JSONValue,
-    override: JSONValue,
-    *,
-    field_merge_map: dict[str, FieldMergeStrategyEnum] | None = None,
-    _path: str = "",
-) -> JSONValue:
-    if field_merge_map is not None and _path in field_merge_map:
-        return apply_field_merge(base, override, field_merge_map[_path])
-
+def deep_merge_last_wins(base: JSONValue, override: JSONValue) -> JSONValue:
     if isinstance(base, dict) and isinstance(override, dict):
         result = dict(base)
         for key, value in override.items():
-            child_path = f"{_path}.{key}" if _path else key
             if key in result:
-                result[key] = deep_merge_last_wins(
-                    result[key],
-                    value,
-                    field_merge_map=field_merge_map,
-                    _path=child_path,
-                )
+                result[key] = deep_merge_last_wins(result[key], value)
             else:
                 result[key] = value
         return result
     return override
 
 
-def deep_merge_first_wins(
-    base: JSONValue,
-    override: JSONValue,
-    *,
-    field_merge_map: dict[str, FieldMergeStrategyEnum] | None = None,
-    _path: str = "",
-) -> JSONValue:
-    if field_merge_map is not None and _path in field_merge_map:
-        return apply_field_merge(base, override, field_merge_map[_path])
-
+def deep_merge_first_wins(base: JSONValue, override: JSONValue) -> JSONValue:
     if isinstance(base, dict) and isinstance(override, dict):
         result = dict(base)
         for key, value in override.items():
-            child_path = f"{_path}.{key}" if _path else key
             if key in result:
-                result[key] = deep_merge_first_wins(
-                    result[key],
-                    value,
-                    field_merge_map=field_merge_map,
-                    _path=child_path,
-                )
+                result[key] = deep_merge_first_wins(result[key], value)
             else:
                 result[key] = value
         return result
@@ -136,8 +35,7 @@ def _collect_conflicts(
     source_contexts: list[SourceContext],
     path: list[str],
     conflicts: list[tuple[list[str], list[tuple[int, JSONValue]]]],
-    field_merge_map: dict[str, FieldMergeStrategyEnum] | None = None,
-    callable_merge_paths: frozenset[str] | None = None,
+    field_merge_paths: frozenset[str] | None = None,
 ) -> None:
     key_sources: dict[str, list[tuple[int, JSONValue]]] = {}
 
@@ -154,9 +52,7 @@ def _collect_conflicts(
             continue
 
         field_path = ".".join([*path, key])
-        has_enum_strategy = field_merge_map is not None and field_path in field_merge_map
-        has_callable_strategy = callable_merge_paths is not None and field_path in callable_merge_paths
-        if has_enum_strategy or has_callable_strategy:
+        if field_merge_paths is not None and field_path in field_merge_paths:
             continue
 
         values = [v for _, v in sources]
@@ -168,8 +64,7 @@ def _collect_conflicts(
                 [source_contexts[i] for i, _ in sources],
                 [*path, key],
                 conflicts,
-                field_merge_map=field_merge_map,
-                callable_merge_paths=callable_merge_paths,
+                field_merge_paths=field_merge_paths,
             )
             continue
 
@@ -183,8 +78,7 @@ def raise_on_conflict(
     dicts: list[JSONValue],
     source_ctxs: list[SourceContext],
     dataclass_name: str,
-    field_merge_map: dict[str, FieldMergeStrategyEnum] | None = None,
-    callable_merge_paths: frozenset[str] | None = None,
+    field_merge_paths: frozenset[str] | None = None,
 ) -> None:
     conflicts: list[tuple[list[str], list[tuple[int, JSONValue]]]] = []
     _collect_conflicts(
@@ -192,8 +86,7 @@ def raise_on_conflict(
         source_ctxs,
         [],
         conflicts,
-        field_merge_map=field_merge_map,
-        callable_merge_paths=callable_merge_paths,
+        field_merge_paths=field_merge_paths,
     )
 
     if not conflicts:
@@ -215,18 +108,3 @@ def raise_on_conflict(
         )
 
     raise MergeConflictError(dataclass_name, conflict_errors)
-
-
-def deep_merge(
-    base: JSONValue,
-    override: JSONValue,
-    *,
-    strategy: MergeStrategyEnum,
-    field_merge_map: dict[str, FieldMergeStrategyEnum] | None = None,
-) -> JSONValue:
-    if strategy == MergeStrategyEnum.LAST_WINS:
-        return deep_merge_last_wins(base, override, field_merge_map=field_merge_map)
-    if strategy in (MergeStrategyEnum.FIRST_WINS, MergeStrategyEnum.FIRST_FOUND):
-        return deep_merge_first_wins(base, override, field_merge_map=field_merge_map)
-    msg = "Use merge_sources for RAISE_ON_CONFLICT strategy"
-    raise ValueError(msg)

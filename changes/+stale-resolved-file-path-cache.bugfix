@@ -1,0 +1,1 @@
+Fixed ``apply_source_init_params`` leaking a stale ``FileFieldMixin._resolved_file_path`` cache: priming the cache (e.g. via ``repr(source)``) before ``load(...)`` no longer prevents ``search_system_paths`` / ``system_config_dirs`` overrides from taking effect.

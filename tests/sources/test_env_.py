@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+import dature
 from dature import EnvFileSource, EnvSource, load
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -30,7 +31,7 @@ class TestEnvFileSource:
 
     def test_custom_split_symbols(self, custom_separator_env_file: Path):
         """Test custom separator for nested keys."""
-        loader = EnvFileSource(file=custom_separator_env_file, prefix="APP_", split_symbols=".")
+        loader = EnvFileSource(file=custom_separator_env_file, prefix="APP_", nested_sep=".")
         result = loader.load_raw()
 
         assert result.data == {
@@ -294,7 +295,7 @@ class TestEnvSource:
         expected_data = TestConfig(db=TestData(host="localhost", port="5432"))
 
         data = load(
-            EnvSource(prefix="APP_", split_symbols="."),
+            EnvSource(prefix="APP_", nested_sep="."),
             schema=TestConfig,
         )
 
@@ -317,11 +318,9 @@ class TestEnvFileSourceDisplayProperties:
 
 class TestEnvSourceResolveLocation:
     def test_resolve_returns_env_var_name(self):
-        locations = EnvSource.resolve_location(
+        locations = EnvSource().resolve_location(
             field_path=["host"],
-            file_path=None,
             file_content=None,
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -331,11 +330,9 @@ class TestEnvSourceResolveLocation:
         assert locations[0].location_label == "ENV"
 
     def test_resolve_with_prefix(self):
-        locations = EnvSource.resolve_location(
+        locations = EnvSource(prefix="APP_").resolve_location(
             field_path=["host"],
-            file_path=None,
             file_content=None,
-            prefix="APP_",
             nested_conflict=None,
         )
 
@@ -343,11 +340,9 @@ class TestEnvSourceResolveLocation:
         assert locations[0].env_var_name == "APP_HOST"
 
     def test_resolve_nested_path(self):
-        locations = EnvSource.resolve_location(
+        locations = EnvSource().resolve_location(
             field_path=["database", "host"],
-            file_path=None,
             file_content=None,
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -355,13 +350,10 @@ class TestEnvSourceResolveLocation:
         assert locations[0].env_var_name == "DATABASE__HOST"
 
     def test_resolve_with_custom_split_symbols(self):
-        locations = EnvSource.resolve_location(
+        locations = EnvSource(nested_sep=".").resolve_location(
             field_path=["database", "host"],
-            file_path=None,
             file_content=None,
-            prefix=None,
             nested_conflict=None,
-            split_symbols=".",
         )
 
         assert len(locations) == 1
@@ -372,11 +364,9 @@ class TestEnvFileSourceResolveLocation:
     def test_resolve_finds_line_in_content(self):
         content = "HOST=localhost\nPORT=8080"
 
-        locations = EnvFileSource.resolve_location(
+        locations = EnvFileSource(file=".env").resolve_location(
             field_path=["port"],
-            file_path=Path(".env"),
             file_content=content,
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -386,11 +376,9 @@ class TestEnvFileSourceResolveLocation:
         assert locations[0].line_range.start == 2
 
     def test_resolve_no_content(self):
-        locations = EnvFileSource.resolve_location(
+        locations = EnvFileSource(file=".env").resolve_location(
             field_path=["host"],
-            file_path=Path(".env"),
             file_content=None,
-            prefix=None,
             nested_conflict=None,
         )
 
@@ -410,3 +398,70 @@ class TestEnvFileSourceStream:
 
         assert result.name == "test"
         assert result.port == 8080
+
+
+class TestEnvFileSourceSearch:
+    """Tests that EnvFileSource honors search_system_paths / system_config_dirs (FileFieldMixin)."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_config(self):
+        dature.configure(loading={})
+
+    @dataclass
+    class _Cfg:
+        host: str
+
+    def test_finds_envfile_in_system_dir(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / ".env").write_text("HOST=from-system")
+
+        result = load(
+            EnvFileSource(file=".env", system_config_dirs=(system_dir,)),
+            schema=self._Cfg,
+        )
+
+        assert result.host == "from-system"
+
+    def test_priority_cwd_before_system(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".env").write_text("HOST=from-cwd")
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / ".env").write_text("HOST=from-system")
+
+        result = load(
+            EnvFileSource(file=".env", system_config_dirs=(system_dir,)),
+            schema=self._Cfg,
+        )
+
+        assert result.host == "from-cwd"
+
+    def test_search_system_paths_disabled_per_source(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / ".env").write_text("HOST=from-system")
+
+        with pytest.raises(FileNotFoundError):
+            load(
+                EnvFileSource(
+                    file=".env",
+                    search_system_paths=False,
+                    system_config_dirs=(system_dir,),
+                ),
+                schema=self._Cfg,
+            )

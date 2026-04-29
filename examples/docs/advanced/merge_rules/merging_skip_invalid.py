@@ -15,7 +15,10 @@ class Config:
 
 
 config = dature.load(
-    dature.Yaml12Source(file=SOURCES_DIR / "merging_skip_invalid_defaults.yaml", skip_if_invalid=True),
+    dature.Yaml12Source(
+        file=SOURCES_DIR / "merging_skip_invalid_defaults.yaml",
+        skip_field_if_invalid=True,
+    ),
     schema=Config,
 )
 

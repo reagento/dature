@@ -1,4 +1,4 @@
-"""Debug report — dature.get_load_report() to inspect which source provided each field."""
+"""Debug report — get_load_report() shows which source set each field."""
 
 from dataclasses import dataclass
 from pathlib import Path

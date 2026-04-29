@@ -17,7 +17,10 @@ class Config:
 # --8<-- [start:merge]
 config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
-    dature.Toml11Source(file=SOURCES_DIR / "hydra_config.toml", skip_if_broken=True),
+    dature.Toml11Source(
+        file=SOURCES_DIR / "hydra_config.toml",
+        skip_if_broken=True,
+    ),
     dature.EnvSource(prefix="APP_"),
     schema=Config,
 )

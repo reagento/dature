@@ -11,6 +11,7 @@ import pytest
 from dature import JsonSource, load
 from dature.errors import MergeConflictError
 from dature.field_path import F
+from dature.strategies import SourceFirstWins, SourceLastWins
 from dature.types import FieldMergeStrategyName
 
 
@@ -180,7 +181,7 @@ class TestFieldMergesFunction:
         class Config:
             value: str
 
-        with pytest.raises(TypeError, match="APPEND strategy requires both values to be lists"):
+        with pytest.raises(TypeError, match="APPEND strategy requires every value to be a list"):
             load(
                 JsonSource(file=defaults),
                 JsonSource(file=overrides),
@@ -395,22 +396,22 @@ class TestFieldMergesErrors:
         [
             pytest.param(
                 "append",
-                "APPEND strategy requires both values to be lists",
+                "APPEND strategy requires every value to be a list",
                 id="append",
             ),
             pytest.param(
                 "append_unique",
-                "APPEND_UNIQUE strategy requires both values to be lists",
+                "APPEND_UNIQUE strategy requires every value to be a list",
                 id="append_unique",
             ),
             pytest.param(
                 "prepend",
-                "PREPEND strategy requires both values to be lists",
+                "PREPEND strategy requires every value to be a list",
                 id="prepend",
             ),
             pytest.param(
                 "prepend_unique",
-                "PREPEND_UNIQUE strategy requires both values to be lists",
+                "PREPEND_UNIQUE strategy requires every value to be a list",
                 id="prepend_unique",
             ),
         ],
@@ -444,22 +445,22 @@ class TestFieldMergesErrors:
         [
             pytest.param(
                 "append",
-                "APPEND strategy requires both values to be lists",
+                "APPEND strategy requires every value to be a list",
                 id="append",
             ),
             pytest.param(
                 "append_unique",
-                "APPEND_UNIQUE strategy requires both values to be lists",
+                "APPEND_UNIQUE strategy requires every value to be a list",
                 id="append_unique",
             ),
             pytest.param(
                 "prepend",
-                "PREPEND strategy requires both values to be lists",
+                "PREPEND strategy requires every value to be a list",
                 id="prepend",
             ),
             pytest.param(
                 "prepend_unique",
-                "PREPEND_UNIQUE strategy requires both values to be lists",
+                "PREPEND_UNIQUE strategy requires every value to be a list",
                 id="prepend_unique",
             ),
         ],
@@ -493,12 +494,12 @@ class TestFieldMergesErrors:
         [
             pytest.param(
                 "append",
-                "APPEND strategy requires both values to be lists, got list and str",
+                "APPEND strategy requires every value to be a list, got str",
                 id="append",
             ),
             pytest.param(
                 "prepend",
-                "PREPEND strategy requires both values to be lists, got list and str",
+                "PREPEND strategy requires every value to be a list, got str",
                 id="prepend",
             ),
         ],
@@ -934,6 +935,37 @@ class TestCallableMergeStrategy:
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
         assert messages == ["Merge-related parameters have no effect with a single source"]
+
+    @pytest.mark.parametrize(
+        ("strategy_kwarg", "expect_warning"),
+        [
+            ({}, False),
+            ({"strategy": "last_wins"}, True),
+            ({"strategy": SourceLastWins()}, True),
+            ({"strategy": "first_wins"}, True),
+            ({"strategy": SourceFirstWins()}, True),
+        ],
+    )
+    def test_single_source_strategy_warning(
+        self,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+        strategy_kwarg: dict[str, Any],
+        expect_warning: bool,
+    ) -> None:
+        a = tmp_path / "a.json"
+        a.write_text('{"score": 42}')
+
+        @dataclass
+        class Config:
+            score: int
+
+        with caplog.at_level(logging.WARNING, logger="dature"):
+            load(JsonSource(file=a), schema=Config, **strategy_kwarg)
+
+        messages = [r.message for r in caplog.records if r.name == "dature"]
+        warning = "Merge-related parameters have no effect with a single source"
+        assert (warning in messages) is expect_warning
 
     def test_callable_with_raise_on_conflict(self, tmp_path: Path):
         a = tmp_path / "a.json"

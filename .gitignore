@@ -61,7 +61,9 @@ dmypy.json
 .coverage
 htmlcov/
 
-.claude
 uv.lock
 tmp/
 site/
+
+# LLM
+.nessy

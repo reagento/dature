@@ -159,7 +159,7 @@ class TestCoerceFlagFields:
 
 
 class TestBuildErrorCtx:
-    def test_file_source_no_split_symbols(self, tmp_path: Path):
+    def test_file_source(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text("{}")
         source = JsonSource(file=json_file, prefix="app")
@@ -167,16 +167,14 @@ class TestBuildErrorCtx:
         ctx = build_error_ctx(source, "MyConfig")
 
         assert ctx.dataclass_name == "MyConfig"
-        assert ctx.source_class is JsonSource
-        assert ctx.prefix == "app"
-        assert ctx.split_symbols is None
+        assert ctx.source is source
 
-    def test_flat_key_source_has_split_symbols(self):
-        source = EnvSource(prefix="APP", split_symbols="__")
+    def test_flat_key_source(self):
+        source = EnvSource(prefix="APP", nested_sep="__")
 
         ctx = build_error_ctx(source, "MyConfig")
 
-        assert ctx.split_symbols == "__"
+        assert ctx.source is source
 
 
 class TestGetAllowedFields:
@@ -198,8 +196,8 @@ class TestGetAllowedFields:
 
 
 class TestApplySkipInvalid:
-    @pytest.mark.parametrize("skip_if_invalid", [False, None], ids=["false", "none"])
-    def test_falsy_returns_raw_unchanged(self, tmp_path: Path, skip_if_invalid):
+    @pytest.mark.parametrize("skip_field_if_invalid", [False, None], ids=["false", "none"])
+    def test_falsy_returns_raw_unchanged(self, tmp_path: Path, skip_field_if_invalid):
         json_file = tmp_path / "config.json"
         json_file.write_text("{}")
 
@@ -212,7 +210,7 @@ class TestApplySkipInvalid:
 
         result = apply_skip_invalid(
             raw=raw,
-            skip_if_invalid=skip_if_invalid,
+            skip_field_if_invalid=skip_field_if_invalid,
             source=source,
             schema=Cfg,
             log_prefix="[test]",

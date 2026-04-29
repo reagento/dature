@@ -53,21 +53,23 @@ nav:
   - Getting Started:
     - Home: index.md
     - Introduction: introduction.md
+    - Loading: loading.md
     - Supported Types: supported_types.md
   - Features:
     - Naming: features/naming.md
     - Validation: features/validation.md
     - Merging: features/merging.md
     - Masking: features/masking.md
+    - Configure: features/configure.md
   - Advanced:
     - Merge Rules: advanced/merge-rules.md
     - Field Groups: advanced/field-groups.md
     - Nested Resolve: advanced/nested-resolve.md
     - ENV Expansion: advanced/env-expansion.md
+    - Config Search: advanced/config-search.md
     - Special Types: advanced/special-types.md
     - Debug & Reports: advanced/debug.md
     - Caching: advanced/caching.md
-    - Configure: advanced/configure.md
     - Custom Types & Loaders: advanced/custom_types.md
   - Comparison:
     - vs pydantic-settings: comparison/why-not-pydantic-settings.md
@@ -102,21 +104,23 @@ plugins:
       sections:
         Getting Started:
           - introduction.md
+          - loading.md
           - supported_types.md
         Features:
           - features/naming.md
           - features/validation.md
           - features/merging.md
           - features/masking.md
+          - features/configure.md
         Advanced:
           - advanced/merge-rules.md
           - advanced/field-groups.md
           - advanced/nested-resolve.md
           - advanced/env-expansion.md
+          - advanced/config-search.md
           - advanced/special-types.md
           - advanced/debug.md
           - advanced/caching.md
-          - advanced/configure.md
           - advanced/custom_types.md
         Comparison:
           - comparison/why-not-pydantic-settings.md

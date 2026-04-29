@@ -3,12 +3,12 @@ from collections.abc import Callable
 from typing import Any, overload
 
 from dature.config import config
-from dature.loading.merge_config import MergeConfig
+from dature.loading.merge_config import MergeConfig, SourceParams
 from dature.loading.multi import merge_load_as_function, merge_make_decorator
 from dature.loading.single import load_as_function, make_decorator
-from dature.merging.strategy import MergeStrategyEnum
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
+from dature.strategies.source import SourceMergeStrategy
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -21,13 +21,15 @@ from dature.types import (
 
 logger = logging.getLogger("dature")
 
+_DEFAULT_STRATEGY: Any = object()
+
 
 @overload
 def load[T](
     *sources: Source,
     schema: type[T],
     debug: bool | None = None,
-    strategy: MergeStrategyName = "last_wins",
+    strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
     skip_broken_sources: bool = False,
@@ -47,7 +49,7 @@ def load(
     schema: None = None,
     cache: bool | None = None,
     debug: bool | None = None,
-    strategy: MergeStrategyName = "last_wins",
+    strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
     skip_broken_sources: bool = False,
@@ -67,7 +69,7 @@ def load(  # noqa: PLR0913
     schema: type[Any] | None = None,
     cache: bool | None = None,
     debug: bool | None = None,
-    strategy: MergeStrategyName = "last_wins",
+    strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
     skip_broken_sources: bool = False,
@@ -85,10 +87,14 @@ def load(  # noqa: PLR0913
     if debug is None:
         debug = config.loading.debug
 
+    user_set_strategy = strategy is not _DEFAULT_STRATEGY
+    if not user_set_strategy:
+        strategy = "last_wins"
+
     _validate_sources(sources)
 
     if len(sources) == 1 and (
-        strategy != "last_wins"
+        user_set_strategy
         or field_merges is not None
         or field_groups != ()
         or skip_broken_sources
@@ -117,6 +123,12 @@ def load(  # noqa: PLR0913
 
     source = sources[0]
 
+    _source_params = SourceParams(
+        expand_env_vars=expand_env_vars,
+        nested_resolve_strategy=nested_resolve_strategy,
+        nested_resolve=nested_resolve,
+    )
+
     if schema is not None:
         return load_as_function(
             source=source,
@@ -124,10 +136,8 @@ def load(  # noqa: PLR0913
             debug=debug,
             secret_field_names=secret_field_names,
             mask_secrets=mask_secrets,
-            expand_env_vars=expand_env_vars,
+            source_params=_source_params,
             type_loaders=type_loaders,
-            nested_resolve_strategy=nested_resolve_strategy,
-            nested_resolve=nested_resolve,
         )
 
     return make_decorator(
@@ -136,10 +146,8 @@ def load(  # noqa: PLR0913
         debug=debug,
         secret_field_names=secret_field_names,
         mask_secrets=mask_secrets,
-        expand_env_vars=expand_env_vars,
+        source_params=_source_params,
         type_loaders=type_loaders,
-        nested_resolve_strategy=nested_resolve_strategy,
-        nested_resolve=nested_resolve,
     )
 
 
@@ -160,7 +168,7 @@ def _load_multi(  # noqa: PLR0913
     schema: type[DataclassInstance] | None,
     cache: bool,
     debug: bool,
-    strategy: MergeStrategyName,
+    strategy: MergeStrategyName | SourceMergeStrategy,
     field_merges: FieldMergeMap | None,
     field_groups: tuple[FieldGroupTuple, ...],
     skip_broken_sources: bool,
@@ -174,17 +182,19 @@ def _load_multi(  # noqa: PLR0913
 ) -> DataclassInstance | Callable[[type[DataclassInstance]], type[DataclassInstance]]:
     merge_meta = MergeConfig(
         sources=sources,
-        strategy=MergeStrategyEnum(strategy),
+        source_params=SourceParams(
+            expand_env_vars=expand_env_vars,
+            nested_resolve_strategy=nested_resolve_strategy,
+            nested_resolve=nested_resolve,
+        ),
+        strategy=strategy,
         field_merges=field_merges,
         field_groups=field_groups,
         skip_broken_sources=skip_broken_sources,
         skip_invalid_fields=skip_invalid_fields,
-        expand_env_vars=expand_env_vars or "default",
         secret_field_names=secret_field_names,
         mask_secrets=mask_secrets,
         type_loaders=type_loaders,
-        nested_resolve_strategy=nested_resolve_strategy,
-        nested_resolve=nested_resolve,
     )
     if schema is not None:
         return merge_load_as_function(merge_meta, schema, debug=debug)

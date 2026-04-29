@@ -1,0 +1,1 @@
+``EnvFileSource`` now honors ``search_system_paths`` and ``system_config_dirs`` (previously the system-path search was bypassed for ``.env`` files).

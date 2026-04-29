@@ -8,10 +8,10 @@ from typing import Annotated
 
 import pytest
 
-from dature import JsonSource, get_load_report, load
+from dature import JsonSource, V, get_load_report, load
 from dature.errors import DatureConfigError
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry
-from dature.validators.number import Ge
+from dature.strategies.source import SourceFirstWins, SourceLastWins
 
 
 class TestGetLoadReportMergeFunction:
@@ -36,42 +36,40 @@ class TestGetLoadReportMergeFunction:
 
         report = get_load_report(result)
 
-        expected = LoadReport(
-            dataclass_name="Config",
-            strategy="last_wins",
-            sources=(
-                SourceEntry(
-                    index=0,
-                    file_path=str(defaults),
-                    loader_type="json",
-                    raw_data={"host": "localhost", "port": 3000},
-                ),
-                SourceEntry(
-                    index=1,
-                    file_path=str(overrides),
-                    loader_type="json",
-                    raw_data={"port": 8080},
-                ),
+        assert report is not None
+        assert report.dataclass_name == "Config"
+        assert isinstance(report.strategy, SourceLastWins)
+        assert report.sources == (
+            SourceEntry(
+                index=0,
+                file_path=str(defaults),
+                loader_type="json",
+                raw_data={"host": "localhost", "port": 3000},
             ),
-            field_origins=(
-                FieldOrigin(
-                    key="host",
-                    value="localhost",
-                    source_index=0,
-                    source_file=str(defaults),
-                    source_loader_type="json",
-                ),
-                FieldOrigin(
-                    key="port",
-                    value=8080,
-                    source_index=1,
-                    source_file=str(overrides),
-                    source_loader_type="json",
-                ),
+            SourceEntry(
+                index=1,
+                file_path=str(overrides),
+                loader_type="json",
+                raw_data={"port": 8080},
             ),
-            merged_data={"host": "localhost", "port": 8080},
         )
-        assert expected == report
+        assert report.field_origins == (
+            FieldOrigin(
+                key="host",
+                value="localhost",
+                source_index=0,
+                source_file=str(defaults),
+                source_loader_type="json",
+            ),
+            FieldOrigin(
+                key="port",
+                value=8080,
+                source_index=1,
+                source_file=str(overrides),
+                source_loader_type="json",
+            ),
+        )
+        assert report.merged_data == {"host": "localhost", "port": 8080}
 
     def test_first_wins(self, tmp_path: Path):
         first = tmp_path / "first.json"
@@ -95,42 +93,40 @@ class TestGetLoadReportMergeFunction:
 
         report = get_load_report(result)
 
-        expected = LoadReport(
-            dataclass_name="Config",
-            strategy="first_wins",
-            sources=(
-                SourceEntry(
-                    index=0,
-                    file_path=str(first),
-                    loader_type="json",
-                    raw_data={"host": "first-host", "port": 1000},
-                ),
-                SourceEntry(
-                    index=1,
-                    file_path=str(second),
-                    loader_type="json",
-                    raw_data={"host": "second-host", "port": 2000},
-                ),
+        assert report is not None
+        assert report.dataclass_name == "Config"
+        assert isinstance(report.strategy, SourceFirstWins)
+        assert report.sources == (
+            SourceEntry(
+                index=0,
+                file_path=str(first),
+                loader_type="json",
+                raw_data={"host": "first-host", "port": 1000},
             ),
-            field_origins=(
-                FieldOrigin(
-                    key="host",
-                    value="second-host",
-                    source_index=0,
-                    source_file=str(first),
-                    source_loader_type="json",
-                ),
-                FieldOrigin(
-                    key="port",
-                    value=2000,
-                    source_index=0,
-                    source_file=str(first),
-                    source_loader_type="json",
-                ),
+            SourceEntry(
+                index=1,
+                file_path=str(second),
+                loader_type="json",
+                raw_data={"host": "second-host", "port": 2000},
             ),
-            merged_data={"host": "first-host", "port": 1000},
         )
-        assert expected == report
+        assert report.field_origins == (
+            FieldOrigin(
+                key="host",
+                value="first-host",
+                source_index=0,
+                source_file=str(first),
+                source_loader_type="json",
+            ),
+            FieldOrigin(
+                key="port",
+                value=1000,
+                source_index=0,
+                source_file=str(first),
+                source_loader_type="json",
+            ),
+        )
+        assert report.merged_data == {"host": "first-host", "port": 1000}
 
     def test_nested_field_origins(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -240,7 +236,7 @@ class TestGetLoadReportDecorator:
         config = Config()
         report = get_load_report(config)
         assert report is not None
-        assert report.strategy == "last_wins"
+        assert isinstance(report.strategy, SourceLastWins)
         assert len(report.sources) == 2
 
     def test_single_source_decorator(self, tmp_path: Path):
@@ -317,11 +313,11 @@ class TestDebugLogging:
             " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']",
             f"[Config] Source 0 loaded: loader=json, file={defaults}, keys=['host', 'port']",
             "[Config] Source 0 raw data: {'host': 'localhost', 'port': 3000}",
+            "[Config] Merge step 0 (strategy=last_wins): added=['host', 'port'], overwritten=[]",
+            "[Config] State after step 0: {'host': 'localhost', 'port': 3000}",
             f"[JsonSource] load_raw: source={overrides}, raw_keys=['port'], after_preprocessing_keys=['port']",
             f"[Config] Source 1 loaded: loader=json, file={overrides}, keys=['port']",
             "[Config] Source 1 raw data: {'port': 8080}",
-            "[Config] Merge step 0 (strategy=last_wins): added=['host', 'port'], overwritten=[]",
-            "[Config] State after step 0: {'host': 'localhost', 'port': 3000}",
             "[Config] Merge step 1 (strategy=last_wins): added=[], overwritten=['port']",
             "[Config] State after step 1: {'host': 'localhost', 'port': 8080}",
             "[Config] Merged result (strategy=last_wins, 2 sources): {'host': 'localhost', 'port': 8080}",
@@ -374,25 +370,24 @@ class TestLoadReportOnError:
                 debug=True,
             )
 
-        expected = LoadReport(
-            dataclass_name="Config",
-            strategy="last_wins",
-            sources=(
-                SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"host": "localhost"}),
-                SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "override"}),
-            ),
-            field_origins=(
-                FieldOrigin(
-                    key="host",
-                    value="override",
-                    source_index=1,
-                    source_file=str(b),
-                    source_loader_type="json",
-                ),
-            ),
-            merged_data={"host": "override"},
+        report = get_load_report(Config)
+        assert report is not None
+        assert report.dataclass_name == "Config"
+        assert isinstance(report.strategy, SourceLastWins)
+        assert report.sources == (
+            SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"host": "localhost"}),
+            SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "override"}),
         )
-        assert expected == get_load_report(Config)
+        assert report.field_origins == (
+            FieldOrigin(
+                key="host",
+                value="override",
+                source_index=1,
+                source_file=str(b),
+                source_loader_type="json",
+            ),
+        )
+        assert report.merged_data == {"host": "override"}
 
     def test_merge_validation_error(self, tmp_path: Path):
         a = tmp_path / "a.json"
@@ -404,7 +399,7 @@ class TestLoadReportOnError:
         @dataclass
         class Config:
             host: str
-            port: Annotated[int, Ge(0)]
+            port: Annotated[int, V >= 0]
 
         with pytest.raises(DatureConfigError):
             load(
@@ -414,26 +409,25 @@ class TestLoadReportOnError:
                 debug=True,
             )
 
-        expected = LoadReport(
-            dataclass_name="Config",
-            strategy="last_wins",
-            sources=(
-                SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"port": -5}),
-                SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "localhost"}),
-            ),
-            field_origins=(
-                FieldOrigin(
-                    key="host",
-                    value="localhost",
-                    source_index=1,
-                    source_file=str(b),
-                    source_loader_type="json",
-                ),
-                FieldOrigin(key="port", value=-5, source_index=0, source_file=str(a), source_loader_type="json"),
-            ),
-            merged_data={"host": "localhost", "port": -5},
+        report = get_load_report(Config)
+        assert report is not None
+        assert report.dataclass_name == "Config"
+        assert isinstance(report.strategy, SourceLastWins)
+        assert report.sources == (
+            SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"port": -5}),
+            SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "localhost"}),
         )
-        assert expected == get_load_report(Config)
+        assert report.field_origins == (
+            FieldOrigin(
+                key="host",
+                value="localhost",
+                source_index=1,
+                source_file=str(b),
+                source_loader_type="json",
+            ),
+            FieldOrigin(key="port", value=-5, source_index=0, source_file=str(a), source_loader_type="json"),
+        )
+        assert report.merged_data == {"host": "localhost", "port": -5}
 
     def test_single_source_missing_field(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -472,7 +466,7 @@ class TestLoadReportOnError:
 
         @dataclass
         class Config:
-            port: Annotated[int, Ge(0)]
+            port: Annotated[int, V >= 0]
 
         with pytest.raises(DatureConfigError):
             load(JsonSource(file=json_file), schema=Config, debug=True)

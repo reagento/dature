@@ -1,5 +1,5 @@
 import types
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from io import BufferedIOBase, RawIOBase, TextIOBase
 from pathlib import Path
@@ -8,7 +8,7 @@ from urllib.parse import ParseResult
 
 if TYPE_CHECKING:
     from dature.field_path import FieldPath
-    from dature.protocols import ValidatorProtocol
+    from dature.validators.predicate import Predicate
 
 type JSONValue = dict[str, JSONValue] | list[JSONValue] | str | int | float | bool | None
 
@@ -68,15 +68,17 @@ type Base64UrlStr = str
 
 type ExpandEnvVarsMode = Literal["disabled", "default", "empty", "strict"]
 
+type SystemConfigDirsEntry = Path | str
+type SystemConfigDirsList = Iterable[SystemConfigDirsEntry]
+type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsList]
+
 type NestedResolveStrategy = Literal["flat", "json"]
 # Values are FieldPath at runtime, but F[Type] returns the dataclass type itself
 # due to the overload trick for IDE autocompletion, so we accept Any here.
 type _NestedResolveValue = "tuple[FieldPath | Any, ...]"
 type NestedResolve = dict[NestedResolveStrategy, _NestedResolveValue]
 
-type FieldValidators = dict[FieldRef, "ValidatorProtocol | tuple[ValidatorProtocol, ...]"]
-
-type FieldMergeCallable = Callable[[list[JSONValue]], JSONValue]
+type FieldValidators = dict[FieldRef, "Predicate | tuple[Predicate, ...]"]
 
 type MergeStrategyName = Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]
 type FieldMergeStrategyName = Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]

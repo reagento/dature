@@ -3,8 +3,7 @@
 from dataclasses import dataclass
 
 import dature
-from dature.validators.number import Gt
-from dature.validators.string import MinLength
+from dature import V
 
 
 @dataclass
@@ -20,7 +19,7 @@ class Config:
 
 # --8<-- [start:nested]
 validators = {
-    dature.F[Config].database.host: MinLength(1),
-    dature.F[Config].database.port: Gt(0),
+    dature.F[Config].database.host: V.len() >= 1,
+    dature.F[Config].database.port: V > 0,
 }
 # --8<-- [end:nested]

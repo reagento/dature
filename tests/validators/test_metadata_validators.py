@@ -4,12 +4,9 @@ from typing import Annotated
 
 import pytest
 
-from dature import JsonSource, load
+from dature import JsonSource, V, load
 from dature.errors import DatureConfigError
 from dature.field_path import F
-from dature.validators.number import Ge, Gt, Lt
-from dature.validators.root import RootValidator
-from dature.validators.string import MaxLength, MinLength
 
 
 class TestMetadataValidatorsSuccess:
@@ -24,7 +21,7 @@ class TestMetadataValidatorsSuccess:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MinLength(3),
+                F[Config].name: V.len() >= 3,
             },
         )
         result = load(metadata, schema=Config)
@@ -42,7 +39,7 @@ class TestMetadataValidatorsSuccess:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].port: (Gt(0), Lt(65536)),
+                F[Config].port: (V > 0, V < 65536),
             },
         )
         result = load(metadata, schema=Config)
@@ -61,8 +58,8 @@ class TestMetadataValidatorsSuccess:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MinLength(3),
-                F[Config].port: Gt(0),
+                F[Config].name: V.len() >= 3,
+                F[Config].port: V > 0,
             },
         )
         result = load(metadata, schema=Config)
@@ -84,7 +81,7 @@ class TestMetadataValidatorsFailure:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MinLength(3),
+                F[Config].name: V.len() >= 3,
             },
         )
 
@@ -95,9 +92,9 @@ class TestMetadataValidatorsFailure:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [name]  Value must have at least 3 characters\n"
+            "  [name]  Value length must be greater than or equal to 3\n"
             f"   ├── {content}\n"
-            f"   │             ^^\n"
+            "   │             ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -113,7 +110,7 @@ class TestMetadataValidatorsFailure:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].port: (Gt(0), Lt(65536)),
+                F[Config].port: (V > 0, V < 65536),
             },
         )
 
@@ -124,9 +121,9 @@ class TestMetadataValidatorsFailure:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [port]  Value must be greater than 0\n"
+            "  [port]  Value must be greater than 0\n"
             f"   ├── {content}\n"
-            f"   │            ^^\n"
+            "   │            ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -148,8 +145,8 @@ class TestMetadataValidatorsNested:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].database.host: MinLength(1),
-                F[Config].database.port: Gt(0),
+                F[Config].database.host: V.len() >= 1,
+                F[Config].database.port: V > 0,
             },
         )
         result = load(metadata, schema=Config)
@@ -174,7 +171,7 @@ class TestMetadataValidatorsNested:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].database.host: MinLength(1),
+                F[Config].database.host: V.len() >= 1,
             },
         )
 
@@ -185,7 +182,7 @@ class TestMetadataValidatorsNested:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            "  [database.host]  Value must have at least 1 characters\n"
+            "  [database.host]  Value length must be greater than or equal to 1\n"
             f"   ├── {content}\n"
             "   │                         ^^\n"
             f"   └── FILE '{json_file}', line 1"
@@ -196,7 +193,7 @@ class TestMetadataValidatorsComplement:
     def test_metadata_validators_complement_annotated(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(3)]
+            name: Annotated[str, V.len() >= 3]
             port: int
 
         json_file = tmp_path / "config.json"
@@ -205,8 +202,8 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(50),
-                F[Config].port: Gt(0),
+                F[Config].name: V.len() <= 50,
+                F[Config].port: V > 0,
             },
         )
         result = load(metadata, schema=Config)
@@ -217,7 +214,7 @@ class TestMetadataValidatorsComplement:
     def test_annotated_still_validates(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(5)]
+            name: Annotated[str, V.len() >= 5]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "Al"}'
@@ -226,7 +223,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(50),
+                F[Config].name: V.len() <= 50,
             },
         )
 
@@ -237,16 +234,16 @@ class TestMetadataValidatorsComplement:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [name]  Value must have at least 5 characters\n"
+            "  [name]  Value length must be greater than or equal to 5\n"
             f"   ├── {content}\n"
-            f"   │             ^^\n"
+            "   │             ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
     def test_metadata_validator_fails_with_annotated_present(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(3)]
+            name: Annotated[str, V.len() >= 3]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "This is a very long name that exceeds the limit"}'
@@ -255,7 +252,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(10),
+                F[Config].name: V.len() <= 10,
             },
         )
 
@@ -266,16 +263,16 @@ class TestMetadataValidatorsComplement:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [name]  Value must have at most 10 characters\n"
+            "  [name]  Value length must be less than or equal to 10\n"
             f"   ├── {content}\n"
-            f"   │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            "   │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
     def test_both_annotated_and_metadata_on_same_field_pass(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(3)]
+            name: Annotated[str, V.len() >= 3]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "Alice"}')
@@ -283,7 +280,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(10),
+                F[Config].name: V.len() <= 10,
             },
         )
         result = load(metadata, schema=Config)
@@ -293,7 +290,7 @@ class TestMetadataValidatorsComplement:
     def test_annotated_fails_while_metadata_would_pass(self, tmp_path: Path):
         @dataclass
         class Config:
-            name: Annotated[str, MinLength(5)]
+            name: Annotated[str, V.len() >= 5]
 
         json_file = tmp_path / "config.json"
         content = '{"name": "AB"}'
@@ -302,7 +299,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MaxLength(50),
+                F[Config].name: V.len() <= 50,
             },
         )
 
@@ -313,16 +310,16 @@ class TestMetadataValidatorsComplement:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [name]  Value must have at least 5 characters\n"
+            "  [name]  Value length must be greater than or equal to 5\n"
             f"   ├── {content}\n"
-            f"   │             ^^\n"
+            "   │             ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
     def test_same_validator_type_in_annotated_and_metadata(self, tmp_path: Path):
         @dataclass
         class Config:
-            port: Annotated[int, Ge(0)]
+            port: Annotated[int, V >= 0]
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 8080}')
@@ -330,7 +327,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].port: Lt(65536),
+                F[Config].port: V < 65536,
             },
         )
         result = load(metadata, schema=Config)
@@ -340,7 +337,7 @@ class TestMetadataValidatorsComplement:
     def test_same_validator_type_in_annotated_and_metadata_fails(self, tmp_path: Path):
         @dataclass
         class Config:
-            port: Annotated[int, Ge(1024)]
+            port: Annotated[int, V >= 1024]
 
         json_file = tmp_path / "config.json"
         content = '{"port": 80}'
@@ -349,7 +346,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].port: Lt(65536),
+                F[Config].port: V < 65536,
             },
         )
 
@@ -362,14 +359,14 @@ class TestMetadataValidatorsComplement:
         assert str(e.exceptions[0]) == (
             "  [port]  Value must be greater than or equal to 1024\n"
             f"   ├── {content}\n"
-            f"   │            ^^\n"
+            "   │            ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
     def test_metadata_fails_while_annotated_passes(self, tmp_path: Path):
         @dataclass
         class Config:
-            port: Annotated[int, Ge(0)]
+            port: Annotated[int, V >= 0]
 
         json_file = tmp_path / "config.json"
         content = '{"port": 70000}'
@@ -378,7 +375,7 @@ class TestMetadataValidatorsComplement:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].port: Lt(65536),
+                F[Config].port: V < 65536,
             },
         )
 
@@ -389,9 +386,9 @@ class TestMetadataValidatorsComplement:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [port]  Value must be less than 65536\n"
+            "  [port]  Value must be less than 65536\n"
             f"   ├── {content}\n"
-            f"   │            ^^^^^\n"
+            "   │            ^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -428,9 +425,9 @@ class TestMetadataValidatorsWithRootValidators:
 
         metadata = JsonSource(
             file=json_file,
-            root_validators=(RootValidator(validate_config),),
+            root_validators=(V.root(validate_config),),
             validators={
-                F[Config].port: Ge(0),
+                F[Config].port: V >= 0,
             },
         )
         result = load(metadata, schema=Config)
@@ -452,8 +449,8 @@ class TestMetadataValidatorsDecorator:
         metadata = JsonSource(
             file=json_file,
             validators={
-                F[Config].name: MinLength(2),
-                F[Config].age: Ge(0),
+                F[Config].name: V.len() >= 2,
+                F[Config].age: V >= 0,
             },
         )
 

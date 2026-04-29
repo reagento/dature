@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from dature import EnvFileSource, EnvSource, JsonSource, Toml11Source
 from dature.errors import LineRange
 from dature.errors.location import ErrorContext, resolve_source_location
@@ -9,10 +7,7 @@ class TestResolveSourceLocation:
     def test_env_source(self):
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=EnvSource,
-            file_path=None,
-            prefix="APP_",
-            split_symbols="__",
+            source=EnvSource(prefix="APP_"),
         )
         locs = resolve_source_location(["database", "port"], ctx, file_content=None)
         assert len(locs) == 1
@@ -20,13 +15,37 @@ class TestResolveSourceLocation:
         assert locs[0].env_var_name == "APP_DATABASE__PORT"
         assert locs[0].file_path is None
 
+    def test_env_source_shows_value(self, monkeypatch):
+        monkeypatch.setenv("APP_PORT", "abc")
+        ctx = ErrorContext(
+            dataclass_name="Config",
+            source=EnvSource(prefix="APP_"),
+        )
+        locs = resolve_source_location(["port"], ctx, file_content=None)
+        assert locs[0].env_var_value == "abc"
+
+    def test_env_source_no_value_when_unset(self):
+        ctx = ErrorContext(
+            dataclass_name="Config",
+            source=EnvSource(prefix="APP_"),
+        )
+        locs = resolve_source_location(["port"], ctx, file_content=None)
+        assert locs[0].env_var_value is None
+
+    def test_env_source_secret_drops_value(self, monkeypatch):
+        monkeypatch.setenv("APP_TOKEN", "hunter2")
+        ctx = ErrorContext(
+            dataclass_name="Config",
+            source=EnvSource(prefix="APP_"),
+            secret_paths=frozenset({"token"}),
+        )
+        locs = resolve_source_location(["token"], ctx, file_content=None)
+        assert locs[0].env_var_value is None
+
     def test_env_source_no_prefix(self):
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=EnvSource,
-            file_path=None,
-            prefix=None,
-            split_symbols="__",
+            source=EnvSource(),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=None)
         assert locs[0].env_var_name == "TIMEOUT"
@@ -34,10 +53,7 @@ class TestResolveSourceLocation:
     def test_env_source_custom_split_symbols(self):
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=EnvSource,
-            file_path=None,
-            prefix="APP_",
-            split_symbols="_",
+            source=EnvSource(prefix="APP_", nested_sep="_"),
         )
         locs = resolve_source_location(["database", "port"], ctx, file_content=None)
         assert locs[0].env_var_name == "APP_DATABASE_PORT"
@@ -46,10 +62,7 @@ class TestResolveSourceLocation:
         content = '{\n  "timeout": "30",\n  "name": "test"\n}'
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=JsonSource,
-            file_path=Path("config.json"),
-            prefix=None,
-            split_symbols="__",
+            source=JsonSource(file="config.json"),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].location_label == "FILE"
@@ -60,10 +73,7 @@ class TestResolveSourceLocation:
         content = 'timeout = "30"\nname = "test"'
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=Toml11Source,
-            file_path=Path("config.toml"),
-            prefix=None,
-            split_symbols="__",
+            source=Toml11Source(file="config.toml"),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].location_label == "FILE"
@@ -74,10 +84,7 @@ class TestResolveSourceLocation:
         content = "# comment\nAPP_TIMEOUT=30\nAPP_NAME=test"
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=EnvFileSource,
-            file_path=Path(".env"),
-            prefix="APP_",
-            split_symbols="__",
+            source=EnvFileSource(file="dummy.env", prefix="APP_"),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].location_label == "ENV FILE"
@@ -89,10 +96,7 @@ class TestResolveSourceLocation:
         content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=JsonSource,
-            file_path=Path("config.json"),
-            prefix=None,
-            split_symbols="__",
+            source=JsonSource(file="config.json"),
             secret_paths=frozenset({"password"}),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
@@ -102,10 +106,7 @@ class TestResolveSourceLocation:
         content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=JsonSource,
-            file_path=Path("config.json"),
-            prefix=None,
-            split_symbols="__",
+            source=JsonSource(file="config.json"),
             secret_paths=frozenset({"password"}),
         )
         locs = resolve_source_location(["password"], ctx, file_content=content)
@@ -115,10 +116,7 @@ class TestResolveSourceLocation:
         content = '{"password": "secret123", "timeout": "30"}'
         ctx = ErrorContext(
             dataclass_name="Config",
-            source_class=JsonSource,
-            file_path=Path("config.json"),
-            prefix=None,
-            split_symbols="__",
+            source=JsonSource(file="config.json"),
             secret_paths=frozenset({"password"}),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)

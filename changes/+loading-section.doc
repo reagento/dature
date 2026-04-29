@@ -1,0 +1,1 @@
+Added a new "Loading" page to the Getting Started section that walks through common load-time errors (missing file, malformed source, type mismatch, missing required field, multiple errors) with their actual stderr output, plus a `skip_if_broken` recovery example.

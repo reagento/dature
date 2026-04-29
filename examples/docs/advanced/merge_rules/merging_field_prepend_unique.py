@@ -1,4 +1,4 @@
-"""Per-field merge — PREPEND_UNIQUE puts override before base, removing duplicates."""
+"""Per-field merge — PREPEND_UNIQUE prepends override, drops duplicates."""
 
 from dataclasses import dataclass
 from pathlib import Path

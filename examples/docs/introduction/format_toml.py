@@ -15,7 +15,10 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Toml11Source(file=SOURCES_DIR / "intro_app.toml"), schema=Config)
+config = dature.load(
+    dature.Toml11Source(file=SOURCES_DIR / "intro_app.toml"),
+    schema=Config,
+)
 
 assert config.host == "localhost"
 assert config.port == 8080

@@ -53,6 +53,11 @@ class TestConfigure:
                 ("loading", "debug"),
                 True,
             ),
+            (
+                {"loading": {"search_system_paths": False}},
+                ("loading", "search_system_paths"),
+                False,
+            ),
         ],
         ids=[
             "masking-mask",
@@ -60,6 +65,7 @@ class TestConfigure:
             "error_display-max_visible_lines",
             "loading-cache",
             "loading-debug",
+            "loading-search_system_paths",
         ],
     )
     def test_configure_overrides(

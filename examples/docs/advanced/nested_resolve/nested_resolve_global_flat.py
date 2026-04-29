@@ -1,4 +1,4 @@
-"""Global nested_resolve_strategy="flat" (default) — use flat keys, ignore JSON."""
+"""Global nested_resolve_strategy="flat" — use flat keys, ignore JSON."""
 
 import os
 from dataclasses import dataclass

@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dature.errors.exceptions import LineRange, SourceLocation
+from dature.errors.exceptions import CaretSpan, LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
 from dature.path_finders.base import PathFinder
-from dature.types import NestedConflict, NestedConflicts
+from dature.types import JSONValue, NestedConflict, NestedConflicts
 
 if TYPE_CHECKING:
     from dature.sources.base import Source
@@ -15,10 +15,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class ErrorContext:
     dataclass_name: str
-    source_class: "type[Source]"
-    file_path: Path | None
-    prefix: str | None
-    split_symbols: str | None = None
+    source: "Source"
     secret_paths: frozenset[str] = frozenset()
     mask_secrets: bool = False
     nested_conflicts: NestedConflicts | None = None
@@ -78,26 +75,38 @@ def _apply_masking(
     file_content: str | None,
     *,
     is_secret: bool,
+    field_path: list[str],
+    input_value: JSONValue,
 ) -> list[SourceLocation]:
     result: list[SourceLocation] = []
+    field_key = field_path[-1] if field_path else None
     for location in locations:
         should_mask = is_secret
         if (
             not should_mask
             and ctx.secret_paths
             and location.line_range is not None
-            and ctx.source_class.path_finder_class is not None
+            and ctx.source.path_finder_class is not None
             and file_content is not None
         ):
             should_mask = _secret_overlaps_lines(
                 file_content=file_content,
                 line_range=location.line_range,
                 secret_paths=ctx.secret_paths,
-                prefix=ctx.prefix,
-                path_finder_class=ctx.source_class.path_finder_class,
+                prefix=ctx.source.prefix,
+                path_finder_class=ctx.source.path_finder_class,
             )
-        if should_mask and location.line_content is not None:
-            masked_lines = [mask_env_line(line) for line in location.line_content]
+        if should_mask and (location.line_content is not None or location.env_var_value is not None):
+            masked_lines = (
+                [mask_env_line(line) for line in location.line_content] if location.line_content is not None else None
+            )
+            masked_carets: list[CaretSpan] | None = None
+            if masked_lines is not None:
+                masked_carets = ctx.source._compute_line_carets(  # noqa: SLF001
+                    masked_lines,
+                    input_value=input_value,
+                    field_key=field_key,
+                )
             result.append(
                 SourceLocation(
                     location_label=location.location_label,
@@ -105,6 +114,8 @@ def _apply_masking(
                     line_range=location.line_range,
                     line_content=masked_lines,
                     env_var_name=location.env_var_name,
+                    line_carets=masked_carets,
+                    # env_var_value intentionally omitted — drop it when masking
                 ),
             )
         else:
@@ -116,17 +127,24 @@ def resolve_source_location(
     field_path: list[str],
     ctx: ErrorContext,
     file_content: str | None,
+    *,
+    input_value: JSONValue = None,
 ) -> list[SourceLocation]:
     is_secret = ".".join(field_path) in ctx.secret_paths
     conflict = _resolve_conflict(field_path, ctx)
 
-    locations = ctx.source_class.resolve_location(
+    locations = ctx.source.resolve_location(
         field_path=field_path,
-        file_path=ctx.file_path,
         file_content=file_content,
-        prefix=ctx.prefix,
         nested_conflict=conflict,
-        split_symbols=ctx.split_symbols,
+        input_value=input_value,
     )
 
-    return _apply_masking(locations, ctx, file_content, is_secret=is_secret)
+    return _apply_masking(
+        locations,
+        ctx,
+        file_content,
+        is_secret=is_secret,
+        field_path=field_path,
+        input_value=input_value,
+    )

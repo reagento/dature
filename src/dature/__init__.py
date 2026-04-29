@@ -11,6 +11,7 @@ from dature.sources.json5_ import Json5Source
 from dature.sources.json_ import JsonSource
 from dature.sources.toml_ import Toml10Source, Toml11Source
 from dature.sources.yaml_ import Yaml11Source, Yaml12Source
+from dature.validators.v import V
 
 __all__ = [
     "DockerSecretsSource",
@@ -24,6 +25,7 @@ __all__ = [
     "Source",
     "Toml10Source",
     "Toml11Source",
+    "V",
     "Yaml11Source",
     "Yaml12Source",
     "__version__",

@@ -1,10 +1,9 @@
-"""Metadata validators syntax — single validator vs tuple for multiple."""
+"""Metadata validators syntax — single predicate vs tuple vs `&` composition."""
 
 from dataclasses import dataclass
 
 import dature
-from dature.validators.number import Gt, Lt
-from dature.validators.string import MinLength
+from dature import V
 
 
 @dataclass
@@ -15,7 +14,12 @@ class Config:
 
 # --8<-- [start:syntax]
 validators = {
-    dature.F[Config].port: (Gt(0), Lt(65536)),  # tuple for multiple
-    dature.F[Config].host: MinLength(1),  # single, no tuple needed
+    dature.F[Config].port: (V > 0) & (V < 65536),  # composed with & (preferred)
+    dature.F[Config].host: V.len() >= 1,  # single predicate
+}
+
+# alternative: tuple of predicates — equivalent to &
+validators_tuple = {
+    dature.F[Config].port: (V > 0, V < 65536),
 }
 # --8<-- [end:syntax]
