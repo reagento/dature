@@ -1,0 +1,1 @@
+Config(command='create', verbose=True, create=CreateArgs(name='alice'), delete=None)

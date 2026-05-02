@@ -10,12 +10,20 @@ from dature.cli import main
 
 
 @pytest.fixture
-def run_cli(capsys: pytest.CaptureFixture[str]) -> Callable[..., tuple[int, str, str]]:
-    """Invoke ``dature.cli.main`` with given args, return (exit_code, stdout, stderr)."""
+def run_cli(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[..., tuple[int, str, str]]:
+    """Invoke ``dature.cli.main`` with given args, return (exit_code, stdout, stderr).
+
+    ``main()`` reads ``sys.argv`` directly (via ``ArgparseSource``); we
+    override it per call instead of passing argv as an argument.
+    """
 
     def _run(*args: str) -> tuple[int, str, str]:
+        monkeypatch.setattr(sys, "argv", ["dature", *args])
         try:
-            exit_code = main(list(args))
+            exit_code = main()
         except SystemExit as e:
             exit_code = e.code if isinstance(e.code, int) else 0
         captured = capsys.readouterr()

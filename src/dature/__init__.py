@@ -3,7 +3,9 @@ from dature.config import configure
 from dature.field_path import F
 from dature.load_report import get_load_report
 from dature.main import load
+from dature.sources.argparse_ import ArgparseSource
 from dature.sources.base import FileSource, Source
+from dature.sources.cli_base import CliSource
 from dature.sources.docker_secrets import DockerSecretsSource
 from dature.sources.env_ import EnvFileSource, EnvSource
 from dature.sources.ini_ import IniSource
@@ -14,6 +16,8 @@ from dature.sources.yaml_ import Yaml11Source, Yaml12Source
 from dature.validators.v import V
 
 __all__ = [
+    "ArgparseSource",
+    "CliSource",
     "DockerSecretsSource",
     "EnvFileSource",
     "EnvSource",

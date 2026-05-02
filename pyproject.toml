@@ -223,3 +223,9 @@ docs = [
     "cairosvg>=2.7; sys_platform == 'linux'",
     "pymdown-extensions>=10.7",
 ]
+examples = [
+    "click>=8",
+]
+
+[tool.uv]
+default-groups = ["dev", "examples"]

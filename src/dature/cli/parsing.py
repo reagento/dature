@@ -4,10 +4,36 @@ import json
 import re
 import types
 import typing
-from typing import Any, Literal, get_args, get_origin, get_type_hints
+from dataclasses import field, make_dataclass
+from functools import cache
+from typing import Any, Literal, Protocol, get_args, get_origin, get_type_hints
 
 from dature.main import load
+from dature.protocols import DataclassInstance
 from dature.sources.base import Source
+
+
+class CliCommonArgs(DataclassInstance, Protocol):
+    """Fields shared by every dature CLI subcommand."""
+
+    schema: str
+    source: list[str]
+
+
+class CliInspectArgs(CliCommonArgs, Protocol):
+    """Fields accessed on the ``inspect`` subcommand's args dataclass."""
+
+    field: str | None
+    format: str | None
+
+
+class CliArgs(DataclassInstance, Protocol):
+    """Top-level dataclass produced by :func:`derive_cli_schema`."""
+
+    command: Literal["inspect", "validate"]
+    inspect: CliInspectArgs | None
+    validate: CliCommonArgs | None
+
 
 CLI_LOAD_PARAMS: tuple[str, ...] = (
     "strategy",
@@ -113,6 +139,32 @@ def _non_none_args(annotation: Any) -> tuple[Any, ...]:  # noqa: ANN401
     return (resolved,)
 
 
+def _cli_field_type(annotation: Any) -> Any:  # noqa: ANN401
+    """Narrow ``annotation`` to the type argparse will produce on the CLI.
+
+    Mirrors candidate-selection in :func:`add_typed_arg`: returns the first
+    union arm matching one of the supported categories (``bool``, ``Literal``,
+    ``tuple[str, ...]``, ``str``). ``tuple[str, ...]`` is downgraded to
+    ``list[str]`` because argparse ``action="append"`` produces a list and
+    adaptix does not coerce list to tuple.
+    """
+    for raw_cand in _non_none_args(annotation):
+        cand = _resolve_alias(raw_cand)
+        if cand is bool:
+            return bool
+        origin = get_origin(cand)
+        if origin is Literal:
+            return cand
+        if origin is tuple:
+            tuple_args = get_args(cand)
+            if tuple_args and tuple_args[0] is str:
+                return list[str]
+        if cand is str:
+            return str
+    msg = f"Unsupported CLI annotation: {annotation!r}"
+    raise TypeError(msg)
+
+
 def add_typed_arg(parser: argparse.ArgumentParser, name: str, annotation: Any) -> None:  # noqa: ANN401
     """Add an argparse flag inferred from a Python type annotation.
 
@@ -171,14 +223,52 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
     add_load_args(parser)
 
 
-def build_load_kwargs(args: argparse.Namespace) -> dict[str, Any]:
-    """Collect non-``None`` values for ``CLI_LOAD_PARAMS`` from parsed args."""
-    result: dict[str, Any] = {}
+def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
+    """Collect non-``None`` values for ``CLI_LOAD_PARAMS`` from a derived dataclass."""
+    return {name: v for name in CLI_LOAD_PARAMS if (v := getattr(args, name, None)) is not None}
+
+
+@cache
+def derive_cli_schema() -> type:
+    """Build the runtime dataclass schema for the dature CLI.
+
+    Returns a top-level dataclass with a discriminated ``command`` field and
+    nested dataclasses for the ``inspect`` and ``validate`` subcommands. The
+    fields for ``load()`` parameters are derived from :func:`load`'s type
+    hints, so the CLI stays in sync with the public API automatically.
+
+    Cached: the same class is returned on every call so adaptix can reuse its
+    Retort cache for repeated runs (e.g. test suites).
+    """
+    hints = get_type_hints(load)
+    common: list[tuple[str, Any, Any]] = [
+        ("schema", str, field()),
+        ("source", list[str], field()),
+    ]
     for name in CLI_LOAD_PARAMS:
-        value = getattr(args, name, None)
-        if value is not None:
-            result[name] = value
-    return result
+        if name not in hints:
+            msg = f"{name!r} not found in load() signature"
+            raise RuntimeError(msg)
+        cli_type = _cli_field_type(hints[name])
+        common.append((name, cli_type | None, field(default=None)))
+
+    inspect_args = make_dataclass(
+        "InspectArgs",
+        [
+            *common,
+            ("field", str | None, field(default=None)),
+            ("format", Literal["json", "text"] | None, field(default=None)),
+        ],
+    )
+    validate_args = make_dataclass("ValidateArgs", common)
+    return make_dataclass(
+        "CliArgs",
+        [
+            ("command", Literal["inspect", "validate"], field()),
+            ("inspect", inspect_args | None, field(default=None)),
+            ("validate", validate_args | None, field(default=None)),
+        ],
+    )
 
 
 def build_sources(specs: list[str]) -> list[Source]:

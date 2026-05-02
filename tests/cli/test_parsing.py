@@ -2,7 +2,8 @@
 
 import argparse
 import inspect
-from typing import Literal
+from dataclasses import fields, is_dataclass
+from typing import Any, Literal, get_args, get_origin
 
 import pytest
 
@@ -12,8 +13,9 @@ from dature.cli.parsing import (
     add_common_args,
     add_load_args,
     add_typed_arg,
-    build_load_kwargs,
+    build_load_kwargs_from_dataclass,
     build_sources,
+    derive_cli_schema,
     import_attr,
     parse_source_spec,
     parse_value,
@@ -218,17 +220,104 @@ class TestAddLoadArgs:
         assert ns.secret_field_names == ["password", "api_key"]
 
 
-class TestBuildLoadKwargs:
+class TestBuildLoadKwargsFromDataclass:
     def test_drops_none(self):
-        ns = argparse.Namespace(
+        cls = derive_cli_schema()
+        validate_field = next(f for f in fields(cls) if f.name == "validate")
+        validate_args = _strip_optional(validate_field.type)(
+            schema="x:Y",
+            source=["type=dature.EnvSource"],
             strategy="last_wins",
-            skip_broken_sources=None,
-            skip_invalid_fields=None,
-            expand_env_vars=None,
-            secret_field_names=None,
             mask_secrets=True,
         )
-        assert build_load_kwargs(ns) == {"strategy": "last_wins", "mask_secrets": True}
+        assert build_load_kwargs_from_dataclass(validate_args) == {
+            "strategy": "last_wins",
+            "mask_secrets": True,
+        }
+
+    def test_all_none_returns_empty(self):
+        cls = derive_cli_schema()
+        validate_field = next(f for f in fields(cls) if f.name == "validate")
+        validate_args = _strip_optional(validate_field.type)(
+            schema="x:Y",
+            source=["type=dature.EnvSource"],
+        )
+        assert build_load_kwargs_from_dataclass(validate_args) == {}
+
+
+class TestDeriveCliSchema:
+    def test_top_level_fields(self):
+        cls = derive_cli_schema()
+        names = {f.name for f in fields(cls)}
+        assert names == {"command", "inspect", "validate"}
+
+    def test_command_is_literal(self):
+        cls = derive_cli_schema()
+        command_field = next(f for f in fields(cls) if f.name == "command")
+        assert get_origin(command_field.type) is Literal
+        assert set(get_args(command_field.type)) == {"inspect", "validate"}
+
+    def test_cached(self):
+        assert derive_cli_schema() is derive_cli_schema()
+
+    @pytest.mark.parametrize("subcommand", ["inspect", "validate"])
+    def test_subcommand_has_schema_and_source(self, subcommand):
+        cls = derive_cli_schema()
+        sub_field = next(f for f in fields(cls) if f.name == subcommand)
+        sub_cls = _strip_optional(sub_field.type)
+        assert is_dataclass(sub_cls)
+        sub_names = {f.name for f in fields(sub_cls)}
+        assert {"schema", "source"} <= sub_names
+
+    @pytest.mark.parametrize("subcommand", ["inspect", "validate"])
+    def test_subcommand_has_all_load_params(self, subcommand):
+        cls = derive_cli_schema()
+        sub_field = next(f for f in fields(cls) if f.name == subcommand)
+        sub_cls = _strip_optional(sub_field.type)
+        sub_names = {f.name for f in fields(sub_cls)}
+        assert set(CLI_LOAD_PARAMS) <= sub_names
+
+    def test_inspect_has_field_and_format(self):
+        cls = derive_cli_schema()
+        inspect_field = next(f for f in fields(cls) if f.name == "inspect")
+        inspect_cls = _strip_optional(inspect_field.type)
+        names = {f.name for f in fields(inspect_cls)}
+        assert "field" in names
+        assert "format" in names
+
+    def test_validate_has_no_field_or_format(self):
+        cls = derive_cli_schema()
+        validate_field = next(f for f in fields(cls) if f.name == "validate")
+        validate_cls = _strip_optional(validate_field.type)
+        names = {f.name for f in fields(validate_cls)}
+        assert "field" not in names
+        assert "format" not in names
+
+    def test_load_params_optional_with_none_default(self):
+        cls = derive_cli_schema()
+        validate_field = next(f for f in fields(cls) if f.name == "validate")
+        validate_cls = _strip_optional(validate_field.type)
+        for f in fields(validate_cls):
+            if f.name in CLI_LOAD_PARAMS:
+                assert f.default is None, f"{f.name} should default to None"
+                args = get_args(f.type)
+                assert type(None) in args, f"{f.name} should be Optional"
+
+    def test_secret_field_names_is_list_str(self):
+        cls = derive_cli_schema()
+        validate_field = next(f for f in fields(cls) if f.name == "validate")
+        validate_cls = _strip_optional(validate_field.type)
+        f = next(f for f in fields(validate_cls) if f.name == "secret_field_names")
+        non_none = [a for a in get_args(f.type) if a is not type(None)]
+        assert non_none == [list[str]]
+
+
+def _strip_optional(annotation: object) -> Any:
+    """Return the non-None arm of ``T | None`` (or annotation unchanged)."""
+    if get_origin(annotation) is None:
+        return annotation
+    args = [a for a in get_args(annotation) if a is not type(None)]
+    return args[0] if len(args) == 1 else annotation
 
 
 class TestAddCommonArgs:

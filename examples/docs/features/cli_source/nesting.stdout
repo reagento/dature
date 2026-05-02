@@ -1,0 +1,1 @@
+Config(db=Db(host='localhost', port=5432))

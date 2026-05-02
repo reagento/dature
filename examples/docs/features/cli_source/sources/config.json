@@ -1,0 +1,5 @@
+{
+  "host": "from-file",
+  "port": 1111,
+  "debug": false
+}

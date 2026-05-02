@@ -11,8 +11,14 @@ import pytest
 EXAMPLES_DIR = pathlib.Path(__file__).parent.parent / "examples"
 PROJECT_SRC = pathlib.Path(__file__).parent.parent / "src"
 
+# When a .sh file shares stem and parent with a .py file, the .sh is the
+# canonical entry point (it usually invokes the .py with realistic args).
+# Skip the .py from direct execution to avoid double-running with mismatched argv.
+_sh_stems = {p.with_suffix("") for p in EXAMPLES_DIR.rglob("*.sh")}
 example_scripts = sorted(
-    [*EXAMPLES_DIR.rglob("*.py"), *EXAMPLES_DIR.rglob("*.sh")],
+    p
+    for p in (*EXAMPLES_DIR.rglob("*.py"), *EXAMPLES_DIR.rglob("*.sh"))
+    if p.suffix == ".sh" or p.with_suffix("") not in _sh_stems
 )
 
 _IS_POSIX = hasattr(os, "posix_spawn")

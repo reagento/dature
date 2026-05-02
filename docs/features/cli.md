@@ -215,3 +215,7 @@ Per-source overrides for parameters that exist on both `load()` and the [`Source
 ## Limitations
 
 The CLI exposes the common case. [`load()`](../api-reference.md#datureload) parameters that require Python objects — [`field_merges`](../api-reference.md#field-merge-strategies), [`field_groups`](../advanced/field-groups.md), [`type_loaders`](../advanced/custom_types.md), callable [`root_validators`](../api-reference.md#root-validator-daturevalidatorsroot), explicit [`field_mapping`](../features/naming.md) — must be expressed in code. For those, use [`dature.load(...)`](../api-reference.md#datureload) directly. The CLI is intentionally not a substitute for the library.
+
+## Implementation note: dogfooding
+
+The `dature` console script parses its own arguments through [`ArgparseSource`](../api-reference.md#argparsesourceflatkeysource) — the very class users instantiate to feed CLI arguments into their own configurations. The dataclass schema that the CLI loads into is built at runtime from the signature of [`load()`](../api-reference.md#datureload) (via `dataclasses.make_dataclass` over `typing.get_type_hints(load)`), so adding or changing a parameter on `load()` is automatically reflected in the CLI without any hand-written wiring. The CLI is not special code: it is dature using itself.
