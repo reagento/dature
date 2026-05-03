@@ -1,10 +1,10 @@
 Schema: Settings (strategy: —)
 
 Sources:
-  [0] json         sources/config.json
+  [0] json         sources{SEP}config.json
 
 Field origins:
-  db = {"host": "localhost", "port": 5432}   <- [0] sources/config.json
+  db = {"host": "localhost", "port": 5432}   <- [0] sources{SEP}config.json
 
 Merged data:
   {

@@ -4,7 +4,7 @@
   "sources": [
     {
       "index": 0,
-      "file_path": "sources/config.json",
+      "file_path": "sources{SEP}config.json",
       "loader_type": "json",
       "raw_data": {
         "db": {
@@ -22,7 +22,7 @@
         "port": 5432
       },
       "source_index": 0,
-      "source_file": "sources/config.json",
+      "source_file": "sources{SEP}config.json",
       "source_loader_type": "json"
     }
   ],

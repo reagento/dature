@@ -3,5 +3,5 @@
     | dature.errors.exceptions.FieldLoadError:   [db.port]  invalid literal for int() with base 10: 'not_a_number'
     |    ├── {"db": {"host": "localhost", "port": "not_a_number"}}
     |    │                                         ^^^^^^^^^^^^
-    |    └── FILE 'sources/bad.json', line 1
+    |    └── FILE 'sources{SEP}bad.json', line 1
     +------------------------------------

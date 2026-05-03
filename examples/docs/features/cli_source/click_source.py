@@ -4,13 +4,7 @@ click is not a dature dependency; this script exits silently if click isn't
 installed in the current environment.
 """
 
-import importlib.util
 import sys
-
-if importlib.util.find_spec("click") is None:
-    print("click is not installed; skipping click_source.py")
-    sys.exit(0)
-
 from dataclasses import dataclass
 from typing import ClassVar
 
