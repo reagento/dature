@@ -636,7 +636,7 @@ class TestFileFieldMixin:
         [
             ("config.json", "config.json"),
             (Path("config.json"), "config.json"),
-            ("", ""),
+            ("", "."),
             (None, None),
             (StringIO("data"), "<stream>"),
             (BytesIO(b"data"), "<stream>"),
