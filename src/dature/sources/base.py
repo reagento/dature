@@ -357,7 +357,7 @@ class FileFieldMixin:
         if isinstance(file, FILE_LIKE_TYPES):
             return "<stream>"
         if file is not None:
-            return Path(file).as_posix()
+            return str(file)
         return None
 
     @staticmethod
@@ -370,7 +370,7 @@ class FileFieldMixin:
 
     def file_display(self) -> str | None:
         if self._resolved_file_path is not None:
-            return self._resolved_file_path.as_posix()
+            return str(self._resolved_file_path)
         return self.file_field_display(self.file)
 
     def file_path_for_errors(self) -> Path | None:

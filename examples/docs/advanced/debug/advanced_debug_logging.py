@@ -34,8 +34,8 @@ log_lines = [
     line for line in log_stream.getvalue().splitlines() if "[Config]" in line
 ]
 
-defaults = (SHARED_DIR / "common_defaults.yaml").as_posix()
-overrides = (SHARED_DIR / "common_overrides.yaml").as_posix()
+defaults = str(SHARED_DIR / "common_defaults.yaml")
+overrides = str(SHARED_DIR / "common_overrides.yaml")
 
 keys = "['host', 'port', 'tags']"
 defaults_data = "{'host': 'localhost', 'port': 3000, 'tags': ['default']}"

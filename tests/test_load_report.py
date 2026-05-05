@@ -42,13 +42,13 @@ class TestGetLoadReportMergeFunction:
         assert report.sources == (
             SourceEntry(
                 index=0,
-                file_path=defaults.as_posix(),
+                file_path=str(defaults),
                 loader_type="json",
                 raw_data={"host": "localhost", "port": 3000},
             ),
             SourceEntry(
                 index=1,
-                file_path=overrides.as_posix(),
+                file_path=str(overrides),
                 loader_type="json",
                 raw_data={"port": 8080},
             ),
@@ -58,14 +58,14 @@ class TestGetLoadReportMergeFunction:
                 key="host",
                 value="localhost",
                 source_index=0,
-                source_file=defaults.as_posix(),
+                source_file=str(defaults),
                 source_loader_type="json",
             ),
             FieldOrigin(
                 key="port",
                 value=8080,
                 source_index=1,
-                source_file=overrides.as_posix(),
+                source_file=str(overrides),
                 source_loader_type="json",
             ),
         )
@@ -99,13 +99,13 @@ class TestGetLoadReportMergeFunction:
         assert report.sources == (
             SourceEntry(
                 index=0,
-                file_path=first.as_posix(),
+                file_path=str(first),
                 loader_type="json",
                 raw_data={"host": "first-host", "port": 1000},
             ),
             SourceEntry(
                 index=1,
-                file_path=second.as_posix(),
+                file_path=str(second),
                 loader_type="json",
                 raw_data={"host": "second-host", "port": 2000},
             ),
@@ -115,14 +115,14 @@ class TestGetLoadReportMergeFunction:
                 key="host",
                 value="first-host",
                 source_index=0,
-                source_file=first.as_posix(),
+                source_file=str(first),
                 source_loader_type="json",
             ),
             FieldOrigin(
                 key="port",
                 value=1000,
                 source_index=0,
-                source_file=first.as_posix(),
+                source_file=str(first),
                 source_loader_type="json",
             ),
         )
@@ -159,14 +159,14 @@ class TestGetLoadReportMergeFunction:
                 key="database.host",
                 value="prod-host",
                 source_index=1,
-                source_file=overrides.as_posix(),
+                source_file=str(overrides),
                 source_loader_type="json",
             ),
             FieldOrigin(
                 key="database.port",
                 value=5432,
                 source_index=0,
-                source_file=defaults.as_posix(),
+                source_file=str(defaults),
                 source_loader_type="json",
             ),
         )
@@ -193,7 +193,7 @@ class TestGetLoadReportSingleSource:
             sources=(
                 SourceEntry(
                     index=0,
-                    file_path=json_file.as_posix(),
+                    file_path=str(json_file),
                     loader_type="json",
                     raw_data={"name": "test", "port": 8080},
                 ),
@@ -203,14 +203,14 @@ class TestGetLoadReportSingleSource:
                     key="name",
                     value="test",
                     source_index=0,
-                    source_file=json_file.as_posix(),
+                    source_file=str(json_file),
                     source_loader_type="json",
                 ),
                 FieldOrigin(
                     key="port",
                     value=8080,
                     source_index=0,
-                    source_file=json_file.as_posix(),
+                    source_file=str(json_file),
                     source_loader_type="json",
                 ),
             ),
@@ -308,23 +308,21 @@ class TestDebugLogging:
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
 
-        defaults_p = defaults.as_posix()
-        overrides_p = overrides.as_posix()
         expected = [
-            f"[JsonSource] load_raw: source={defaults_p},"
+            f"[JsonSource] load_raw: source={defaults},"
             " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']",
-            f"[Config] Source 0 loaded: loader=json, file={defaults_p}, keys=['host', 'port']",
+            f"[Config] Source 0 loaded: loader=json, file={defaults}, keys=['host', 'port']",
             "[Config] Source 0 raw data: {'host': 'localhost', 'port': 3000}",
             "[Config] Merge step 0 (strategy=last_wins): added=['host', 'port'], overwritten=[]",
             "[Config] State after step 0: {'host': 'localhost', 'port': 3000}",
-            f"[JsonSource] load_raw: source={overrides_p}, raw_keys=['port'], after_preprocessing_keys=['port']",
-            f"[Config] Source 1 loaded: loader=json, file={overrides_p}, keys=['port']",
+            f"[JsonSource] load_raw: source={overrides}, raw_keys=['port'], after_preprocessing_keys=['port']",
+            f"[Config] Source 1 loaded: loader=json, file={overrides}, keys=['port']",
             "[Config] Source 1 raw data: {'port': 8080}",
             "[Config] Merge step 1 (strategy=last_wins): added=[], overwritten=['port']",
             "[Config] State after step 1: {'host': 'localhost', 'port': 8080}",
             "[Config] Merged result (strategy=last_wins, 2 sources): {'host': 'localhost', 'port': 8080}",
-            f"[Config] Field 'host' = 'localhost'  <-- source 0 ({defaults_p})",
-            f"[Config] Field 'port' = 8080  <-- source 1 ({overrides_p})",
+            f"[Config] Field 'host' = 'localhost'  <-- source 0 ({defaults})",
+            f"[Config] Field 'port' = 8080  <-- source 1 ({overrides})",
         ]
         assert expected == messages
 
@@ -343,9 +341,9 @@ class TestDebugLogging:
         messages = [r.message for r in caplog.records if r.name == "dature"]
 
         expected = [
-            f"[JsonSource] load_raw: source={json_file.as_posix()},"
+            f"[JsonSource] load_raw: source={json_file},"
             " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']",
-            f"[Config] Single-source load: loader=json, file={json_file.as_posix()}",
+            f"[Config] Single-source load: loader=json, file={json_file}",
             "[Config] Loaded data: {'host': 'localhost', 'port': 3000}",
         ]
         assert expected == messages
@@ -377,15 +375,15 @@ class TestLoadReportOnError:
         assert report.dataclass_name == "Config"
         assert isinstance(report.strategy, SourceLastWins)
         assert report.sources == (
-            SourceEntry(index=0, file_path=a.as_posix(), loader_type="json", raw_data={"host": "localhost"}),
-            SourceEntry(index=1, file_path=b.as_posix(), loader_type="json", raw_data={"host": "override"}),
+            SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"host": "localhost"}),
+            SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "override"}),
         )
         assert report.field_origins == (
             FieldOrigin(
                 key="host",
                 value="override",
                 source_index=1,
-                source_file=b.as_posix(),
+                source_file=str(b),
                 source_loader_type="json",
             ),
         )
@@ -416,18 +414,18 @@ class TestLoadReportOnError:
         assert report.dataclass_name == "Config"
         assert isinstance(report.strategy, SourceLastWins)
         assert report.sources == (
-            SourceEntry(index=0, file_path=a.as_posix(), loader_type="json", raw_data={"port": -5}),
-            SourceEntry(index=1, file_path=b.as_posix(), loader_type="json", raw_data={"host": "localhost"}),
+            SourceEntry(index=0, file_path=str(a), loader_type="json", raw_data={"port": -5}),
+            SourceEntry(index=1, file_path=str(b), loader_type="json", raw_data={"host": "localhost"}),
         )
         assert report.field_origins == (
             FieldOrigin(
                 key="host",
                 value="localhost",
                 source_index=1,
-                source_file=b.as_posix(),
+                source_file=str(b),
                 source_loader_type="json",
             ),
-            FieldOrigin(key="port", value=-5, source_index=0, source_file=a.as_posix(), source_loader_type="json"),
+            FieldOrigin(key="port", value=-5, source_index=0, source_file=str(a), source_loader_type="json"),
         )
         assert report.merged_data == {"host": "localhost", "port": -5}
 
@@ -447,16 +445,14 @@ class TestLoadReportOnError:
             dataclass_name="Config",
             strategy=None,
             sources=(
-                SourceEntry(
-                    index=0, file_path=json_file.as_posix(), loader_type="json", raw_data={"host": "localhost"}
-                ),
+                SourceEntry(index=0, file_path=str(json_file), loader_type="json", raw_data={"host": "localhost"}),
             ),
             field_origins=(
                 FieldOrigin(
                     key="host",
                     value="localhost",
                     source_index=0,
-                    source_file=json_file.as_posix(),
+                    source_file=str(json_file),
                     source_loader_type="json",
                 ),
             ),
@@ -478,13 +474,13 @@ class TestLoadReportOnError:
         expected = LoadReport(
             dataclass_name="Config",
             strategy=None,
-            sources=(SourceEntry(index=0, file_path=json_file.as_posix(), loader_type="json", raw_data={"port": -1}),),
+            sources=(SourceEntry(index=0, file_path=str(json_file), loader_type="json", raw_data={"port": -1}),),
             field_origins=(
                 FieldOrigin(
                     key="port",
                     value=-1,
                     source_index=0,
-                    source_file=json_file.as_posix(),
+                    source_file=str(json_file),
                     source_loader_type="json",
                 ),
             ),

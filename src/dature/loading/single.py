@@ -243,7 +243,7 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
             report = _build_single_source_report(
                 dataclass_name=ctx.cls.__name__,
                 loader_type=ctx.loader_type,
-                file_path=path.as_posix() if (path := ctx.source.file_path_for_errors()) else ctx.source.display_name(),
+                file_path=str(path) if (path := ctx.source.file_path_for_errors()) else ctx.source.display_name(),
                 raw_data=result_dict,
                 secret_paths=ctx.secret_paths,
             )
@@ -323,7 +323,7 @@ def load_as_function(  # noqa: C901, PLR0913
     report: LoadReport | None = None
     if debug:
         source_path = source.file_path_for_errors()
-        report_file_path = source_path.as_posix() if source_path is not None else source.display_name()
+        report_file_path = str(source_path) if source_path is not None else source.display_name()
         report = _build_single_source_report(
             dataclass_name=schema.__name__,
             loader_type=format_name,

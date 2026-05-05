@@ -636,7 +636,7 @@ class TestFileFieldMixin:
         [
             ("config.json", "config.json"),
             (Path("config.json"), "config.json"),
-            ("", "."),
+            ("", ""),
             (None, None),
             (StringIO("data"), "<stream>"),
             (BytesIO(b"data"), "<stream>"),
@@ -672,7 +672,7 @@ class TestFileFieldMixin:
         config_file.write_text("{}")
 
         src = Src(file=config_file)
-        assert src.file_display() == config_file.as_posix()
+        assert src.file_display() == str(config_file)
 
     def test_file_path_for_errors_with_resolved_path(self, tmp_path: Path):
         @dataclass
