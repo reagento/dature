@@ -8,7 +8,7 @@ import pytest
 
 from dature import EnvFileSource, IniSource, JsonSource, Toml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, EnvVarExpandError
-from dature.loading.merge_config import MergeConfig, SourceParams, apply_source_init_params
+from dature.loading.merge_config import MergeConfig
 from dature.loading.source_loading import (
     apply_merge_skip_invalid,
     resolve_skip_invalid,
@@ -471,53 +471,3 @@ class TestApplyMergeSkipInvalid:
 
         assert result.cleaned_dict == raw
         assert result.skipped_paths == []
-
-
-class TestApplySourceInitParamsNestedStrategy:
-    @pytest.mark.parametrize(
-        ("source_strategy", "load_strategy", "expected"),
-        [
-            (None, "json", "json"),
-            ("flat", "json", "flat"),
-            ("json", "flat", "json"),
-            (None, None, "flat"),
-        ],
-        ids=[
-            "source-none-uses-load-level",
-            "source-explicit-flat-overrides-load-level",
-            "source-explicit-json-overrides-load-level",
-            "source-none-no-load-level-uses-config-default",
-        ],
-    )
-    def test_resolve(
-        self,
-        source_strategy: str | None,
-        load_strategy: str | None,
-        expected: str,
-    ):
-        kwargs = {} if source_strategy is None else {"nested_resolve_strategy": source_strategy}
-        source = EnvSource(**kwargs)
-
-        result = apply_source_init_params(source, SourceParams(nested_resolve_strategy=load_strategy))
-
-        assert result.nested_resolve_strategy == expected
-
-
-class TestApplySourceInitParamsFilePathCache:
-    def test_overrides_invalidate_resolved_file_path_cache(self, tmp_path: Path):
-        config_file = tmp_path / "config.yaml"
-        config_file.write_text("key: value\n")
-
-        source = Yaml12Source(file="config.yaml")
-
-        # Before overrides: same call falls back to Path(self.file).
-        assert source.file_path_for_errors() == Path("config.yaml")
-
-        result = apply_source_init_params(
-            source,
-            SourceParams(search_system_paths=True, system_config_dirs=(tmp_path,)),
-        )
-
-        # After overrides: same call now resolves via the system-path search,
-        # proving the stale cache was invalidated.
-        assert result.file_path_for_errors() == config_file

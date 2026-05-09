@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, cast
 
 from dature.config_paths import find_config
 from dature.errors import CaretSpan, LineRange, SourceLocation
@@ -57,11 +57,11 @@ class Source(abc.ABC):
     skip_if_broken: bool | None = None
     skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
-    # --8<-- [end:load-metadata]
 
     format_name: ClassVar[str]
     location_label: ClassVar[str]
     path_finder_class: ClassVar[type[PathFinder] | None] = None
+    config_group: ClassVar[str | None] = None
 
     retorts: "dict[tuple[type, frozenset[tuple[type, Any]]], Retort]" = field(
         default_factory=dict,
@@ -69,6 +69,7 @@ class Source(abc.ABC):
         repr=False,
     )
 
+    # --8<-- [end:load-metadata]
     def __repr__(self) -> str:
         return self.format_name
 
@@ -83,6 +84,16 @@ class Source(abc.ABC):
 
     def additional_loaders(self) -> "list[Provider]":
         return []
+
+    def _validate(self) -> None:
+        """Hook called by ``apply_source_config_defaults`` after global-config merge.
+
+        Default no-op. Subclasses with ``config_group`` set may override to
+        check post-merge invariants (required fields, mutually exclusive
+        options, etc.) — by the time this runs, all None instance fields
+        have been populated from ``dature.config.<config_group>``.
+        """
+        return
 
     @staticmethod
     def _infer_type(value: str) -> JSONValue:
@@ -562,3 +573,75 @@ class FlatKeySource(Source, abc.ABC):
                     conflicts[top_field] = NestedConflict(flat_var, json_var, value)
             else:
                 result[top_field] = value
+
+
+_NOT_FOUND: Final[object] = object()
+
+
+# --8<-- [start:remote-source]
+@dataclass(kw_only=True, repr=False)
+class RemoteSource(Source, abc.ABC):
+    location_label: ClassVar[str] = "REMOTE"
+
+    _loaded_cache: JSONValue | None = field(default=None, init=False, repr=False)
+    # --8<-- [end:remote-source]
+
+    @abc.abstractmethod
+    def remote_address(self) -> str: ...
+
+    @abc.abstractmethod
+    def _fetch(self) -> JSONValue: ...
+
+    def _load(self) -> JSONValue:
+        result = self._fetch()
+        self._loaded_cache = result
+        return result
+
+    def __repr__(self) -> str:
+        return f"{self.format_name} '{self.remote_address()}'"
+
+    def display_name(self) -> str:
+        return self.remote_address()
+
+    def file_display(self) -> str | None:
+        return self.remote_address()
+
+    def file_path_for_errors(self) -> Path | None:
+        return None
+
+    def _lookup_loaded(self, field_path: list[str]) -> "JSONValue | object":
+        if self._loaded_cache is None:
+            return _NOT_FOUND
+        node: JSONValue = self._loaded_cache
+        for part in field_path:
+            if not isinstance(node, dict) or part not in node:
+                return _NOT_FOUND
+            node = node[part]
+        return node
+
+    def resolve_location(
+        self,
+        *,
+        field_path: list[str],
+        file_content: str | None,  # noqa: ARG002
+        nested_conflict: NestedConflict | None,  # noqa: ARG002
+        input_value: JSONValue = None,  # noqa: ARG002
+    ) -> list[SourceLocation]:
+        addr = self.remote_address()
+        key = ".".join(field_path) if field_path else None
+        line_content = [f"{addr}: {key}"] if key else [addr]
+        if field_path:
+            value = self._lookup_loaded(field_path)
+            if value is not _NOT_FOUND:
+                rendered = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+                line_content = [f"{addr}: {key} = {rendered}"]
+        return [
+            SourceLocation(
+                location_label=self.location_label,
+                file_path=None,
+                line_range=None,
+                line_content=line_content,
+                env_var_name=None,
+                line_carets=None,
+            ),
+        ]

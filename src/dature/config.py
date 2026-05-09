@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast
 
 from dature.types import ExpandEnvVarsMode, NestedResolveStrategy, SystemConfigDirsArg, TypeLoaderMap
 
@@ -76,11 +76,28 @@ class LoadingConfig:
 # --8<-- [end:loading-config]
 
 
+# --8<-- [start:vault-config]
+@dataclass(frozen=True, slots=True)
+class VaultConfig:
+    url: str | None = None
+    token: str | None = None
+    role_id: str | None = None
+    secret_id: str | None = None
+    namespace: str | None = None
+    verify: bool | str = True
+    mount_point: str = "secret"
+    kv_version: Literal[1, 2] = 2
+
+
+# --8<-- [end:vault-config]
+
+
 @dataclass(frozen=True, slots=True)
 class DatureConfig:
     masking: MaskingConfig = MaskingConfig()
     error_display: ErrorDisplayConfig = ErrorDisplayConfig()
     loading: LoadingConfig = LoadingConfig()
+    vault: VaultConfig = VaultConfig()
 
 
 def _load_config() -> DatureConfig:
@@ -129,6 +146,17 @@ class LoadingOptions(TypedDict, total=False):
     system_config_dirs: SystemConfigDirsArg
 
 
+class VaultOptions(TypedDict, total=False):
+    url: str | None
+    token: str | None
+    role_id: str | None
+    secret_id: str | None
+    namespace: str | None
+    verify: bool | str
+    mount_point: str
+    kv_version: Literal[1, 2]
+
+
 class _ConfigProxy:
     _instance: DatureConfig | None = None
     _loading: bool = False
@@ -168,6 +196,10 @@ class _ConfigProxy:
         return self.ensure_loaded().loading
 
     @property
+    def vault(self) -> VaultConfig:
+        return self.ensure_loaded().vault
+
+    @property
     def type_loaders(self) -> TypeLoaderMap:
         return _ConfigProxy._type_loaders
 
@@ -189,6 +221,7 @@ def configure(
     masking: MaskingOptions | None = None,
     error_display: ErrorDisplayOptions | None = None,
     loading: LoadingOptions | None = None,
+    vault: VaultOptions | None = None,
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
@@ -197,12 +230,14 @@ def configure(
     merged_masking = _merge_group(current.masking, masking, MaskingConfig)
     merged_error = _merge_group(current.error_display, error_display, ErrorDisplayConfig)
     merged_loading = _merge_group(current.loading, loading, LoadingConfig)
+    merged_vault = _merge_group(current.vault, vault, VaultConfig)
 
     config.set_instance(
         DatureConfig(
             masking=merged_masking,
             error_display=merged_error,
             loading=merged_loading,
+            vault=merged_vault,
         ),
     )
     if type_loaders is not None:

@@ -63,6 +63,7 @@ nav:
     - Configure: features/configure.md
     - CLI: features/cli.md
     - CLI Source: features/cli_source.md
+    - Remote Source: features/remote_source.md
   - Advanced:
     - Merge Rules: advanced/merge-rules.md
     - Field Groups: advanced/field-groups.md
@@ -116,6 +117,7 @@ plugins:
           - features/configure.md
           - features/cli.md
           - features/cli_source.md
+          - features/remote_source.md
         Advanced:
           - advanced/merge-rules.md
           - advanced/field-groups.md

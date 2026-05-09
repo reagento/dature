@@ -3,7 +3,7 @@
 import builtins
 import sys
 from collections.abc import Callable, Generator
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
@@ -191,13 +191,29 @@ def block_import(_clean_dature_modules: None) -> Callable[[str], AbstractContext
     real_import = builtins.__import__
 
     def _block(module_name: str) -> AbstractContextManager[None]:
-        def _blocker(name: str, *args: object, **kwargs: object) -> object:
-            if name == module_name or name.startswith(module_name + "."):
-                msg = f"No module named '{module_name}'"
-                raise ImportError(msg)
-            return real_import(name, *args, **kwargs)
+        @contextmanager
+        def _ctx() -> Generator[None]:
+            # Drop any cached entry so ``import <module_name>`` actually goes through __import__
+            # — otherwise a previously-imported module short-circuits the block.
+            removed = {
+                key: sys.modules.pop(key)
+                for key in list(sys.modules)
+                if key == module_name or key.startswith(module_name + ".")
+            }
 
-        return patch("builtins.__import__", side_effect=_blocker)  # type: ignore[return-value]
+            def _blocker(name: str, *args: object, **kwargs: object) -> object:
+                if name == module_name or name.startswith(module_name + "."):
+                    msg = f"No module named '{module_name}'"
+                    raise ImportError(msg)
+                return real_import(name, *args, **kwargs)
+
+            with patch("builtins.__import__", side_effect=_blocker):
+                try:
+                    yield
+                finally:
+                    sys.modules.update(removed)
+
+        return _ctx()
 
     return _block
 

@@ -1,0 +1,1 @@
+Add documentation for ``RemoteSource`` and the contract for plugging in custom remote sources, with ``VaultSource`` as a worked example. Examples are runnable end-to-end against a live Vault container in the integration suite.
