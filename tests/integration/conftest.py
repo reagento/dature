@@ -6,10 +6,18 @@ Also converts ``docker.errors.DockerException`` raised at fixture setup into a
 with a working Docker + registry, so this only fires in misconfigured envs.
 """
 
+import os
 from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+
+# Cap testcontainers' container-startup wait at 30s (default 120). Vault dev mode
+# starts in ~3-5s; 30s leaves headroom for image pull on a cold runner. Must be set
+# before ``testcontainers.core.config`` is imported (its dataclass defaults read
+# the env var once at class-body evaluation) — conftest runs before any test file
+# that imports testcontainers, so this is safe here.
+os.environ.setdefault("TC_MAX_TRIES", "30")
 
 _INTEGRATION_ROOT = Path(__file__).parent.resolve()
 

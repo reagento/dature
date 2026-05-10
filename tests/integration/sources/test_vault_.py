@@ -11,7 +11,6 @@ from typing import Final, cast
 
 import hvac
 import pytest
-from testcontainers.vault import VaultContainer
 
 from dature import VaultSource, configure, load
 from dature.errors import SourceLocation
@@ -19,12 +18,6 @@ from dature.errors import SourceLocation
 KV2_PATH: Final = "myapp/config"
 KV1_PATH: Final = "myapp/config"
 KV1_MOUNT: Final = "kv1"
-
-
-@pytest.fixture(scope="module")
-def vault_container():
-    with VaultContainer() as c:
-        yield c
 
 
 @pytest.fixture
