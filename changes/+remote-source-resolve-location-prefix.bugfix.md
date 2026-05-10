@@ -1,1 +1,0 @@
-Fix ``RemoteSource.resolve_location`` ignoring the source's ``prefix``: error messages for prefixed sources (e.g. ``VaultSource(prefix="app", ...)``) used to show only the field key without the rendered value, because ``_lookup_loaded`` was called with the schema-side ``field_path`` directly while ``_loaded_cache`` holds the raw pre-prefix data.

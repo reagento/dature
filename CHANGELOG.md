@@ -1,3 +1,39 @@
+## 0.18.0
+
+### Features
+
+- Add ``dature`` CLI with ``inspect`` (prints the load report) and ``validate`` (exits 0 on success, 1 on validation failure) subcommands. Sources are passed as ``--source type=dature.JsonSource,file=config.json`` (Docker-style key=value, ``\,`` and ``\=`` escape separators in values), and the schema as ``--schema myapp.config:Settings``. Global flags mirror ``load()`` and are generated from its signature.
+
+  Add ``ArgparseSource`` and the abstract ``CliSource`` base — a Source for loading command-line arguments into a dataclass. ``ArgparseSource`` takes a user-built ``argparse.ArgumentParser`` (the parser reads ``sys.argv`` itself; supports any depth of subparsers, mapped to nested fields). Bool flags always feed into the result; non-bool args only when explicitly passed, so CLI safely composes with file/env sources via ``load()``. ``CliSource`` is the extension point for click/typer/custom parsers — implement ``_parse_argv()`` and you're done. ([#84](https://github.com/reagento/dature/issues/84))
+- Add ``RemoteSource`` (abstract base for Sources that fetch from remote services) and the first concrete remote: ``VaultSource`` for HashiCorp Vault. Supports KV v1 and KV v2, token and AppRole authentication, optional Vault Enterprise namespace. Connection settings (url, credentials, mount_point, kv_version) can be set per-instance, via ``dature.configure(vault={...})``, or via ``DATURE_VAULT__*`` env vars; instance-level fields take precedence. Install via ``pip install dature[vault]``. Integration tests requiring a running Vault container are gated behind the ``integration`` pytest marker (excluded from the default ``pytest`` run; run via ``pytest -m integration`` with ``testcontainers[vault]`` installed).
+
+### Bugfixes
+
+- Fix ``LoadReport.sources[*].file_path`` and ``LoadReport.field_origins[*].source_file`` to contain a path string rather than the ``repr()`` of a ``pathlib.Path`` (e.g. ``"PosixPath('...')"``).
+
+  Fix ``dature ... --secret-field-names X`` crashing with ``TypeError: unhashable type: 'list'``. The CLI schema declares ``secret_field_names`` as ``list[str]`` (argparse ``action="append"`` produces a list), but ``load()`` expects ``tuple[str, ...]`` and uses it as part of a dict cache key. ``build_load_kwargs_from_dataclass`` now coerces the list back to a tuple at the load() boundary for any param whose ``load()`` annotation is tuple-shaped.
+
+  Fix ``CliSource`` error messages displaying flag names in upper case (e.g. ``--DB--HOST``). The base ``FlatKeySource`` uppercases via ``_build_var_name`` because that matches env-var convention (``APP_DB_HOST``); ``CliSource`` now overrides ``_build_var_name`` to preserve case, so both ``NestedConflict.used_var`` (built during nested-conflict detection) and the flag name rendered in error messages remain in their original case (``--db--host``).
+
+  ``CliSource`` (and therefore ``ArgparseSource``) now defaults ``expand_env_vars`` to ``"disabled"``. The shell has already expanded ``$VAR`` before values reach Python; re-expanding silently turned quoted literals like ``--password '$ecret'`` into empty strings. Users who want CLI values re-expanded can opt in by passing ``expand_env_vars="default"`` (or ``"empty"`` / ``"strict"``) explicitly.
+
+  Fix mixed path separators on Windows when a ``Path`` is passed to a file-based ``Source`` and contains an ``$ENV_VAR`` whose value uses ``/``. ``Toml11Source(file=Path("$DATURE_DIR") / "config.toml")`` with ``DATURE_DIR=/etc/app`` previously produced ``/etc/app\config.toml``; ``expand_file_path`` now re-normalizes through ``pathlib.Path`` when the input was a ``Path``, yielding ``\etc\app\config.toml`` on Windows and ``/etc/app/config.toml`` on POSIX. ``str`` inputs are still returned verbatim so user-chosen separators are preserved. ([#84](https://github.com/reagento/dature/issues/84))
+- Fix ``RemoteSource.resolve_location`` ignoring the source's ``prefix``: error messages for prefixed sources (e.g. ``VaultSource(prefix="app", ...)``) used to show only the field key without the rendered value, because ``_lookup_loaded`` was called with the schema-side ``field_path`` directly while ``_loaded_cache`` holds the raw pre-prefix data.
+- Fix single-source ``dature.load(source, schema=...)`` (and the ``@load(source)`` decorator) ignoring ``dature.configure(...)`` and ``DATURE_*`` env defaults — only the multi-source path was running ``apply_source_config_defaults``. Notably affects ``VaultSource`` users who relied on global ``vault`` configuration with a single source.
+
+### Docs
+
+- Add documentation for ``RemoteSource`` and the contract for plugging in custom remote sources, with ``VaultSource`` as a worked example. Examples are runnable end-to-end against a live Vault container in the integration suite.
+
+### Refactoring
+
+- ``dature`` CLI now parses its own arguments through ``ArgparseSource``: the schema it loads into is built at runtime from the signature of ``load()`` via ``dataclasses.make_dataclass``, so CLI flags stay in sync with the public API automatically. ``main()`` no longer accepts an ``argv`` parameter — like ``ArgparseSource`` itself, it reads ``sys.argv`` directly. Bool actions registered with ``default=None`` are now suppressed from ``ArgparseSource`` output (treated as "unset", same as non-bool flags), so absence on the CLI falls back to the schema/dataclass default rather than emitting a literal ``None``. ([#84](https://github.com/reagento/dature/issues/84))
+
+### Misc
+
+- Move ``types-hvac`` out of the runtime ``vault`` extra into a new ``type-stubs`` extra so production installs of ``dature[vault]`` no longer pull typing stubs. mypy/pyright users opt in with ``pip install dature[vault,type-stubs]``.
+
+
 ## 0.17.1
 
 ### Bugfixes

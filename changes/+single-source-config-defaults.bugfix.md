@@ -1,1 +1,0 @@
-Fix single-source ``dature.load(source, schema=...)`` (and the ``@load(source)`` decorator) ignoring ``dature.configure(...)`` and ``DATURE_*`` env defaults — only the multi-source path was running ``apply_source_config_defaults``. Notably affects ``VaultSource`` users who relied on global ``vault`` configuration with a single source.
