@@ -21,7 +21,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
 
 @pytest.hookimpl(wrapper=True)
-def pytest_runtest_setup(_: pytest.Item) -> Generator[None]:
+def pytest_runtest_setup(item: pytest.Item) -> Generator[None]:  # noqa: ARG001
     from docker.errors import DockerException  # noqa: PLC0415
 
     try:

@@ -12,7 +12,8 @@ Consul KV, …) by overriding two methods. See
 Install the extra (pulls [hvac](https://github.com/hvac/hvac)):
 
 ```bash
-pip install dature[vault]
+pip install dature[vault]              # runtime only
+pip install dature[vault,type-stubs]   # runtime + mypy/pyright stubs for hvac
 ```
 
 ```python

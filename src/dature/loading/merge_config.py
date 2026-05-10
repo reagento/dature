@@ -68,40 +68,38 @@ def apply_source_init_params[T: Source](source: T, params: SourceParams) -> T:
 
 
 def apply_source_config_defaults[T: Source](source: T) -> T:
-    """Fill None-valued source fields from ``dature.config.<source.config_group>``.
+    """Fill None-valued source fields from ``dature.config.<source.config_group>``,
+    then invoke ``source._validate()`` so post-merge invariants are checked exactly once
+    on the path between source construction and ``load_raw()``.
 
     Sources whose connection/credential params are typically configured globally
     (e.g. ``VaultSource`` → ``config.vault``) opt in via the ClassVar
     ``config_group``. Source-level non-None values always win; this only fills gaps.
-    No-op when ``source.config_group`` is ``None`` (the default).
+    Sources without a ``config_group`` skip the merge step but still run ``_validate()``.
     Order: instance > load-level (apply_source_init_params) > config group (this).
     """
     group_name: str | None = getattr(type(source), "config_group", None)
-    if group_name is None:
-        return source
+    cfg_group = getattr(config, group_name, None) if group_name is not None else None
 
-    cfg_group = getattr(config, group_name, None)
-    if cfg_group is None:
-        return source
+    if cfg_group is not None:
+        source_field_names = {f.name for f in fields(source) if f.init}
+        overrides: dict[str, object] = {}
+        for f in fields(cfg_group):
+            name = f.name
+            if name not in source_field_names:
+                continue
+            if getattr(source, name, None) is not None:
+                continue  # source-level wins
+            cfg_val = getattr(cfg_group, name)
+            if cfg_val is not None:
+                overrides[name] = cfg_val
 
-    source_field_names = {f.name for f in fields(source) if f.init}
-    overrides: dict[str, object] = {}
-    for f in fields(cfg_group):
-        name = f.name
-        if name not in source_field_names:
-            continue
-        if getattr(source, name, None) is not None:
-            continue  # source-level wins
-        cfg_val = getattr(cfg_group, name)
-        if cfg_val is not None:
-            overrides[name] = cfg_val
+        if overrides:
+            source = copy.copy(source)
+            vars(source).update(overrides)
 
-    if not overrides:
-        return source
-
-    new_source = copy.copy(source)
-    vars(new_source).update(overrides)
-    return new_source
+    source._validate()  # noqa: SLF001
+    return source
 
 
 @dataclass(slots=True, kw_only=True)
@@ -118,9 +116,6 @@ class MergeConfig:
     type_loaders: "TypeLoaderMap | None" = None
 
     def __post_init__(self) -> None:
-        prepared: list[Source] = []
-        for s in self.sources:
-            merged = apply_source_config_defaults(apply_source_init_params(s, self.source_params))
-            merged._validate()  # noqa: SLF001
-            prepared.append(merged)
-        self.sources = tuple(prepared)
+        self.sources = tuple(
+            apply_source_config_defaults(apply_source_init_params(s, self.source_params)) for s in self.sources
+        )

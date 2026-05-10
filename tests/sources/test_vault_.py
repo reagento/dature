@@ -68,11 +68,10 @@ class TestVaultSourceValidation:
         ],
     )
     def test_validate_raises_when_invalid(self, kwargs, match):
-        # Validation runs in MergeConfig.__post_init__ after apply_source_config_defaults;
-        # we exercise the same hook directly here (no need to spin up dature.load).
-        merged = apply_source_config_defaults(VaultSource(**kwargs))
+        # apply_source_config_defaults runs _validate() at the end of the merge step;
+        # exercising it directly here saves spinning up dature.load.
         with pytest.raises(ValueError, match=match):
-            merged._validate()
+            apply_source_config_defaults(VaultSource(**kwargs))
 
     @pytest.mark.parametrize(
         ("env_vars", "instance_kwargs"),

@@ -34,11 +34,12 @@ pip install dature
 With optional format support:
 
 ```bash
-pip install dature[yaml]    # YAML (ruamel.yaml)
-pip install dature[json5]   # JSON5
-pip install dature[toml]    # TOML (toml_rs)
-pip install dature[vault]   # HashiCorp Vault (hvac)
-pip install dature[secure]  # Secret detection heuristics
+pip install dature[yaml]       # YAML (ruamel.yaml)
+pip install dature[json5]      # JSON5
+pip install dature[toml]       # TOML (toml_rs)
+pip install dature[vault]      # HashiCorp Vault (hvac)
+pip install dature[secure]     # Secret detection heuristics
+pip install dature[type-stubs] # Type stubs for the integrations above (mypy/pyright users)
 ```
 
 ## Quick Start
