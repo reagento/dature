@@ -16,7 +16,7 @@ def vault_container() -> Generator[VaultContainer]:
         yield c
 
 
-@pytest.fixture
+@pytest.fixture(scope="package")
 def vault_client(vault_container: VaultContainer) -> hvac.Client:
     """Authenticated hvac.Client for the running container."""
     return hvac.Client(url=vault_container.get_connection_url(), token=vault_container.root_token)

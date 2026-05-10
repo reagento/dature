@@ -15,9 +15,19 @@ import pytest
 from dature import VaultSource, configure, load
 from dature.errors import SourceLocation
 
-KV2_PATH: Final = "myapp/config"
-KV1_PATH: Final = "myapp/config"
+KV_PATH: Final = "myapp/config"
 KV1_MOUNT: Final = "kv1"
+EXPECTED_SECRET: Final = {"db_password": "s3cret", "port": "5432", "name": "myapp"}
+
+
+@dataclass
+class _Config:
+    db_password: str
+    port: int
+    name: str
+
+
+EXPECTED_DATACLASS: Final = _Config(db_password="s3cret", port=5432, name="myapp")
 
 
 @pytest.fixture
@@ -31,29 +41,25 @@ def vault_root_token(vault_container) -> str:
 
 
 @pytest.fixture
-def kv2_secret(vault_client):
-    """Write a fixed secret in the default KV v2 mount."""
-    expected = {"db_password": "s3cret", "port": "5432", "name": "myapp"}
-    vault_client.secrets.kv.v2.create_or_update_secret(path=KV2_PATH, secret=expected)
-    return expected
+def _kv2_secret(vault_client):
+    """Write the canonical secret in the default KV v2 mount."""
+    vault_client.secrets.kv.v2.create_or_update_secret(path=KV_PATH, secret=EXPECTED_SECRET)
 
 
 @pytest.fixture
-def kv1_mount(vault_client):
-    """Enable a KV v1 mount at kv1/ and write a secret there."""
+def _kv1_mount(vault_client):
+    """Enable a KV v1 mount at ``KV1_MOUNT`` and write the canonical secret there."""
     with contextlib.suppress(hvac.exceptions.InvalidRequest):
         vault_client.sys.enable_secrets_engine(
             backend_type="kv",
             path=KV1_MOUNT,
             options={"version": "1"},
         )
-    expected = {"db_password": "v1-secret", "port": "5432"}
     vault_client.secrets.kv.v1.create_or_update_secret(
-        path=KV1_PATH,
-        secret=expected,
+        path=KV_PATH,
+        secret=EXPECTED_SECRET,
         mount_point=KV1_MOUNT,
     )
-    return KV1_MOUNT, expected
 
 
 @pytest.fixture
@@ -76,41 +82,35 @@ def approle_creds(vault_client):
 
 @pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceTokenKv2:
-    def test_load_basic(self, vault_url, vault_root_token, kv2_secret):
-        source = VaultSource(url=vault_url, token=vault_root_token, path=KV2_PATH)
-        assert source.load_raw().data == kv2_secret
-
-    @pytest.mark.usefixtures("kv2_secret")
-    def test_load_into_dataclass(self, vault_url, vault_root_token):
-        @dataclass
-        class Config:
-            db_password: str
-            port: int
-            name: str
-
+    @pytest.mark.usefixtures("_kv2_secret")
+    def test_load_basic(self, vault_url, vault_root_token):
         result = load(
-            VaultSource(url=vault_url, token=vault_root_token, path=KV2_PATH),
-            schema=Config,
+            VaultSource(url=vault_url, token=vault_root_token, path=KV_PATH),
+            schema=_Config,
         )
-        assert result == Config(db_password="s3cret", port=5432, name="myapp")
+        assert result == EXPECTED_DATACLASS
 
     def test_path_not_found_raises(self, vault_url, vault_root_token):
-        source = VaultSource(url=vault_url, token=vault_root_token, path="does/not/exist")
         with pytest.raises(KeyError, match="Vault path not found"):
-            source.load_raw()
+            load(
+                VaultSource(url=vault_url, token=vault_root_token, path="does/not/exist"),
+                schema=_Config,
+            )
 
-    @pytest.mark.usefixtures("kv2_secret")
+    @pytest.mark.usefixtures("_kv2_secret")
     def test_invalid_token_raises(self, vault_url):
-        source = VaultSource(url=vault_url, token="bad-token", path=KV2_PATH)
         with pytest.raises((PermissionError, hvac.exceptions.Forbidden, hvac.exceptions.Unauthorized)):
-            source.load_raw()
+            load(
+                VaultSource(url=vault_url, token="bad-token", path=KV_PATH),
+                schema=_Config,
+            )
 
-    @pytest.mark.usefixtures("kv2_secret")
+    @pytest.mark.usefixtures("_kv2_secret")
     def test_resolve_location_renders_real_value(self, vault_url, vault_root_token):
         source = VaultSource(
             url=vault_url,
             token=vault_root_token,
-            path=KV2_PATH,
+            path=KV_PATH,
             mount_point="secret",
             kv_version=2,
         )
@@ -121,65 +121,64 @@ class TestVaultSourceTokenKv2:
                 location_label="VAULT",
                 file_path=None,
                 line_range=None,
-                line_content=[f"{vault_url}/v1/secret/data/{KV2_PATH}: db_password = s3cret"],
+                line_content=[f"{vault_url}/v1/secret/data/{KV_PATH}: db_password = s3cret"],
                 env_var_name=None,
                 line_carets=None,
             ),
         ]
 
 
-@pytest.mark.usefixtures("_reset_config")
+@pytest.mark.usefixtures("_reset_config", "_kv1_mount")
 class TestVaultSourceTokenKv1:
-    def test_load_basic(self, vault_url, vault_root_token, kv1_mount):
-        mount, expected = kv1_mount
-        source = VaultSource(
-            url=vault_url,
-            token=vault_root_token,
-            path=KV1_PATH,
-            mount_point=mount,
-            kv_version=1,
+    def test_load_basic(self, vault_url, vault_root_token):
+        result = load(
+            VaultSource(
+                url=vault_url,
+                token=vault_root_token,
+                path=KV_PATH,
+                mount_point=KV1_MOUNT,
+                kv_version=1,
+            ),
+            schema=_Config,
         )
-        assert source.load_raw().data == expected
+        assert result == EXPECTED_DATACLASS
 
-    def test_path_not_found_raises(self, vault_url, vault_root_token, kv1_mount):
-        mount, _expected = kv1_mount
-        source = VaultSource(
-            url=vault_url,
-            token=vault_root_token,
-            path="does/not/exist",
-            mount_point=mount,
-            kv_version=1,
-        )
+    def test_path_not_found_raises(self, vault_url, vault_root_token):
         with pytest.raises(KeyError, match="Vault path not found"):
-            source.load_raw()
+            load(
+                VaultSource(
+                    url=vault_url,
+                    token=vault_root_token,
+                    path="does/not/exist",
+                    mount_point=KV1_MOUNT,
+                    kv_version=1,
+                ),
+                schema=_Config,
+            )
 
 
-@pytest.mark.usefixtures("_reset_config")
+@pytest.mark.usefixtures("_reset_config", "_kv2_secret")
 class TestVaultSourceAppRole:
-    def test_login_and_read(self, vault_url, approle_creds, kv2_secret):
+    def test_login_and_read(self, vault_url, approle_creds):
         role_id, secret_id = approle_creds
-        source = VaultSource(
-            url=vault_url,
-            role_id=role_id,
-            secret_id=secret_id,
-            path=KV2_PATH,
+        result = load(
+            VaultSource(url=vault_url, role_id=role_id, secret_id=secret_id, path=KV_PATH),
+            schema=_Config,
         )
-        assert source.load_raw().data == kv2_secret
+        assert result == EXPECTED_DATACLASS
 
-    @pytest.mark.usefixtures("kv2_secret")
     def test_invalid_role_id_raises(self, vault_url, approle_creds):
-        _role_id, secret_id = approle_creds
-        source = VaultSource(
-            url=vault_url,
-            role_id="ccd5c5fa-e4be-486f-ba33-125b235d8b34",
-            secret_id=secret_id,
-            path=KV2_PATH,
-        )
+        _, secret_id = approle_creds
         with pytest.raises(Exception):  # noqa: B017, PT011
-            source.load_raw()
+            load(
+                VaultSource(
+                    url=vault_url, role_id="ccd5c5fa-e4be-486f-ba33-125b235d8b34", secret_id=secret_id, path=KV_PATH
+                ),
+                schema=_Config,
+            )
 
 
-@pytest.mark.usefixtures("_reset_config", "kv2_secret")
+@pytest.mark.usefixtures("_reset_config", "_kv2_secret")
 class TestVaultSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
@@ -195,11 +194,5 @@ class TestVaultSourceGlobalConfigEndToEnd:
             monkeypatch.setenv("DATURE_VAULT__URL", vault_url)
             monkeypatch.setenv("DATURE_VAULT__TOKEN", vault_root_token)
 
-        @dataclass
-        class Config:
-            db_password: str
-            port: int
-            name: str
-
-        result = load(VaultSource(path=KV2_PATH), schema=Config)
-        assert result == Config(db_password="s3cret", port=5432, name="myapp")
+        result = load(VaultSource(path=KV_PATH), schema=_Config)
+        assert result == EXPECTED_DATACLASS
