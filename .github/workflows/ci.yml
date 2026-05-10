@@ -131,7 +131,127 @@ jobs:
         run: uv sync --all-extras --dev --upgrade-package adaptix==${{ matrix.adaptix-version }}
 
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples
+
+  examples-tests:
+    needs: [lint]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run examples tests
+        run: uv run pytest tests/examples -v
+
+  get-integration-lib-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      combinations: ${{ steps.compute.outputs.combinations }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install filtering tool
+        run: pip install packaging
+
+      - id: compute
+        shell: python
+        run: |
+          import json, os, sys, tomllib, urllib.request
+          from packaging.requirements import Requirement
+          from packaging.version import Version
+
+          # 1. Read pyproject.toml: which libs to parametrize + each lib's version constraint
+          with open("pyproject.toml", "rb") as f:
+              pyproject = tomllib.load(f)
+          libs = pyproject["tool"]["dature"]["ci"]["integration-test-libs"]
+          extras = pyproject["project"]["optional-dependencies"]
+
+          # 2. For each lib: fetch PyPI, take latest non-yanked stable per major matching the spec
+          per_lib = {}
+          for lib_name, extras_name in libs.items():
+              req_str = next(d for d in extras[extras_name] if Requirement(d).name == lib_name)
+              spec = Requirement(req_str).specifier
+
+              with urllib.request.urlopen(f"https://pypi.org/pypi/{lib_name}/json") as resp:
+                  data = json.loads(resp.read())
+
+              by_major = {}
+              for v_str, files in data["releases"].items():
+                  if not files or any(f.get("yanked") for f in files):
+                      continue
+                  try:
+                      v = Version(v_str)
+                  except Exception:
+                      continue
+                  if v.is_prerelease or v not in spec:
+                      continue
+                  if v.major not in by_major or v > by_major[v.major]:
+                      by_major[v.major] = v
+
+              if not by_major:
+                  sys.exit(f"::error::No versions of {lib_name} match constraint {spec}")
+              per_lib[lib_name] = [str(by_major[m]) for m in sorted(by_major)]
+
+          # 3. Pair via cyclic indexing — i % len(versions). Single-version libs broadcast;
+          # shorter multi-version lists wrap around so every major from the longest list is exercised.
+          max_len = max(len(v) for v in per_lib.values())
+          combinations = []
+          for i in range(max_len):
+              pinned = {lib: versions[i % len(versions)] for lib, versions in per_lib.items()}
+              name = "-".join(f"{lib}{Version(v).major}" for lib, v in pinned.items())
+              flags = " ".join(f"--upgrade-package {lib}=={v}" for lib, v in pinned.items())
+              combinations.append({"name": name, "flags": flags})
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"combinations={json.dumps(combinations)}\n")
+
+  integration-tests:
+    name: integration-tests (${{ matrix.lib-versions.name }})
+    needs: [lint, get-integration-lib-versions]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lib-versions: ${{ fromJson(needs.get-integration-lib-versions.outputs.combinations) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: uv sync --all-extras --group integration-tests --dev ${{ matrix.lib-versions.flags }}
+
+      - name: Run integration tests
+        run: uv run pytest -v -m integration
 
   coverage:
     permissions:
@@ -155,7 +275,7 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov --cov-report=term
+        run: uv run pytest --cov --cov-report=term --ignore=tests/integration --ignore=tests/examples
 
       - name: Extract coverage percentage
         id: cov
@@ -214,7 +334,7 @@ jobs:
 
   test-result:
     if: always()
-    needs: [test, coverage]
+    needs: [test, coverage, integration-tests, examples-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
@@ -225,6 +345,14 @@ jobs:
           fi
           if [[ "${{ needs.coverage.result }}" != "success" ]]; then
             echo "::error::Coverage failed or was cancelled: ${{ needs.coverage.result }}"
+            exit 1
+          fi
+          if [[ "${{ needs.integration-tests.result }}" != "success" ]]; then
+            echo "::error::Integration tests failed or were cancelled: ${{ needs.integration-tests.result }}"
+            exit 1
+          fi
+          if [[ "${{ needs.examples-tests.result }}" != "success" ]]; then
+            echo "::error::Examples tests failed or were cancelled: ${{ needs.examples-tests.result }}"
             exit 1
           fi
 

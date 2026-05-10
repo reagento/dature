@@ -23,7 +23,7 @@
 
 **[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/en/latest/changelog/)**
 
-Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, and Docker secrets — with automatic type conversion, validation, and human-readable error messages.
+Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker secrets, CLI arguments, and HashiCorp Vault — with automatic type conversion, validation, and human-readable error messages.
 
 ## Installation
 
@@ -34,10 +34,12 @@ pip install dature
 With optional format support:
 
 ```bash
-pip install dature[yaml]    # YAML (ruamel.yaml)
-pip install dature[json5]   # JSON5
-pip install dature[toml]    # TOML (toml_rs)
-pip install dature[secure]  # Secret detection heuristics
+pip install dature[yaml]       # YAML (ruamel.yaml)
+pip install dature[json5]      # JSON5
+pip install dature[toml]       # TOML (toml_rs)
+pip install dature[vault]      # HashiCorp Vault (hvac)
+pip install dature[secure]     # Secret detection heuristics
+pip install dature[type-stubs] # Type stubs for the integrations above (mypy/pyright users)
 ```
 
 ## Quick Start
@@ -58,7 +60,7 @@ config = dature.load(dature.Yaml12Source(file="config.yaml"), Config)
 
 ## Key Features
 
-- **Multiple formats** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets
+- **Multiple sources** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets, CLI args (`argparse`), HashiCorp Vault
 - **Merging** — combine multiple sources with configurable strategies (`"last_wins"`, `"first_wins"`, `"raise_on_conflict"`)
 - **Validation** — `Annotated` field validators, root validators, `__post_init__` support
 - **Naming** — automatic field name mapping (`snake_case` ↔ `camelCase` ↔ `UPPER_SNAKE` etc.)

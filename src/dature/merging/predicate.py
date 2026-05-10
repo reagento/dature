@@ -42,7 +42,7 @@ def _expand_dataclass_fields(prefix: str, dc_type: type) -> list[str]:
     for f in fields(dc_type):
         child_path = f"{prefix}.{f.name}" if prefix else f.name
         child_type = hints.get(f.name)
-        if child_type is not None and is_dataclass(child_type):
+        if isinstance(child_type, type) and is_dataclass(child_type):
             result.extend(_expand_dataclass_fields(child_path, child_type))
         else:
             result.append(child_path)

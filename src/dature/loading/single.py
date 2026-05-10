@@ -15,7 +15,7 @@ from dature.loading.context import (
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.merge_config import SourceParams, apply_source_init_params
+from dature.loading.merge_config import SourceParams, apply_source_config_defaults, apply_source_init_params
 from dature.loading.source_loading import (
     SkippedFieldSource,
     resolve_type_loaders,
@@ -265,7 +265,7 @@ def load_as_function(  # noqa: C901, PLR0913
     source_params: SourceParams | None = None,
     type_loaders: "TypeLoaderMap | None" = None,
 ) -> DataclassInstance:
-    source = apply_source_init_params(source, source_params or SourceParams())
+    source = apply_source_config_defaults(apply_source_init_params(source, source_params or SourceParams()))
     resolved_type_loaders = resolve_type_loaders(source, type_loaders)
     format_name = source.format_name
 
@@ -388,7 +388,7 @@ def make_decorator(  # noqa: PLR0913
     source_params: SourceParams | None = None,
     type_loaders: "TypeLoaderMap | None" = None,
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
-    source = apply_source_init_params(source, source_params or SourceParams())
+    source = apply_source_config_defaults(apply_source_init_params(source, source_params or SourceParams()))
     resolved_type_loaders = resolve_type_loaders(source, type_loaders)
 
     def decorator(cls: type[DataclassInstance]) -> type[DataclassInstance]:

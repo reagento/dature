@@ -20,6 +20,7 @@
 - Public API is minimal — don't break it without discussion (`__init__.py` is the contract)
 - Errors must be human-readable with field path to the problem
 - Google-style docstrings, English
+- Don't use `from __future__ import annotations` — Python 3.12+ supports `X | Y`, `list[int]`, etc. natively; quote forward references when needed
 - **IMPORTANT:** for any refactoring, architectural change, or task touching multiple files — enter plan mode first, explore the codebase, then present the plan for approval before writing any code
 - **IMPORTANT:** never finish without running `/done` (prek + tests + changelog check)
 - **IMPORTANT:** every bugfix needs a regression test
