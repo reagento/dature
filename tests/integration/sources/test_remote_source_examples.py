@@ -15,15 +15,15 @@ REMOTE_SOURCE_EXAMPLES_DIR = EXAMPLES_DIR / "docs" / "features" / "remote_source
 
 
 @pytest.fixture(scope="module")
-def vault_examples_env(vault_container) -> dict[str, str]:
+def vault_examples_env(vault_container, vault_client) -> dict[str, str]:
     """Write the secret used by the examples and yield matching env vars."""
-    vault_container.get_client().secrets.kv.v2.create_or_update_secret(
+    vault_client.secrets.kv.v2.create_or_update_secret(
         path="myapp/config",
         secret={"db_password": "s3cret", "port": "5432", "name": "myapp"},
     )
     return {
         "VAULT_ADDR": vault_container.get_connection_url(),
-        "VAULT_TOKEN": vault_container.get_root_token(),
+        "VAULT_TOKEN": vault_container.root_token,
     }
 
 

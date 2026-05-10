@@ -27,30 +27,28 @@ def vault_url(vault_container) -> str:
 
 @pytest.fixture
 def vault_root_token(vault_container) -> str:
-    return cast("str", vault_container.get_root_token())
+    return cast("str", vault_container.root_token)
 
 
 @pytest.fixture
-def kv2_secret(vault_container):
+def kv2_secret(vault_client):
     """Write a fixed secret in the default KV v2 mount."""
-    client = vault_container.get_client()
     expected = {"db_password": "s3cret", "port": "5432", "name": "myapp"}
-    client.secrets.kv.v2.create_or_update_secret(path=KV2_PATH, secret=expected)
+    vault_client.secrets.kv.v2.create_or_update_secret(path=KV2_PATH, secret=expected)
     return expected
 
 
 @pytest.fixture
-def kv1_mount(vault_container):
+def kv1_mount(vault_client):
     """Enable a KV v1 mount at kv1/ and write a secret there."""
-    client = vault_container.get_client()
     with contextlib.suppress(hvac.exceptions.InvalidRequest):
-        client.sys.enable_secrets_engine(
+        vault_client.sys.enable_secrets_engine(
             backend_type="kv",
             path=KV1_MOUNT,
             options={"version": "1"},
         )
     expected = {"db_password": "v1-secret", "port": "5432"}
-    client.secrets.kv.v1.create_or_update_secret(
+    vault_client.secrets.kv.v1.create_or_update_secret(
         path=KV1_PATH,
         secret=expected,
         mount_point=KV1_MOUNT,
@@ -59,21 +57,20 @@ def kv1_mount(vault_container):
 
 
 @pytest.fixture
-def approle_creds(vault_container):
+def approle_creds(vault_client):
     """Enable approle, create role 'tester' with read on secret/, return (role_id, secret_id)."""
-    client = vault_container.get_client()
     with contextlib.suppress(hvac.exceptions.InvalidRequest):
-        client.sys.enable_auth_method(method_type="approle")
-    client.sys.create_or_update_policy(
+        vault_client.sys.enable_auth_method(method_type="approle")
+    vault_client.sys.create_or_update_policy(
         name="reader",
         policy='path "secret/*" { capabilities = ["read"] }',
     )
-    client.auth.approle.create_or_update_approle(
+    vault_client.auth.approle.create_or_update_approle(
         role_name="tester",
         token_policies=["reader"],
     )
-    role_id = client.auth.approle.read_role_id(role_name="tester")["data"]["role_id"]
-    secret_id = client.auth.approle.generate_secret_id(role_name="tester")["data"]["secret_id"]
+    role_id = vault_client.auth.approle.read_role_id(role_name="tester")["data"]["role_id"]
+    secret_id = vault_client.auth.approle.generate_secret_id(role_name="tester")["data"]["secret_id"]
     return role_id, secret_id
 
 

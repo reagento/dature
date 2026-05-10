@@ -628,10 +628,13 @@ class RemoteSource(Source, abc.ABC):
         input_value: JSONValue = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         addr = self.remote_address()
-        key = ".".join(field_path) if field_path else None
+        # ``_loaded_cache`` holds the raw ``_fetch()`` result (pre-prefix); the schema-side
+        # ``field_path`` is already prefix-stripped, so prepend the prefix before looking up.
+        search_path = self._build_search_path(field_path, self.prefix)
+        key = ".".join(search_path) if search_path else None
         line_content = [f"{addr}: {key}"] if key else [addr]
-        if field_path:
-            value = self._lookup_loaded(field_path)
+        if search_path:
+            value = self._lookup_loaded(search_path)
             if value is not _NOT_FOUND:
                 rendered = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
                 line_content = [f"{addr}: {key} = {rendered}"]

@@ -2,6 +2,7 @@
 
 from collections.abc import Generator
 
+import hvac
 import pytest
 from testcontainers.vault import VaultContainer
 
@@ -13,3 +14,9 @@ def vault_container() -> Generator[VaultContainer]:
     """One Vault container shared by every test under sources/ for the run."""
     with VaultContainer(VAULT_IMAGE) as c:
         yield c
+
+
+@pytest.fixture
+def vault_client(vault_container: VaultContainer) -> hvac.Client:
+    """Authenticated hvac.Client for the running container."""
+    return hvac.Client(url=vault_container.get_connection_url(), token=vault_container.root_token)
