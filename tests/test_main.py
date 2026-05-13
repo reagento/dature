@@ -1,9 +1,11 @@
 """Tests for main.py — public load() API."""
 
 from dataclasses import dataclass, field
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
+import time_machine
 
 from dature import (
     EnvFileSource,
@@ -108,14 +110,40 @@ class TestLoadAsDecorator:
                 pass
 
 
+_SENTINEL: object = object()
+
+
 class TestCache:
-    def test_cache_enabled_by_default(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(
+        ("cache_arg", "advance_seconds", "expected_second"),
+        [
+            (_SENTINEL, 0.0, "original"),
+            (True, 0.0, "original"),
+            (False, 0.0, "updated"),
+            (timedelta(seconds=30), 10.0, "original"),
+            (timedelta(seconds=30), 31.0, "updated"),
+            (timedelta(0), 0.0, "updated"),
+        ],
+        ids=["default", "true", "false", "ttl-hit", "ttl-expired", "ttl-zero"],
+    )
+    def test_decorator_cache_matrix(
+        self,
+        tmp_path: Path,
+        time_control: time_machine.Traveller,
+        cache_arg: object,
+        advance_seconds: float,
+        expected_second: str,
+    ) -> None:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
-
         metadata = JsonSource(file=json_file)
 
-        @load(metadata)
+        if cache_arg is _SENTINEL:
+            decorator = load(metadata)
+        else:
+            decorator = load(metadata, cache=cache_arg)
+
+        @decorator
         @dataclass
         class Config:
             name: str
@@ -123,29 +151,101 @@ class TestCache:
 
         first = Config()
         json_file.write_text('{"name": "updated", "port": 9090}')
+        time_control.shift(advance_seconds)
         second = Config()
 
         assert first.name == "original"
-        assert second.name == "original"
+        assert second.name == expected_second
 
-    def test_cache_disabled(self, tmp_path: Path) -> None:
+    def test_negative_timedelta_raises(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
-        json_file.write_text('{"name": "original", "port": 8080}')
+        json_file.write_text('{"name": "x", "port": 1}')
 
-        metadata = JsonSource(file=json_file)
-
-        @load(metadata, cache=False)
         @dataclass
         class Config:
             name: str
             port: int
 
-        first = Config()
+        with pytest.raises(ValueError, match="cache timedelta must be non-negative"):
+            load(JsonSource(file=json_file), cache=timedelta(seconds=-1))
+
+
+class TestLoadAsFunctionCache:
+    @pytest.mark.parametrize(
+        ("cache_arg", "advance_seconds", "expected_second"),
+        [
+            (True, 0.0, "original"),
+            (False, 0.0, "updated"),
+            (timedelta(seconds=30), 10.0, "original"),
+            (timedelta(seconds=30), 31.0, "updated"),
+            (timedelta(0), 0.0, "updated"),
+        ],
+        ids=["true", "false", "ttl-hit", "ttl-expired", "ttl-zero"],
+    )
+    def test_function_cache_matrix(
+        self,
+        tmp_path: Path,
+        time_control: time_machine.Traveller,
+        cache_arg: object,
+        advance_seconds: float,
+        expected_second: str,
+    ) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"name": "original", "port": 8080}')
+        source = JsonSource(file=json_file)
+
+        @dataclass
+        class Config:
+            name: str
+            port: int
+
+        first = load(source, schema=Config, cache=cache_arg)
         json_file.write_text('{"name": "updated", "port": 9090}')
-        second = Config()
+        time_control.shift(advance_seconds)
+        second = load(source, schema=Config, cache=cache_arg)
 
         assert first.name == "original"
-        assert second.name == "updated"
+        assert second.name == expected_second
+
+    def test_function_cache_per_schema(self, tmp_path: Path) -> None:
+        a_file = tmp_path / "a.json"
+        a_file.write_text('{"name": "A"}')
+        source = JsonSource(file=a_file)
+
+        @dataclass
+        class ConfigA:
+            name: str
+
+        @dataclass
+        class ConfigB:
+            name: str
+
+        first_a = load(source, schema=ConfigA, cache=True)
+        first_b = load(source, schema=ConfigB, cache=True)
+
+        assert first_a.name == "A"
+        assert first_b.name == "A"
+        assert type(first_a).__name__ == "ConfigA"
+        assert type(first_b).__name__ == "ConfigB"
+
+    def test_function_cache_different_sources_independent(self, tmp_path: Path) -> None:
+        a_file = tmp_path / "a.json"
+        a_file.write_text('{"name": "A"}')
+        b_file = tmp_path / "b.json"
+        b_file.write_text('{"name": "B"}')
+
+        source_a = JsonSource(file=a_file)
+        source_b = JsonSource(file=b_file)
+
+        @dataclass
+        class Config:
+            name: str
+
+        cfg_a = load(source_a, schema=Config, cache=True)
+        cfg_b = load(source_b, schema=Config, cache=True)
+
+        assert cfg_a.name == "A"
+        assert cfg_b.name == "B"
 
 
 class TestLoadAsFunction:

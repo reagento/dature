@@ -1,8 +1,10 @@
 import logging
 from collections.abc import Callable
+from datetime import timedelta
 from typing import Any, overload
 
 from dature.config import config
+from dature.loading.cache import cache_get, cache_put
 from dature.loading.merge_config import MergeConfig, SourceParams
 from dature.loading.multi import merge_load_as_function, merge_make_decorator
 from dature.loading.single import load_as_function, make_decorator
@@ -28,6 +30,7 @@ _DEFAULT_STRATEGY: Any = object()
 def load[T](
     *sources: Source,
     schema: type[T],
+    cache: bool | timedelta | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -47,7 +50,7 @@ def load[T](
 def load(
     *sources: Source,
     schema: None = None,
-    cache: bool | None = None,
+    cache: bool | timedelta | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -67,7 +70,7 @@ def load(
 def load(  # noqa: PLR0913
     *sources: Source,
     schema: type[Any] | None = None,
-    cache: bool | None = None,
+    cache: bool | timedelta | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
@@ -84,6 +87,9 @@ def load(  # noqa: PLR0913
     # --8<-- [end:load]
     if cache is None:
         cache = config.loading.cache
+    if isinstance(cache, timedelta) and cache < timedelta(0):
+        msg = f"cache timedelta must be non-negative, got {cache!r}"
+        raise ValueError(msg)
     if debug is None:
         debug = config.loading.debug
 
@@ -130,7 +136,10 @@ def load(  # noqa: PLR0913
     )
 
     if schema is not None:
-        return load_as_function(
+        cached = cache_get(schema, sources, cache=cache)
+        if cached is not None:
+            return cached
+        result = load_as_function(
             source=source,
             schema=schema,
             debug=debug,
@@ -139,6 +148,8 @@ def load(  # noqa: PLR0913
             source_params=_source_params,
             type_loaders=type_loaders,
         )
+        cache_put(schema, sources, result, cache=cache)
+        return result
 
     return make_decorator(
         source=source,
@@ -166,7 +177,7 @@ def _load_multi(  # noqa: PLR0913
     *,
     sources: tuple[Source, ...],
     schema: type[DataclassInstance] | None,
-    cache: bool,
+    cache: bool | timedelta,
     debug: bool,
     strategy: MergeStrategyName | SourceMergeStrategy,
     field_merges: FieldMergeMap | None,
@@ -197,5 +208,10 @@ def _load_multi(  # noqa: PLR0913
         type_loaders=type_loaders,
     )
     if schema is not None:
-        return merge_load_as_function(merge_meta, schema, debug=debug)
+        cached = cache_get(schema, sources, cache=cache)
+        if cached is not None:
+            return cached
+        result = merge_load_as_function(merge_meta, schema, debug=debug)
+        cache_put(schema, sources, result, cache=cache)
+        return result
     return merge_make_decorator(merge_meta, cache=cache, debug=debug)

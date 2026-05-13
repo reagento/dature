@@ -1,12 +1,14 @@
 import logging
 from collections.abc import Callable
 from dataclasses import asdict, fields, is_dataclass
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from dature.errors import DatureConfigError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
 from dature.errors.location import read_file_content
 from dature.load_report import FieldOrigin, LoadReport, SourceEntry, attach_load_report
+from dature.loading.cache import cache_get, cache_put
 from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import (
     apply_skip_invalid,
@@ -111,7 +113,7 @@ class _PatchContext:
         *,
         source: Source,
         cls: type[DataclassInstance],
-        cache: bool,
+        cache: bool | timedelta,
         debug: bool,
         secret_field_names: tuple[str, ...] | None = None,
         mask_secrets: bool | None = None,
@@ -127,9 +129,8 @@ class _PatchContext:
 
         self.source = source
         self.cls = cls
-        self.cache = cache
+        self.cache: bool | timedelta = cache
         self.debug = debug
-        self.cached_data: DataclassInstance | None = None
         self.field_list = fields(cls)
         self.original_init = cls.__init__
         self.original_post_init = getattr(cls, "__post_init__", None)
@@ -215,8 +216,9 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
             ctx.original_init(self, *args, **kwargs)
             return
 
-        if ctx.cache and ctx.cached_data is not None:
-            loaded_data = ctx.cached_data
+        cached = cache_get(ctx.cls, (ctx.source,), cache=ctx.cache)
+        if cached is not None:
+            loaded_data = cached
         else:
             ctx.loading = True
             try:
@@ -232,8 +234,7 @@ def _make_new_init(ctx: _PatchContext) -> Callable[..., None]:
                 secret_paths=ctx.secret_paths,
             )
 
-            if ctx.cache:
-                ctx.cached_data = loaded_data
+            cache_put(ctx.cls, (ctx.source,), loaded_data, cache=ctx.cache)
 
         complete_kwargs = merge_fields(loaded_data, ctx.field_list, args, kwargs)
         ctx.original_init(self, *args, **complete_kwargs)
@@ -381,7 +382,7 @@ def load_as_function(  # noqa: C901, PLR0913
 def make_decorator(  # noqa: PLR0913
     *,
     source: Source,
-    cache: bool,
+    cache: bool | timedelta,
     debug: bool,
     secret_field_names: tuple[str, ...] | None = None,
     mask_secrets: bool | None = None,
