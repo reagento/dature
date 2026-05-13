@@ -1,1 +1,0 @@
-Move ``types-hvac`` out of the runtime ``vault`` extra into a new ``type-stubs`` extra so production installs of ``dature[vault]`` no longer pull typing stubs. mypy/pyright users opt in with ``pip install dature[vault,type-stubs]``.
