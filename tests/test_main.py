@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 import time_machine
@@ -16,10 +17,13 @@ from dature import (
     Source,
     Toml10Source,
     Toml11Source,
+    VaultSource,
     Yaml11Source,
     Yaml12Source,
+    configure,
     load,
 )
+from dature.types import JSONValue
 
 
 def _all_file_sources() -> list[type[Source]]:
@@ -171,25 +175,8 @@ class TestCache:
 
 
 class TestLoadAsFunctionCache:
-    @pytest.mark.parametrize(
-        ("cache_arg", "advance_seconds", "expected_second"),
-        [
-            (True, 0.0, "original"),
-            (False, 0.0, "updated"),
-            (timedelta(seconds=30), 10.0, "original"),
-            (timedelta(seconds=30), 31.0, "updated"),
-            (timedelta(0), 0.0, "updated"),
-        ],
-        ids=["true", "false", "ttl-hit", "ttl-expired", "ttl-zero"],
-    )
-    def test_function_cache_matrix(
-        self,
-        tmp_path: Path,
-        time_control: time_machine.Traveller,
-        cache_arg: object,
-        advance_seconds: float,
-        expected_second: str,
-    ) -> None:
+    def test_function_load_does_not_cache_across_calls(self, tmp_path: Path) -> None:
+        """A throwaway ``load(...)`` does not retain cache between calls."""
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "original", "port": 8080}')
         source = JsonSource(file=json_file)
@@ -199,53 +186,12 @@ class TestLoadAsFunctionCache:
             name: str
             port: int
 
-        first = load(source, schema=Config, cache=cache_arg)
+        first = load(source, schema=Config, cache=True)
         json_file.write_text('{"name": "updated", "port": 9090}')
-        time_control.shift(advance_seconds)
-        second = load(source, schema=Config, cache=cache_arg)
+        second = load(source, schema=Config, cache=True)
 
         assert first.name == "original"
-        assert second.name == expected_second
-
-    def test_function_cache_per_schema(self, tmp_path: Path) -> None:
-        a_file = tmp_path / "a.json"
-        a_file.write_text('{"name": "A"}')
-        source = JsonSource(file=a_file)
-
-        @dataclass
-        class ConfigA:
-            name: str
-
-        @dataclass
-        class ConfigB:
-            name: str
-
-        first_a = load(source, schema=ConfigA, cache=True)
-        first_b = load(source, schema=ConfigB, cache=True)
-
-        assert first_a.name == "A"
-        assert first_b.name == "A"
-        assert type(first_a).__name__ == "ConfigA"
-        assert type(first_b).__name__ == "ConfigB"
-
-    def test_function_cache_different_sources_independent(self, tmp_path: Path) -> None:
-        a_file = tmp_path / "a.json"
-        a_file.write_text('{"name": "A"}')
-        b_file = tmp_path / "b.json"
-        b_file.write_text('{"name": "B"}')
-
-        source_a = JsonSource(file=a_file)
-        source_b = JsonSource(file=b_file)
-
-        @dataclass
-        class Config:
-            name: str
-
-        cfg_a = load(source_a, schema=Config, cache=True)
-        cfg_b = load(source_b, schema=Config, cache=True)
-
-        assert cfg_a.name == "A"
-        assert cfg_b.name == "B"
+        assert second.name == "updated"
 
 
 class TestLoadAsFunction:
@@ -321,3 +267,51 @@ class TestFileNotFoundWithLoad:
 
         with pytest.raises(FileNotFoundError):
             Config()
+
+
+@dataclass(kw_only=True, repr=False)
+class _ConfigAwareSource(Source):
+    """Single-field source that emits its own ``url`` so we can assert config-merge happened."""
+
+    url: str | None = None
+    format_name = "_config_aware"
+    location_label: ClassVar[str] = "TEST"
+    config_group: ClassVar[str | None] = "vault"
+
+    def _load(self) -> JSONValue:
+        return {"url_value": self.url}
+
+
+@pytest.mark.usefixtures("_reset_config")
+class TestSingleSourceConfigDefaults:
+    def test_load_applies_config_defaults(self) -> None:
+        # Regression: single-source load() must call apply_source_config_defaults so that
+        # ``configure(vault={...})`` (and ``DATURE_VAULT__*``) actually reach the source.
+        configure(vault={"url": "http://from-config"})
+
+        @dataclass
+        class Config:
+            url_value: str | None = None
+
+        result = load(_ConfigAwareSource(), schema=Config)
+        assert result.url_value == "http://from-config"
+
+    def test_decorator_applies_config_defaults(self) -> None:
+        configure(vault={"url": "http://from-config"})
+
+        @load(_ConfigAwareSource())
+        @dataclass
+        class Config:
+            url_value: str | None = None
+
+        assert Config().url_value == "http://from-config"
+
+    def test_validate_runs_for_single_source(self) -> None:
+        # Regression: single-source path used to skip _validate(); a misconfigured VaultSource
+        # would surface as a confusing failure inside _fetch() instead of a clean ValueError.
+        @dataclass
+        class Config:
+            x: str | None = None
+
+        with pytest.raises(ValueError, match="VaultSource: url is required"):
+            load(VaultSource(path="p", token="t"), schema=Config)

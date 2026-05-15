@@ -1,48 +1,37 @@
+"""Multi-source merge machinery.
+
+Holds the merge core ``_load_and_merge`` and its helpers. Single-source loading
+lives directly on ``Loader._do_load_single`` in ``loader.py``.
+"""
+
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass as stdlib_dataclass
-from dataclasses import fields, is_dataclass
-from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING
 
 from dature.errors import DatureConfigError, SourceLoadError
 from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
-from dature.load_report import (
-    FieldOrigin,
-    LoadReport,
-    SourceEntry,
-    attach_load_report,
-    get_load_report,
-)
-from dature.loading.cache import cache_get, cache_put
+from dature.load_report import LoadReport, _build_merge_report, attach_load_report
 from dature.loading.common import resolve_mask_secrets
-from dature.loading.context import (
-    build_error_ctx,
-    coerce_flag_fields,
-    make_validating_post_init,
-    merge_fields,
-)
+from dature.loading.context import coerce_flag_fields
 from dature.loading.merge_config import MergeConfig
-from dature.loading.source_loading import resolve_type_loaders
 from dature.masking.detection import build_secret_paths
-from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries, mask_value
+from dature.masking.masking import mask_json_value, mask_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
 from dature.protocols import DataclassInstance
+from dature.report_types import FieldOrigin
 from dature.sources.base import Source
-from dature.sources.retort import (
-    create_validating_retort,
-    ensure_retort,
-    transform_to_dataclass,
-)
+from dature.sources.retort import transform_to_dataclass
 from dature.strategies.source import (
     LoadCtx,
     MergeStepEvent,
-    SourceMergeStrategy,
     resolve_source_strategy,
 )
 from dature.types import JSONValue, TypeLoaderMap
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger("dature")
 
@@ -104,29 +93,6 @@ def _log_field_origins(
                 origin.source_index,
                 origin.source_file,
             )
-
-
-def _build_merge_report(
-    *,
-    dataclass_name: str,
-    strategy: SourceMergeStrategy,
-    source_entries: tuple[SourceEntry, ...],
-    field_origins: tuple[FieldOrigin, ...],
-    merged_data: JSONValue,
-    secret_paths: frozenset[str] = frozenset(),
-) -> LoadReport:
-    if secret_paths:
-        source_entries = mask_source_entries(source_entries, secret_paths=secret_paths)
-        field_origins = mask_field_origins(field_origins, secret_paths=secret_paths)
-        merged_data = mask_json_value(merged_data, secret_paths=secret_paths)
-
-    return LoadReport(
-        dataclass_name=dataclass_name,
-        strategy=strategy,
-        sources=source_entries,
-        field_origins=field_origins,
-        merged_data=merged_data,
-    )
 
 
 def _collect_leaf_paths(data: JSONValue, prefix: str = "") -> list[str]:
@@ -364,170 +330,3 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         last_source=last_source,
         last_type_loaders=report.last_type_loaders,
     )
-
-
-def merge_load_as_function[T: DataclassInstance](
-    merge_meta: MergeConfig,
-    schema: type[T],
-    *,
-    debug: bool,
-) -> T:
-    data = _load_and_merge(
-        merge_meta=merge_meta,
-        schema=schema,
-        debug=debug,
-    )
-
-    last_type_loaders = data.last_type_loaders
-    validating_retort = create_validating_retort(
-        data.last_source,
-        schema,
-        resolved_type_loaders=last_type_loaders,
-    )
-    validation_loader = validating_retort.get_loader(schema)
-
-    last_meta = data.last_source
-    mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
-    secret_paths: frozenset[str] = frozenset()
-    if mask_secrets:
-        extra_patterns = _collect_extra_secret_patterns(merge_meta)
-        secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
-    last_error_ctx = build_error_ctx(
-        last_meta,
-        schema.__name__,
-        secret_paths=secret_paths,
-        mask_secrets=mask_secrets,
-    )
-    try:
-        handle_load_errors(
-            func=lambda: validation_loader(data.merged_raw),
-            ctx=last_error_ctx,
-        )
-    except DatureConfigError:
-        if debug:
-            report = get_load_report(data.result)
-            if report is not None:
-                attach_load_report(schema, report)
-        raise
-
-    return data.result
-
-
-class _MergePatchContext:
-    def __init__(
-        self,
-        *,
-        merge_meta: MergeConfig,
-        cls: type[DataclassInstance],
-        cache: bool | timedelta,
-        debug: bool,
-    ) -> None:
-        self._prepare_sources(merge_meta=merge_meta, cls=cls)
-
-        self.merge_meta = merge_meta
-        self.cls = cls
-        self.cache: bool | timedelta = cache
-        self.debug = debug
-        self.field_list = fields(cls)
-        self.original_init = cls.__init__
-        self.original_post_init = getattr(cls, "__post_init__", None)
-        self.loading = False
-        self.validating = False
-
-        last_source = merge_meta.sources[-1]
-        last_type_loaders = resolve_type_loaders(last_source, merge_meta.type_loaders)
-        validating_retort = create_validating_retort(
-            last_source,
-            cls,
-            resolved_type_loaders=last_type_loaders,
-        )
-        self.validation_loader: Callable[[JSONValue], DataclassInstance] = validating_retort.get_loader(cls)
-
-        mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
-        self.secret_paths: frozenset[str] = frozenset()
-        if mask_secrets:
-            extra_patterns = _collect_extra_secret_patterns(merge_meta)
-            self.secret_paths = build_secret_paths(cls, extra_patterns=extra_patterns)
-
-        self.error_ctx = build_error_ctx(
-            last_source,
-            cls.__name__,
-            secret_paths=self.secret_paths,
-            mask_secrets=mask_secrets,
-        )
-
-    def _prepare_sources(
-        self,
-        *,
-        merge_meta: MergeConfig,
-        cls: type[DataclassInstance],
-    ) -> None:
-        for source in merge_meta.sources:
-            type_loaders = resolve_type_loaders(source, merge_meta.type_loaders)
-            ensure_retort(source, cls, resolved_type_loaders=type_loaders)
-
-
-def _make_merge_new_init(ctx: _MergePatchContext) -> Callable[..., None]:
-    def new_init(self: DataclassInstance, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        if ctx.loading:
-            ctx.original_init(self, *args, **kwargs)
-            return
-
-        cached = cache_get(ctx.cls, ctx.merge_meta.sources, cache=ctx.cache)
-        if cached is not None:
-            loaded_data = cached
-        else:
-            ctx.loading = True
-            try:
-                merged_data = _load_and_merge(
-                    merge_meta=ctx.merge_meta,
-                    schema=ctx.cls,
-                    debug=ctx.debug,
-                )
-            finally:
-                ctx.loading = False
-            loaded_data = merged_data.result
-            ctx.error_ctx = build_error_ctx(
-                merged_data.last_source,
-                ctx.cls.__name__,
-                secret_paths=ctx.secret_paths,
-                mask_secrets=ctx.error_ctx.mask_secrets,
-            )
-            cache_put(ctx.cls, ctx.merge_meta.sources, loaded_data, cache=ctx.cache)
-
-        complete_kwargs = merge_fields(loaded_data, ctx.field_list, args, kwargs)
-        ctx.original_init(self, *args, **complete_kwargs)
-
-        if ctx.debug:
-            report = get_load_report(loaded_data)
-            if report is not None:
-                attach_load_report(self, report)
-
-        if ctx.original_post_init is None:
-            self.__post_init__()  # type: ignore[attr-defined]
-
-    return new_init
-
-
-def merge_make_decorator(
-    merge_meta: MergeConfig,
-    *,
-    cache: bool | timedelta,
-    debug: bool,
-) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
-    def decorator(cls: type[DataclassInstance]) -> type[DataclassInstance]:
-        if not is_dataclass(cls):
-            msg = f"{cls.__name__} must be a dataclass"
-            raise TypeError(msg)
-
-        ctx = _MergePatchContext(
-            merge_meta=merge_meta,
-            cls=cls,
-            cache=cache,
-            debug=debug,
-        )
-        cls.__init__ = _make_merge_new_init(ctx)  # type: ignore[method-assign]
-        cls.__post_init__ = make_validating_post_init(ctx)  # type: ignore[attr-defined]
-        return cls
-
-    return decorator

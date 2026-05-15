@@ -10,7 +10,7 @@ from typing import Annotated
 import pytest
 import time_machine
 
-from dature import EnvFileSource, EnvSource, JsonSource, V, Yaml12Source, load
+from dature import EnvFileSource, EnvSource, JsonSource, Loader, V, Yaml12Source, load
 from dature.errors import DatureConfigError, FieldGroupError, MergeConflictError
 from dature.field_path import F
 
@@ -260,11 +260,11 @@ class TestMergeFunctionCache:
         ],
         ids=["true", "false", "ttl-hit", "ttl-expired", "ttl-zero"],
     )
-    def test_function_cache_matrix(
+    def test_loader_cache_matrix(
         self,
         tmp_path: Path,
         time_control: time_machine.Traveller,
-        cache_arg: object,
+        cache_arg: bool | timedelta,
         advance_seconds: float,
         expected_second: str,
     ):
@@ -281,20 +281,18 @@ class TestMergeFunctionCache:
             host: str
             port: int
 
-        first = load(defaults_source, overrides_source, schema=Config, cache=cache_arg)
+        loader = Loader(defaults_source, overrides_source, schema=Config, cache=cache_arg)
+        first = loader.load()
         defaults.write_text('{"host": "updated", "port": 3000}')
         time_control.shift(advance_seconds)
-        second = load(defaults_source, overrides_source, schema=Config, cache=cache_arg)
+        second = loader.load()
 
         assert first.host == "original"
         assert second.host == expected_second
         assert second.port == 8080
 
-    def test_function_cache_distinguishes_different_first_sources(self, tmp_path: Path):
-        """Two multi-loads sharing the same last source but different first sources
-        must not collide in the cache: the merged result differs, so they belong
-        to separate cache slots.
-        """
+    def test_loader_distinguishes_different_first_sources(self, tmp_path: Path):
+        """Two Loader instances over different source sets keep their caches separate."""
         common = tmp_path / "common.json"
         common.write_text('{"port": 5000}')
         first_a = tmp_path / "first_a.json"
@@ -309,8 +307,8 @@ class TestMergeFunctionCache:
             host: str
             port: int
 
-        cfg_a = load(JsonSource(file=first_a), common_source, schema=Config, cache=True)
-        cfg_b = load(JsonSource(file=first_b), common_source, schema=Config, cache=True)
+        cfg_a = Loader(JsonSource(file=first_a), common_source, schema=Config, cache=True).load()
+        cfg_b = Loader(JsonSource(file=first_b), common_source, schema=Config, cache=True).load()
 
         assert cfg_a.host == "host-A"
         assert cfg_b.host == "host-B"

@@ -2,6 +2,7 @@ from dature._version import __version__
 from dature.config import configure
 from dature.field_path import F
 from dature.load_report import get_load_report
+from dature.loading.loader import Loader
 from dature.main import load
 from dature.sources.argparse_ import ArgparseSource
 from dature.sources.base import FileSource, RemoteSource, Source
@@ -27,6 +28,7 @@ __all__ = [
     "IniSource",
     "Json5Source",
     "JsonSource",
+    "Loader",
     "RemoteSource",
     "Source",
     "Toml10Source",

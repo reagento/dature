@@ -4,10 +4,7 @@ from datetime import timedelta
 from typing import Any, overload
 
 from dature.config import config
-from dature.loading.cache import cache_get, cache_put
-from dature.loading.merge_config import MergeConfig, SourceParams
-from dature.loading.multi import merge_load_as_function, merge_make_decorator
-from dature.loading.single import load_as_function, make_decorator
+from dature.loading.loader import Loader
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
 from dature.strategies.source import SourceMergeStrategy
@@ -108,58 +105,28 @@ def load(  # noqa: PLR0913
     ):
         logger.warning("Merge-related parameters have no effect with a single source")
 
-    if len(sources) > 1:
-        return _load_multi(
-            sources=sources,
-            schema=schema,
-            cache=cache,
-            debug=debug,
-            strategy=strategy,
-            field_merges=field_merges,
-            field_groups=field_groups,
-            skip_broken_sources=skip_broken_sources,
-            skip_invalid_fields=skip_invalid_fields,
-            expand_env_vars=expand_env_vars,
-            secret_field_names=secret_field_names,
-            mask_secrets=mask_secrets,
-            type_loaders=type_loaders,
-            nested_resolve_strategy=nested_resolve_strategy,
-            nested_resolve=nested_resolve,
-        )
-
-    source = sources[0]
-
-    _source_params = SourceParams(
-        expand_env_vars=expand_env_vars,
-        nested_resolve_strategy=nested_resolve_strategy,
-        nested_resolve=nested_resolve,
-    )
+    common_kwargs: dict[str, Any] = {
+        "cache": cache,
+        "debug": debug,
+        "strategy": strategy,
+        "field_merges": field_merges,
+        "field_groups": field_groups,
+        "skip_broken_sources": skip_broken_sources,
+        "skip_invalid_fields": skip_invalid_fields,
+        "expand_env_vars": expand_env_vars,
+        "secret_field_names": secret_field_names,
+        "mask_secrets": mask_secrets,
+        "type_loaders": type_loaders,
+        "nested_resolve_strategy": nested_resolve_strategy,
+        "nested_resolve": nested_resolve,
+    }
 
     if schema is not None:
-        cached = cache_get(schema, sources, cache=cache)
-        if cached is not None:
-            return cached
-        result = load_as_function(
-            source=source,
-            schema=schema,
-            debug=debug,
-            secret_field_names=secret_field_names,
-            mask_secrets=mask_secrets,
-            source_params=_source_params,
-            type_loaders=type_loaders,
-        )
-        cache_put(schema, sources, result, cache=cache)
-        return result
+        # Function mode — throwaway Loader. No cache carries across calls.
+        # To cache, construct ``Loader(...)`` explicitly and reuse it.
+        return Loader(*sources, schema=schema, **common_kwargs).load()
 
-    return make_decorator(
-        source=source,
-        cache=cache,
-        debug=debug,
-        secret_field_names=secret_field_names,
-        mask_secrets=mask_secrets,
-        source_params=_source_params,
-        type_loaders=type_loaders,
-    )
+    return Loader.as_decorator(*sources, **common_kwargs)
 
 
 def _validate_sources(sources: tuple[Source, ...]) -> None:
@@ -171,47 +138,3 @@ def _validate_sources(sources: tuple[Source, ...]) -> None:
     if not sources:
         msg = "load() requires at least one Source"
         raise TypeError(msg)
-
-
-def _load_multi(  # noqa: PLR0913
-    *,
-    sources: tuple[Source, ...],
-    schema: type[DataclassInstance] | None,
-    cache: bool | timedelta,
-    debug: bool,
-    strategy: MergeStrategyName | SourceMergeStrategy,
-    field_merges: FieldMergeMap | None,
-    field_groups: tuple[FieldGroupTuple, ...],
-    skip_broken_sources: bool,
-    skip_invalid_fields: bool,
-    expand_env_vars: ExpandEnvVarsMode | None,
-    secret_field_names: tuple[str, ...] | None,
-    mask_secrets: bool | None,
-    type_loaders: TypeLoaderMap | None,
-    nested_resolve_strategy: NestedResolveStrategy | None,
-    nested_resolve: NestedResolve | None,
-) -> DataclassInstance | Callable[[type[DataclassInstance]], type[DataclassInstance]]:
-    merge_meta = MergeConfig(
-        sources=sources,
-        source_params=SourceParams(
-            expand_env_vars=expand_env_vars,
-            nested_resolve_strategy=nested_resolve_strategy,
-            nested_resolve=nested_resolve,
-        ),
-        strategy=strategy,
-        field_merges=field_merges,
-        field_groups=field_groups,
-        skip_broken_sources=skip_broken_sources,
-        skip_invalid_fields=skip_invalid_fields,
-        secret_field_names=secret_field_names,
-        mask_secrets=mask_secrets,
-        type_loaders=type_loaders,
-    )
-    if schema is not None:
-        cached = cache_get(schema, sources, cache=cache)
-        if cached is not None:
-            return cached
-        result = merge_load_as_function(merge_meta, schema, debug=debug)
-        cache_put(schema, sources, result, cache=cache)
-        return result
-    return merge_make_decorator(merge_meta, cache=cache, debug=debug)

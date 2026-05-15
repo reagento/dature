@@ -1,5 +1,9 @@
-"""
-Caching — function mode reuses the result while the Source instance is alive.
+"""Function-mode caching via an explicit ``Loader``.
+
+``dature.load(...)`` is a thin shortcut that creates a throwaway ``Loader`` and
+calls ``.load()`` once — repeated calls do NOT share a cache. To make caching
+useful in function mode, keep the ``Loader`` instance around and call
+``.load()`` multiple times.
 """
 
 import os
@@ -18,17 +22,15 @@ class FunctionConfig:
     port: int
 
 
-source = dature.EnvSource(prefix="FN_")
+loader = dature.Loader(
+    dature.EnvSource(prefix="FN_"),
+    schema=FunctionConfig,
+    cache=timedelta(seconds=30),
+)
 
-
-def get_config() -> FunctionConfig:
-    return dature.load(
-        source, schema=FunctionConfig, cache=timedelta(seconds=30)
-    )
-
-
-first = get_config()
+first = loader.load()
 os.environ["FN_PORT"] = "9999"
-second = get_config()
+second = loader.load()
+
 assert first.port == 6379
-assert second.port == 6379  # cache still fresh
+assert second.port == 6379  # cache still fresh — same Loader instance

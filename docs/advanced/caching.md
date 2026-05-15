@@ -48,10 +48,23 @@ Example with `cache=timedelta(minutes=15)`:
 
 The first load in a window has an effectively shortened TTL (up to one period less than the full duration). This is the standard cron-style trade-off and matches the intuitive "invalidate every N minutes" mental model.
 
-## Function mode
+## Function-mode caching: `Loader`
 
-`cache` works in function mode (`load(..., schema=Cls)`) too. The cache slot is attached to the `schema` class (under `__dature_cache__`), keyed by the participating sources. Decorator and function modes share the same storage — loading the same schema with the same source set via either mode hits the same cache slot. The slot dies with the schema class; no module-level state.
+`dature.load(src, schema=Cls)` is a **thin shortcut** that constructs a throwaway `Loader` and calls `.load()` once. Repeated `load(...)` calls **do not share a cache** — each call is a fresh load.
+
+To cache across calls in function mode, construct a `Loader` explicitly and keep the instance around:
 
 ```python
 --8<-- "examples/docs/advanced/caching/advanced_caching_function.py"
 ```
+
+The `Loader` carries all the load-time parameters and the cache state. Identity of the `Loader` instance fully captures the call configuration — there is no implicit fingerprinting of `debug`/`type_loaders`/`strategy`/etc. Different parameters → different `Loader` instances → independent cache slots.
+
+### Loader API
+
+| Method | Effect |
+|---|---|
+| `Loader.load() -> T` | Return cached result if fresh, else reload and cache. |
+| `Loader.invalidate()` | Drop the cached result so the next `.load()` reloads from sources. |
+
+`Loader` supports the same constructor parameters as `dature.load(...)` for function mode.
