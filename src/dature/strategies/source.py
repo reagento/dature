@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from dature.errors import DatureConfigError, SourceLoadError, SourceLocation
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import read_file_content
-from dature.load_report import FieldOrigin, SourceEntry
 from dature.loading.context import build_error_ctx
 from dature.loading.source_loading import (
     SkippedFieldSource,
@@ -17,6 +16,7 @@ from dature.loading.source_loading import (
 )
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_first_wins, deep_merge_last_wins, raise_on_conflict
+from dature.report_types import FieldOrigin, SourceEntry
 from dature.sources.base import Source
 from dature.types import JSONValue, MergeStrategyName, TypeLoaderMap
 

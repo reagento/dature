@@ -2,15 +2,42 @@
 
 import builtins
 import sys
+import time
 from collections.abc import Callable, Generator
 from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import time_machine
 from adaptix.load_error import ValidationLoadError
 
 from dature.config import _ConfigProxy
+
+
+@pytest.fixture
+def time_control() -> Generator[time_machine.Traveller, None, None]:
+    """Freeze wall-clock via ``time_machine`` AND bridge ``time.monotonic`` /
+    ``time.perf_counter`` to it so that ``traveller.shift(seconds)`` advances
+    both clocks consistently. Returns the underlying ``time_machine`` traveller.
+    """
+    mono_start = 1_000_000.0
+
+    with time_machine.travel("2024-01-01 00:00:00", tick=False) as traveller:
+        wall_start = time.time()
+
+        def fake_monotonic() -> float:
+            return mono_start + (time.time() - wall_start)
+
+        def fake_monotonic_ns() -> int:
+            return int(fake_monotonic() * 1e9)
+
+        with (
+            patch("time.monotonic", side_effect=fake_monotonic),
+            patch("time.monotonic_ns", side_effect=fake_monotonic_ns),
+            patch("time.perf_counter", side_effect=fake_monotonic),
+        ):
+            yield traveller
 
 
 def _collect_validation_errors(

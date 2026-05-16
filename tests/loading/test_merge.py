@@ -1,14 +1,16 @@
 """Tests for loading/multi.py — multi-source config loading."""
 
 from dataclasses import dataclass
+from datetime import timedelta
 from enum import Flag
 from pathlib import Path
 from textwrap import dedent
 from typing import Annotated
 
 import pytest
+import time_machine
 
-from dature import EnvFileSource, EnvSource, JsonSource, V, Yaml12Source, load
+from dature import EnvFileSource, EnvSource, JsonSource, Loader, V, Yaml12Source, load
 from dature.errors import DatureConfigError, FieldGroupError, MergeConflictError
 from dature.field_path import F
 
@@ -246,6 +248,72 @@ class TestMergeLoadAsFunction:
         assert result.my_var == "from_env"
 
 
+class TestMergeFunctionCache:
+    @pytest.mark.parametrize(
+        ("cache_arg", "advance_seconds", "expected_second"),
+        [
+            (True, 0.0, "original"),
+            (False, 0.0, "updated"),
+            (timedelta(seconds=30), 10.0, "original"),
+            (timedelta(seconds=30), 31.0, "updated"),
+            (timedelta(0), 0.0, "updated"),
+        ],
+        ids=["true", "false", "ttl-hit", "ttl-expired", "ttl-zero"],
+    )
+    def test_loader_cache_matrix(
+        self,
+        tmp_path: Path,
+        time_control: time_machine.Traveller,
+        cache_arg: bool | timedelta,
+        advance_seconds: float,
+        expected_second: str,
+    ):
+        defaults = tmp_path / "defaults.json"
+        defaults.write_text('{"host": "original", "port": 3000}')
+        overrides = tmp_path / "overrides.json"
+        overrides.write_text('{"port": 8080}')
+
+        defaults_source = JsonSource(file=defaults)
+        overrides_source = JsonSource(file=overrides)
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        loader = Loader(defaults_source, overrides_source, schema=Config, cache=cache_arg)
+        first = loader.load()
+        defaults.write_text('{"host": "updated", "port": 3000}')
+        time_control.shift(advance_seconds)
+        second = loader.load()
+
+        assert first.host == "original"
+        assert second.host == expected_second
+        assert second.port == 8080
+
+    def test_loader_distinguishes_different_first_sources(self, tmp_path: Path):
+        """Two Loader instances over different source sets keep their caches separate."""
+        common = tmp_path / "common.json"
+        common.write_text('{"port": 5000}')
+        first_a = tmp_path / "first_a.json"
+        first_a.write_text('{"host": "host-A"}')
+        first_b = tmp_path / "first_b.json"
+        first_b.write_text('{"host": "host-B"}')
+
+        common_source = JsonSource(file=common)
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        cfg_a = Loader(JsonSource(file=first_a), common_source, schema=Config, cache=True).load()
+        cfg_b = Loader(JsonSource(file=first_b), common_source, schema=Config, cache=True).load()
+
+        assert cfg_a.host == "host-A"
+        assert cfg_b.host == "host-B"
+
+
 class TestMergeAsDecorator:
     def test_decorator_with_merge(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -267,11 +335,37 @@ class TestMergeAsDecorator:
         assert config.host == "localhost"
         assert config.port == 9090
 
-    def test_decorator_cache(self, tmp_path: Path):
+    _CACHE_SENTINEL: object = object()
+
+    @pytest.mark.parametrize(
+        ("cache_arg", "advance_seconds", "expected_second"),
+        [
+            (_CACHE_SENTINEL, 0.0, "original"),
+            (True, 0.0, "original"),
+            (False, 0.0, "updated"),
+            (timedelta(seconds=30), 10.0, "original"),
+            (timedelta(seconds=30), 31.0, "updated"),
+            (timedelta(0), 0.0, "updated"),
+        ],
+        ids=["default", "true", "false", "ttl-hit", "ttl-expired", "ttl-zero"],
+    )
+    def test_decorator_cache_matrix(
+        self,
+        tmp_path: Path,
+        time_control: time_machine.Traveller,
+        cache_arg: object,
+        advance_seconds: float,
+        expected_second: str,
+    ):
         defaults = tmp_path / "defaults.json"
         defaults.write_text('{"host": "original", "port": 3000}')
 
-        @load(JsonSource(file=defaults))
+        if cache_arg is self._CACHE_SENTINEL:
+            decorator = load(JsonSource(file=defaults))
+        else:
+            decorator = load(JsonSource(file=defaults), cache=cache_arg)
+
+        @decorator
         @dataclass
         class Config:
             host: str
@@ -279,27 +373,11 @@ class TestMergeAsDecorator:
 
         first = Config()
         defaults.write_text('{"host": "updated", "port": 9090}')
+        time_control.shift(advance_seconds)
         second = Config()
 
         assert first.host == "original"
-        assert second.host == "original"
-
-    def test_decorator_no_cache(self, tmp_path: Path):
-        defaults = tmp_path / "defaults.json"
-        defaults.write_text('{"host": "original", "port": 3000}')
-
-        @load(JsonSource(file=defaults), cache=False)
-        @dataclass
-        class Config:
-            host: str
-            port: int
-
-        first = Config()
-        defaults.write_text('{"host": "updated", "port": 9090}')
-        second = Config()
-
-        assert first.host == "original"
-        assert second.host == "updated"
+        assert second.host == expected_second
 
     def test_decorator_with_tuple(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"

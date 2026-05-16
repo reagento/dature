@@ -1,5 +1,5 @@
 from dature.config import config
-from dature.load_report import FieldOrigin, SourceEntry
+from dature.report_types import FieldOrigin, SourceEntry
 from dature.types import JSONValue
 
 try:

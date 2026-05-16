@@ -28,7 +28,7 @@ Main entry point. Two calling patterns:
 |-----------|------|---------|-------------|
 | `*sources` | `Source` | — | One or more source descriptors (e.g. `JsonSource(file=...)`, `EnvSource()`). Multiple sources → merge mode. |
 | `schema` | `type[T] \| None` | `None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
-| `cache` | `bool \| None` | `None` | Enable caching in decorator mode. Default from `configure()`. Ignored in function mode. |
+| `cache` | `bool \| timedelta \| None` | `None` | Enable caching. `True`/`False` toggle, `timedelta` sets TTL. Default from `configure()`. **Effective in decorator mode only** — function mode `load(...)` creates a throwaway loader each call. For function-mode caching, use `dature.Loader` explicitly; see [Caching](advanced/caching.md). |
 | `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `configure()`. Retrieve with `get_load_report()`. |
 | `strategy` | `MergeStrategyName \| SourceMergeStrategy` | `"last_wins"` | Merge strategy: a built-in name or a custom object implementing `SourceMergeStrategy`. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
 | `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy name, callable, or any object implementing `FieldMergeStrategy`. See [Field Merge Strategies](#field-merge-strategies). |
@@ -54,6 +54,19 @@ Main entry point. Two calling patterns:
 - `MergeConflictError` — conflicting values with `strategy="raise_on_conflict"`.
 - `FieldGroupError` — field group constraint violation.
 - `EnvVarExpandError` — missing env vars with `expand_env_vars="strict"`.
+
+---
+
+### `dature.Loader`
+
+```python
+class Loader[T: DataclassInstance]:
+    def __init__(*sources, schema, cache=None, debug=None, **load_kwargs): ...
+    def load(self) -> T: ...
+    def invalidate(self) -> None: ...
+```
+
+Public class that carries all the load-time parameters and the cache state. Use it for function-mode caching across repeated calls (the throwaway `Loader` constructed inside `dature.load(...)` cannot cache between calls). Constructor accepts the same parameters as `dature.load(..., schema=...)` for function mode. See [Caching](advanced/caching.md) for the cache semantics (eternal / TTL / bucket-aligned).
 
 ---
 
@@ -305,7 +318,7 @@ Frozen dataclass controlling load behavior defaults.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `cache` | `bool` | `True` | Default caching in decorator mode. |
+| `cache` | `bool \| timedelta` | `True` | Default caching. `True`/`False` toggle, `timedelta` sets TTL. See [Caching](advanced/caching.md). |
 | `debug` | `bool` | `False` | Default debug mode (collect `LoadReport`). |
 | `nested_resolve_strategy` | `NestedResolveStrategy` | `"flat"` | Default nested resolve strategy for `FlatKeySource`. |
 | `expand_env_vars` | `ExpandEnvVarsMode` | `"default"` | Default env var expansion mode applied when neither source nor load-level value is set. |
