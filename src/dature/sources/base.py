@@ -1,48 +1,68 @@
 import abc
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
+from datetime import date, datetime, time
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Final, cast
+from typing import Any, ClassVar, Final, cast
+
+from adaptix import Retort, loader
+from adaptix.provider import Provider
 
 from dature.config_paths import find_config
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars, expand_file_path
 from dature.field_path import FieldPath
+from dature.loaders import (
+    bool_loader,
+    bytearray_from_json_string,
+    date_from_string,
+    datetime_from_string,
+    float_from_string,
+    none_from_empty_string,
+    optional_from_empty_string,
+    str_from_scalar,
+    time_from_string,
+)
 from dature.path_finders.base import PathFinder
-from dature.sources.retort import string_value_loaders
 from dature.types import (
     FILE_LIKE_TYPES,
     DotSeparatedPath,
     ExpandEnvVarsMode,
+    FieldMapping,
+    FileLike,
     FileOrStream,
+    FilePath,
     JSONValue,
     LoadRawResult,
+    NameStyle,
     NestedConflict,
     NestedConflicts,
     NestedResolve,
     NestedResolveStrategy,
+    SystemConfigDirsArg,
+    TypeLoaderMap,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    from adaptix import Retort
-    from adaptix.provider import Provider
-
-    from dature.types import (
-        FieldMapping,
-        FieldValidators,
-        FileLike,
-        FilePath,
-        NameStyle,
-        SystemConfigDirsArg,
-        TypeLoaderMap,
-    )
-    from dature.validators.root import RootPredicate
+from dature.validators.root import RootPredicate
+from dature.validators.types import FieldValidators
 
 logger = logging.getLogger("dature")
+
+
+def string_value_loaders() -> list[Provider]:
+    return [
+        loader(str, str_from_scalar),
+        loader(float, float_from_string),
+        loader(date, date_from_string),
+        loader(datetime, datetime_from_string),
+        loader(time, time_from_string),
+        loader(bytearray, bytearray_from_json_string),
+        loader(type(None), none_from_empty_string),
+        loader(str | None, optional_from_empty_string),
+        loader(bool, bool_loader),
+    ]
 
 
 # --8<-- [start:load-metadata]

@@ -5,9 +5,9 @@ from typing import Any, overload
 
 from dature.config import config
 from dature.loading.loader import Loader
+from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
-from dature.strategies.source import SourceMergeStrategy
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,

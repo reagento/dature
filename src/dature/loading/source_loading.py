@@ -1,78 +1,49 @@
-import logging
-from dataclasses import dataclass
+"""Post-load error enrichment for ``LoadCtx`` and the loader.
 
-from dature.config import config
-from dature.errors.location import ErrorContext
-from dature.field_path import FieldPath
-from dature.loading.context import apply_skip_invalid
-from dature.loading.merge_config import MergeConfig
-from dature.protocols import DataclassInstance
-from dature.skip_field_provider import FilterResult
-from dature.sources.base import Source
-from dature.types import (
-    JSONValue,
-    TypeLoaderMap,
-)
+``enrich_skipped_errors`` enriches ``Missing required field`` errors with
+information about fields that were skipped due to ``skip_field_if_invalid``.
+Per-source loading helpers (``resolve_type_loaders``, ``should_skip_broken``,
+``resolve_skip_invalid``, ``apply_merge_skip_invalid``) live in
+``dature.loading.merge_runtime`` together with ``MergeConfig``.
+"""
 
-logger = logging.getLogger("dature")
+from dature.errors.exceptions import DatureConfigError, DatureError, FieldLoadError
+from dature.errors.location import SkippedFieldSource, resolve_source_location
 
 
-def resolve_type_loaders(
-    source: Source,
-    load_type_loaders: TypeLoaderMap | None,
-) -> TypeLoaderMap | None:
-    merged = {**config.type_loaders, **(load_type_loaders or {}), **(source.type_loaders or {})}
-    return merged or None
+def enrich_skipped_errors(
+    err: DatureConfigError,
+    skipped_fields: dict[str, list[SkippedFieldSource]],
+) -> DatureConfigError:
+    updated: list[DatureError] = []
+    for exc in err.exceptions:
+        if not isinstance(exc, FieldLoadError):
+            if isinstance(exc, DatureError):
+                updated.append(exc)
+            continue
 
+        if exc.message != "Missing required field":
+            updated.append(exc)
+            continue
 
-def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
-    if source.skip_if_broken is not None:
-        if source.file_display() is None:
-            logger.warning(
-                "skip_if_broken has no effect on non-file sources — they cannot be broken",
-            )
-        return source.skip_if_broken
-    return merge_meta.skip_broken_sources
+        field_name = exc.field_path[-1] if exc.field_path else ""
+        sources = skipped_fields.get(field_name)
+        if sources is None:
+            updated.append(exc)
+            continue
 
-
-def resolve_skip_invalid(
-    source: Source,
-    merge_meta: MergeConfig,
-) -> bool | tuple[FieldPath, ...]:
-    if source.skip_field_if_invalid is not None:
-        return source.skip_field_if_invalid
-    return merge_meta.skip_invalid_fields
-
-
-def apply_merge_skip_invalid(
-    *,
-    raw: JSONValue,
-    source: Source,
-    merge_meta: MergeConfig,
-    schema: type[DataclassInstance],
-    source_index: int,
-) -> FilterResult:
-    skip_value = resolve_skip_invalid(source, merge_meta)
-    if not skip_value:
-        return FilterResult(cleaned_dict=raw, skipped_paths=[])
-
-    return apply_skip_invalid(
-        raw=raw,
-        skip_field_if_invalid=skip_value,
-        source=source,
-        schema=schema,
-        log_prefix=f"[{schema.__name__}] Source {source_index}:",
-    )
-
-
-@dataclass(frozen=True, slots=True)
-class SourceContext:
-    error_ctx: ErrorContext
-    file_content: str | None
-
-
-@dataclass(frozen=True, slots=True)
-class SkippedFieldSource:
-    source: Source
-    error_ctx: ErrorContext
-    file_content: str | None
+        source_reprs = ", ".join(repr(s.source) for s in sources)
+        locations = [
+            loc
+            for s in sources
+            for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content, input_value=exc.input_value)
+        ]
+        updated.append(
+            FieldLoadError(
+                field_path=exc.field_path,
+                message=f"Missing required field (invalid in: {source_reprs})",
+                input_value=exc.input_value,
+                locations=locations,
+            ),
+        )
+    return DatureConfigError(err.dataclass_name, updated)

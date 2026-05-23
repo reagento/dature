@@ -1,7 +1,7 @@
 import types
 from collections.abc import Callable
 from dataclasses import replace
-from typing import TYPE_CHECKING, Union, get_args
+from typing import Union, get_args
 
 from adaptix.load_error import (
     AggregateLoadError,
@@ -18,16 +18,12 @@ from adaptix.struct_trail import get_trail
 
 from dature.errors.exceptions import (
     DatureConfigError,
-    DatureError,
     EnvVarExpandError,
     FieldLoadError,
     MissingEnvVarError,
 )
 from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
 from dature.masking.masking import is_random_string, mask_value
-
-if TYPE_CHECKING:
-    from dature.loading.source_loading import SkippedFieldSource
 
 
 def _describe_error(exc: BaseException, *, is_secret: bool = False) -> str:
@@ -93,12 +89,13 @@ def _walk_exception(
 
     is_secret = ".".join(current_path) in secret_paths
     input_value = getattr(exc, "input_value", None)
-    if not is_secret and mask_secrets and isinstance(input_value, str) and is_random_string(input_value):
-        is_secret = True
-        if heuristic_secret_paths is not None:
-            heuristic_secret_paths.add(".".join(current_path))
-    if is_secret and input_value is not None:
-        input_value = mask_value(str(input_value))
+    if mask_secrets or is_secret:
+        if not is_secret and mask_secrets and isinstance(input_value, str) and is_random_string(input_value):
+            is_secret = True
+            if heuristic_secret_paths is not None:
+                heuristic_secret_paths.add(".".join(current_path))
+        if is_secret and input_value is not None:
+            input_value = mask_value(str(input_value))
 
     result.append(
         FieldLoadError(
@@ -163,41 +160,3 @@ def handle_load_errors[T](
                 ),
             )
         raise DatureConfigError(ctx.dataclass_name, enriched) from None
-
-
-def enrich_skipped_errors(
-    err: DatureConfigError,
-    skipped_fields: "dict[str, list[SkippedFieldSource]]",
-) -> DatureConfigError:
-    updated: list[DatureError] = []
-    for exc in err.exceptions:
-        if not isinstance(exc, FieldLoadError):
-            if isinstance(exc, DatureError):
-                updated.append(exc)
-            continue
-
-        if exc.message != "Missing required field":
-            updated.append(exc)
-            continue
-
-        field_name = exc.field_path[-1] if exc.field_path else ""
-        sources = skipped_fields.get(field_name)
-        if sources is None:
-            updated.append(exc)
-            continue
-
-        source_reprs = ", ".join(repr(s.source) for s in sources)
-        locations = [
-            loc
-            for s in sources
-            for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content, input_value=exc.input_value)
-        ]
-        updated.append(
-            FieldLoadError(
-                field_path=exc.field_path,
-                message=f"Missing required field (invalid in: {source_reprs})",
-                input_value=exc.input_value,
-                locations=locations,
-            ),
-        )
-    return DatureConfigError(err.dataclass_name, updated)

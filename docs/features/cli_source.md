@@ -177,7 +177,7 @@ win over file defaults.
 ## Combining with other sources
 
 Standard `load()` rules apply. Only values the CLI explicitly received reach
-the merge step (per the [defaults rule](#defaults-semantics--bool-vs-everything-else)),
+the merge step (per the [defaults rule](#defaults-semantics-bool-vs-everything-else)),
 so you can safely mix CLI with env vars and config files.
 
 === "Script"

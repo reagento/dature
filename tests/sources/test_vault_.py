@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import pytest
 
 from dature import VaultSource, configure, load
-from dature.loading.merge_config import apply_source_config_defaults
+from dature.loading.merge_runtime import apply_source_config_defaults
 
 
 class TestVaultSourceDisplayProperties:

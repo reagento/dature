@@ -3,12 +3,10 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from io import BufferedIOBase, RawIOBase, TextIOBase
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, Self
+from typing import Annotated, Any, Final, Literal, Self
 from urllib.parse import ParseResult
 
-if TYPE_CHECKING:
-    from dature.field_path import FieldPath
-    from dature.validators.predicate import Predicate
+from dature.field_path import FieldPath
 
 type JSONValue = dict[str, JSONValue] | list[JSONValue] | str | int | float | bool | None
 
@@ -56,7 +54,7 @@ type NameStyle = Literal[
 # field's static type (str, int, list[str], dict, etc.) for IDE autocompletion.
 # This union covers all types mypy can infer from F expressions.
 type FieldRef = (
-    "FieldPath | str | int | float | bool | list[Any] | dict[str, Any] | tuple[Any, ...] | set[Any] | bytes | None"
+    FieldPath | str | int | float | bool | list[Any] | dict[str, Any] | tuple[Any, ...] | set[Any] | bytes | None
 )
 
 type FieldMapping = dict[FieldRef, str | tuple[str, ...]]
@@ -75,10 +73,8 @@ type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsL
 type NestedResolveStrategy = Literal["flat", "json"]
 # Values are FieldPath at runtime, but F[Type] returns the dataclass type itself
 # due to the overload trick for IDE autocompletion, so we accept Any here.
-type _NestedResolveValue = "tuple[FieldPath | Any, ...]"
+type _NestedResolveValue = tuple[FieldPath | Any, ...]
 type NestedResolve = dict[NestedResolveStrategy, _NestedResolveValue]
-
-type FieldValidators = dict[FieldRef, "Predicate | tuple[Predicate, ...]"]
 
 type MergeStrategyName = Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]
 type FieldMergeStrategyName = Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]

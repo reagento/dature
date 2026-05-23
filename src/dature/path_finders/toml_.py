@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import toml_rs
 from toml_rs._lib import TomlVersion
@@ -6,8 +6,10 @@ from toml_rs._lib import TomlVersion
 from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
 
-if TYPE_CHECKING:
+try:
     from toml_rs._toml_rs import KeyMeta
+except ImportError:  # pragma: no cover  -- ``KeyMeta`` lives in the .pyi stub only
+    KeyMeta = dict  # type: ignore[misc, assignment]
 
 
 class TomlPathFinder(PathFinder):
@@ -36,7 +38,7 @@ def _build_toml_line_map(content: str, toml_version: TomlVersion) -> dict[tuple[
 
 
 def _walk_nodes(
-    nodes: "dict[str, KeyMeta]",
+    nodes: dict[str, KeyMeta],
     prefix: tuple[str, ...],
     line_map: dict[tuple[str, ...], LineRange],
 ) -> None:
@@ -52,7 +54,7 @@ def _walk_nodes(
 
 
 def _process_leaf_or_inline_table(
-    node: "KeyMeta",
+    node: KeyMeta,
     path: tuple[str, ...],
     line_map: dict[tuple[str, ...], LineRange],
 ) -> None:

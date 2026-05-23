@@ -8,8 +8,8 @@ import pytest
 from dature import JsonSource, configure, get_load_report, load
 from dature.errors import DatureConfigError
 from dature.fields.secret_str import SecretStr
-from dature.load_report import FieldOrigin, SourceEntry
 from dature.masking.masking import mask_env_line, mask_field_origins, mask_json_value, mask_source_entries, mask_value
+from dature.report_types import FieldOrigin, SourceEntry
 
 
 class TestMaskValue:

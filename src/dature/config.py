@@ -1,12 +1,10 @@
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, cast
+from typing import Any, ClassVar, Literal, TypedDict, cast
 
+from dature.protocols import DataclassInstance
 from dature.types import ExpandEnvVarsMode, NestedResolveStrategy, SystemConfigDirsArg, TypeLoaderMap
-
-if TYPE_CHECKING:
-    from dature.protocols import DataclassInstance
 
 
 # --8<-- [start:masking-config]

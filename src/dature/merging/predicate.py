@@ -1,12 +1,10 @@
 from dataclasses import dataclass, fields, is_dataclass
-from typing import TYPE_CHECKING, get_type_hints
+from typing import get_type_hints
 
 from dature.field_path import FieldPath, extract_field_path, resolve_field_type
 from dature.protocols import DataclassInstance
 from dature.strategies.field import FieldMergeStrategy, resolve_field_strategy
-
-if TYPE_CHECKING:
-    from dature.types import FieldGroupTuple, FieldMergeMap
+from dature.types import FieldGroupTuple, FieldMergeMap
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,11 +13,11 @@ class ResolvedFieldGroup:
 
 
 def build_field_merge_map(
-    field_merges: "FieldMergeMap | None",
+    field_merges: FieldMergeMap | None,
     schema: type[DataclassInstance] | None = None,
     *,
     dataclass_name: str = "<unknown>",
-) -> "dict[str, FieldMergeStrategy]":
+) -> dict[str, FieldMergeStrategy]:
     if not field_merges:
         return {}
 
@@ -50,7 +48,7 @@ def _expand_dataclass_fields(prefix: str, dc_type: type) -> list[str]:
 
 
 def build_field_group_paths(
-    field_groups: "tuple[FieldGroupTuple, ...]",
+    field_groups: tuple[FieldGroupTuple, ...],
     schema: type[DataclassInstance],
 ) -> tuple[ResolvedFieldGroup, ...]:
     resolved: list[ResolvedFieldGroup] = []

@@ -1,18 +1,12 @@
 import abc
 from dataclasses import dataclass
 from datetime import date, datetime, time
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, Literal, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
 
 from dature._descriptors import classproperty
-from dature.sources.base import FileSource
-
-if TYPE_CHECKING:
-    from toml_rs._lib import TomlVersion
-
-    from dature.path_finders.base import PathFinder
 from dature.loaders import (
     bytearray_from_string,
     date_passthrough,
@@ -21,13 +15,22 @@ from dature.loaders import (
     optional_from_empty_string,
 )
 from dature.loaders.toml_ import time_passthrough
+from dature.path_finders.base import PathFinder
+from dature.sources.base import FileSource
 from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
+
+type _TomlVersionStr = Literal["1.0.0", "1.1.0"]
 
 
 @dataclass(kw_only=True, repr=False)
 class _BaseTomlSource(FileSource, abc.ABC):
     @abc.abstractmethod
-    def _toml_version(self) -> "TomlVersion": ...
+    def _toml_version(self) -> _TomlVersionStr:
+        """Return the TOML spec version this source parses.
+
+        Subclasses return a string literal rather than ``toml_rs._lib.TomlVersion``
+        directly so this module can be imported without the ``toml`` extra.
+        """
 
     def _load_file(self, path: FileOrStream) -> JSONValue:
         import toml_rs  # noqa: PLC0415
@@ -57,12 +60,12 @@ class Toml10Source(_BaseTomlSource):
     format_name = "toml1.0"
 
     @classproperty
-    def path_finder_class(cls) -> "type[PathFinder]":  # noqa: N805
+    def path_finder_class(cls) -> type[PathFinder]:  # noqa: N805
         from dature.path_finders.toml_ import Toml10PathFinder  # noqa: PLC0415
 
         return Toml10PathFinder
 
-    def _toml_version(self) -> "TomlVersion":
+    def _toml_version(self) -> _TomlVersionStr:
         return "1.0.0"
 
 
@@ -71,10 +74,10 @@ class Toml11Source(_BaseTomlSource):
     format_name = "toml1.1"
 
     @classproperty
-    def path_finder_class(cls) -> "type[PathFinder]":  # noqa: N805
+    def path_finder_class(cls) -> type[PathFinder]:  # noqa: N805
         from dature.path_finders.toml_ import Toml11PathFinder  # noqa: PLC0415
 
         return Toml11PathFinder
 
-    def _toml_version(self) -> "TomlVersion":
+    def _toml_version(self) -> _TomlVersionStr:
         return "1.1.0"

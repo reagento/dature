@@ -1,23 +1,29 @@
 import logging
 import warnings
+from dataclasses import dataclass
 from typing import Any
 
+from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries
-from dature.report_types import FieldOrigin, LoadReport, SourceEntry
-from dature.strategies.source import SourceMergeStrategy
+from dature.report_types import FieldOrigin, SourceEntry
 from dature.types import JSONValue
-
-__all__ = [
-    "FieldOrigin",
-    "LoadReport",
-    "SourceEntry",
-    "attach_load_report",
-    "get_load_report",
-]
 
 logger = logging.getLogger("dature")
 
 _REPORT_ATTR = "__dature_load_report__"
+
+
+# --8<-- [start:report-structure]
+@dataclass(frozen=True, slots=True, kw_only=True)
+class LoadReport:
+    dataclass_name: str
+    strategy: SourceMergeStrategy | None
+    sources: tuple[SourceEntry, ...]
+    field_origins: tuple[FieldOrigin, ...]
+    merged_data: JSONValue
+
+
+# --8<-- [end:report-structure]
 
 
 # --8<-- [start:get-load-report]

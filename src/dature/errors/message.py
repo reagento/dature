@@ -1,11 +1,7 @@
 """Error message formatting helpers."""
 
-from typing import TYPE_CHECKING
-
 from dature.config import config
-
-if TYPE_CHECKING:
-    from dature.errors.exceptions import CaretSpan, SourceLocation
+from dature.errors.loc_types import CaretSpan, SourceLocation
 
 
 def format_path(field_path: list[str]) -> str:
@@ -19,7 +15,7 @@ def _truncate_line(line: str) -> str:
     return line
 
 
-def _format_caret(caret: "CaretSpan") -> str | None:
+def _format_caret(caret: CaretSpan) -> str | None:
     if caret.length <= 0:
         return None
     max_visible = config.error_display.max_line_length - 3
@@ -28,7 +24,7 @@ def _format_caret(caret: "CaretSpan") -> str | None:
     return f"   │   {' ' * caret.start}{'^' * min(caret.length, max_visible - caret.start)}"
 
 
-def _format_fileline(loc: "SourceLocation", *, connector: str, suffix: str) -> str:
+def _format_fileline(loc: SourceLocation, *, connector: str, suffix: str) -> str:
     line = f"   {connector} {loc.location_label} '{loc.file_path}'"
     if loc.line_range is not None:
         line += f", {loc.line_range!r}"
@@ -37,7 +33,7 @@ def _format_fileline(loc: "SourceLocation", *, connector: str, suffix: str) -> s
 
 def _format_content_with_carets(
     content: list[str],
-    carets: "list[CaretSpan] | None",
+    carets: list[CaretSpan] | None,
 ) -> list[str]:
     max_visible = config.error_display.max_visible_lines
     truncated = len(content) > max_visible
@@ -54,7 +50,7 @@ def _format_content_with_carets(
 
 
 def format_location(
-    loc: "SourceLocation",
+    loc: SourceLocation,
     *,
     last: bool = True,
 ) -> list[str]:

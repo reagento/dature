@@ -1,16 +1,12 @@
 import io
 from dataclasses import dataclass
 from datetime import date, datetime, time
-from typing import TYPE_CHECKING, TextIO, cast
+from typing import TextIO, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
 
 from dature._descriptors import classproperty
-from dature.sources.base import FileSource
-
-if TYPE_CHECKING:
-    from dature.path_finders.base import PathFinder
 from dature.loaders import (
     bytearray_from_string,
     date_from_string,
@@ -19,6 +15,8 @@ from dature.loaders import (
     time_from_string,
 )
 from dature.loaders.json5_ import str_from_json_identifier
+from dature.path_finders.base import PathFinder
+from dature.sources.base import FileSource
 from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 
@@ -27,7 +25,7 @@ class Json5Source(FileSource):
     format_name = "json5"
 
     @classproperty
-    def path_finder_class(cls) -> "type[PathFinder]":  # noqa: N805
+    def path_finder_class(cls) -> type[PathFinder]:  # noqa: N805
         from dature.path_finders.json5_ import Json5PathFinder  # noqa: PLC0415
 
         return Json5PathFinder

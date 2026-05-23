@@ -218,6 +218,7 @@ Retrieves the `LoadReport` attached to a loaded instance. Returns `None` and emi
 ### `LoadReport`, `SourceEntry`, `FieldOrigin`
 
 ```python
+--8<-- "src/dature/report_types.py:value-types"
 --8<-- "src/dature/load_report.py:report-structure"
 ```
 

@@ -10,7 +10,8 @@ import pytest
 
 from dature import JsonSource, V, get_load_report, load
 from dature.errors import DatureConfigError
-from dature.load_report import FieldOrigin, LoadReport, SourceEntry
+from dature.load_report import LoadReport
+from dature.report_types import FieldOrigin, SourceEntry
 from dature.strategies.source import SourceFirstWins, SourceLastWins
 
 
