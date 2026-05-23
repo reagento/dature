@@ -1,3 +1,6 @@
+from adaptix import Provider as Provider
+from adaptix import loader as loader
+
 from dature.loaders.base import (
     base64url_bytes_from_string,
     base64url_str_from_string,
@@ -27,6 +30,7 @@ from dature.loaders.common import (
 )
 
 __all__ = [
+    "Provider",
     "base64url_bytes_from_string",
     "base64url_str_from_string",
     "bool_loader",
@@ -42,6 +46,7 @@ __all__ = [
     "float_from_string",
     "float_passthrough",
     "int_from_string",
+    "loader",
     "none_from_empty_string",
     "optional_from_empty_string",
     "payment_card_number_from_string",
