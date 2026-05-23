@@ -3,12 +3,9 @@ import os
 import sys
 from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from dature.expansion.env_expand import _expand_string_collect
-
-if TYPE_CHECKING:
-    from dature.types import SystemConfigDirsArg
+from dature.types import SystemConfigDirsArg
 
 logger = logging.getLogger("dature")
 
@@ -60,7 +57,7 @@ def _resolve_dirs(system_config_dirs: "SystemConfigDirsArg | None") -> Iterator[
 
 def find_config(
     filename: str,
-    system_config_dirs: "SystemConfigDirsArg | None",
+    system_config_dirs: SystemConfigDirsArg | None,
 ) -> Path | None:
     """Find the first existing ``filename`` in ``system_config_dirs``.
 

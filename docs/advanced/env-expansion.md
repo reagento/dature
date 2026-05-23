@@ -18,11 +18,11 @@ String values in all file formats support environment variable expansion:
 
 | Syntax | Description |
 |--------|-------------|
-| `$VAR` | Simple variable |
-| `${VAR}` | Braced variable |
+| `$VAR` | Subsitute variable |
+| `${VAR}` | Substitute variable (alterative form) |
 | `${VAR:-default}` | Variable with fallback value |
 | `${VAR:-$FALLBACK_VAR}` | Fallback is also an env variable |
-| `%VAR%` | Windows-style variable |
+| `%VAR%` | Substitute variable (alterative windows-like form) |
 | `$$` | Literal `$` (escaped) |
 | `%%` | Literal `%` (escaped) |
 

@@ -5,15 +5,16 @@ lives directly on ``Loader._do_load_single`` in ``loader.py``.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass as stdlib_dataclass
-from typing import TYPE_CHECKING
 
 from dature.errors import DatureConfigError, SourceLoadError
-from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
+from dature.errors.formatter import handle_load_errors
 from dature.load_report import LoadReport, _build_merge_report, attach_load_report
 from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import coerce_flag_fields
-from dature.loading.merge_config import MergeConfig
+from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent
+from dature.loading.source_loading import enrich_skipped_errors
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value, mask_value
 from dature.merging.deep_merge import deep_merge_last_wins
@@ -23,15 +24,8 @@ from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin
 from dature.sources.base import Source
 from dature.sources.retort import transform_to_dataclass
-from dature.strategies.source import (
-    LoadCtx,
-    MergeStepEvent,
-    resolve_source_strategy,
-)
+from dature.strategies.source import resolve_source_strategy
 from dature.types import JSONValue, TypeLoaderMap
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 logger = logging.getLogger("dature")
 

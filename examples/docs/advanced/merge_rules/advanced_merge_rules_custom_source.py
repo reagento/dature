@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from dature.strategies.source import LoadCtx, SourceMergeStrategy
+from dature.strategies import LoadCtx, SourceMergeStrategy
 from dature.types import JSONValue
 
 SHARED_DIR = Path(__file__).parents[2] / "shared"

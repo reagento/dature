@@ -2,22 +2,14 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 
 from dature import EnvSource, JsonSource, load
 from dature.field_path import F
-from dature.strategies.source import (
-    LoadCtx,
-    SourceFirstFound,
-    SourceFirstWins,
-    SourceLastWins,
-    SourceMergeStrategy,
-)
-
-if TYPE_CHECKING:
-    from dature.types import JSONValue
+from dature.loading.merge_runtime import LoadCtx, SourceMergeStrategy
+from dature.strategies.source import SourceFirstFound, SourceFirstWins, SourceLastWins
+from dature.types import JSONValue
 
 
 @dataclass

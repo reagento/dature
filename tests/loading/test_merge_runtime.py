@@ -1,4 +1,4 @@
-"""Tests for loading/merge_config.py — load-level and config-group source merging."""
+"""Tests for loading/merge_runtime.py — load-level and config-group source merging."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -6,11 +6,15 @@ from typing import ClassVar, Literal
 
 import pytest
 
-from dature import Yaml12Source, configure
-from dature.loading.merge_config import (
+from dature import JsonSource, Yaml12Source, configure
+from dature.loading.merge_runtime import (
+    MergeConfig,
     SourceParams,
+    apply_merge_skip_invalid,
     apply_source_config_defaults,
     apply_source_init_params,
+    resolve_skip_invalid,
+    should_skip_broken,
 )
 from dature.sources.base import Source
 from dature.sources.env_ import EnvSource
@@ -129,3 +133,87 @@ class TestApplySourceConfigDefaults:
         configure(vault=config_kwargs)
         merged = apply_source_config_defaults(_FakeRemote(**instance_kwargs))
         assert getattr(merged, field) == expected
+
+
+class TestShouldSkipBroken:
+    @pytest.mark.parametrize(
+        ("skip_if_broken", "skip_broken_sources", "expected"),
+        [
+            (True, False, True),
+            (False, True, False),
+            (None, True, True),
+        ],
+        ids=["source-true", "source-false", "source-none-uses-merge"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        skip_if_broken: bool | None,
+        skip_broken_sources: bool,
+        expected: bool,
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if skip_if_broken is None else {"skip_if_broken": skip_if_broken}
+        source = JsonSource(file=json_file, **kwargs)
+        merge = MergeConfig(sources=(source,), skip_broken_sources=skip_broken_sources)
+
+        assert should_skip_broken(source, merge) is expected
+
+    def test_env_source_warns(self, caplog: pytest.LogCaptureFixture):
+        source = EnvSource(skip_if_broken=True)
+        merge = MergeConfig(sources=(source,))
+
+        should_skip_broken(source, merge)
+
+        assert "skip_if_broken has no effect on non-file sources" in caplog.text
+
+
+class TestResolveSkipInvalid:
+    @pytest.mark.parametrize(
+        ("source_skip", "merge_skip", "expected"),
+        [
+            (True, False, True),
+            (None, True, True),
+        ],
+        ids=["source-overrides", "source-none-inherits"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        source_skip: bool | None,
+        merge_skip: bool,
+        expected: bool,
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if source_skip is None else {"skip_field_if_invalid": source_skip}
+        source = JsonSource(file=json_file, **kwargs)
+        merge = MergeConfig(sources=(source,), skip_invalid_fields=merge_skip)
+
+        assert resolve_skip_invalid(source, merge) is expected
+
+
+class TestApplyMergeSkipInvalid:
+    def test_skip_false_returns_raw(self, tmp_path: Path):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+
+        @dataclass
+        class Cfg:
+            name: str
+
+        source = JsonSource(file=json_file)
+        merge = MergeConfig(sources=(source,), skip_invalid_fields=False)
+        raw = {"name": "hello"}
+
+        result = apply_merge_skip_invalid(
+            raw=raw,
+            source=source,
+            merge_meta=merge,
+            schema=Cfg,
+            source_index=0,
+        )
+
+        assert result.cleaned_dict == raw
+        assert result.skipped_paths == []

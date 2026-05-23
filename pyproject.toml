@@ -79,7 +79,13 @@ ignore = [
     "ANN204", # missing return type for __init__
     "SIM108", # ternary operator
     "COM812", # disable the conflicting rule with formatter
+    "TC001",  # typing-only first-party import — TYPE_CHECKING is banned in dature
+    "TC002",  # typing-only third-party import — TYPE_CHECKING is banned in dature
+    "TC003",  # typing-only standard-library import — TYPE_CHECKING is banned in dature
 ]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.TYPE_CHECKING".msg = "TYPE_CHECKING is banned in dature: move imports to module or function scope; resolve cycles by refactoring."
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
@@ -163,7 +169,6 @@ omit = ["src/dature/_version.py"]
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
-    "if TYPE_CHECKING:",
     "@overload",
 ]
 

@@ -21,12 +21,14 @@ import logging
 from collections.abc import Callable
 from dataclasses import asdict, fields, is_dataclass
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+from adaptix import Retort
 
 from dature.config import config
 from dature.errors import DatureConfigError
-from dature.errors.formatter import enrich_skipped_errors, handle_load_errors
-from dature.errors.location import read_file_content
+from dature.errors.formatter import handle_load_errors
+from dature.errors.location import ErrorContext, SkippedFieldSource, read_file_content
 from dature.load_report import (
     LoadReport,
     _build_single_source_report,
@@ -43,13 +45,15 @@ from dature.loading.context import (
     merge_fields,
 )
 from dature.loading.merge import _collect_extra_secret_patterns, _load_and_merge
-from dature.loading.merge_config import (
+from dature.loading.merge_runtime import (
     MergeConfig,
+    SourceMergeStrategy,
     SourceParams,
     apply_source_config_defaults,
     apply_source_init_params,
+    resolve_type_loaders,
 )
-from dature.loading.source_loading import SkippedFieldSource, resolve_type_loaders
+from dature.loading.source_loading import enrich_skipped_errors
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
 from dature.protocols import DataclassInstance
@@ -60,7 +64,6 @@ from dature.sources.retort import (
     ensure_retort,
     transform_to_dataclass,
 )
-from dature.strategies.source import SourceMergeStrategy
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -71,11 +74,6 @@ from dature.types import (
     NestedResolveStrategy,
     TypeLoaderMap,
 )
-
-if TYPE_CHECKING:
-    from adaptix import Retort
-
-    from dature.errors.location import ErrorContext
 
 logger = logging.getLogger("dature")
 
@@ -334,7 +332,7 @@ class Loader[T: DataclassInstance]:
         return self._type_loaders
 
     @property
-    def probe_retort(self) -> "Retort | None":
+    def probe_retort(self) -> Retort | None:
         return self._probe_retort
 
     # ------------------------------------------------------------------ #

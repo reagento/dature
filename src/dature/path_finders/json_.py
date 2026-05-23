@@ -3,15 +3,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from json.decoder import JSONArray, JSONObject, scanstring  # type: ignore[attr-defined]
 from json.scanner import py_make_scanner  # type: ignore[attr-defined]
-from typing import TYPE_CHECKING
 
 from dature.errors import LineRange
 from dature.path_finders.base import PathFinder
+from dature.types import JSONValue
 
-if TYPE_CHECKING:
-    from dature.types import JSONValue
-
-    _ScanOnce = Callable[[str, int], tuple["JSONValue", int]]
+_ScanOnce = Callable[[str, int], tuple[JSONValue, int]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,11 +37,11 @@ def _build_json_line_map(content: str) -> dict[tuple[str, ...], LineRange]:
     def _wrapping_parse_object(
         s_and_end: tuple[str, int],
         strict: bool,  # noqa: FBT001
-        scan_once: "_ScanOnce",
-        object_hook: Callable[["JSONValue"], "JSONValue"],
-        object_pairs_hook: Callable[["JSONValue"], "JSONValue"],
+        scan_once: _ScanOnce,
+        object_hook: Callable[[JSONValue], JSONValue],
+        object_pairs_hook: Callable[[JSONValue], JSONValue],
         memo: dict[str, str] | None = None,
-    ) -> tuple["JSONValue", int]:
+    ) -> tuple[JSONValue, int]:
         def tracking_scan_once(s: str, idx: int) -> tuple["JSONValue", int]:
             extracted = _extract_key_before_value(s, idx)
             if extracted.key is not None:
@@ -72,8 +69,8 @@ def _build_json_line_map(content: str) -> dict[tuple[str, ...], LineRange]:
 
     def _wrapping_parse_array(
         s_and_end: tuple[str, int],
-        scan_once: "_ScanOnce",
-    ) -> tuple[list["JSONValue"], int]:
+        scan_once: _ScanOnce,
+    ) -> tuple[list[JSONValue], int]:
         idx = 0
 
         def tracking_scan_once(s: str, pos: int) -> tuple["JSONValue", int]:

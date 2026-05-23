@@ -1,20 +1,17 @@
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from dature.errors import CaretSpan, SourceLocation
 from dature.expansion.env_expand import expand_file_path
 from dature.sources.base import FlatKeySource
-from dature.types import JSONValue, NestedConflict
-
-if TYPE_CHECKING:
-    from dature.types import FilePath
+from dature.types import FilePath, JSONValue, NestedConflict
 
 
 @dataclass(kw_only=True, repr=False)
 class DockerSecretsSource(FlatKeySource):
-    dir_: "FilePath"
+    dir_: FilePath
     format_name = "docker_secrets"
     location_label: ClassVar[str] = "SECRET FILE"
 

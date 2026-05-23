@@ -1,43 +1,9 @@
 from collections.abc import Sequence
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Self
 
+from dature.errors.loc_types import SourceLocation
 from dature.errors.message import format_location, format_path
 from dature.types import JSONValue
-
-
-@dataclass(frozen=True, slots=True)
-class LineRange:
-    start: int
-    end: int
-
-    def __repr__(self) -> str:
-        if self.start == self.end:
-            return f"line {self.start}"
-        return f"line {self.start}-{self.end}"
-
-
-@dataclass(frozen=True, slots=True)
-class CaretSpan:
-    start: int
-    end: int
-
-    @property
-    def length(self) -> int:
-        return self.end - self.start
-
-
-@dataclass(frozen=True, slots=True)
-class SourceLocation:
-    location_label: str
-    file_path: Path | None
-    line_range: LineRange | None
-    line_content: list[str] | None
-    env_var_name: str | None
-    annotation: str | None = None
-    env_var_value: str | None = None
-    line_carets: "list[CaretSpan] | None" = None
 
 
 class DatureError(Exception):

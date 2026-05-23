@@ -1,24 +1,34 @@
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from dature.errors.exceptions import CaretSpan, LineRange, SourceLocation
+from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
 from dature.path_finders.base import PathFinder
+from dature.sources.base import Source
 from dature.types import JSONValue, NestedConflict, NestedConflicts
-
-if TYPE_CHECKING:
-    from dature.sources.base import Source
 
 
 @dataclass(frozen=True)
 class ErrorContext:
     dataclass_name: str
-    source: "Source"
+    source: Source
     secret_paths: frozenset[str] = frozenset()
     mask_secrets: bool = False
     nested_conflicts: NestedConflicts | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SourceContext:
+    error_ctx: ErrorContext
+    file_content: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SkippedFieldSource:
+    source: Source
+    error_ctx: ErrorContext
+    file_content: str | None
 
 
 def read_file_content(file_path: Path | None) -> str | None:

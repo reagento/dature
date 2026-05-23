@@ -1,3 +1,4 @@
+from dature.loading.merge_runtime import LoadCtx, SourceMergeStrategy
 from dature.strategies.field import (
     FieldAppend,
     FieldAppendUnique,
@@ -8,11 +9,9 @@ from dature.strategies.field import (
     FieldPrependUnique,
 )
 from dature.strategies.source import (
-    LoadCtx,
     SourceFirstFound,
     SourceFirstWins,
     SourceLastWins,
-    SourceMergeStrategy,
     SourceRaiseOnConflict,
 )
 

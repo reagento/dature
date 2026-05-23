@@ -1,6 +1,6 @@
 from dataclasses import fields
-from datetime import date, datetime, time, timedelta
-from typing import TYPE_CHECKING, Any, cast, get_type_hints
+from datetime import timedelta
+from typing import Any, cast, get_type_hints
 
 from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort, loader, name_mapping
@@ -11,17 +11,6 @@ from dature.field_path import FieldPath
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
-from dature.loaders import (
-    bool_loader,
-    bytearray_from_json_string,
-    date_from_string,
-    datetime_from_string,
-    float_from_string,
-    none_from_empty_string,
-    optional_from_empty_string,
-    str_from_scalar,
-    time_from_string,
-)
 from dature.loaders.base import (
     base64url_bytes_from_string,
     base64url_str_from_string,
@@ -34,12 +23,18 @@ from dature.loaders.base import (
     url_from_string,
 )
 from dature.loaders.common import float_passthrough, int_from_string
+from dature.protocols import DataclassInstance
 from dature.skip_field_provider import ModelToDictProvider, SkipFieldProvider
+from dature.sources.base import Source
 from dature.type_utils import find_nested_dataclasses
 from dature.types import (
     URL,
     Base64UrlBytes,
     Base64UrlStr,
+    FieldMapping,
+    JSONValue,
+    NameStyle,
+    TypeLoaderMap,
 )
 from dature.validators.base import (
     create_metadata_validator_providers,
@@ -48,32 +43,8 @@ from dature.validators.base import (
     extract_and_check_validators,
 )
 
-if TYPE_CHECKING:
-    from dature.protocols import DataclassInstance
-    from dature.sources.base import Source
-    from dature.types import (
-        FieldMapping,
-        JSONValue,
-        NameStyle,
-        TypeLoaderMap,
-    )
 
-
-def string_value_loaders() -> list[Provider]:
-    return [
-        loader(str, str_from_scalar),
-        loader(float, float_from_string),
-        loader(date, date_from_string),
-        loader(datetime, datetime_from_string),
-        loader(time, time_from_string),
-        loader(bytearray, bytearray_from_json_string),
-        loader(type(None), none_from_empty_string),
-        loader(str | None, optional_from_empty_string),
-        loader(bool, bool_loader),
-    ]
-
-
-def get_adaptix_name_style(name_style: "NameStyle | None") -> AdaptixNameStyle | None:
+def get_adaptix_name_style(name_style: NameStyle | None) -> AdaptixNameStyle | None:
     if name_style is None:
         return None
 
@@ -89,8 +60,8 @@ def get_adaptix_name_style(name_style: "NameStyle | None") -> AdaptixNameStyle |
 
 
 def get_name_mapping_providers(
-    name_style: "NameStyle | None",
-    field_mapping: "FieldMapping | None",
+    name_style: NameStyle | None,
+    field_mapping: FieldMapping | None,
 ) -> list[Provider]:
     providers: list[Provider] = []
 
@@ -145,9 +116,9 @@ def get_validator_providers[T](schema: type[T]) -> list[Provider]:
 
 
 def build_base_recipe(
-    source: "Source",
+    source: Source,
     *,
-    resolved_type_loaders: "TypeLoaderMap | None" = None,
+    resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> list[Provider]:
     user_loaders: list[Provider] = [
         loader(type_, func) for type_, func in (resolved_type_loaders or source.type_loaders or {}).items()
@@ -174,9 +145,9 @@ def build_base_recipe(
 
 
 def create_retort(
-    source: "Source",
+    source: Source,
     *,
-    resolved_type_loaders: "TypeLoaderMap | None" = None,
+    resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> Retort:
     return Retort(
         strict_coercion=True,
@@ -185,9 +156,9 @@ def create_retort(
 
 
 def create_probe_retort(
-    source: "Source",
+    source: Source,
     *,
-    resolved_type_loaders: "TypeLoaderMap | None" = None,
+    resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> Retort:
     return Retort(
         strict_coercion=True,
@@ -225,18 +196,18 @@ def create_validating_retort[T](
 
 def _retort_cache_key(
     schema: type,
-    resolved_type_loaders: "TypeLoaderMap | None",
+    resolved_type_loaders: TypeLoaderMap | None,
 ) -> tuple[type, frozenset[tuple[type, Any]]]:
     loaders_key = frozenset(resolved_type_loaders.items()) if resolved_type_loaders is not None else frozenset()
     return (schema, loaders_key)
 
 
 def transform_to_dataclass[T](
-    source: "Source",
-    data: "JSONValue",
+    source: Source,
+    data: JSONValue,
     schema: type[T],
     *,
-    resolved_type_loaders: "TypeLoaderMap | None" = None,
+    resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> T:
     key = _retort_cache_key(schema, resolved_type_loaders)
     if key not in source.retorts:
@@ -245,10 +216,10 @@ def transform_to_dataclass[T](
 
 
 def ensure_retort(
-    source: "Source",
-    cls: "type[DataclassInstance]",
+    source: Source,
+    cls: type[DataclassInstance],
     *,
-    resolved_type_loaders: "TypeLoaderMap | None" = None,
+    resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     key = _retort_cache_key(cls, resolved_type_loaders)
     if key not in source.retorts:

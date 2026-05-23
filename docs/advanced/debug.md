@@ -23,6 +23,7 @@ Pass `debug=True` to collect a `LoadReport`:
 ## Report Structure
 
 ```python
+--8<-- "src/dature/report_types.py:value-types"
 --8<-- "src/dature/load_report.py:report-structure"
 ```
 

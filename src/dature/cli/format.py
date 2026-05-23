@@ -3,7 +3,8 @@ import traceback
 from dataclasses import asdict
 from typing import Any
 
-from dature.load_report import FieldOrigin, LoadReport
+from dature.load_report import LoadReport
+from dature.report_types import FieldOrigin
 
 
 def format_dature_error(exc: BaseException) -> str:

@@ -1,20 +1,17 @@
-"""Frozen value types for ``LoadReport`` and related data.
+"""Frozen value types describing a load report.
 
-Lives in its own module so that ``dature.load_report`` (which depends on
-``dature.masking``) and ``dature.masking.masking`` (which needs ``FieldOrigin``
-/ ``SourceEntry``) can share the same definitions without an import cycle.
+``SourceEntry`` and ``FieldOrigin`` describe individual entries of a load
+report. The aggregate ``LoadReport`` itself lives in :mod:`dature.load_report`
+next to its helpers — keeping this module free of any ``merge_runtime``
+import.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from dature.types import JSONValue
 
-if TYPE_CHECKING:
-    from dature.strategies.source import SourceMergeStrategy
 
-
-# --8<-- [start:report-structure]
+# --8<-- [start:value-types]
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SourceEntry:
     index: int
@@ -32,13 +29,4 @@ class FieldOrigin:
     source_loader_type: str
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class LoadReport:
-    dataclass_name: str
-    strategy: "SourceMergeStrategy | None"
-    sources: tuple[SourceEntry, ...]
-    field_origins: tuple[FieldOrigin, ...]
-    merged_data: JSONValue
-
-
-# --8<-- [end:report-structure]
+# --8<-- [end:value-types]
