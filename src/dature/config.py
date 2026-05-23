@@ -70,6 +70,7 @@ class LoadingConfig:
     expand_env_vars: ExpandEnvVarsMode = "default"
     search_system_paths: bool = True
     system_config_dirs: SystemConfigDirsArg = field(default_factory=_default_system_config_dirs)
+    encoding: str | None = None
 
 
 # --8<-- [end:loading-config]
@@ -144,6 +145,7 @@ class LoadingOptions(TypedDict, total=False):
     expand_env_vars: ExpandEnvVarsMode
     search_system_paths: bool
     system_config_dirs: SystemConfigDirsArg
+    encoding: str | None
 
 
 class VaultOptions(TypedDict, total=False):

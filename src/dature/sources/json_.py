@@ -35,5 +35,5 @@ class JsonSource(FileSource):
     def _load_file(self, path: FileOrStream) -> JSONValue:
         if isinstance(path, FILE_LIKE_TYPES):
             return cast("JSONValue", json.load(path))
-        with path.open() as file:
+        with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", json.load(file))

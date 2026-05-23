@@ -34,9 +34,9 @@ class IniSource(FileSource):
         if isinstance(path, TEXT_IO_TYPES):
             config.read_file(path)
         elif isinstance(path, BINARY_IO_TYPES):
-            config.read_file(io.TextIOWrapper(cast("io.BufferedReader", path)))
+            config.read_file(io.TextIOWrapper(cast("io.BufferedReader", path), encoding=self.encoding))
         else:
-            with path.open() as f:
+            with path.open(encoding=self.encoding) as f:
                 config.read_file(f)
         if self.prefix and self.prefix in config:
             result: dict[str, JSONValue] = dict(config[self.prefix])

@@ -63,6 +63,7 @@ class SourceParams:
     nested_resolve: NestedResolve | None = None
     search_system_paths: bool | None = None
     system_config_dirs: SystemConfigDirsArg | None = None
+    encoding: str | None = None
 
 
 def apply_source_init_params[T: Source](source: T, params: SourceParams) -> T:

@@ -38,7 +38,7 @@ class _BaseYamlSource(FileSource, abc.ABC):
         yaml.version = Version(*self._yaml_version())
         if isinstance(path, FILE_LIKE_TYPES):
             return cast("JSONValue", yaml.load(path))
-        with path.open() as file:
+        with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", yaml.load(file))
 
 

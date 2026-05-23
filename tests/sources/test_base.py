@@ -7,7 +7,7 @@ import pytest
 
 import dature
 from dature import JsonSource, Source, load
-from dature.errors import EnvVarExpandError
+from dature.errors import DatureConfigError, EnvVarExpandError
 from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
 from dature.sources.base import FileFieldMixin, RemoteSource, string_value_loaders
@@ -984,3 +984,48 @@ class TestFileSourceSearch:
 
         assert result.host == "mapped"
         assert result.port == 8000
+
+
+class TestFileSourceEncoding:
+    @pytest.fixture(autouse=True)
+    def _reset_config(self):
+        dature.configure(loading={})
+
+    @dataclass
+    class _Cfg:
+        name: str
+
+    def test_default_encoding_loads_utf8(self, tmp_path: Path) -> None:
+        (tmp_path / "config.json").write_bytes('{"name": "hello"}'.encode("utf-8"))  # noqa: UP012
+        result = dature.load(JsonSource(file=tmp_path / "config.json"), schema=self._Cfg)
+        assert result.name == "hello"
+
+    @pytest.mark.parametrize("encoding", ["cp1251", "cp866"])
+    def test_source_level_encoding(self, tmp_path: Path, encoding: str) -> None:
+        content = '{"name": "Привет"}'
+        (tmp_path / "config.json").write_bytes(content.encode(encoding))
+        result = dature.load(
+            JsonSource(file=tmp_path / "config.json", encoding=encoding),
+            schema=self._Cfg,
+        )
+        assert result.name == "Привет"
+
+    def test_wrong_encoding_raises(self, tmp_path: Path) -> None:
+        (tmp_path / "config.json").write_bytes('{"name": "Привет"}'.encode("cp1251"))
+        with pytest.raises((DatureConfigError, UnicodeDecodeError)):
+            dature.load(JsonSource(file=tmp_path / "config.json", encoding="utf-8"), schema=self._Cfg)
+
+    def test_global_config_encoding_applied(self, tmp_path: Path) -> None:
+        (tmp_path / "config.json").write_bytes('{"name": "Привет"}'.encode("cp1251"))
+        dature.configure(loading={"encoding": "cp1251"})
+        result = dature.load(JsonSource(file=tmp_path / "config.json"), schema=self._Cfg)
+        assert result.name == "Привет"
+
+    def test_source_level_encoding_wins_over_global(self, tmp_path: Path) -> None:
+        (tmp_path / "config.json").write_bytes('{"name": "Привет"}'.encode("cp1251"))
+        dature.configure(loading={"encoding": "utf-8"})
+        result = dature.load(
+            JsonSource(file=tmp_path / "config.json", encoding="cp1251"),
+            schema=self._Cfg,
+        )
+        assert result.name == "Привет"

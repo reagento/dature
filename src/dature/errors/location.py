@@ -35,7 +35,7 @@ def read_file_content(file_path: Path | None) -> str | None:
     if file_path is None:
         return None
 
-    with suppress(OSError):
+    with suppress(OSError, UnicodeDecodeError):
         return file_path.read_text()
 
     return None

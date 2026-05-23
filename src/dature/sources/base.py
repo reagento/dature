@@ -351,6 +351,7 @@ class FileFieldMixin:
     file: "FileLike | FilePath | None" = None
     search_system_paths: bool | None = None
     system_config_dirs: "SystemConfigDirsArg | None" = None
+    encoding: str | None = None
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:

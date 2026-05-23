@@ -40,7 +40,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
             if isinstance(content, bytes):
                 content = content.decode()
             return cast("JSONValue", toml_rs.loads(content, toml_version=self._toml_version()))
-        with path.open() as file:
+        with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", toml_rs.loads(file.read(), toml_version=self._toml_version()))
 
     def additional_loaders(self) -> list[Provider]:
