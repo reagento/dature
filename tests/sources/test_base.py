@@ -7,7 +7,7 @@ import pytest
 
 import dature
 from dature import JsonSource, Source, load
-from dature.errors import DatureConfigError, EnvVarExpandError
+from dature.errors import DatureConfigError, EnvVarExpandError, FieldLoadError
 from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
 from dature.sources.base import FileFieldMixin, RemoteSource, string_value_loaders
@@ -1029,3 +1029,20 @@ class TestFileSourceEncoding:
             schema=self._Cfg,
         )
         assert result.name == "Привет"
+
+    def test_error_location_uses_source_encoding(self, tmp_path: Path) -> None:
+        # File has Cyrillic bytes (cp1251); without the fix read_file_content falls
+        # back to the platform default encoding, gets UnicodeDecodeError, and
+        # returns None — leaving the error location without line_content.
+        @dataclass
+        class _CfgNotes:
+            name: str
+            notes: str
+
+        content = '{"name": 42, "notes": "Привет мир"}'
+        (tmp_path / "config.json").write_bytes(content.encode("cp1251"))
+        with pytest.raises(DatureConfigError) as exc_info:
+            dature.load(JsonSource(file=tmp_path / "config.json", encoding="cp1251"), schema=_CfgNotes)
+        errors = list(exc_info.value.exceptions)
+        assert isinstance(errors[0], FieldLoadError)
+        assert errors[0].locations[0].line_content is not None

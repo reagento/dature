@@ -375,7 +375,10 @@ class Loader[T: DataclassInstance]:
         raw_data = filter_result.cleaned_dict
 
         skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-        file_content = read_file_content(self.error_ctx.source.file_path_for_errors())
+        file_content = read_file_content(
+            self.error_ctx.source.file_path_for_errors(),
+            self.error_ctx.source.encoding_for_errors(),
+        )
         for path in filter_result.skipped_paths:
             skipped_fields.setdefault(path, []).append(
                 SkippedFieldSource(source=source, error_ctx=self.error_ctx, file_content=file_content),

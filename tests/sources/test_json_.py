@@ -181,12 +181,14 @@ class TestJsonSourceStream:
 
 
 class TestJsonFindLineRange:
-    def test_key_not_confused_by_newline_in_value(self):
-        content = '{\n  "str1": "line1\\nkey=1",\n  "key": "real"\n}'
-        assert _build_json_line_map(content).get(("key",)) == LineRange(start=3, end=3)
-
-    def test_key_not_confused_by_escaped_quotes(self):
-        content = '{\n  "str1": "he said \\"key\\": value",\n  "key": 42\n}'
+    @pytest.mark.parametrize(
+        "content",
+        [
+            pytest.param('{\n  "str1": "line1\\nkey=1",\n  "key": "real"\n}', id="newline_in_value"),
+            pytest.param('{\n  "str1": "he said \\"key\\": value",\n  "key": 42\n}', id="escaped_quotes"),
+        ],
+    )
+    def test_key_not_confused(self, content: str):
         assert _build_json_line_map(content).get(("key",)) == LineRange(start=3, end=3)
 
     def test_scalar_value(self):

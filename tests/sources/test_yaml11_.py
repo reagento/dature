@@ -183,13 +183,15 @@ def _yaml11(content: str) -> dict[tuple[str, ...], LineRange]:
 
 
 class TestYaml11FindLineRange:
-    def test_key_after_literal_block(self):
-        content = "str1: |\n  x: 1\n  Violets are blue\nx: 1\n"
-        assert _yaml11(content).get(("x",)) == LineRange(start=4, end=4)
-
-    def test_key_after_folded_block(self):
-        content = "str1: >\n  host: localhost\n  more text\nhost: production\n"
-        assert _yaml11(content).get(("host",)) == LineRange(start=4, end=4)
+    @pytest.mark.parametrize(
+        ("content", "key"),
+        [
+            pytest.param("str1: |\n  x: 1\n  Violets are blue\nx: 1\n", ("x",), id="literal"),
+            pytest.param("str1: >\n  host: localhost\n  more text\nhost: production\n", ("host",), id="folded"),
+        ],
+    )
+    def test_key_after_block(self, content: str, key: tuple[str, ...]):
+        assert _yaml11(content).get(key) == LineRange(start=4, end=4)
 
     def test_scalar_value(self):
         content = "timeout: 30\n"
@@ -203,20 +205,9 @@ class TestYaml11FindLineRange:
         content = "tags:\n  - a\n  - b\n"
         assert _yaml11(content).get(("tags",)) == LineRange(start=1, end=3)
 
-    def test_literal_block_scalar(self):
-        content = "key: |\n  line1\n  line2\n"
-        assert _yaml11(content).get(("key",)) == LineRange(start=1, end=3)
-
-    def test_folded_block_scalar(self):
-        content = "key: >\n  line1\n  line2\n"
-        assert _yaml11(content).get(("key",)) == LineRange(start=1, end=3)
-
-    def test_block_scalar_with_strip_modifier(self):
-        content = "key: |-\n  line1\n  line2\n"
-        assert _yaml11(content).get(("key",)) == LineRange(start=1, end=3)
-
-    def test_block_scalar_with_keep_modifier(self):
-        content = "key: >+\n  line1\n  line2\n"
+    @pytest.mark.parametrize("indicator", ["|", ">", "|-", ">+"])
+    def test_block_scalar(self, indicator: str):
+        content = f"key: {indicator}\n  line1\n  line2\n"
         assert _yaml11(content).get(("key",)) == LineRange(start=1, end=3)
 
     def test_not_found(self):

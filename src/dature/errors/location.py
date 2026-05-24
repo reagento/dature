@@ -30,12 +30,12 @@ class SkippedFieldSource:
     file_content: str | None
 
 
-def read_file_content(file_path: Path | None) -> str | None:
+def read_file_content(file_path: Path | None, encoding: str | None = None) -> str | None:
     if file_path is None:
         return None
 
     with suppress(OSError, UnicodeDecodeError):
-        return file_path.read_text()
+        return file_path.read_text(encoding=encoding)
 
     return None
 

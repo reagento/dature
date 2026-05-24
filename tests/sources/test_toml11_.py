@@ -171,17 +171,19 @@ def _toml11(content: str) -> dict[tuple[str, ...], LineRange]:
 
 
 class TestToml11FindLineRange:
-    def test_key_after_multiline_double_quotes(self):
-        content = 'str1 = """\nx=1\nViolets are blue"""\nx = 1\n'
-        assert _toml11(content).get(("x",)) == LineRange(start=4, end=4)
+    @pytest.mark.parametrize(
+        ("content", "key"),
+        [
+            pytest.param('str1 = """\nx=1\nViolets are blue"""\nx = 1\n', ("x",), id="double_quotes"),
+            pytest.param("str1 = '''\nport = 8080\n'''\nport = 3000\n", ("port",), id="single_quotes"),
+        ],
+    )
+    def test_key_after_multiline(self, content: str, key: tuple[str, ...]):
+        assert _toml11(content).get(key) == LineRange(start=4, end=4)
 
     def test_key_inside_multiline_not_matched_as_real_key(self):
         content = 'str1 = """\nhost = localhost\n"""\nhost = "production"\n'
         assert _toml11(content).get(("host",)) == LineRange(start=4, end=4)
-
-    def test_key_after_multiline_single_quotes(self):
-        content = "str1 = '''\nport = 8080\n'''\nport = 3000\n"
-        assert _toml11(content).get(("port",)) == LineRange(start=4, end=4)
 
     def test_key_only_inside_multiline_returns_not_found(self):
         content = 'str1 = """\nx = 1\n"""\n'
@@ -191,12 +193,14 @@ class TestToml11FindLineRange:
         content = "timeout = 30\n"
         assert _toml11(content).get(("timeout",)) == LineRange(start=1, end=1)
 
-    def test_multiline_double_quote_string(self):
-        content = 'key = """\nline1\nline2\n"""\n'
-        assert _toml11(content).get(("key",)) == LineRange(start=1, end=4)
-
-    def test_multiline_single_quote_string(self):
-        content = "key = '''\nline1\nline2\n'''\n"
+    @pytest.mark.parametrize(
+        "content",
+        [
+            pytest.param('key = """\nline1\nline2\n"""\n', id="double_quotes"),
+            pytest.param("key = '''\nline1\nline2\n'''\n", id="single_quotes"),
+        ],
+    )
+    def test_multiline_string(self, content: str):
         assert _toml11(content).get(("key",)) == LineRange(start=1, end=4)
 
     def test_single_line_triple_quote_string(self):

@@ -441,7 +441,10 @@ class LoadCtx:
                 nested_conflicts=load_result.nested_conflicts,
             )
 
-        file_content = read_file_content(error_ctx.source.file_path_for_errors())
+        file_content = read_file_content(
+            error_ctx.source.file_path_for_errors(),
+            error_ctx.source.encoding_for_errors(),
+        )
 
         filter_result = apply_merge_skip_invalid(
             raw=raw,

@@ -97,6 +97,9 @@ class Source(abc.ABC):
     def file_path_for_errors(self) -> Path | None:
         return None
 
+    def encoding_for_errors(self) -> str | None:
+        return None
+
     def display_name(self) -> str:
         return self.file_display() or self.format_name
 
@@ -413,6 +416,9 @@ class FileFieldMixin:
         if self._resolved_file_path is not None:
             return self._resolved_file_path
         return self.file_field_path_for_errors(self.file)
+
+    def encoding_for_errors(self) -> str | None:
+        return self.encoding
 
 
 @dataclass(kw_only=True, repr=False)
