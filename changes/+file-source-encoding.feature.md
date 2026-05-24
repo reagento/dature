@@ -1,1 +1,0 @@
-Add `encoding` field to `FileSource` (and `EnvFileSource`) and a matching `loading.encoding` global default. Default is `None` (Python's `open()` default — platform locale encoding), so existing behavior is unchanged. Set `encoding="utf-8"` on a source or via `configure(loading={"encoding": "utf-8"})` for explicit control.

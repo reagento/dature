@@ -1,1 +1,0 @@
-Fix `read_file_content` in the error formatter to use the source's `encoding` setting. Previously, error location display for `FileSource`/`EnvFileSource` with a non-default encoding (e.g. `cp1251`) would silently fall back to the platform encoding, causing `UnicodeDecodeError` that suppressed line-content from error messages.
