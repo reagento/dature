@@ -4,7 +4,6 @@ from pathlib import Path
 
 from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
-from dature.path_finders.base import PathFinder
 from dature.sources.base import Source
 from dature.types import JSONValue, NestedConflict, NestedConflicts
 
@@ -31,12 +30,12 @@ class SkippedFieldSource:
     file_content: str | None
 
 
-def read_file_content(file_path: Path | None) -> str | None:
+def read_file_content(file_path: Path | None, encoding: str | None = None) -> str | None:
     if file_path is None:
         return None
 
-    with suppress(OSError):
-        return file_path.read_text()
+    with suppress(OSError, UnicodeDecodeError):
+        return file_path.read_text(encoding=encoding)
 
     return None
 
@@ -54,16 +53,14 @@ def _ranges_overlap(a: LineRange, b: LineRange) -> bool:
 
 def _secret_overlaps_lines(
     *,
-    file_content: str,
+    line_index: dict[tuple[str, ...], LineRange],
     line_range: LineRange,
     secret_paths: frozenset[str],
     prefix: str | None,
-    path_finder_class: type[PathFinder],
 ) -> bool:
-    finder = path_finder_class(file_content)
     for secret_path in secret_paths:
         search_path = _build_search_path(secret_path.split("."), prefix)
-        secret_range = finder.find_line_range(search_path)
+        secret_range = line_index.get(tuple(search_path))
         if secret_range is not None and _ranges_overlap(line_range, secret_range):
             return True
     return False
@@ -90,21 +87,15 @@ def _apply_masking(
 ) -> list[SourceLocation]:
     result: list[SourceLocation] = []
     field_key = field_path[-1] if field_path else None
+    line_index = ctx.source._build_line_index(file_content) if ctx.secret_paths and file_content is not None else None  # noqa: SLF001
     for location in locations:
         should_mask = is_secret
-        if (
-            not should_mask
-            and ctx.secret_paths
-            and location.line_range is not None
-            and ctx.source.path_finder_class is not None
-            and file_content is not None
-        ):
+        if not should_mask and ctx.secret_paths and location.line_range is not None and line_index is not None:
             should_mask = _secret_overlaps_lines(
-                file_content=file_content,
+                line_index=line_index,
                 line_range=location.line_range,
                 secret_paths=ctx.secret_paths,
                 prefix=ctx.source.prefix,
-                path_finder_class=ctx.source.path_finder_class,
             )
         if should_mask and (location.line_content is not None or location.env_var_value is not None):
             masked_lines = (

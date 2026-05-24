@@ -9,9 +9,8 @@ Print the following:
 | Module | Role |
 |---|---|
 | `main.py` | `load()` entry point — dispatches single/multi, function/decorator mode |
-| `sources/` | `Source`, `FileSource`, `FlatKeySource` ABC + concrete source classes |
+| `sources/` | `Source`, `FileSource`, `FlatKeySource` ABC + concrete source classes; each file-format source also owns its line-index logic (`_build_line_index`) |
 | `loaders/` | Raw value coercion: string → typed Python (bool, float, date, …) |
-| `path_finders/` | Line-number lookup inside files for precise error locations |
 | `loading/` | Retort building, multi-source orchestration, merge pipeline |
 | `merging/` | Merge strategies, field groups, deep dict merge |
 | `errors/` | Exception formatting: field path + source location + masked values |
@@ -27,7 +26,7 @@ Print the following:
 
 ```
 Source (abc)                        — base: prefix, name_style, validators, masking
-├── FileSource (abc)                — adds file=, uses PathFinder for line locations
+├── FileSource (abc)                — adds file=, override _build_line_index for line locations
 │   ├── Yaml11Source / Yaml12Source
 │   ├── JsonSource / Json5Source
 │   ├── Toml10Source / Toml11Source

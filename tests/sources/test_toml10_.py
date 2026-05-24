@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from dature import Toml10Source, load
-from dature.errors import DatureConfigError, FieldLoadError
+from dature.errors import DatureConfigError, FieldLoadError, LineRange
+from dature.sources.toml_ import _build_toml_line_map
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -163,3 +164,74 @@ class TestToml10Source:
             f"   │          ^\n"
             f"   └── FILE '{toml_file}', line 1"
         )  # fmt: skip
+
+
+def _toml10(content: str) -> dict[tuple[str, ...], LineRange]:
+    return _build_toml_line_map(content, "1.0.0")
+
+
+class TestToml10FindLineRange:
+    @pytest.mark.parametrize(
+        ("content", "key"),
+        [
+            pytest.param('str1 = """\nx=1\nViolets are blue"""\nx = 1\n', ("x",), id="double_quotes"),
+            pytest.param("str1 = '''\nport = 8080\n'''\nport = 3000\n", ("port",), id="single_quotes"),
+        ],
+    )
+    def test_key_after_multiline(self, content: str, key: tuple[str, ...]):
+        assert _toml10(content).get(key) == LineRange(start=4, end=4)
+
+    def test_key_inside_multiline_not_matched_as_real_key(self):
+        content = 'str1 = """\nhost = localhost\n"""\nhost = "production"\n'
+        assert _toml10(content).get(("host",)) == LineRange(start=4, end=4)
+
+    def test_key_only_inside_multiline_returns_not_found(self):
+        content = 'str1 = """\nx = 1\n"""\n'
+        assert _toml10(content).get(("x",)) is None
+
+    def test_scalar_value(self):
+        content = "timeout = 30\n"
+        assert _toml10(content).get(("timeout",)) == LineRange(start=1, end=1)
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            pytest.param('key = """\nline1\nline2\n"""\n', id="double_quotes"),
+            pytest.param("key = '''\nline1\nline2\n'''\n", id="single_quotes"),
+        ],
+    )
+    def test_multiline_string(self, content: str):
+        assert _toml10(content).get(("key",)) == LineRange(start=1, end=4)
+
+    def test_single_line_triple_quote_string(self):
+        content = 'key = """single-line"""\n'
+        assert _toml10(content).get(("key",)) == LineRange(start=1, end=1)
+
+    def test_multiline_array(self):
+        content = 'tags = [\n  "a",\n  "b"\n]\n'
+        assert _toml10(content).get(("tags",)) == LineRange(start=1, end=4)
+
+    def test_not_found(self):
+        content = 'name = "test"\n'
+        assert _toml10(content).get(("missing",)) is None
+
+    def test_inline_array(self):
+        content = 'tags = ["a", "b"]\n'
+        assert _toml10(content).get(("tags",)) == LineRange(start=1, end=1)
+
+    def test_inline_table(self):
+        content = 'db = {host = "localhost", port = 5432}\n'
+        assert _toml10(content).get(("db", "host")) == LineRange(start=1, end=1)
+
+    def test_array_of_tables_nested_key(self):
+        content = (
+            '[[product]]\nname = "Hammer"\nsku = 738594937\n\n'
+            "[[product]]\n\n"
+            '[[product]]\nname = "Nail"\nsku = 284758393\n\n'
+            'color = "gray"\n'
+        )
+        assert _toml10(content).get(("product", "0", "name")) == LineRange(start=2, end=2)
+        assert _toml10(content).get(("product", "0", "sku")) == LineRange(start=3, end=3)
+        assert _toml10(content).get(("product", "2", "name")) == LineRange(start=8, end=8)
+        assert _toml10(content).get(("product", "2", "sku")) == LineRange(start=9, end=9)
+        assert _toml10(content).get(("product", "2", "color")) == LineRange(start=11, end=11)

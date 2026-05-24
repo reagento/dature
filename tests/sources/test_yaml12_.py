@@ -4,9 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+from ruamel.yaml.docinfo import Version
 
 from dature import Yaml12Source, load
-from dature.errors import DatureConfigError, FieldLoadError
+from dature.errors import DatureConfigError, FieldLoadError, LineRange
+from dature.sources.yaml_ import _build_yaml_line_map
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -174,3 +176,44 @@ class TestYaml12Source:
             f"   │         ^\n"
             f"   └── FILE '{yaml_file}', line 1"
         )  # fmt: skip
+
+
+def _yaml12(content: str) -> dict[tuple[str, ...], LineRange]:
+    return _build_yaml_line_map(content, Version(1, 2))
+
+
+class TestYaml12FindLineRange:
+    @pytest.mark.parametrize(
+        ("content", "key"),
+        [
+            pytest.param("str1: |\n  x: 1\n  Violets are blue\nx: 1\n", ("x",), id="literal"),
+            pytest.param("str1: >\n  host: localhost\n  more text\nhost: production\n", ("host",), id="folded"),
+        ],
+    )
+    def test_key_after_block(self, content: str, key: tuple[str, ...]):
+        assert _yaml12(content).get(key) == LineRange(start=4, end=4)
+
+    def test_scalar_value(self):
+        content = "timeout: 30\n"
+        assert _yaml12(content).get(("timeout",)) == LineRange(start=1, end=1)
+
+    def test_multiline_dict(self):
+        content = "db:\n  host: localhost\n  port: 5432\n"
+        assert _yaml12(content).get(("db",)) == LineRange(start=1, end=3)
+
+    def test_multiline_list(self):
+        content = "tags:\n  - a\n  - b\n"
+        assert _yaml12(content).get(("tags",)) == LineRange(start=1, end=3)
+
+    @pytest.mark.parametrize("indicator", ["|", ">", "|-", ">+"])
+    def test_block_scalar(self, indicator: str):
+        content = f"key: {indicator}\n  line1\n  line2\n"
+        assert _yaml12(content).get(("key",)) == LineRange(start=1, end=3)
+
+    def test_not_found(self):
+        content = "name: test\n"
+        assert _yaml12(content).get(("missing",)) is None
+
+    def test_inline_value(self):
+        content = "name: test\n"
+        assert _yaml12(content).get(("name",)) == LineRange(start=1, end=1)

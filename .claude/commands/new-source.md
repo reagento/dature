@@ -11,10 +11,11 @@ Use the following checklist. Ask me for the format name before starting, then ex
    - Import the optional dependency *inside* `_load_file`, not at module level
    - For `FlatKeySource` subclasses that need custom error location: override `resolve_location(self, *, field_path, file_content, nested_conflict, input_value=None)` as an **instance method** (not classmethod). Use `self._compute_line_carets(line_content, input_value=input_value, field_key=field_path[-1])` to compute per-line carets — returns `list[CaretSpan]` parallel to `line_content`. Assign to `SourceLocation.line_carets`. For format-specific caret placement, override classmethods `_caret_for_key_line` or `_find_value_in_line` (both return `CaretSpan`).
 
-2. **PathFinder** (if the format supports line-number error locations) — create `src/dature/path_finders/<format>_.py`
-   - Subclass `PathFinder` from `dature.path_finders.base`
-   - Implement `find_line_range(self, path: list[str]) -> LineRange | None`
-   - Set `path_finder_class = <YourPathFinder>` on the source class
+2. **Line index** (if the format supports line-number error locations) — implement in the same `src/dature/sources/<format>_.py`
+   - Override `_build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None`
+   - Return a dict mapping dotted-path tuples to `LineRange`. Return `None` if diagnostics are not available.
+   - Import the parser lazily inside the method (as in `_load_file`). See `sources/yaml_.py` or `sources/toml_.py` as reference.
+   - No separate class or file needed — everything lives in the Source module.
 
 3. **Optional dependency** — add to `pyproject.toml [project.optional-dependencies]`:
    ```

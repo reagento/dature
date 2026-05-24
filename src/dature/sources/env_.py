@@ -154,14 +154,14 @@ class EnvFileSource(FileFieldMixin, EnvSource):
         if isinstance(self.file, TEXT_IO_TYPES):
             self._collect_pairs(self.file, raw_pairs)
         elif isinstance(self.file, BINARY_IO_TYPES):
-            wrapper = io.TextIOWrapper(cast("io.BufferedReader", self.file))
+            wrapper = io.TextIOWrapper(cast("io.BufferedReader", self.file), encoding=self.encoding)
             self._collect_pairs(wrapper, raw_pairs)
         else:
             path = self._resolved_file_path
             if path is None:
                 msg = f"Config file not found: {self.file}"
                 raise FileNotFoundError(msg)
-            with path.open() as f:
+            with path.open(encoding=self.encoding) as f:
                 self._collect_pairs(f, raw_pairs)
 
         return raw_pairs

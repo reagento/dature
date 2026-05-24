@@ -5,10 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
-from adaptix import Provider, loader
-
 from dature import FileSource, load
-from dature.loaders import bool_loader, float_from_string
+from dature.loaders import Provider, bool_loader, float_from_string, loader
 from dature.types import FileOrStream, JSONValue
 
 

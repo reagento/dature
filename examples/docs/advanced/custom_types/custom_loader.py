@@ -5,8 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dature
-from adaptix import Provider, loader
-from dature.loaders import bool_loader, float_from_string
+from dature.loaders import Provider, bool_loader, float_from_string, loader
 from dature.sources.base import FileSource
 from dature.types import FileOrStream, JSONValue
 
@@ -30,6 +29,10 @@ class XmlSource(FileSource):
             loader(bool, bool_loader),
             loader(float, float_from_string),
         ]
+
+    # Override _build_line_index(content) to add line-number diagnostics.
+    # Return dict[tuple[str, ...], LineRange] mapping paths to line ranges,
+    # or None to disable. See sources/yaml_.py for a reference.
 
 
 @dataclass
