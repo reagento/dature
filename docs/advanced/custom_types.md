@@ -72,9 +72,10 @@ Every custom source needs:
 | Method | Default | Override when |
 |--------|---------|---------------|
 | `additional_loaders()` | `[]` (FileSource) or string-value loaders (FlatKeySource) | Your format stores all values as strings and needs extra type parsers (e.g. `bool`, `float`). |
+| `_build_line_index(content)` | `None` (no diagnostics) | You want errors to show exact line numbers from your source. Return a `dict[tuple[str, ...], LineRange]` mapping dotted key paths to line ranges. See `sources/yaml_.py` as reference. |
 | `file_display()` | `None` | Your source has a meaningful display path (shown in logs and errors). |
 | `file_path_for_errors()` | `None` | Your source points to a file on disk (used in error messages). |
-| `resolve_location(...)` | Empty `SourceLocation` | You want errors to show line numbers or variable names from your source. |
+| `resolve_location(...)` | Uses `_build_line_index` + caret computation | Low-level escape hatch — override only when `_build_line_index` is not enough (e.g. env var name in error messages). |
 | `location_label` | inherited | Change the label in error messages (e.g. `"FILE"`, `"ENV"`, `"API"`). |
 
 ### Example: FileSource subclass

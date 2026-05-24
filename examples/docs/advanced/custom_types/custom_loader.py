@@ -30,6 +30,10 @@ class XmlSource(FileSource):
             loader(float, float_from_string),
         ]
 
+    # Override _build_line_index(content) to add line-number diagnostics.
+    # Return dict[tuple[str, ...], LineRange] mapping paths to line ranges,
+    # or None to disable. See sources/yaml_.py for a reference.
+
 
 @dataclass
 class Config:

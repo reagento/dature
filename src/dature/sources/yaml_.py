@@ -1,12 +1,13 @@
 import abc
 from dataclasses import dataclass
 from datetime import date, datetime, time
+from io import StringIO
 from typing import cast
 
 from adaptix import loader
 from adaptix.provider import Provider
 
-from dature._descriptors import classproperty
+from dature.errors import LineRange
 from dature.loaders import (
     bytearray_from_string,
     date_passthrough,
@@ -14,9 +15,18 @@ from dature.loaders import (
     time_from_string,
 )
 from dature.loaders.yaml_ import time_from_int
-from dature.path_finders.base import PathFinder
 from dature.sources.base import FileSource
 from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
+
+try:
+    from ruamel.yaml.comments import CommentedMap, CommentedSeq
+    from ruamel.yaml.docinfo import Version
+    from ruamel.yaml.scalarstring import ScalarString
+except ImportError:  # pragma: no cover
+    CommentedMap = object  # type: ignore[misc, assignment]
+    CommentedSeq = object  # type: ignore[misc, assignment]
+    ScalarString = object  # type: ignore[misc, assignment]
+    Version = object  # type: ignore[misc, assignment]
 
 
 @dataclass(kw_only=True, repr=False)
@@ -32,7 +42,6 @@ class _BaseYamlSource(FileSource, abc.ABC):
 
     def _load_file(self, path: FileOrStream) -> JSONValue:
         from ruamel.yaml import YAML  # noqa: PLC0415
-        from ruamel.yaml.docinfo import Version  # noqa: PLC0415
 
         yaml = YAML(typ="safe")
         yaml.version = Version(*self._yaml_version())
@@ -41,16 +50,13 @@ class _BaseYamlSource(FileSource, abc.ABC):
         with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", yaml.load(file))
 
+    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+        return _build_yaml_line_map(content, Version(*self._yaml_version()))
+
 
 @dataclass(kw_only=True, repr=False)
 class Yaml11Source(_BaseYamlSource):
     format_name = "yaml1.1"
-
-    @classproperty
-    def path_finder_class(cls) -> type[PathFinder]:  # noqa: N805
-        from dature.path_finders.yaml_ import Yaml11PathFinder  # noqa: PLC0415
-
-        return Yaml11PathFinder
 
     def _yaml_version(self) -> tuple[int, int]:
         return (1, 1)
@@ -68,12 +74,6 @@ class Yaml11Source(_BaseYamlSource):
 class Yaml12Source(_BaseYamlSource):
     format_name = "yaml1.2"
 
-    @classproperty
-    def path_finder_class(cls) -> type[PathFinder]:  # noqa: N805
-        from dature.path_finders.yaml_ import Yaml12PathFinder  # noqa: PLC0415
-
-        return Yaml12PathFinder
-
     def _yaml_version(self) -> tuple[int, int]:
         return (1, 2)
 
@@ -84,3 +84,81 @@ class Yaml12Source(_BaseYamlSource):
             loader(time, time_from_string),
             loader(bytearray, bytearray_from_string),
         ]
+
+
+def _build_yaml_line_map(content: str, yaml_version: Version) -> dict[tuple[str, ...], LineRange]:
+    from ruamel.yaml import YAML  # noqa: PLC0415
+
+    yaml = YAML(typ="rt")
+    yaml.version = yaml_version
+    data = yaml.load(StringIO(content))
+    if not isinstance(data, CommentedMap):
+        return {}
+    lines = content.splitlines()
+    line_map: dict[tuple[str, ...], LineRange] = {}
+    _walk_yaml_mapping(data, (), line_map, lines, len(lines))
+    return line_map
+
+
+def _last_non_empty_yaml_line_before(lines: list[str], before_0based: int, after_0based: int) -> int:
+    """Returns 1-based line number of last non-empty line in [after_0based, before_0based)."""
+    for i in range(before_0based - 1, after_0based - 1, -1):
+        if lines[i].strip():
+            return i + 1
+    return after_0based + 1
+
+
+def _walk_yaml_mapping(
+    mapping: CommentedMap,
+    parent_path: tuple[str, ...],
+    line_map: dict[tuple[str, ...], LineRange],
+    lines: list[str],
+    parent_end_1based: int,
+) -> None:
+    keys = list(mapping.keys())
+    lc_data = mapping.lc.data
+
+    for idx, key in enumerate(keys):
+        key_str = str(key)
+        current_path = (*parent_path, key_str)
+
+        key_line_0, _key_col, val_line_0, _val_col = lc_data[key]
+        start_1based = key_line_0 + 1
+
+        value = mapping[key]
+
+        if isinstance(value, CommentedMap):
+            if idx + 1 < len(keys):
+                next_key = keys[idx + 1]
+                next_key_line_0 = lc_data[next_key][0]
+                end_1based = _last_non_empty_yaml_line_before(lines, next_key_line_0, key_line_0)
+            else:
+                end_1based = _last_non_empty_yaml_line_before(lines, parent_end_1based, key_line_0)
+
+            line_map[current_path] = LineRange(start=start_1based, end=end_1based)
+            _walk_yaml_mapping(value, current_path, line_map, lines, end_1based)
+
+        elif isinstance(value, CommentedSeq):
+            if idx + 1 < len(keys):
+                next_key = keys[idx + 1]
+                next_key_line_0 = lc_data[next_key][0]
+                end_1based = _last_non_empty_yaml_line_before(lines, next_key_line_0, key_line_0)
+            else:
+                end_1based = _last_non_empty_yaml_line_before(lines, parent_end_1based, key_line_0)
+
+            line_map[current_path] = LineRange(start=start_1based, end=end_1based)
+
+        else:
+            is_block_scalar = isinstance(value, ScalarString) and "\n" in str(value)
+
+            if key_line_0 == val_line_0 and not is_block_scalar:
+                line_map[current_path] = LineRange(start=start_1based, end=start_1based)
+            else:
+                if idx + 1 < len(keys):
+                    next_key = keys[idx + 1]
+                    next_key_line_0 = lc_data[next_key][0]
+                    end_1based = _last_non_empty_yaml_line_before(lines, next_key_line_0, key_line_0)
+                else:
+                    end_1based = _last_non_empty_yaml_line_before(lines, parent_end_1based, key_line_0)
+
+                line_map[current_path] = LineRange(start=start_1based, end=end_1based)

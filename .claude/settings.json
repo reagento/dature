@@ -25,7 +25,6 @@
       "Bash(git branch:*)"
     ],
     "deny": [
-      "Bash(rm -rf:*)",
       "Bash(git push:*)",
       "Bash(git stash:*)",
       "Bash(git commit:*)",

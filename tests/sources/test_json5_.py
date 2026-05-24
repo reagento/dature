@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from dature import Json5Source, load
-from dature.errors import DatureConfigError, FieldLoadError
+from dature.errors import DatureConfigError, FieldLoadError, LineRange
+from dature.sources.json5_ import _build_json5_line_map
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -163,3 +164,37 @@ class TestJson5Source:
             f"   │          ^\n"
             f"   └── FILE '{json5_file}', line 1"
         )
+
+
+class TestJson5FindLineRange:
+    def test_key_not_confused_by_newline_in_value(self):
+        content = "{\n  str1: 'line1\\nkey=1',\n  key: 'real'\n}"
+        assert _build_json5_line_map(content).get(("key",)) == LineRange(start=3, end=3)
+
+    def test_key_not_confused_by_escaped_quotes(self):
+        content = '{\n  str1: "he said \\"key\\": value",\n  key: 42\n}'
+        assert _build_json5_line_map(content).get(("key",)) == LineRange(start=3, end=3)
+
+    def test_scalar_value(self):
+        content = "{\n  timeout: 30\n}"
+        assert _build_json5_line_map(content).get(("timeout",)) == LineRange(start=2, end=2)
+
+    def test_multiline_dict(self):
+        content = '{\n  db: {\n    host: "localhost",\n    port: 5432\n  }\n}'
+        assert _build_json5_line_map(content).get(("db",)) == LineRange(start=2, end=5)
+
+    def test_multiline_array(self):
+        content = '{\n  tags: [\n    "a",\n    "b"\n  ]\n}'
+        assert _build_json5_line_map(content).get(("tags",)) == LineRange(start=2, end=5)
+
+    def test_not_found(self):
+        content = '{\n  name: "test"\n}'
+        assert _build_json5_line_map(content).get(("missing",)) is None
+
+    def test_inline_dict(self):
+        content = '{\n  db: {host: "localhost"}\n}'
+        assert _build_json5_line_map(content).get(("db",)) == LineRange(start=2, end=2)
+
+    def test_inline_array(self):
+        content = '{\n  tags: ["a", "b"]\n}'
+        assert _build_json5_line_map(content).get(("tags",)) == LineRange(start=2, end=2)

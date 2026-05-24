@@ -26,7 +26,6 @@ from dature.loaders import (
     str_from_scalar,
     time_from_string,
 )
-from dature.path_finders.base import PathFinder
 from dature.types import (
     FILE_LIKE_TYPES,
     DotSeparatedPath,
@@ -80,7 +79,6 @@ class Source(abc.ABC):
 
     format_name: ClassVar[str]
     location_label: ClassVar[str]
-    path_finder_class: ClassVar[type[PathFinder] | None] = None
     config_group: ClassVar[str | None] = None
 
     retorts: "dict[tuple[type, frozenset[tuple[type, Any]]], Retort]" = field(
@@ -194,11 +192,17 @@ class Source(abc.ABC):
         prefix_parts = prefix.split(".")
         return prefix_parts + field_path
 
+    def _build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None":  # noqa: ARG002
+        return None
+
     @staticmethod
-    def _find_parent_line_range(finder: PathFinder, search_path: list[str]) -> LineRange | None:
+    def _find_parent_line_range(
+        line_index: "dict[tuple[str, ...], LineRange]",
+        search_path: list[str],
+    ) -> "LineRange | None":
         path = search_path[:-1]
         while path:
-            line_range = finder.find_line_range(path)
+            line_range = line_index.get(tuple(path))
             if line_range is not None:
                 return line_range
             path = path[:-1]
@@ -308,14 +312,14 @@ class Source(abc.ABC):
         if file_content is None or not field_path:
             return [self._empty_location(self.location_label, file_path)]
 
-        if self.path_finder_class is None:
+        search_path = self._build_search_path(field_path, self.prefix)
+        line_index = self._build_line_index(file_content)
+        if line_index is None:
             return [self._empty_location(self.location_label, file_path)]
 
-        search_path = self._build_search_path(field_path, self.prefix)
-        finder = self.path_finder_class(file_content)
-        line_range = finder.find_line_range(search_path)
+        line_range = line_index.get(tuple(search_path))
         if line_range is None:
-            line_range = self._find_parent_line_range(finder, search_path)
+            line_range = self._find_parent_line_range(line_index, search_path)
         if line_range is None:
             return [self._empty_location(self.location_label, file_path)]
 
