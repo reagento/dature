@@ -1,1 +1,0 @@
-Fix field_mapping aliases not matching in sources that normalize key case (EnvSource, EnvFileSource, DockerSecretsSource, IniSource). Aliases such as "DB_PASSWORD" now correctly map to the dataclass field regardless of whether the source lowercases its keys.
