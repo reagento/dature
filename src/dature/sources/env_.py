@@ -77,7 +77,8 @@ class EnvSource(FlatKeySource):
             return
 
         processed_key = key[len(self.prefix) :] if self.prefix else key
-        processed_key = processed_key.lower()
+        mapped = self._alias_to_field_name(processed_key)
+        processed_key = mapped if mapped is not None else processed_key.lower()
 
         parts = processed_key.split(self.nested_sep)
         self._process_key_value(

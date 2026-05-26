@@ -86,14 +86,17 @@ class DockerSecretsSource(FlatKeySource):
             if not entry.is_file():
                 continue
 
-            key = entry.name.lower()
+            raw_name = entry.name
             value = entry.read_text().strip()
 
-            if self.prefix and not key.startswith(self.prefix.lower()):
+            if self.prefix and not raw_name.startswith(self.prefix):
                 continue
 
             if self.prefix:
-                key = key[len(self.prefix) :]
+                raw_name = raw_name[len(self.prefix) :]
+
+            mapped = self._alias_to_field_name(raw_name)
+            key = mapped if mapped is not None else raw_name.lower()
 
             result[key] = value
 

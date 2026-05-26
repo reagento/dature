@@ -8,6 +8,7 @@ import pytest
 
 import dature
 from dature import EnvFileSource, EnvSource, load
+from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -144,6 +145,21 @@ class TestEnvFileSource:
         result = load(EnvFileSource(file=env_file), schema=Config)
 
         assert result.value == "prefix$nonexistent/suffix"
+
+    def test_field_mapping_uppercase_alias(self, tmp_path: Path):
+        @dataclass
+        class Config:
+            password: str
+
+        env_file = tmp_path / ".env"
+        env_file.write_text("DB_PASSWORD=secret123\n")
+
+        result = load(
+            EnvFileSource(file=env_file, field_mapping={F[Config].password: "DB_PASSWORD"}),
+            schema=Config,
+        )
+
+        assert result.password == "secret123"
 
 
 class TestEnvSource:
@@ -300,8 +316,20 @@ class TestEnvSource:
         )
 
         assert data == expected_data
-        assert data == expected_data
-        assert data == expected_data
+
+    def test_field_mapping_uppercase_alias(self, monkeypatch):
+        @dataclass
+        class Config:
+            password: str
+
+        monkeypatch.setenv("DB_PASSWORD", "secret123")
+
+        result = load(
+            EnvSource(field_mapping={F[Config].password: "DB_PASSWORD"}),
+            schema=Config,
+        )
+
+        assert result.password == "secret123"
 
 
 class TestEnvSourceDisplayProperties:

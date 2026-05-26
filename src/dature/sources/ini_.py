@@ -8,6 +8,7 @@ from adaptix.provider import Provider
 
 from dature.errors import LineRange
 from dature.expansion.env_expand import expand_env_vars
+from dature.field_path import FieldPath
 from dature.sources.base import FileSource, string_value_loaders
 from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue
 
@@ -29,6 +30,22 @@ class IniSource(FileSource):
         expanded = expand_env_vars(prefixed, mode=resolved_expand)
         return self._parse_string_values(expanded)
 
+    def _normalize_section(self, opts: dict[str, str]) -> dict[str, JSONValue]:
+        # configparser has already lowercased all option names; match aliases case-insensitively
+        result: dict[str, JSONValue] = {}
+        for k, v in opts.items():
+            field_name: str | None = None
+            if self.field_mapping:
+                for field_path, aliases in self.field_mapping.items():
+                    if not isinstance(field_path, FieldPath):
+                        continue
+                    alias_list = (aliases,) if isinstance(aliases, str) else aliases
+                    if any(a.lower() == k for a in alias_list) and field_path.parts:
+                        field_name = field_path.parts[-1]
+                        break
+            result[field_name if field_name is not None else k] = v
+        return result
+
     def _load_file(self, path: FileOrStream) -> JSONValue:
         config = configparser.ConfigParser(interpolation=None)
         if isinstance(path, TEXT_IO_TYPES):
@@ -39,17 +56,17 @@ class IniSource(FileSource):
             with path.open(encoding=self.encoding) as f:
                 config.read_file(f)
         if self.prefix and self.prefix in config:
-            result: dict[str, JSONValue] = dict(config[self.prefix])
+            result: dict[str, JSONValue] = self._normalize_section(dict(config[self.prefix]))
             child_prefix = self.prefix + "."
             for section in config.sections():
                 if section.startswith(child_prefix):
                     nested_key = section[len(child_prefix) :]
-                    result[nested_key] = dict(config[section])
+                    result[nested_key] = self._normalize_section(dict(config[section]))
             return {self.prefix: result}
 
         all_sections: dict[str, JSONValue] = {}
         if config.defaults():
-            all_sections["DEFAULT"] = dict(config.defaults())
+            all_sections["DEFAULT"] = self._normalize_section(dict(config.defaults()))
         for section in config.sections():
             parts = section.split(".")
             target = all_sections
@@ -57,7 +74,7 @@ class IniSource(FileSource):
                 if part not in target:
                     target[part] = {}
                 target = cast("dict[str, JSONValue]", target[part])
-            target[parts[-1]] = dict(config[section])
+            target[parts[-1]] = self._normalize_section(dict(config[section]))
         return all_sections
 
     def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:

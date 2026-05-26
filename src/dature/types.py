@@ -51,11 +51,9 @@ type NameStyle = Literal[
 ]
 
 # F[Type].field is FieldPath at runtime, but the overload trick makes mypy see the
-# field's static type (str, int, list[str], dict, etc.) for IDE autocompletion.
-# This union covers all types mypy can infer from F expressions.
-type FieldRef = (
-    FieldPath | str | int | float | bool | list[Any] | dict[str, Any] | tuple[Any, ...] | set[Any] | bytes | None
-)
+# field's declared type for IDE autocompletion. Dataclass fields can be any user-defined
+# type, so FieldRef must be Any — an exhaustive union is impossible.
+type FieldRef = Any
 
 type FieldMapping = dict[FieldRef, str | tuple[str, ...]]
 

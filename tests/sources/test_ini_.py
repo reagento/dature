@@ -9,6 +9,7 @@ import pytest
 
 from dature import IniSource, load
 from dature.errors import LineRange
+from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -147,7 +148,21 @@ class TestIniSource:
         )
 
         assert result.value == "prefix$nonexistent/suffix"
-        assert result.value == "prefix$nonexistent/suffix"
+
+    def test_field_mapping_uppercase_alias(self, tmp_path: Path):
+        @dataclass
+        class Config:
+            password: str
+
+        ini_file = tmp_path / "config.ini"
+        ini_file.write_text("[database]\nDB_PASSWORD = secret123\n")
+
+        result = load(
+            IniSource(file=ini_file, prefix="database", field_mapping={F[Config].password: "DB_PASSWORD"}),
+            schema=Config,
+        )
+
+        assert result.password == "secret123"
 
 
 class TestIniSourceDisplayProperties:

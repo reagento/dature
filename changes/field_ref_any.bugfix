@@ -1,0 +1,2 @@
+``FieldRef`` is now typed as ``Any`` instead of a fixed union of primitive types.
+Fields in user dataclasses can be of any type (including custom classes), so the previous union was incomplete and caused false mypy errors when using ``F[DataClass].field`` as a ``field_mapping`` key.
