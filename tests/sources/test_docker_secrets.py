@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from dature import DockerSecretsSource, load
+from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -79,10 +80,20 @@ class TestDockerSecretsSource:
 
         assert result.api_url == "https://api.example.com/v1"
         assert result.base == "https://api.example.com"
-        assert result.base == "https://api.example.com"
-        assert result.base == "https://api.example.com"
-        assert result.base == "https://api.example.com"
-        assert result.base == "https://api.example.com"
+
+    def test_field_mapping_uppercase_alias(self, tmp_path: Path):
+        @dataclass
+        class Config:
+            password: str
+
+        (tmp_path / "DB_PASSWORD").write_text("secret123")
+
+        result = load(
+            DockerSecretsSource(dir_=tmp_path, field_mapping={F[Config].password: "DB_PASSWORD"}),
+            schema=Config,
+        )
+
+        assert result.password == "secret123"
 
 
 class TestDockerSecretsDisplayProperties:

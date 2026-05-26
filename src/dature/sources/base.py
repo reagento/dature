@@ -103,6 +103,18 @@ class Source(abc.ABC):
     def display_name(self) -> str:
         return self.file_display() or self.format_name
 
+    def _alias_to_field_name(self, raw_key: str) -> str | None:
+        """Return the dataclass field name if *raw_key* is a field_mapping alias, else None."""
+        if not self.field_mapping:
+            return None
+        for field_path, aliases in self.field_mapping.items():
+            if not isinstance(field_path, FieldPath):
+                continue
+            alias_list = (aliases,) if isinstance(aliases, str) else aliases
+            if raw_key in alias_list and field_path.parts:
+                return field_path.parts[-1]
+        return None
+
     def additional_loaders(self) -> "list[Provider]":
         return []
 
