@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from dature import JsonSource, load
-from dature.errors import MergeConflictError
+from dature.errors import DatureConfigError, MergeConflictError
 from dature.field_path import F
 from dature.strategies import SourceFirstWins, SourceLastWins
 from dature.types import FieldMergeStrategyName
@@ -181,13 +181,16 @@ class TestFieldMergesFunction:
         class Config:
             value: str
 
-        with pytest.raises(TypeError, match="APPEND strategy requires every value to be a list"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 JsonSource(file=defaults),
                 JsonSource(file=overrides),
                 schema=Config,
                 field_merges={F[Config].value: "append"},
             )
+
+        assert isinstance(exc_info.value.exceptions[0], TypeError)
+        assert str(exc_info.value.exceptions[0]) == "APPEND strategy requires every value to be a list, got str"
 
     def test_multiple_merge_rules(self, tmp_path: Path):
         defaults = tmp_path / "defaults.json"
@@ -396,22 +399,22 @@ class TestFieldMergesErrors:
         [
             pytest.param(
                 "append",
-                "APPEND strategy requires every value to be a list",
+                "APPEND strategy requires every value to be a list, got str",
                 id="append",
             ),
             pytest.param(
                 "append_unique",
-                "APPEND_UNIQUE strategy requires every value to be a list",
+                "APPEND_UNIQUE strategy requires every value to be a list, got str",
                 id="append_unique",
             ),
             pytest.param(
                 "prepend",
-                "PREPEND strategy requires every value to be a list",
+                "PREPEND strategy requires every value to be a list, got str",
                 id="prepend",
             ),
             pytest.param(
                 "prepend_unique",
-                "PREPEND_UNIQUE strategy requires every value to be a list",
+                "PREPEND_UNIQUE strategy requires every value to be a list, got str",
                 id="prepend_unique",
             ),
         ],
@@ -432,7 +435,7 @@ class TestFieldMergesErrors:
         class Config:
             value: str
 
-        with pytest.raises(TypeError, match=match):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 JsonSource(file=a),
                 JsonSource(file=b),
@@ -440,27 +443,30 @@ class TestFieldMergesErrors:
                 field_merges={F[Config].value: strategy},
             )
 
+        assert isinstance(exc_info.value.exceptions[0], TypeError)
+        assert str(exc_info.value.exceptions[0]) == match
+
     @pytest.mark.parametrize(
         ("strategy", "match"),
         [
             pytest.param(
                 "append",
-                "APPEND strategy requires every value to be a list",
+                "APPEND strategy requires every value to be a list, got int",
                 id="append",
             ),
             pytest.param(
                 "append_unique",
-                "APPEND_UNIQUE strategy requires every value to be a list",
+                "APPEND_UNIQUE strategy requires every value to be a list, got int",
                 id="append_unique",
             ),
             pytest.param(
                 "prepend",
-                "PREPEND strategy requires every value to be a list",
+                "PREPEND strategy requires every value to be a list, got int",
                 id="prepend",
             ),
             pytest.param(
                 "prepend_unique",
-                "PREPEND_UNIQUE strategy requires every value to be a list",
+                "PREPEND_UNIQUE strategy requires every value to be a list, got int",
                 id="prepend_unique",
             ),
         ],
@@ -481,13 +487,16 @@ class TestFieldMergesErrors:
         class Config:
             value: int
 
-        with pytest.raises(TypeError, match=match):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 JsonSource(file=a),
                 JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
+
+        assert isinstance(exc_info.value.exceptions[0], TypeError)
+        assert str(exc_info.value.exceptions[0]) == match
 
     @pytest.mark.parametrize(
         ("strategy", "match"),
@@ -520,13 +529,16 @@ class TestFieldMergesErrors:
         class Config:
             value: list[str]
 
-        with pytest.raises(TypeError, match=match):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 JsonSource(file=a),
                 JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
+
+        assert isinstance(exc_info.value.exceptions[0], TypeError)
+        assert str(exc_info.value.exceptions[0]) == match
 
     @pytest.mark.parametrize(
         ("strategy", "expected"),
@@ -583,13 +595,16 @@ class TestFieldMergesErrors:
         class Config:
             value: dict[str, int]
 
-        with pytest.raises(TypeError, match=match):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 JsonSource(file=a),
                 JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
+
+        assert isinstance(exc_info.value.exceptions[0], TypeError)
+        assert str(exc_info.value.exceptions[0]) == match
 
     @pytest.mark.parametrize(
         ("strategy", "match"),
@@ -614,13 +629,16 @@ class TestFieldMergesErrors:
         class Config:
             value: int | None
 
-        with pytest.raises(TypeError, match=match):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 JsonSource(file=a),
                 JsonSource(file=b),
                 schema=Config,
                 field_merges={F[Config].value: strategy},
             )
+
+        assert isinstance(exc_info.value.exceptions[0], TypeError)
+        assert str(exc_info.value.exceptions[0]) == match
 
     def test_field_merge_on_missing_key_in_one_source(self, tmp_path: Path):
         a = tmp_path / "a.json"

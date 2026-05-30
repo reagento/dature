@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import pytest
 
 from dature import VaultSource, configure, load
+from dature.errors import DatureConfigError
 from dature.loading.merge_runtime import apply_source_config_defaults
 
 
@@ -140,5 +141,8 @@ def test_missing_hvac_raises_on_load(block_import, monkeypatch):
     class Config:
         foo: str = ""
 
-    with block_import("hvac"), pytest.raises(ImportError, match="hvac"):
+    with block_import("hvac"), pytest.raises(DatureConfigError) as exc_info:
         load(VaultSource(path="p"), schema=Config)
+
+    assert isinstance(exc_info.value.exceptions[0], ImportError)
+    assert "hvac" in str(exc_info.value.exceptions[0])

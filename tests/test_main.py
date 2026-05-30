@@ -23,6 +23,7 @@ from dature import (
     configure,
     load,
 )
+from dature.errors import DatureConfigError
 from dature.types import JSONValue
 
 
@@ -250,8 +251,10 @@ class TestFileNotFoundWithLoad:
 
         metadata = source_class(file="/non/existent/file.json")
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
+
+        assert isinstance(exc_info.value.exceptions[0], FileNotFoundError)
 
     @pytest.mark.parametrize(
         "source_class",
@@ -265,8 +268,10 @@ class TestFileNotFoundWithLoad:
         class Config:
             name: str
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(DatureConfigError) as exc_info:
             Config()
+
+        assert isinstance(exc_info.value.exceptions[0], FileNotFoundError)
 
 
 @dataclass(kw_only=True, repr=False)

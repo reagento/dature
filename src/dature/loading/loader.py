@@ -26,7 +26,7 @@ from typing import Any
 from adaptix import Retort
 
 from dature.config import config
-from dature.errors import DatureConfigError
+from dature.errors import DatureConfigError, DatureError
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import ErrorContext, SkippedFieldSource, read_file_content
 from dature.load_report import (
@@ -251,7 +251,13 @@ class Loader[T: DataclassInstance]:
             return self._cached_data
         self.loading = True
         try:
-            result = self._do_load()
+            try:
+                result = self._do_load()
+            except (DatureError, DatureConfigError):
+                raise
+            except Exception as exc:  # noqa: BLE001
+                exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
+                raise DatureConfigError(self._schema.__name__, [exc]) from None  # type: ignore[list-item]
         finally:
             self.loading = False
         if self._cache is not False:

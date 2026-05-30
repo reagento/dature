@@ -1,7 +1,6 @@
 import sys
 
 from dature import load
-from dature.cli.format import format_dature_error
 from dature.cli.parsing import (
     CliCommonArgs,
     build_load_kwargs_from_dataclass,
@@ -9,6 +8,7 @@ from dature.cli.parsing import (
     import_attr,
 )
 from dature.errors import DatureConfigError, DatureError
+from dature.errors.format import format_dature_error
 
 
 def cmd_validate(args: CliCommonArgs) -> int:

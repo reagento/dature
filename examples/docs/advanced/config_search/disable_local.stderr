@@ -1,1 +1,4 @@
-FileNotFoundError: Config file not found: local.yaml
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | FileNotFoundError: Config file not found: local.yaml
+    +------------------------------------

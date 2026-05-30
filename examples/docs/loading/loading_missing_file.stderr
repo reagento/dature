@@ -1,1 +1,4 @@
-FileNotFoundError: Config file not found: {SOURCES_DIR}does_not_exist.yaml
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | FileNotFoundError: Config file not found: {SOURCES_DIR}does_not_exist.yaml
+    +------------------------------------

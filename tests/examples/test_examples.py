@@ -39,9 +39,9 @@ def test_example_expected_error(script_path: Path, dature_shim_dir: Path) -> Non
     assert result.returncode != 0, f"Script {script_path.name} should have failed but exited with 0"
 
     expected = resolve_placeholders(script_path.with_suffix(".stderr").read_text(), script_path)
-    assert normalize_output(expected.strip()) in normalize_output(result.stderr), (
+    assert normalize_output(expected.strip()) == normalize_output(result.stderr.strip()), (
         f"Script {script_path.name} stderr mismatch.\n\n"
-        f"Expected fragment:\n{expected.strip()}\n\nActual stderr:\n{result.stderr}"
+        f"Expected:\n{expected.strip()}\n\nActual stderr:\n{result.stderr}"
     )
 
 
