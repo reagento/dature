@@ -11,7 +11,7 @@ from dature.loading.merge_runtime import (
     MergeConfig,
     SourceParams,
     apply_merge_skip_invalid,
-    apply_source_config_defaults,
+    apply_source_config_group,
     apply_source_init_params,
     resolve_skip_invalid,
     should_skip_broken,
@@ -85,25 +85,25 @@ class _FakeRemote(Source):
 
 
 @pytest.mark.usefixtures("_reset_config")
-class TestApplySourceConfigDefaults:
+class TestApplySourceConfigGroup:
     def test_noop_when_config_group_is_none(self, monkeypatch):
         monkeypatch.setattr(_FakeRemote, "config_group", None)
         configure(vault={"url": "http://x"})
         src = _FakeRemote(url=None)
-        assert apply_source_config_defaults(src) is src
+        assert apply_source_config_group(src) is src
 
     def test_returns_same_instance_when_no_overrides(self):
         # Every overlapping field is set on the source, so the (non-None) VaultConfig defaults
         # have nothing to fill in → no overrides → same instance is returned.
         src = _FakeRemote(url="x", kv_version=1)
-        result = apply_source_config_defaults(src)
+        result = apply_source_config_group(src)
         assert result is src
 
     def test_unrelated_config_field_ignored(self):
         # `mount_point` exists on VaultConfig but not on _FakeRemote — must not crash
         # nor add the attribute to the merged source
         configure(vault={"mount_point": "kv", "url": "http://x"})
-        merged = apply_source_config_defaults(_FakeRemote())
+        merged = apply_source_config_group(_FakeRemote())
         assert merged.url == "http://x"
         assert not hasattr(merged, "mount_point")
 
@@ -131,7 +131,7 @@ class TestApplySourceConfigDefaults:
     )
     def test_field_resolution(self, instance_kwargs, config_kwargs, field, expected):
         configure(vault=config_kwargs)
-        merged = apply_source_config_defaults(_FakeRemote(**instance_kwargs))
+        merged = apply_source_config_group(_FakeRemote(**instance_kwargs))
         assert getattr(merged, field) == expected
 
 

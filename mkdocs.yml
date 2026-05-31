@@ -74,6 +74,7 @@ nav:
     - Debug & Reports: advanced/debug.md
     - Caching: advanced/caching.md
     - Custom Types & Loaders: advanced/custom_types.md
+    - Cross-Source Refs: advanced/cross_source_refs.md
   - Comparison:
     - vs pydantic-settings: comparison/why-not-pydantic-settings.md
     - vs Hydra: comparison/why-not-hydra.md
@@ -128,6 +129,7 @@ plugins:
           - advanced/debug.md
           - advanced/caching.md
           - advanced/custom_types.md
+          - advanced/cross_source_refs.md
         Comparison:
           - comparison/why-not-pydantic-settings.md
           - comparison/why-not-hydra.md

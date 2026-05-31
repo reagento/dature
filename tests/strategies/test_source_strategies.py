@@ -57,8 +57,8 @@ class TestCustomStrategy:
 
         class TakeFirstNonEmpty:
             def __call__(self, sources, ctx: LoadCtx):
-                for src in sources:
-                    data = ctx.load(src)
+                for idx in range(len(sources)):
+                    data = ctx.load(idx)
                     if data:
                         return data
                 return {}
@@ -81,13 +81,14 @@ class TestCustomStrategy:
             """The files are merged last_wins; the env source is superimposed strictly on top."""
 
             def __call__(self, sources, ctx: LoadCtx):
-                files = [s for s in sources if not isinstance(s, EnvSource)]
-                envs = [s for s in sources if isinstance(s, EnvSource)]
-                base = SourceLastWins()(files, ctx)
-                for env_src in envs:
-                    data = ctx.load(env_src)
-                    if isinstance(base, dict) and isinstance(data, dict):
-                        base = {**base, **data}
+                base: JSONValue = {}
+                for idx, s in enumerate(sources):
+                    if isinstance(s, EnvSource):
+                        data = ctx.load(idx)
+                        if isinstance(base, dict) and isinstance(data, dict):
+                            base = {**base, **data}
+                    else:
+                        base = ctx.merge(source_idx=idx, base=base)
                 return base
 
         result = load(
@@ -145,8 +146,8 @@ class TestLoadCtxPublicAPI:
                 seen["dataclass_name"] = ctx.dataclass_name
                 seen["field_merge_paths"] = ctx.field_merge_paths
                 base: JSONValue = {}
-                for src in sources:
-                    base = ctx.merge(source=src, base=base)
+                for idx in range(len(sources)):
+                    base = ctx.merge(source_idx=idx, base=base)
                 return base
 
         @dataclass

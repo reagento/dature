@@ -1,6 +1,10 @@
 from dature.errors.exceptions import (
+    ConfigEnvVarExpandError,
+    CrossRefError,
+    CrossRefExpandError,
     DatureConfigError,
     DatureError,
+    DatureErrorGroup,
     EnvVarExpandError,
     FieldGroupError,
     FieldGroupViolationError,
@@ -15,8 +19,12 @@ from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 
 __all__ = [
     "CaretSpan",
+    "ConfigEnvVarExpandError",
+    "CrossRefError",
+    "CrossRefExpandError",
     "DatureConfigError",
     "DatureError",
+    "DatureErrorGroup",
     "EnvVarExpandError",
     "FieldGroupError",
     "FieldGroupViolationError",

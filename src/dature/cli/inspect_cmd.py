@@ -8,7 +8,7 @@ from dature.cli.parsing import (
     build_sources,
     import_attr,
 )
-from dature.errors import DatureConfigError, DatureError
+from dature.errors import DatureError, DatureErrorGroup
 from dature.errors.format import format_dature_error
 
 
@@ -23,7 +23,7 @@ def cmd_inspect(args: CliInspectArgs) -> int:
 
     try:
         result = load(*sources, schema=schema, debug=True, **load_kwargs)
-    except (DatureError, DatureConfigError) as exc:
+    except (DatureError, DatureErrorGroup) as exc:
         print(format_dature_error(exc), file=sys.stderr)
         return 1
     except (FileNotFoundError, OSError) as exc:

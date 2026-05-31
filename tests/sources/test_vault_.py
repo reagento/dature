@@ -9,7 +9,7 @@ import pytest
 
 from dature import VaultSource, configure, load
 from dature.errors import DatureConfigError
-from dature.loading.merge_runtime import apply_source_config_defaults
+from dature.loading.merge_runtime import apply_source_config_group
 
 
 class TestVaultSourceDisplayProperties:
@@ -69,10 +69,8 @@ class TestVaultSourceValidation:
         ],
     )
     def test_validate_raises_when_invalid(self, kwargs, match):
-        # apply_source_config_defaults runs _validate() at the end of the merge step;
-        # exercising it directly here saves spinning up dature.load.
         with pytest.raises(ValueError, match=match):
-            apply_source_config_defaults(VaultSource(**kwargs))
+            apply_source_config_group(VaultSource(**kwargs)).validate()
 
     @pytest.mark.parametrize(
         ("env_vars", "instance_kwargs"),
@@ -92,28 +90,28 @@ class TestVaultSourceValidation:
     def test_validate_passes(self, monkeypatch, env_vars, instance_kwargs):
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
-        merged = apply_source_config_defaults(VaultSource(path="p", **instance_kwargs))
-        merged._validate()
+        merged = apply_source_config_group(VaultSource(path="p", **instance_kwargs))
+        merged.validate()
 
 
 @pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceConfigFallback:
     def test_url_from_configure(self):
         configure(vault={"url": "http://from-configure", "token": "t"})
-        merged = apply_source_config_defaults(VaultSource(path="p"))
+        merged = apply_source_config_group(VaultSource(path="p"))
         assert merged.url == "http://from-configure"
         assert merged.token == "t"
 
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_VAULT__URL", "http://localhost:8200")
         monkeypatch.setenv("DATURE_VAULT__TOKEN", "root")
-        merged = apply_source_config_defaults(VaultSource(path="myapp/config"))
+        merged = apply_source_config_group(VaultSource(path="myapp/config"))
         assert merged.url == "http://localhost:8200"
         assert merged.token == "root"
 
     def test_instance_overrides_global(self):
         configure(vault={"url": "http://global", "token": "global-token"})
-        merged = apply_source_config_defaults(VaultSource(path="p", url="http://instance"))
+        merged = apply_source_config_group(VaultSource(path="p", url="http://instance"))
         assert merged.url == "http://instance"
         assert merged.token == "global-token"
 
@@ -127,7 +125,7 @@ class TestVaultSourceConfigFallback:
     )
     def test_kv_version_fallback(self, global_value, instance_value, expected):
         configure(vault={"url": "u", "token": "t", "kv_version": global_value})
-        merged = apply_source_config_defaults(VaultSource(path="p", kv_version=instance_value))
+        merged = apply_source_config_group(VaultSource(path="p", kv_version=instance_value))
         assert merged.kv_version == expected
 
 

@@ -26,7 +26,7 @@ from typing import Any
 from adaptix import Retort
 
 from dature.config import config
-from dature.errors import DatureConfigError, DatureError
+from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import ErrorContext, SkippedFieldSource, read_file_content
 from dature.load_report import (
@@ -44,13 +44,13 @@ from dature.loading.context import (
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.merge import _collect_extra_secret_patterns, _load_and_merge
+from dature.loading.merge import load_and_merge
 from dature.loading.merge_runtime import (
     MergeConfig,
     SourceMergeStrategy,
     SourceParams,
-    apply_source_config_defaults,
-    apply_source_init_params,
+    prepare_single_source,
+    prepare_sources,
     resolve_type_loaders,
 )
 from dature.loading.source_loading import enrich_skipped_errors
@@ -194,7 +194,7 @@ class Loader[T: DataclassInstance]:
             resolved_mask_secrets = resolve_mask_secrets(load_level=self._merge_meta.mask_secrets)
             self.secret_paths: frozenset[str] = frozenset()
             if resolved_mask_secrets:
-                extra_patterns = _collect_extra_secret_patterns(self._merge_meta)
+                extra_patterns = self._merge_meta.secret_field_names or ()
                 self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
             self.error_ctx: ErrorContext = build_error_ctx(
@@ -209,7 +209,8 @@ class Loader[T: DataclassInstance]:
             self._probe_retort: Retort | None = None
         else:
             self._merge_meta = None
-            single_source = apply_source_config_defaults(apply_source_init_params(sources[0], source_params))
+            [single_source] = prepare_sources(sources, source_params)
+            single_source = prepare_single_source(single_source)
             self._source = single_source
             self._secret_field_names = secret_field_names
             self._mask_secrets_arg = mask_secrets
@@ -253,7 +254,7 @@ class Loader[T: DataclassInstance]:
         try:
             try:
                 result = self._do_load()
-            except (DatureError, DatureConfigError):
+            except (DatureError, DatureErrorGroup):
                 raise
             except Exception as exc:  # noqa: BLE001
                 exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
@@ -449,7 +450,7 @@ class Loader[T: DataclassInstance]:
 
     def _do_load_multi(self) -> T:
         assert self._merge_meta is not None  # noqa: S101 — invariant for multi mode
-        data = _load_and_merge(
+        data = load_and_merge(
             merge_meta=self._merge_meta,
             schema=self._schema,
             debug=self._debug,

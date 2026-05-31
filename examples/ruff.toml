@@ -1,2 +1,20 @@
 extend = "../pyproject.toml"
 line-length = 80
+# t_string.py uses Python 3.14 t-string syntax; ruff cannot parse it under py312.
+extend-exclude = ["docs/advanced/cross_source_refs/t_string.py"]
+
+[lint.per-file-ignores]
+"**/*.py" = [
+    "INP001",  # implicit namespace package
+    "T201",    # print
+    "S105",    # possible hardcoded password
+    "DTZ001",  # datetime without tzinfo
+    "PLR2004", # magic values in examples
+    "SIM103",  # return condition directly
+    "S104",    # possible hardcoded password
+    "ERA001",  # commented-out code
+    "S101",    # assert
+    "PT017",   # assertion on exception in except block
+    "TRY003",  # raise-vanilla-args
+    "EM101",   # raw-string-in-exception
+]

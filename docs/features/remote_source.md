@@ -67,7 +67,7 @@ implement two methods:
 
 ### Optional hooks
 
-- `_validate()` — runs after credential merge; override to enforce invariants
+- `validate()` — runs after credential merge; override to enforce invariants
   (e.g. "either `token` or `role_id+secret_id` is set", as `VaultSource` does).
 - `__repr__()` — defaults to `f"{self.format_name} '{self.remote_address()}'"`.
 

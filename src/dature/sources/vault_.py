@@ -27,7 +27,7 @@ class VaultSource(RemoteSource):
             return f"{self.url}/v1/{self.mount_point}/{self.path}"
         return f"{self.url}/v1/{self.mount_point}/data/{self.path}"
 
-    def _validate(self) -> None:
+    def validate(self) -> None:
         if self.token is not None and (self.role_id is not None or self.secret_id is not None):
             msg = "VaultSource: token and role_id/secret_id are mutually exclusive"
             raise ValueError(msg)

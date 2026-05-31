@@ -104,28 +104,25 @@ class MissingEnvVarError(DatureError):
         )
 
 
-class DatureConfigError(ExceptionGroup[DatureError]):
-    dataclass_name: str
+class DatureErrorGroup(ExceptionGroup[DatureError]):
+    """Base for dature exception groups; subclasses add domain-specific context."""
 
-    def __new__(
-        cls,
-        dataclass_name: str,
-        errors: Sequence[DatureError],
-    ) -> Self:
-        obj = super().__new__(
-            cls,
-            f"{dataclass_name} loading errors ({len(errors)})",
-            errors,
-        )
-        obj.dataclass_name = dataclass_name
-        return obj
+    def derive(self, excs: "Sequence[DatureError]", /) -> "Self":  # type: ignore[override]
+        return self.__class__(self.args[0], list(excs))
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({str(self)!r}, {list(self.exceptions)!r})"
+
+
+class DatureConfigError(DatureErrorGroup):
+    dataclass_name: str
 
     def __init__(
         self,
         dataclass_name: str,
-        errors: Sequence[DatureError],
+        _errors: Sequence[DatureError],
     ) -> None:
-        pass
+        self.dataclass_name = dataclass_name
 
     def derive(self, excs: Sequence[DatureError], /) -> Self:  # type: ignore[override]
         return self.__class__(self.dataclass_name, list(excs))
@@ -134,35 +131,12 @@ class DatureConfigError(ExceptionGroup[DatureError]):
         return f"{self.dataclass_name} loading errors ({len(self.exceptions)})"
 
 
-class EnvVarExpandError(DatureConfigError):
-    def __new__(
-        cls,
-        errors: Sequence[MissingEnvVarError],
-        *,
-        dataclass_name: str = "",
-    ) -> Self:
-        obj = super().__new__(cls, dataclass_name, errors)
-        obj.dataclass_name = dataclass_name
-        return obj
-
-    def __init__(
-        self,
-        errors: Sequence[MissingEnvVarError],
-        *,
-        dataclass_name: str = "",
-    ) -> None:
-        pass
-
-    def derive(self, excs: Sequence[MissingEnvVarError], /) -> Self:  # type: ignore[override]
-        return self.__class__(list(excs), dataclass_name=self.dataclass_name)
-
+class EnvVarExpandError(DatureErrorGroup):
     def __str__(self) -> str:
-        if self.dataclass_name:
-            header = f"{self.dataclass_name} env expand errors ({len(self.exceptions)})"
-        else:
-            header = f"Missing environment variables ({len(self.exceptions)})"
-        lines: list[str] = [header, ""]
+        return self._format(f"Missing environment variables ({len(self.exceptions)})")
 
+    def _format(self, header: str) -> str:
+        lines: list[str] = [header, ""]
         for err in self.exceptions:
             if not isinstance(err, MissingEnvVarError):
                 continue
@@ -170,18 +144,15 @@ class EnvVarExpandError(DatureConfigError):
             if err.location is not None:
                 lines.extend(format_location(err.location))
             lines.append("")
-
         return "\n".join(lines)
 
 
-class MergeConflictError(DatureConfigError):
-    def __new__(
-        cls,
-        dataclass_name: str,
-        errors: Sequence[MergeConflictFieldError],
-    ) -> Self:
-        return super().__new__(cls, dataclass_name, errors)
+class ConfigEnvVarExpandError(EnvVarExpandError, DatureConfigError):
+    def __str__(self) -> str:
+        return self._format(f"{self.dataclass_name} env expand errors ({len(self.exceptions)})")
 
+
+class MergeConflictError(DatureConfigError):
     def __str__(self) -> str:
         lines = [f"{self.dataclass_name} merge conflicts ({len(self.exceptions)})", ""]
         for exc in self.exceptions:
@@ -224,12 +195,32 @@ class FieldGroupViolationError(DatureError):
 
 
 class FieldGroupError(DatureConfigError):
-    def __new__(
-        cls,
-        dataclass_name: str,
-        errors: Sequence[FieldGroupViolationError],
-    ) -> Self:
-        return super().__new__(cls, dataclass_name, errors)
-
     def __str__(self) -> str:
         return f"{self.dataclass_name} field group errors ({len(self.exceptions)})"
+
+
+class CrossRefError(DatureError):
+    def __init__(
+        self,
+        *,
+        ref: str,
+        message: str,
+        field_path: list[str] | None = None,
+    ) -> None:
+        self.ref = ref
+        self.message = message
+        self.field_path = field_path or []
+        super().__init__(message)
+
+
+class CrossRefExpandError(DatureErrorGroup):
+    def __str__(self) -> str:
+        lines: list[str] = [f"Cross-source reference errors ({len(self.exceptions)})", ""]
+        for err in self.exceptions:
+            if not isinstance(err, CrossRefError):
+                continue
+            path_str = format_path(err.field_path) if err.field_path else ""
+            prefix = f"  [{path_str}]  " if path_str else "  "
+            lines.append(f"{prefix}{err.ref!r}: {err.message}")
+            lines.append("")
+        return "\n".join(lines)

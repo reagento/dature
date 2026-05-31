@@ -17,6 +17,7 @@ from adaptix.load_error import (
 from adaptix.struct_trail import get_trail
 
 from dature.errors.exceptions import (
+    ConfigEnvVarExpandError,
     DatureConfigError,
     EnvVarExpandError,
     FieldLoadError,
@@ -132,7 +133,7 @@ def handle_load_errors[T](
             locations = resolve_source_location(e.field_path, ctx, file_content)
             e.location = locations[0] if locations else None
             enriched_env.append(e)
-        raise EnvVarExpandError(enriched_env, dataclass_name=ctx.dataclass_name) from exc
+        raise ConfigEnvVarExpandError(ctx.dataclass_name, enriched_env) from exc
     except (AggregateLoadError, LoadError) as exc:
         file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
         heuristic_paths: set[str] = set()

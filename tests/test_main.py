@@ -288,9 +288,9 @@ class _ConfigAwareSource(Source):
 
 
 @pytest.mark.usefixtures("_reset_config")
-class TestSingleSourceConfigDefaults:
-    def test_load_applies_config_defaults(self) -> None:
-        # Regression: single-source load() must call apply_source_config_defaults so that
+class TestSingleSourceConfigGroup:
+    def test_load_applies_config_group(self) -> None:
+        # Regression: single-source load() must call apply_source_config_group so that
         # ``configure(vault={...})`` (and ``DATURE_VAULT__*``) actually reach the source.
         configure(vault={"url": "http://from-config"})
 
@@ -301,7 +301,7 @@ class TestSingleSourceConfigDefaults:
         result = load(_ConfigAwareSource(), schema=Config)
         assert result.url_value == "http://from-config"
 
-    def test_decorator_applies_config_defaults(self) -> None:
+    def test_decorator_applies_config_group(self) -> None:
         configure(vault={"url": "http://from-config"})
 
         @load(_ConfigAwareSource())
@@ -312,7 +312,7 @@ class TestSingleSourceConfigDefaults:
         assert Config().url_value == "http://from-config"
 
     def test_validate_runs_for_single_source(self) -> None:
-        # Regression: single-source path used to skip _validate(); a misconfigured VaultSource
+        # Regression: single-source path used to skip validate(); a misconfigured VaultSource
         # would surface as a confusing failure inside _fetch() instead of a clean ValueError.
         @dataclass
         class Config:

@@ -327,3 +327,43 @@ class TestExpandEnvVars:
 
         with pytest.raises(EnvVarExpandError):
             expand_env_vars(data, mode="strict")
+
+
+class TestCrossRefAwareness:
+    """env_expand must leave ${@tag.key} patterns intact for the cross-source pass."""
+
+    @pytest.mark.parametrize(
+        ("text", "mode"),
+        [
+            ("${@cli.env}", "strict"),
+            ("${@cli.env}", "default"),
+            ("${@cli.env}", "empty"),
+            ("${@env.db.host}", "strict"),
+            ("${@env.VAULT_TOKEN:-}", "default"),
+        ],
+    )
+    def test_cross_ref_preserved_verbatim(self, text: str, mode: str) -> None:
+        assert expand_string(text, mode=mode) == text
+
+    @pytest.mark.parametrize(
+        "mode",
+        ["strict", "default", "empty"],
+    )
+    def test_double_dollar_before_cross_ref_preserved(self, mode: str) -> None:
+        # $$ before {@ must NOT be collapsed to $ here — the cross-source pass
+        # owns that escape step so that $${@cli.env} → literal ${@cli.env}.
+        assert expand_string("$${@cli.env}", mode=mode) == "$${@cli.env}"
+
+    def test_regular_double_dollar_still_collapses(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("VAR", raising=False)
+        assert expand_string("$${VAR}", mode="default") == "${VAR}"
+
+    def test_env_var_before_cross_ref_expanded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("HOME", "/home/user")
+        result = expand_string("${HOME}/${@cli.env}", mode="strict")
+        assert result == "/home/user/${@cli.env}"
+
+    def test_cross_ref_in_data_preserved(self) -> None:
+        data: JSONValue = {"url": "https://${@env.HOST}/api", "port": 8080}
+        result = expand_env_vars(data, mode="default")
+        assert result == {"url": "https://${@env.HOST}/api", "port": 8080}

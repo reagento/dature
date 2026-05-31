@@ -12,16 +12,16 @@ from dature.types import JSONValue, MergeStrategyName
 class SourceLastWins:
     def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
-        for src in sources:
-            base = ctx.merge(source=src, base=base)
+        for idx in range(len(sources)):
+            base = ctx.merge(source_idx=idx, base=base)
         return base
 
 
 class SourceFirstWins:
     def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
-        for src in sources:
-            base = ctx.merge(source=src, base=base, op=deep_merge_first_wins)
+        for idx in range(len(sources)):
+            base = ctx.merge(source_idx=idx, base=base, op=deep_merge_first_wins)
         return base
 
 
@@ -35,10 +35,10 @@ class SourceFirstFound:
     """
 
     def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
-        for src in sources:
-            data = ctx.load(src, skip_on_error=True)
+        for idx in range(len(sources)):
+            data = ctx.load(idx, skip_on_error=True)
             if data is not None:
-                return ctx.merge(source=src, base={}, skip_on_error=True)
+                return ctx.merge(source_idx=idx, base={}, skip_on_error=True)
         return {}
 
 
@@ -55,8 +55,8 @@ class SourceRaiseOnConflict:
 
     def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
-        for src in sources:
-            base = ctx.merge(source=src, base=base)
+        for idx in range(len(sources)):
+            base = ctx.merge(source_idx=idx, base=base)
         raise_on_conflict(
             ctx.loaded_raw_dicts(),
             ctx.loaded_source_ctxs(),
