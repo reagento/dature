@@ -1,3 +1,12 @@
+## 0.19.1
+
+### Bugfixes
+
+- Fix field_mapping aliases not matching in sources that normalize key case (EnvSource, EnvFileSource, DockerSecretsSource, IniSource). Aliases such as "DB_PASSWORD" now correctly map to the dataclass field regardless of whether the source lowercases its keys. ([#field_mapping_uppercase](https://github.com/reagento/dature/issues/field_mapping_uppercase))
+- ``FieldRef`` is now typed as ``Any`` instead of a fixed union of primitive types.
+  Fields in user dataclasses can be of any type (including custom classes), so the previous union was incomplete and caused false mypy errors when using ``F[DataClass].field`` as a ``field_mapping`` key. ([#field_ref_any](https://github.com/reagento/dature/issues/field_ref_any))
+
+
 ## 0.19.0
 
 ### Features
