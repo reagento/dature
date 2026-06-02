@@ -9,19 +9,19 @@ Pass multiple `Source` objects to `dature.load()`:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_basic.py"
+    --8<-- "docs/examples/features/merging/merging_basic.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_overrides.yaml"
+    --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
 ## Multiple Sources
@@ -31,19 +31,19 @@ Multiple sources use `"last_wins"` by default:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_tuple_shorthand.py"
+    --8<-- "docs/examples/features/merging/merging_tuple_shorthand.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_overrides.yaml"
+    --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
 Works as a decorator too:
@@ -51,13 +51,13 @@ Works as a decorator too:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_tuple_shorthand_decorator.py"
+    --8<-- "docs/examples/features/merging/merging_tuple_shorthand_decorator.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 ## Merge Strategies
@@ -76,19 +76,19 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Last source overrides earlier ones. This is the default strategy.
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_strategy_last_wins.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_last_wins.py"
     ```
 
     === "common_defaults.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_defaults.yaml"
+        --8<-- "docs/examples/shared/common_defaults.yaml"
         ```
 
     === "common_overrides.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_overrides.yaml"
+        --8<-- "docs/examples/shared/common_overrides.yaml"
         ```
 
 === "first_wins"
@@ -96,19 +96,19 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     First source wins on conflict. Later sources only fill in missing keys.
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_strategy_first_wins.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_first_wins.py"
     ```
 
     === "common_defaults.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_defaults.yaml"
+        --8<-- "docs/examples/shared/common_defaults.yaml"
         ```
 
     === "common_overrides.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_overrides.yaml"
+        --8<-- "docs/examples/shared/common_overrides.yaml"
         ```
 
 === "first_found"
@@ -116,13 +116,13 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Uses the first source that loads successfully and ignores the rest. Broken sources (missing file, parse error) are skipped automatically — no `skip_if_broken` needed. Type errors (wrong type, missing field) are **not** skipped.
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_strategy_first_found.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_first_found.py"
     ```
 
     === "common_defaults.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_defaults.yaml"
+        --8<-- "docs/examples/shared/common_defaults.yaml"
         ```
 
 === "raise_on_conflict"
@@ -130,19 +130,19 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Raises `MergeConflictError` if the same key appears in multiple sources with different values. Works best when sources have disjoint keys.
 
     ```python
-    --8<-- "examples/docs/features/merging/merging_strategy_raise_on_conflict.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_raise_on_conflict.py"
     ```
 
     === "common_raise_on_conflict_a.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_raise_on_conflict_a.yaml"
+        --8<-- "docs/examples/shared/common_raise_on_conflict_a.yaml"
         ```
 
     === "common_raise_on_conflict_b.yaml"
 
         ```yaml
-        --8<-- "examples/docs/shared/common_raise_on_conflict_b.yaml"
+        --8<-- "docs/examples/shared/common_raise_on_conflict_b.yaml"
         ```
 
 `strategy` is not limited to the names above — any object implementing the `SourceMergeStrategy` `Protocol` is accepted, so you can plug in your own merge logic (e.g. let env sources override files unconditionally) while still composing the built-in strategies. See [Custom Source Strategy](../advanced/merge-rules.md#custom-source-strategy).

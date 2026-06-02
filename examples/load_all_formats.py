@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-import dature
-
 from all_types_dataclass import (  # type: ignore[import-not-found]
     AllPythonTypesCompact,
 )
+
+import dature
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 

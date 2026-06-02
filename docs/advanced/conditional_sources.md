@@ -12,13 +12,13 @@ The source is enabled if **every** key expands to the expected value.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/dev.py"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py"
     ```
 
 === "vault_dev.env"
 
     ```env
-    --8<-- "examples/docs/advanced/conditional_sources/sources/vault_dev.env"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/vault_dev.env"
     ```
 
 Keys support the same `${VAR}` and `${@tag.key}` expansion syntax as source
@@ -29,7 +29,7 @@ init-fields.  `when=None` or `when={}` (the default) means always enabled.
 Pass a tuple to accept any of several values:
 
 ```python
---8<-- "examples/docs/advanced/conditional_sources/tuple_values.py"
+--8<-- "docs/examples/advanced/conditional_sources/tuple_values.py"
 ```
 
 `APP_ENV=local` matches `("dev", "local")`, so the source is enabled.
@@ -39,7 +39,7 @@ Pass a tuple to accept any of several values:
 List multiple keys to require all of them to match simultaneously:
 
 ```python
---8<-- "examples/docs/advanced/conditional_sources/multiple_keys.py"
+--8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py"
 ```
 
 The source is enabled only when both `APP_ENV=prod` **and** `REGION` is `eu`
@@ -53,13 +53,13 @@ share the **same** default so the conditions stay mutually exclusive:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/env_var_default.py"
+    --8<-- "docs/examples/advanced/conditional_sources/env_var_default.py"
     ```
 
 === "vault_dev.env"
 
     ```env
-    --8<-- "examples/docs/advanced/conditional_sources/sources/vault_dev.env"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/vault_dev.env"
     ```
 
 Both keys expand to `"dev"` when `APP_ENV` is unset — exactly one source is
@@ -73,13 +73,13 @@ If every source is conditional and none matches, dature raises immediately:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/errors_all_filtered.py"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/advanced/conditional_sources/errors_all_filtered.stderr"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.stderr"
     ```
 
 ## Switching environments
@@ -91,19 +91,19 @@ The `dature.load()` call is identical in both environments:
 === "prod"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/prod.py"
+    --8<-- "docs/examples/advanced/conditional_sources/prod.py"
     ```
 
 === "dev"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/dev.py"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py"
     ```
 
 === "vault_dev.env"
 
     ```env
-    --8<-- "examples/docs/advanced/conditional_sources/sources/vault_dev.env"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/vault_dev.env"
     ```
 
 Because `when=` conditions are mutually exclusive, only one source is ever active
@@ -117,13 +117,13 @@ another source rather than in an OS environment variable:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/source_toggle.py"
+    --8<-- "docs/examples/advanced/conditional_sources/source_toggle.py"
     ```
 
 === "config.json"
 
     ```json
-    --8<-- "examples/docs/advanced/conditional_sources/sources/config.json"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/config.json"
     ```
 
 `JsonSource` loads first; its `env` key drives the `when=` of `EnvFileSource`.
@@ -139,13 +139,13 @@ default raises.  Use `:-` to provide a fallback:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/ref_fallback.py"
+    --8<-- "docs/examples/advanced/conditional_sources/ref_fallback.py"
     ```
 
 === "config.json"
 
     ```json
-    --8<-- "examples/docs/advanced/conditional_sources/sources/config.json"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/config.json"
     ```
 
 `secrets` is disabled (`cfg.env` is `"dev"`, not `"prod"`), so
@@ -161,19 +161,19 @@ most one is active at a time.  Use separate instances with different
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/same_tag.py"
+    --8<-- "docs/examples/advanced/conditional_sources/same_tag.py"
     ```
 
 === "base.env"
 
     ```ini
-    --8<-- "examples/docs/advanced/conditional_sources/sources/base.env"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/base.env"
     ```
 
 === "vault_dev.env"
 
     ```ini
-    --8<-- "examples/docs/advanced/conditional_sources/sources/vault_dev.env"
+    --8<-- "docs/examples/advanced/conditional_sources/sources/vault_dev.env"
     ```
 
 `base.env` is always loaded (no `when=`); only the secrets source switches.
@@ -186,13 +186,13 @@ enabled — dature raises `DatureError` at construction time:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/errors_tag_collision_explicit.py"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/advanced/conditional_sources/errors_tag_collision_explicit.stderr"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.stderr"
     ```
 
 The same collision can appear with auto-tags (no explicit `tag=`): two sources
@@ -202,13 +202,13 @@ when a downstream source references that tag:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/conditional_sources/errors_tag_collision.py"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/advanced/conditional_sources/errors_tag_collision.stderr"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.stderr"
     ```
 
 Fix: use the same `:-default` in both `when=` keys so exactly one condition

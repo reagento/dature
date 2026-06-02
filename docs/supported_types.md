@@ -325,43 +325,43 @@ Always encoded as a string.
 ### Nested dataclasses
 
 ```python
---8<-- "examples/docs/supported_types/nested_dc.py:schema"
+--8<-- "docs/examples/supported_types/nested_dc.py:schema"
 ```
 
 === "YAML"
 
     ```yaml
-    --8<-- "examples/docs/supported_types/sources/nested_dc.yaml"
+    --8<-- "docs/examples/supported_types/sources/nested_dc.yaml"
     ```
 
 === "JSON"
 
     ```json
-    --8<-- "examples/docs/supported_types/sources/nested_dc.json"
+    --8<-- "docs/examples/supported_types/sources/nested_dc.json"
     ```
 
 === "JSON5"
 
     ```json5
-    --8<-- "examples/docs/supported_types/sources/nested_dc.json5"
+    --8<-- "docs/examples/supported_types/sources/nested_dc.json5"
     ```
 
 === "TOML"
 
     ```toml
-    --8<-- "examples/docs/supported_types/sources/nested_dc.toml"
+    --8<-- "docs/examples/supported_types/sources/nested_dc.toml"
     ```
 
 === "INI"
 
     ```ini
-    --8<-- "examples/docs/supported_types/sources/nested_dc.ini"
+    --8<-- "docs/examples/supported_types/sources/nested_dc.ini"
     ```
 
 === "ENV / ENV File"
 
     ```bash
-    --8<-- "examples/docs/supported_types/sources/nested_dc.env"
+    --8<-- "docs/examples/supported_types/sources/nested_dc.env"
     ```
 
 === "Docker Secrets"

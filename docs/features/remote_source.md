@@ -17,7 +17,7 @@ pip install dature[vault,type-stubs]   # runtime + mypy/pyright stubs for hvac
 ```
 
 ```python
---8<-- "examples/docs/features/remote_source/quickstart.py"
+--8<-- "docs/examples/features/remote_source/quickstart.py"
 ```
 
 ## VaultSource fields
@@ -36,7 +36,7 @@ Connection settings rarely change per-call, so they can be set once via
 `dature.configure(vault={...})` (or the matching `DATURE_VAULT__*` env vars):
 
 ```python
---8<-- "examples/docs/features/remote_source/configure.py"
+--8<-- "docs/examples/features/remote_source/configure.py"
 ```
 
 Precedence (highest first): instance fields → `configure()` → `DATURE_VAULT__*`
@@ -62,7 +62,7 @@ implement two methods:
   stripping, env-var expansion, and error-location rendering for free.
 
 ```python
---8<-- "examples/docs/features/remote_source/custom_source.py"
+--8<-- "docs/examples/features/remote_source/custom_source.py"
 ```
 
 ### Optional hooks

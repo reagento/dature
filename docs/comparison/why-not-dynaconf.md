@@ -47,7 +47,7 @@ There's no schema in your code that says "these fields exist, with these types."
 dature makes your config a **typed dataclass**:
 
 ```python
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_basic.py:basic"
+--8<-- "docs/examples/comparison/why-not-dynaconf/dynaconf_basic.py:basic"
 ```
 
 Missing fields, wrong types, invalid values — all caught at load time with clear error messages pointing to the exact source file and line.
@@ -76,21 +76,21 @@ This gives flexibility — validators can be defined in a different module, reus
 dature supports **both approaches**. Inline validators live with the type:
 
 ```python
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_validators.py"
+--8<-- "docs/examples/comparison/why-not-dynaconf/dynaconf_validators.py"
 ```
 
 ```title="Error"
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_validators.stderr"
+--8<-- "docs/examples/comparison/why-not-dynaconf/dynaconf_validators.stderr"
 ```
 
 And separate validators when you need cross-field checks or decoupled validation logic:
 
 ```python
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_root_validators.py"
+--8<-- "docs/examples/comparison/why-not-dynaconf/dynaconf_root_validators.py"
 ```
 
 ```title="Error"
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_root_validators.stderr"
+--8<-- "docs/examples/comparison/why-not-dynaconf/dynaconf_root_validators.stderr"
 ```
 
 You choose the style that fits — or mix them.
@@ -121,7 +121,7 @@ This leaks infrastructure concerns into your config files. Every team member nee
 dature uses **explicit strategies in code**:
 
 ```python
---8<-- "examples/docs/comparison/why-not-dynaconf/dynaconf_merge.py:merge"
+--8<-- "docs/examples/comparison/why-not-dynaconf/dynaconf_merge.py:merge"
 ```
 
 No magic keys in config files. Merge behavior is defined in code, visible in one place.

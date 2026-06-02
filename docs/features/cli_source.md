@@ -27,19 +27,19 @@ tests? Use `monkeypatch.setattr(sys, "argv", [...])`.
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/quickstart.py"
+    --8<-- "docs/examples/features/cli_source/quickstart.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/quickstart.sh"
+    --8<-- "docs/examples/features/cli_source/quickstart.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli_source/quickstart.stdout"
+    --8<-- "docs/examples/features/cli_source/quickstart.stdout"
     ```
 
 ## Defaults semantics — bool vs everything else
@@ -62,19 +62,19 @@ genuinely means "use the declared default".
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/defaults.py"
+    --8<-- "docs/examples/features/cli_source/defaults.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/defaults.sh"
+    --8<-- "docs/examples/features/cli_source/defaults.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli_source/defaults.stdout"
+    --8<-- "docs/examples/features/cli_source/defaults.stdout"
     ```
 
 `--debug` is a bool action → always present. `--env` and `--port` are non-bool
@@ -96,19 +96,19 @@ For non-default separators that argparse can't preserve in `dest`, set
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/nesting.py"
+    --8<-- "docs/examples/features/cli_source/nesting.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/nesting.sh"
+    --8<-- "docs/examples/features/cli_source/nesting.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli_source/nesting.stdout"
+    --8<-- "docs/examples/features/cli_source/nesting.stdout"
     ```
 
 ## Subparsers (and arbitrary nesting)
@@ -124,19 +124,19 @@ Args of subparsers that were **not** chosen are simply absent — adaptix uses
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/subparsers.py"
+    --8<-- "docs/examples/features/cli_source/subparsers.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/subparsers.sh"
+    --8<-- "docs/examples/features/cli_source/subparsers.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli_source/subparsers.stdout"
+    --8<-- "docs/examples/features/cli_source/subparsers.stdout"
     ```
 
 ## Bootstrap pattern — peek before `load()`
@@ -149,25 +149,25 @@ parse it yourself first, read the value, then hand the same parser to
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/bootstrap.py"
+    --8<-- "docs/examples/features/cli_source/bootstrap.py"
     ```
 
 === "sources/config.dev.json"
 
     ```json
-    --8<-- "examples/docs/features/cli_source/sources/config.dev.json"
+    --8<-- "docs/examples/features/cli_source/sources/config.dev.json"
     ```
 
 === "sources/config.production.json"
 
     ```json
-    --8<-- "examples/docs/features/cli_source/sources/config.production.json"
+    --8<-- "docs/examples/features/cli_source/sources/config.production.json"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/bootstrap.sh"
+    --8<-- "docs/examples/features/cli_source/bootstrap.sh"
     ```
 
 The order in `load()` controls precedence: with the default `last_wins`,
@@ -183,25 +183,25 @@ so you can safely mix CLI with env vars and config files.
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/combining.py"
+    --8<-- "docs/examples/features/cli_source/combining.py"
     ```
 
 === "sources/config.json"
 
     ```json
-    --8<-- "examples/docs/features/cli_source/sources/config.json"
+    --8<-- "docs/examples/features/cli_source/sources/config.json"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/combining.sh"
+    --8<-- "docs/examples/features/cli_source/combining.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli_source/combining.stdout"
+    --8<-- "docs/examples/features/cli_source/combining.stdout"
     ```
 
 ## Implementing a custom CLI parser
@@ -225,19 +225,19 @@ Below is a complete `ClickSource` you can copy into your project. It supports
 === "Script"
 
     ```python
-    --8<-- "examples/docs/features/cli_source/click_source.py"
+    --8<-- "docs/examples/features/cli_source/click_source.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli_source/click_source.sh"
+    --8<-- "docs/examples/features/cli_source/click_source.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli_source/click_source.stdout"
+    --8<-- "docs/examples/features/cli_source/click_source.stdout"
     ```
 
 A `TyperSource` is a thin wrapper — typer commands are click commands under

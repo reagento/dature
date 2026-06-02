@@ -5,19 +5,19 @@ In decorator mode, caching is enabled by default:
 === "cache=True"
 
     ```python
-    --8<-- "examples/docs/advanced/caching/advanced_caching_enabled.py"
+    --8<-- "docs/examples/advanced/caching/advanced_caching_enabled.py"
     ```
 
 === "cache=False"
 
     ```python
-    --8<-- "examples/docs/advanced/caching/advanced_caching_disabled.py"
+    --8<-- "docs/examples/advanced/caching/advanced_caching_disabled.py"
     ```
 
 === "cache=timedelta(...)"
 
     ```python
-    --8<-- "examples/docs/advanced/caching/advanced_caching_ttl.py"
+    --8<-- "docs/examples/advanced/caching/advanced_caching_ttl.py"
     ```
 
 Caching can also be configured globally via `configure()`.
@@ -55,7 +55,7 @@ The first load in a window has an effectively shortened TTL (up to one period le
 To cache across calls in function mode, construct a `Loader` explicitly and keep the instance around:
 
 ```python
---8<-- "examples/docs/advanced/caching/advanced_caching_function.py"
+--8<-- "docs/examples/advanced/caching/advanced_caching_function.py"
 ```
 
 The `Loader` carries all the load-time parameters and the cache state. Identity of the `Loader` instance fully captures the call configuration — there is no implicit fingerprinting of `debug`/`type_loaders`/`strategy`/etc. Different parameters → different `Loader` instances → independent cache slots.

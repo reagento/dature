@@ -7,19 +7,19 @@ Customize defaults for the entire application — programmatically or via enviro
 === "configure()"
 
     ```python
-    --8<-- "examples/docs/features/configure/advanced_configure.py"
+    --8<-- "docs/examples/features/configure/advanced_configure.py"
     ```
 
 === "Environment Variables"
 
     ```python
-    --8<-- "examples/docs/features/configure/advanced_configure_env.py"
+    --8<-- "docs/examples/features/configure/advanced_configure_env.py"
     ```
 
 === "common_app.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_app.yaml"
+    --8<-- "docs/examples/shared/common_app.yaml"
     ```
 
 ### MaskingConfig

@@ -10,13 +10,13 @@ without imperative glue code.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/cross_source_refs/quickstart.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/quickstart.py"
     ```
 
 === "app.json"
 
     ```json
-    --8<-- "examples/docs/advanced/cross_source_refs/sources/app.json"
+    --8<-- "docs/examples/advanced/cross_source_refs/sources/app.json"
     ```
 
 The `env` in `${@env.config_path}` is the source **tag**.  By default the tag
@@ -46,13 +46,13 @@ should contain `${@...}` literally rather than be treated as a cross-ref:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/cross_source_refs/escaping.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/escaping.py"
     ```
 
 === "${@env.something}"
 
     ```json
-    --8<-- "examples/docs/advanced/cross_source_refs/sources/${@env.something}"
+    --8<-- "docs/examples/advanced/cross_source_refs/sources/${@env.something}"
     ```
 
 ## T-string syntax (Python 3.14+)
@@ -67,13 +67,13 @@ t-string is exactly equivalent to `"${@tag.key}"` as a plain string:
 === "Python 3.14+"
 
     ```python
-    --8<-- "examples/docs/advanced/cross_source_refs/t_string.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/t_string.py"
     ```
 
 === "app.json"
 
     ```json
-    --8<-- "examples/docs/advanced/cross_source_refs/sources/app.json"
+    --8<-- "docs/examples/advanced/cross_source_refs/sources/app.json"
     ```
 
 The format spec becomes the default value — `t"{ref.env.log_level:INFO}"` is
@@ -86,13 +86,13 @@ the same as `"${@env.log_level:-INFO}"`.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/cross_source_refs/errors_unknown_tag.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_unknown_tag.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/advanced/cross_source_refs/errors_unknown_tag.stderr"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_unknown_tag.stderr"
     ```
 
 ### Cycle
@@ -100,13 +100,13 @@ the same as `"${@env.log_level:-INFO}"`.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/cross_source_refs/errors_cycle.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_cycle.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/advanced/cross_source_refs/errors_cycle.stderr"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_cycle.stderr"
     ```
 
 ### Tag collision
@@ -114,11 +114,11 @@ the same as `"${@env.log_level:-INFO}"`.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/cross_source_refs/errors_tag_collision.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_tag_collision.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/advanced/cross_source_refs/errors_tag_collision.stderr"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_tag_collision.stderr"
     ```

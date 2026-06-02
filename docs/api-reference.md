@@ -13,13 +13,13 @@ Main entry point. Two calling patterns:
 **Function mode** — pass `schema`, get an instance back:
 
 ```python
---8<-- "examples/docs/api_reference/api_reference_function_mode.py"
+--8<-- "docs/examples/api_reference/api_reference_function_mode.py"
 ```
 
 **Decorator mode** — omit `schema`, get a decorator:
 
 ```python
---8<-- "examples/docs/api_reference/api_reference_decorator_mode.py"
+--8<-- "docs/examples/api_reference/api_reference_decorator_mode.py"
 ```
 
 **Parameters:**
@@ -180,7 +180,7 @@ The built-ins are also exposed as classes from `dature.strategies.field` (`Field
 Factory for building type-safe field paths. Used for `field_mapping`, `field_merges`, `field_groups`, `validators`, `skip_field_if_invalid`, and `nested_resolve`.
 
 ```python
---8<-- "examples/docs/api_reference/api_reference_field_path.py"
+--8<-- "docs/examples/api_reference/api_reference_field_path.py"
 ```
 
 ### `FieldPath`
