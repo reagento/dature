@@ -1,6 +1,7 @@
 """End-to-end tests for N-phase cross-source orchestration."""
 
 import dataclasses
+import json
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -445,7 +446,7 @@ class TestThreeSourceChain:
         data_file.write_text('{"value": "nested-json"}')
 
         ptr_file = tmp_path / "ptr.json"
-        ptr_file.write_text(f'{{"data_path": "{data_file}"}}')
+        ptr_file.write_text(json.dumps({"data_path": data_file}))
 
         result = load(
             JsonSource(file="${@ptr.data_path}", tag="data"),

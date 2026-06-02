@@ -525,7 +525,7 @@ class LoadCtx:
             )
             self._cache[source_idx] = None
             return None
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 location = SourceLocation(
                     location_label=source.location_label,
@@ -538,7 +538,8 @@ class LoadCtx:
                     message=str(exc),
                     location=location,
                 )
-                raise DatureConfigError(self.dataclass_name, [source_error]) from exc
+                exc.__traceback__ = None
+                raise DatureConfigError(self.dataclass_name, [source_error]) from None
             logger.warning(
                 "[%s] Source %d skipped (broken): file=%s",
                 self.dataclass_name,
