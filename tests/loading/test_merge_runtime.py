@@ -1,12 +1,14 @@
 """Tests for loading/merge_runtime.py — load-level and config-group source merging."""
 
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar, Literal
 
 import pytest
 
-from dature import JsonSource, Yaml12Source, configure
+from dature import JsonSource, Yaml12Source, configure, load
+from dature.errors.exceptions import DatureError
 from dature.loading.merge_runtime import (
     MergeConfig,
     SourceParams,
@@ -217,3 +219,83 @@ class TestApplyMergeSkipInvalid:
 
         assert result.cleaned_dict == raw
         assert result.skipped_paths == []
+
+
+@dataclass(kw_only=True, repr=False)
+class _StubSource(Source):
+    """Minimal in-memory source that returns its own data field."""
+
+    data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+    format_name: ClassVar[str] = "stubmr"
+    location_label: ClassVar[str] = "STUBMR"
+
+    def _load(self) -> JSONValue:
+        return dict(self.data)
+
+
+@dataclass
+class _ValCfg:
+    value: str = ""
+
+
+class TestEvalLazyWhen:
+    """Unit coverage for LoadCtx._eval_lazy_when via the full load() path."""
+
+    def test_lazy_when_enabled_when_context_matches(self) -> None:
+        result = load(
+            _StubSource(data={"value": "from-stub"}, when={"${@ctrl.mode}": "active"}, tag="stub"),
+            _StubSource(data={"mode": "active"}, tag="ctrl"),
+            schema=_ValCfg,
+        )
+        assert result.value == "from-stub"
+
+    def test_lazy_when_disabled_when_context_not_matched(self) -> None:
+        result = load(
+            _StubSource(data={"value": "should-not-load"}, when={"${@ctrl.mode}": "active"}, tag="stub"),
+            _StubSource(data={"mode": "inactive", "value": "fallback"}, tag="ctrl"),
+            schema=_ValCfg,
+        )
+        assert result.value == "fallback"
+
+
+@dataclass(kw_only=True, repr=False)
+class _StubSourceB(Source):
+    """Second stub variant — same format_name as _StubSource so they share resolved_tag."""
+
+    data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+    format_name: ClassVar[str] = "stubmr"  # same as _StubSource → same resolved_tag when tag= unset
+    location_label: ClassVar[str] = "STUBMRB"
+
+    def _load(self) -> JSONValue:
+        return dict(self.data)
+
+
+class TestCheckLazyTagCollision:
+    """Unit coverage for LoadCtx._check_lazy_tag_collision via the full load() path.
+
+    The static _build_dep_graph collision check only fires when the shared tag is
+    referenced by ${@...} refs or when sources use an explicit tag=.  When both sources
+    share a tag *implicitly* (same format_name, no tag=) and neither is referenced,
+    the static check treats it as inactive — only the dynamic check in LoadCtx fires
+    when both lazy when= conditions evaluate True at load time.
+    """
+
+    def test_collision_when_both_lazy_enabled(self) -> None:
+        # Both sources share resolved_tag="stubmr" (via format_name) and pass their lazy when=.
+        with pytest.raises(DatureError, match="Tag collision among enabled sources"):
+            load(
+                _StubSource(data={"value": "a"}, when={"${@ctrl.flag}": "yes"}),
+                _StubSourceB(data={"value": "b"}, when={"${@ctrl.flag}": "yes"}),
+                _StubSource(data={"flag": "yes"}, tag="ctrl"),
+                schema=_ValCfg,
+            )
+
+    def test_no_collision_when_one_lazy_disabled(self) -> None:
+        # Only one source's lazy condition is met, so no collision.
+        result = load(
+            _StubSource(data={"value": "active"}, when={"${@ctrl.flag}": "yes"}),
+            _StubSourceB(data={"value": "inactive"}, when={"${@ctrl.flag}": "no"}),
+            _StubSource(data={"flag": "yes"}, tag="ctrl"),
+            schema=_ValCfg,
+        )
+        assert result.value == "active"

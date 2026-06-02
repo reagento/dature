@@ -11,6 +11,10 @@ that single call. ``_validate()`` also runs after interpolation, so credential s
 ``CliSource`` cross-refs now use the same dot-notation as all other sources (``${@cli.db.host}``)
 instead of the flat separator notation (``${@cli.db__host}``).
 
+When a dependency source is skipped (``skip_if_broken=True`` and the source fails to load),
+its tag contributes an empty dict to the cross-ref context so that ``${@tag.key:-default}``
+fallback expressions on downstream sources still resolve cleanly.
+
 Exception hierarchy: introduced ``DatureErrorGroup`` as a base ExceptionGroup without ``dataclass_name``;
 ``CrossRefExpandError`` inherits from it directly. ``DatureConfigError`` and all its subclasses
 drop ``__new__`` overrides — construction uses ``__init__`` only.

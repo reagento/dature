@@ -28,7 +28,13 @@ from dature.errors.formatter import handle_load_errors
 from dature.errors.location import SkippedFieldSource, SourceContext, read_file_content
 from dature.field_path import FieldPath
 from dature.loading.context import apply_skip_invalid, build_error_ctx
-from dature.loading.cross_source import CrossRefPlan, build_cross_ref_plan, clone_with_interpolation
+from dature.loading.cross_source import (
+    CrossRefPlan,
+    build_cross_ref_plan,
+    clone_with_interpolation,
+    evaluate_when_lazy,
+    when_has_cross_refs,
+)
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.protocols import DataclassInstance
@@ -143,17 +149,6 @@ def prepare_sources(
     return tuple(apply_source_config_group(s) for s in after_params)
 
 
-def prepare_single_source[T: Source](source: T) -> T:
-    """Finalise a prepared source for single-source loading.
-
-    build_cross_ref_plan → clone_with_interpolation ($$ escaping) → validate
-    """
-    build_cross_ref_plan((source,))
-    source = clone_with_interpolation(source, {})  # type: ignore[assignment]
-    source.validate()
-    return source
-
-
 @dataclass(slots=True, kw_only=True)
 class MergeConfig:
     sources: tuple[Source, ...]
@@ -197,6 +192,13 @@ def resolve_type_loaders(
 
 
 def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
+    """Return True if a load failure for *source* should be silently skipped.
+
+    ``when=`` filtering happens *before* this check — a source disabled by
+    ``when=`` never reaches ``load_raw()`` and therefore never has a chance to
+    fail.  ``skip_if_broken`` / ``skip_broken_sources`` only apply to sources
+    that pass the ``when=`` gate and then raise during loading.
+    """
     if source.skip_if_broken is not None:
         if source.file_display() is None:
             logger.warning(
@@ -313,6 +315,7 @@ class LoadCtx:
         self._merge_step_idx = 0
         self._entry_pos_by_source_idx: dict[int, int] = {}
         self._field_origins: dict[str, FieldOrigin] = {}
+        self._enabled_by_tag: dict[str, int] = {}  # tag → source_idx, for lazy-collision check
 
     def merge(
         self,
@@ -345,36 +348,84 @@ class LoadCtx:
         )
         return after
 
-    def _prepare_source(self, source_idx: int) -> None:
-        """Apply lazy cross-ref interpolation + ``validate()`` before first ``load_raw()``.
+    def _resolve_dep_refs(self, source_idx: int) -> "dict[str, dict[str, JSONValue]]":
+        """Load all declared dependencies and return a context dict for cross-ref expansion.
 
-        Loads all dependencies first (recursively, cache-backed), then
-        substitutes ``${@tag.key}`` refs in the source's init-fields and
-        validates the result in-place inside ``self._sources[source_idx]``.
-        Sources without deps still run ``validate()`` here.
+        Disabled (when=-filtered) or skipped deps contribute an empty dict so that
+        ``${@tag.key:-default}`` fallbacks on downstream sources still resolve.
         """
         plan = self._merge_meta.cross_ref_plan
-        if plan is not None and plan.deps[source_idx]:
-            context: dict[str, dict[str, JSONValue]] = {}
-            for dep_idx in plan.deps[source_idx]:
-                dep_raw = self.load(dep_idx)
-                if dep_raw is None:
-                    continue  # broken+skipped dep: absent from context → "key not found" if referenced
-                if not isinstance(dep_raw, dict):
-                    dep_source = self._sources[dep_idx]
-                    msg = (
-                        f"{type(dep_source).__name__}(tag='{dep_source.resolved_tag}') is referenced "
-                        f"by ${{@{dep_source.resolved_tag}.*}} but its loaded data is not a dict "
-                        f"(got {type(dep_raw).__name__}). Cross-source references require dict-shaped sources."
-                    )
-                    raise DatureError(msg)
-                context[self._sources[dep_idx].resolved_tag] = dep_raw
+        context: dict[str, dict[str, JSONValue]] = {}
+        if plan is None or not plan.deps[source_idx]:
+            return context
+        for dep_idx in plan.deps[source_idx]:
+            dep_raw = self.load(dep_idx)
+            dep_source = self._sources[dep_idx]
+            dep_tag = dep_source.resolved_tag
+            if dep_raw is None:
+                context[dep_tag] = {}
+                continue
+            if not isinstance(dep_raw, dict):
+                msg = (
+                    f"{type(dep_source).__name__}(tag='{dep_tag}') is referenced "
+                    f"by ${{@{dep_tag}.*}} but its loaded data is not a dict "
+                    f"(got {type(dep_raw).__name__}). Cross-source references require dict-shaped sources."
+                )
+                raise DatureError(msg)
+            context[dep_tag] = dep_raw
+        return context
 
-            interpolated = clone_with_interpolation(self._sources[source_idx], context)
-            interpolated.validate()
-            self._sources[source_idx] = interpolated
-        else:
-            self._sources[source_idx].validate()
+    def _eval_lazy_when(
+        self,
+        source: "Source",
+        context: "dict[str, dict[str, JSONValue]]",
+    ) -> bool:
+        """Return False if source has lazy when= and the condition is not met."""
+        return not when_has_cross_refs(source) or evaluate_when_lazy(source.when, context)
+
+    def _check_lazy_tag_collision(self, source: "Source", source_idx: int) -> None:
+        """Raise DatureError if two lazy-when sources with the same tag are both enabled.
+
+        This complements the *static* tag-collision check in ``_build_dep_graph``
+        (``cross_source.py``), which runs at ``MergeConfig.__post_init__`` time and
+        catches collisions that are statically visible in the enabled set.  That static
+        check cannot detect the case where two sources share a tag and each has a lazy
+        ``when=`` condition (resolved at load time from cross-source context) — because
+        both sources may pass the static filter and only reveal the collision when both
+        lazy conditions evaluate to ``True`` during the actual load.  This dynamic check
+        fills that gap.
+        """
+        if not when_has_cross_refs(source):
+            return
+        tag = source.resolved_tag
+        if tag in self._enabled_by_tag:
+            prev_idx = self._enabled_by_tag[tag]
+            prev_source = self._sources[prev_idx]
+            msg = (
+                f"Tag collision among enabled sources: resolved_tag={tag!r} is shared by "
+                f"{type(prev_source).__name__} (index {prev_idx}) and "
+                f"{type(source).__name__} (index {source_idx}), "
+                "both enabled by their lazy when= conditions. "
+                "Use mutually exclusive when= conditions."
+            )
+            raise DatureError(msg)
+        self._enabled_by_tag[tag] = source_idx
+
+    def _prepare_source_and_check_enabled(self, source_idx: int) -> bool:
+        """Coordinate lazy cross-ref resolution, when= evaluation, and validate().
+
+        Returns False when the source's lazy ``when=`` condition is not met —
+        the caller caches None and skips loading.
+        """
+        context = self._resolve_dep_refs(source_idx)
+        if context:
+            self._sources[source_idx] = clone_with_interpolation(self._sources[source_idx], context)
+        source = self._sources[source_idx]
+        if not self._eval_lazy_when(source, context):
+            return False
+        self._check_lazy_tag_collision(source, source_idx)
+        source.validate()
+        return True
 
     def field_origins(self) -> tuple[FieldOrigin, ...]:
         """Snapshot of accumulated field origins after the strategy has finished.
@@ -443,7 +494,11 @@ class LoadCtx:
         if source_idx in self._cache:
             return self._cache[source_idx]
 
-        self._prepare_source(source_idx)
+        if not self._prepare_source_and_check_enabled(source_idx):
+            # Lazy when= condition not met — treat as skipped (same as broken+skipped).
+            self._cache[source_idx] = None
+            return None
+
         source = self._sources[source_idx]
 
         i = self._next_index

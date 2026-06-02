@@ -120,7 +120,7 @@ class DatureConfigError(DatureErrorGroup):
     def __init__(
         self,
         dataclass_name: str,
-        _errors: Sequence[DatureError],
+        _errors: Sequence[DatureError | BaseException],
     ) -> None:
         self.dataclass_name = dataclass_name
 

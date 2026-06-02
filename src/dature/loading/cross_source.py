@@ -15,10 +15,12 @@ its init-fields immediately before that call.
 
 import dataclasses
 from collections import deque
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from dature.errors.exceptions import DatureError
 from dature.expansion.cross_source import expand_cross_refs, find_refs, needs_cross_ref_expansion
+from dature.expansion.env_expand import expand_string_default
 from dature.sources.base import Source, clone_source
 from dature.types import JSONValue
 
@@ -33,13 +35,61 @@ def _init_string_fields(source: Source) -> dict[str, str]:
     }
 
 
+def when_has_cross_refs(source: Source) -> bool:
+    """Return True if any key in source.when contains a ${@tag.key} cross-ref."""
+    return any(needs_cross_ref_expansion(k) for k in (source.when or {}))
+
+
 def _extract_ref_tags(source: Source) -> set[str]:
-    """Return all tag names referenced in this source's init string fields."""
+    """Return all tag names referenced in this source's init string fields and when keys."""
     tags: set[str] = set()
     for value in _init_string_fields(source).values():
         for tag, _ in find_refs(value):
             tags.add(tag)
+    for key in source.when or {}:
+        for tag, _ in find_refs(key):
+            tags.add(tag)
     return tags
+
+
+def evaluate_when_eager(when: "Mapping[str, str | tuple[str, ...]] | None") -> bool:
+    """Return True if all when conditions pass using env-var substitution only.
+
+    Called at the start of each ``.load()`` before any sources are fetched.
+    Cross-source refs in keys are left unexpanded; since they won't match any
+    expected value, the source is treated as enabled (deferred to lazy evaluation)
+    by the caller's ``when_has_cross_refs`` short-circuit, not by this function.
+    """
+    if not when:
+        return True
+    for key, expected in when.items():
+        expanded = expand_string_default(key)
+        expected_tuple = (expected,) if isinstance(expected, str) else expected
+        if expanded not in expected_tuple:
+            return False
+    return True
+
+
+def evaluate_when_lazy(
+    when: "Mapping[str, str | tuple[str, ...]] | None",
+    context: dict[str, dict[str, JSONValue]],
+) -> bool:
+    """Return True if all when conditions pass using env-var + cross-source expansion.
+
+    Called inside ``LoadCtx._prepare_source`` when the source's dependency context
+    is already available.  Both ``${VAR}`` env refs and ``${@tag.key}`` cross-refs
+    in condition keys are fully expanded before comparison.
+    """
+    if not when:
+        return True
+    for key, expected in when.items():
+        expanded = expand_string_default(key)
+        if needs_cross_ref_expansion(expanded):
+            expanded = expand_cross_refs(expanded, context=context)
+        expected_tuple = (expected,) if isinstance(expected, str) else expected
+        if expanded not in expected_tuple:
+            return False
+    return True
 
 
 def clone_with_interpolation(
@@ -150,7 +200,11 @@ def _build_dep_graph(sources: tuple[Source, ...]) -> list[list[int]]:
         else:
             by_tag[tag] = source_idx
 
-    active_collisions = {tag: idxs for tag, idxs in collisions.items() if tag in referenced_tags}
+    active_collisions = {
+        tag: idxs
+        for tag, idxs in collisions.items()
+        if tag in referenced_tags or any(sources[i].tag is not None for i in idxs)
+    }
     if active_collisions:
         msgs = [
             _format_tag_collision_error(tag, [sources[idx] for idx in idxs]) for tag, idxs in active_collisions.items()
@@ -224,15 +278,13 @@ def build_cross_ref_plan(sources: tuple[Source, ...]) -> CrossRefPlan | None:
     """Eagerly validate the cross-ref dependency graph and return a plan.
 
     Raises ``DatureError`` on tag collision, unknown tag reference, or cycle.
-    Returns ``None`` when no source contains any ``${@...}`` refs (fast path).
+    Returns ``None`` when there are no cross-ref edges (fast path for interpolation;
+    collision validation still runs via ``_build_dep_graph``).
     """
-    has_refs = any(_extract_ref_tags(s) for s in sources)
-    if not has_refs:
-        return None
-
     deps = _build_dep_graph(sources)
+    if not any(deps):
+        return None
     topo_order = _topological_sort(sources, deps)
-
     return CrossRefPlan(
         deps=tuple(tuple(d) for d in deps),
         topo_order=tuple(topo_order),

@@ -313,10 +313,12 @@ class TestSingleSourceConfigGroup:
 
     def test_validate_runs_for_single_source(self) -> None:
         # Regression: single-source path used to skip validate(); a misconfigured VaultSource
-        # would surface as a confusing failure inside _fetch() instead of a clean ValueError.
+        # would surface as a confusing failure inside _fetch() instead of a clean error.
         @dataclass
         class Config:
             x: str | None = None
 
-        with pytest.raises(ValueError, match="VaultSource: url is required"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(VaultSource(path="p", token="t"), schema=Config)
+        expected = "VaultSource: url is required (set on instance or via configure(vault={...}) / DATURE_VAULT__URL)"
+        assert str(exc_info.value.exceptions[0]) == expected

@@ -10,7 +10,12 @@ import pytest
 
 from dature import EnvSource, JsonSource, load
 from dature.errors.exceptions import DatureError
-from dature.loading.cross_source import build_cross_ref_plan
+from dature.loading.cross_source import (
+    build_cross_ref_plan,
+    evaluate_when_eager,
+    evaluate_when_lazy,
+    when_has_cross_refs,
+)
 from dature.sources.base import Source
 from dature.sources.cli_base import CliSource
 from dature.types import JSONValue
@@ -38,6 +43,18 @@ class _Stub(Source):
         if self.path is not None:
             result.setdefault("path", self.path)
         return result
+
+
+@dataclass(kw_only=True, repr=False)
+class _BrokenDepStub(Source):
+    """Source that always raises FileNotFoundError — used to simulate skipped deps."""
+
+    format_name: ClassVar[str] = "broken_dep_stub"
+    location_label: ClassVar[str] = "BROKEN_DEP"
+
+    def _load(self) -> JSONValue:
+        msg = "simulated missing source"
+        raise FileNotFoundError(msg)
 
 
 @dataclass
@@ -235,6 +252,18 @@ class TestInterpolation:
 
         assert result.url == "${@a.url}"
 
+    def test_skipped_dep_contributes_empty_context_for_default_fallback(self) -> None:
+        # Regression: when a dependency source is skipped (skip_if_broken=True and
+        # the file doesn't exist), _resolve_dep_refs writes context[dep_tag] = {} so
+        # that ${@dep.key:-fallback} default expressions still resolve, rather than
+        # raising "unknown tag".
+        broken = _BrokenDepStub(tag="dep", skip_if_broken=True)
+        consumer = _Stub(tag="consumer", url="${@dep.key:-used-fallback}", data={})
+
+        result = load(broken, consumer, schema=_StrConfig, skip_broken_sources=True)
+
+        assert result.url == "used-fallback"
+
 
 class TestSingleSourceEscaping:
     def test_double_dollar_in_file_path_resolved_single_source(self) -> None:
@@ -425,3 +454,82 @@ class TestThreeSourceChain:
         )
 
         assert result.value == "nested-json"
+
+
+class TestWhenHasCrossRefs:
+    @pytest.mark.parametrize(
+        ("when", "expected"),
+        [
+            (None, False),
+            ({}, False),
+            ({"${APP_ENV}": "prod"}, False),
+            ({"${@env.mode}": "prod"}, True),
+            ({"${APP_ENV}": "prod", "${@env.mode}": "staging"}, True),
+        ],
+        ids=["none", "empty", "env-only", "cross-ref", "mixed"],
+    )
+    def test_when_has_cross_refs(self, when: "dict[str, str] | None", expected: bool) -> None:
+        @dataclass(kw_only=True, repr=False)
+        class _S(Source):
+            format_name = "s"
+            location_label = "S"
+
+            def _load(self) -> JSONValue:
+                return {}
+
+        source = _S(when=when)
+        assert when_has_cross_refs(source) is expected
+
+
+class TestEvaluateWhenEager:
+    def test_none_when_returns_true(self) -> None:
+        assert evaluate_when_eager(None) is True
+
+    def test_empty_when_returns_true(self) -> None:
+        assert evaluate_when_eager({}) is True
+
+    def test_env_var_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_ENV", "prod")
+        assert evaluate_when_eager({"${APP_ENV}": "prod"}) is True
+
+    def test_env_var_no_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_ENV", "dev")
+        assert evaluate_when_eager({"${APP_ENV}": "prod"}) is False
+
+    def test_tuple_expected_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_ENV", "staging")
+        assert evaluate_when_eager({"${APP_ENV}": ("prod", "staging")}) is True
+
+    def test_tuple_expected_no_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_ENV", "dev")
+        assert evaluate_when_eager({"${APP_ENV}": ("prod", "staging")}) is False
+
+    def test_cross_ref_key_is_not_expanded(self) -> None:
+        assert evaluate_when_eager({"${@env.mode}": "prod"}) is False
+
+    def test_multiple_conditions_all_must_pass(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_ENV", "prod")
+        monkeypatch.setenv("APP_REGION", "us")
+        assert evaluate_when_eager({"${APP_ENV}": "prod", "${APP_REGION}": "us"}) is True
+        assert evaluate_when_eager({"${APP_ENV}": "prod", "${APP_REGION}": "eu"}) is False
+
+    def test_unset_env_var_literal_returned(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("UNSET_VAR", raising=False)
+        assert evaluate_when_eager({"${UNSET_VAR}": "${UNSET_VAR}"}) is True
+
+
+class TestEvaluateWhenLazy:
+    def test_none_when_returns_true(self) -> None:
+        assert evaluate_when_lazy(None, {}) is True
+
+    def test_env_var_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_ENV", "prod")
+        assert evaluate_when_lazy({"${APP_ENV}": "prod"}, {}) is True
+
+    def test_cross_ref_match(self) -> None:
+        context = {"env": {"mode": "prod"}}
+        assert evaluate_when_lazy({"${@env.mode}": "prod"}, context) is True
+
+    def test_cross_ref_no_match(self) -> None:
+        context = {"env": {"mode": "dev"}}
+        assert evaluate_when_lazy({"${@env.mode}": "prod"}, context) is False

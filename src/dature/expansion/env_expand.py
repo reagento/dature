@@ -27,7 +27,7 @@ def _resolve_brace_default(content: str, full: str) -> str:
         value = os.environ.get(var_name)
         if value is not None:
             return value
-        return _expand_string_default(fallback)
+        return expand_string_default(fallback)
 
     value = os.environ.get(content)
     if value is not None:
@@ -109,7 +109,7 @@ def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
         return text
 
     if mode == "default":
-        return _expand_string_default(text)
+        return expand_string_default(text)
 
     expander = _EnvExpander(mode=mode, source_text=text)
     result = _VAR_RE.sub(expander, text)
@@ -127,14 +127,14 @@ def _expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, 
         return text, []
 
     if mode == "default":
-        return _expand_string_default(text), []
+        return expand_string_default(text), []
 
     expander = _EnvExpander(mode=mode, source_text=text)
     result = _VAR_RE.sub(expander, text)
     return result, expander.errors
 
 
-def _expand_string_default(text: str) -> str:
+def expand_string_default(text: str) -> str:
     def _replace(match: re.Match[str]) -> str:
         full = match.group(0)
 

@@ -3,7 +3,7 @@ import contextlib
 import copy
 import json
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
 from datetime import date, datetime, time
 from functools import cached_property
@@ -79,6 +79,7 @@ class Source(abc.ABC):
     skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
     tag: str | None = None
+    when: "Mapping[str, str | tuple[str, ...]] | None" = None
 
     format_name: ClassVar[str]
     location_label: ClassVar[str]

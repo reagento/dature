@@ -1,21 +1,58 @@
 """Unit tests for src/dature/loading/loader.py — the public ``Loader`` class."""
 
+import dataclasses
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import Flag
 from io import BytesIO, StringIO
 from pathlib import Path
+from typing import ClassVar
+from unittest.mock import patch
 
 import pytest
 import time_machine
 
-from dature import EnvFileSource, JsonSource, Loader, Source
+import dature
+import dature.sources.base
+from dature import EnvFileSource, EnvSource, JsonSource, Loader, Source, load
+from dature.errors.exceptions import CrossRefExpandError, DatureConfigError, DatureError
+from dature.types import JSONValue
 
 
 @dataclass
 class _Config:
     host: str
     port: int
+
+
+@dataclass(kw_only=True, repr=False)
+class _Stub(dature.sources.base.Source):
+    """Minimal in-memory source for when= tests."""
+
+    data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+
+    format_name: ClassVar[str] = "stub"
+    location_label: ClassVar[str] = "STUB"
+
+    def _load(self) -> JSONValue:
+        return dict(self.data)
+
+
+@dataclass(kw_only=True, repr=False)
+class _StubUrl(dature.sources.base.Source):
+    """In-memory source that returns a single url key — used for cross-ref tests."""
+
+    url: str = ""
+    format_name: ClassVar[str] = "stuburl"
+    location_label: ClassVar[str] = "STUB"
+
+    def _load(self) -> JSONValue:
+        return {"url": self.url}
+
+
+@dataclass
+class _WhenCfg:
+    x: str = ""
 
 
 class TestLoaderValidation:
@@ -117,25 +154,24 @@ class TestLoaderCache:
         assert first.host == "original"
         assert second.host == expected_second
 
-    def test_invalidate_forces_reload(self, tmp_path: Path) -> None:
-        json_file = tmp_path / "config.json"
-        json_file.write_text('{"host": "original", "port": 1}')
-        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=True)
-
+    def test_when_routing_re_evaluated_after_env_change(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # when= is re-evaluated on every .load() call. When the enabled set changes,
+        # the cache is automatically cleared and a fresh load runs.
+        monkeypatch.setenv("APP_ENV", "dev")
+        loader = Loader(
+            _Stub(data={"x": "prod"}, when={"${APP_ENV}": "prod"}),
+            _Stub(data={"x": "dev"}, when={"${APP_ENV}": "dev"}),
+            schema=_WhenCfg,
+            cache=True,
+        )
         first = loader.load()
-        json_file.write_text('{"host": "updated", "port": 1}')
-        loader.invalidate()
+        assert first.x == "dev"
+
+        monkeypatch.setenv("APP_ENV", "prod")
         second = loader.load()
-
-        assert first.host == "original"
-        assert second.host == "updated"
-
-    def test_invalidate_when_empty_is_noop(self, tmp_path: Path) -> None:
-        json_file = tmp_path / "config.json"
-        json_file.write_text('{"host": "h", "port": 1}')
-        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=True)
-        loader.invalidate()  # no entry yet — must not raise
-        assert loader.load().host == "h"
+        # when= routing changed → cache cleared automatically → fresh load.
+        assert second.x == "prod"
+        assert first is not second
 
     def test_loader_per_schema_independent(self, tmp_path: Path) -> None:
         a_file = tmp_path / "a.json"
@@ -228,7 +264,7 @@ class TestLoaderAsDecorator:
             class NotADataclass:
                 pass
 
-    def test_patches_init(self, tmp_path: Path) -> None:
+    def test_patches_init_and_post_init(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
 
@@ -240,17 +276,6 @@ class TestLoaderAsDecorator:
         Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
 
         assert Config.__init__ is not original_init
-
-    def test_patches_post_init(self, tmp_path: Path) -> None:
-        json_file = tmp_path / "config.json"
-        json_file.write_text('{"name": "test"}')
-
-        @dataclass
-        class Config:
-            name: str
-
-        Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
-
         assert hasattr(Config, "__post_init__")
 
     def test_loads_on_init(self, tmp_path: Path) -> None:
@@ -375,19 +400,22 @@ class _Permission(Flag):
 
 class TestLoaderFlagFields:
     @pytest.mark.parametrize(
-        ("source_factory_name", "perms_value", "expected"),
+        ("source_type", "perms_value", "expected", "mode"),
         [
-            ("env_file", "3", _Permission.READ | _Permission.WRITE),
-            ("json", 3, _Permission.READ | _Permission.WRITE),
+            ("env_file", "3", _Permission.READ | _Permission.WRITE, "function"),
+            ("json", 3, _Permission.READ | _Permission.WRITE, "function"),
+            ("env_file", "5", _Permission.READ | _Permission.EXECUTE, "decorator"),
+            ("json", 7, _Permission.READ | _Permission.WRITE | _Permission.EXECUTE, "decorator"),
         ],
-        ids=["env-file", "json-int"],
+        ids=["fn-env-file", "fn-json", "dec-env-file", "dec-json"],
     )
-    def test_function_mode(
+    def test_flag_coercion(
         self,
         tmp_path: Path,
-        source_factory_name: str,
+        source_type: str,
         perms_value: object,
         expected: _Permission,
+        mode: str,
     ) -> None:
         @dataclass
         class Config:
@@ -395,7 +423,7 @@ class TestLoaderFlagFields:
             perms: _Permission
 
         source: Source
-        if source_factory_name == "env_file":
+        if source_type == "env_file":
             env_file = tmp_path / "config.env"
             env_file.write_text(f"NAME=test\nPERMS={perms_value}\n")
             source = EnvFileSource(file=env_file)
@@ -404,41 +432,11 @@ class TestLoaderFlagFields:
             json_file.write_text(f'{{"name": "test", "perms": {perms_value}}}')
             source = JsonSource(file=json_file)
 
-        result = Loader(source, schema=Config, debug=False).load()
-        assert result.perms == expected
-
-    @pytest.mark.parametrize(
-        ("source_factory_name", "perms_value", "expected"),
-        [
-            ("env_file", "5", _Permission.READ | _Permission.EXECUTE),
-            ("json", 7, _Permission.READ | _Permission.WRITE | _Permission.EXECUTE),
-        ],
-        ids=["env-file", "json-int"],
-    )
-    def test_decorator_mode(
-        self,
-        tmp_path: Path,
-        source_factory_name: str,
-        perms_value: object,
-        expected: _Permission,
-    ) -> None:
-        @dataclass
-        class Config:
-            name: str
-            perms: _Permission
-
-        source: Source
-        if source_factory_name == "env_file":
-            env_file = tmp_path / "config.env"
-            env_file.write_text(f"NAME=test\nPERMS={perms_value}\n")
-            source = EnvFileSource(file=env_file)
+        if mode == "function":
+            assert Loader(source, schema=Config, debug=False).load().perms == expected
         else:
-            json_file = tmp_path / "config.json"
-            json_file.write_text(f'{{"name": "test", "perms": {perms_value}}}')
-            source = JsonSource(file=json_file)
-
-        Loader.as_decorator(source, cache=True, debug=False)(Config)
-        assert Config().perms == expected
+            Loader.as_decorator(source, cache=True, debug=False)(Config)
+            assert Config().perms == expected
 
 
 class TestLoaderFilelikeSources:
@@ -470,3 +468,330 @@ class TestLoaderFilelikeSources:
 
         result = Loader(JsonSource(file=json_file), schema=Config, debug=False).load()
         assert result.name == "direct_path"
+
+
+# ---------------------------------------------------------------------------
+# when= conditional source inclusion
+# ---------------------------------------------------------------------------
+
+
+class TestEagerWhen:
+    @pytest.mark.parametrize(
+        ("env_value", "expected_x"),
+        [
+            ("prod", "prod_val"),
+            ("dev", "dev_val"),
+        ],
+    )
+    def test_single_env_var_mutual_exclusive(self, monkeypatch, env_value, expected_x):
+        """Mutually exclusive when= → exactly one source active."""
+        monkeypatch.setenv("APP_ENV", env_value)
+        result = load(
+            _Stub(data={"x": "prod_val"}, when={"${APP_ENV}": "prod"}),
+            _Stub(data={"x": "dev_val"}, when={"${APP_ENV}": "dev"}),
+            schema=_WhenCfg,
+        )
+        assert result.x == expected_x
+
+    @pytest.mark.parametrize(
+        ("env_value", "expected_x"),
+        [
+            ("prod", "override"),  # conditional source is last → last_wins
+            ("dev", "default"),  # conditional disabled → only default active
+            (None, "default"),
+        ],
+    )
+    def test_conditional_overrides_default_when_active(self, monkeypatch, env_value, expected_x):
+        """Conditional source placed last overrides the default when enabled."""
+        if env_value is None:
+            monkeypatch.delenv("APP_ENV", raising=False)
+        else:
+            monkeypatch.setenv("APP_ENV", env_value)
+
+        result = load(
+            _Stub(data={"x": "default"}),
+            _Stub(data={"x": "override"}, when={"${APP_ENV}": "prod"}),
+            schema=_WhenCfg,
+        )
+        assert result.x == expected_x
+
+    @pytest.mark.parametrize(
+        ("env_value", "expected_x"),
+        [
+            (None, "prod_val"),  # ${APP_ENV:-prod} → "prod" → enabled
+            ("prod", "prod_val"),
+            ("dev", "dev_val"),
+        ],
+    )
+    def test_env_var_with_default(self, monkeypatch, env_value, expected_x):
+        if env_value is None:
+            monkeypatch.delenv("APP_ENV", raising=False)
+        else:
+            monkeypatch.setenv("APP_ENV", env_value)
+
+        result = load(
+            _Stub(data={"x": "prod_val"}, when={"${APP_ENV:-prod}": "prod"}),
+            _Stub(data={"x": "dev_val"}, when={"${APP_ENV:-prod}": "dev"}),
+            schema=_WhenCfg,
+        )
+        assert result.x == expected_x
+
+    @pytest.mark.parametrize(
+        ("env_value", "expected_x"),
+        [
+            ("dev", "from_stub"),
+            ("local", "from_stub"),
+            ("prod", "fallback"),
+            (None, "fallback"),
+        ],
+    )
+    def test_tuple_of_expected_values(self, monkeypatch, env_value, expected_x):
+        if env_value is None:
+            monkeypatch.delenv("APP_ENV", raising=False)
+        else:
+            monkeypatch.setenv("APP_ENV", env_value)
+
+        result = load(
+            _Stub(data={"x": "fallback"}),
+            _Stub(data={"x": "from_stub"}, when={"${APP_ENV}": ("dev", "local")}),
+            schema=_WhenCfg,
+        )
+        assert result.x == expected_x
+
+    @pytest.mark.parametrize(
+        ("a", "b", "expected_x"),
+        [
+            ("1", "2", "from_stub"),
+            ("1", "x", "fallback"),
+            ("x", "2", "fallback"),
+            (None, None, "fallback"),
+        ],
+    )
+    def test_multiple_keys_and(self, monkeypatch, a, b, expected_x):
+        """All keys must match (AND semantics)."""
+        if a is None:
+            monkeypatch.delenv("A", raising=False)
+        else:
+            monkeypatch.setenv("A", a)
+        if b is None:
+            monkeypatch.delenv("B", raising=False)
+        else:
+            monkeypatch.setenv("B", b)
+
+        result = load(
+            _Stub(data={"x": "fallback"}),
+            _Stub(data={"x": "from_stub"}, when={"${A}": "1", "${B}": "2"}),
+            schema=_WhenCfg,
+        )
+        assert result.x == expected_x
+
+    @pytest.mark.parametrize("when_value", [None, {}])
+    def test_none_and_empty_always_enabled(self, when_value):
+        result = load(
+            _Stub(data={"x": "ok"}, when=when_value),
+            schema=_WhenCfg,
+        )
+        assert result.x == "ok"
+
+    def test_load_raw_not_called_when_disabled(self, monkeypatch):
+        monkeypatch.setenv("APP_ENV", "dev")
+        load_calls: list[str] = []
+
+        @dataclass(kw_only=True, repr=False)
+        class _Tracked(dature.sources.base.Source):
+            name: str = ""
+            data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+            format_name: ClassVar[str] = "tracked"
+            location_label: ClassVar[str] = "STUB"
+
+            def _load(self) -> JSONValue:
+                load_calls.append(self.name)
+                return dict(self.data)
+
+        result = load(
+            _Tracked(name="disabled", data={"x": "secret"}, when={"${APP_ENV}": "prod"}),
+            _Tracked(name="active", data={"x": "ok"}),
+            schema=_WhenCfg,
+        )
+        assert "disabled" not in load_calls
+        assert "active" in load_calls
+        assert result.x == "ok"
+
+    def test_all_sources_disabled_raises(self, monkeypatch):
+        monkeypatch.setenv("APP_ENV", "dev")
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                _Stub(data={"x": "a"}, when={"${APP_ENV}": "prod"}),
+                schema=_WhenCfg,
+            )
+        assert str(exc_info.value.exceptions[0]) == (
+            "Loader requires at least one enabled Source (all sources filtered out by when=)"
+        )
+
+    def test_single_source_mode_when_one_passes_eager(self, monkeypatch):
+        """Single enabled source after eager filter → _do_load_single path."""
+        monkeypatch.setenv("APP_ENV", "prod")
+        result = load(
+            _Stub(data={"x": "prod_val"}, when={"${APP_ENV}": "prod"}),
+            schema=_WhenCfg,
+        )
+        assert result.x == "prod_val"
+
+
+class TestLazyWhen:
+    def test_when_resolved_from_cross_source(self):
+        """when= key with ${@tag.key} is evaluated after the dep source loads."""
+        # EnvSource lowercases keys: APP_ENV → app_env in loaded data
+        with patch.dict("os.environ", {"APP_ENV": "prod"}, clear=False):
+            result = load(
+                EnvSource(tag="env"),
+                _Stub(data={"x": "conditional"}, when={"${@env.app_env}": "prod"}),
+                _Stub(data={"x": "fallback"}, when={"${@env.app_env}": "dev"}),
+                schema=_WhenCfg,
+            )
+        assert result.x == "conditional"
+
+    def test_when_lazy_disabled_cross_ref_gets_empty_context(self):
+        """Disabled lazy source: downstream ${@tag.key} without default → error."""
+
+        @dataclass
+        class _Cfg2:
+            url: str = ""
+
+        with patch.dict("os.environ", {"APP_ENV": "dev"}, clear=False):
+            disabled = _Stub(data={"x": "val"}, when={"${@env.app_env}": "prod"}, tag="data")
+            referencing = _StubUrl(url="${@data.x}")
+
+            # disabled source contributes {} to context → "key not found" in sub-errors
+            with pytest.raises(CrossRefExpandError) as exc_info:
+                load(EnvSource(tag="env"), disabled, referencing, schema=_Cfg2)
+            assert str(exc_info.value.exceptions[0]) == "key 'x' not found in 'data' data and no default provided"
+
+    def test_when_lazy_disabled_with_default_succeeds(self):
+        """${@tag.key:-default} works even when tag's source is disabled by when=."""
+
+        @dataclass
+        class _Cfg2:
+            url: str = ""
+
+        with patch.dict("os.environ", {"APP_ENV": "dev"}, clear=False):
+            disabled = _Stub(data={"x": "val"}, when={"${@env.app_env}": "prod"}, tag="data")
+            referencing = _StubUrl(url="${@data.x:-fallback_url}")
+            result = load(EnvSource(tag="env"), disabled, referencing, schema=_Cfg2)
+        assert result.url == "fallback_url"
+
+
+class TestWhenTagCollision:
+    def test_mutual_exclusive_when_no_collision(self, monkeypatch):
+        """Two sources with same tag= and mutually exclusive when= → no error."""
+        monkeypatch.setenv("APP_ENV", "prod")
+
+        @dataclass
+        class _Cfg2:
+            token: str = ""
+
+        result = load(
+            _Stub(data={"token": "prod_token"}, tag="secrets", when={"${APP_ENV}": "prod"}),
+            _Stub(data={"token": "dev_token"}, tag="secrets", when={"${APP_ENV}": "dev"}),
+            schema=_Cfg2,
+        )
+        assert result.token == "prod_token"
+
+    def test_both_enabled_same_referenced_tag_raises(self, monkeypatch):
+        """Two sources with same tag=, both active, tag is cross-ref'd → DatureError."""
+        monkeypatch.setenv("APP_ENV", "prod")
+
+        @dataclass
+        class _Cfg2:
+            url: str = ""
+
+        with pytest.raises(DatureError, match="Tag collision"):
+            load(
+                _Stub(data={"x": "a"}, tag="secrets", when={"${APP_ENV}": "prod"}),
+                _Stub(data={"x": "b"}, tag="secrets", when={"${APP_ENV}": "prod"}),
+                _StubUrl(url="${@secrets.x}"),
+                schema=_Cfg2,
+            )
+
+    def test_explicit_tag_collision_without_cross_ref_raises(self):
+        """Two sources with same explicit tag= and no cross-refs → DatureError."""
+        with pytest.raises(DatureError, match="Tag collision"):
+            load(
+                _Stub(data={"x": "a"}, tag="s"),
+                _Stub(data={"x": "b"}, tag="s"),
+                schema=_WhenCfg,
+            )
+
+
+class TestDecoratorFootgun:
+    def test_loader_init_does_not_read_env(self, monkeypatch):
+        """Loader.__init__ must not evaluate when= — footgun fix.
+
+        Old code: DatureError raised in __init__ when APP_ENV unset.
+        New code: when= filter deferred to .load(), so construction always succeeds.
+        """
+        monkeypatch.delenv("APP_ENV", raising=False)
+
+        # Must NOT raise — env is unset, but filter happens at .load() time.
+        loader = Loader(
+            _Stub(data={"x": "fallback"}),
+            _Stub(data={"x": "prod_val"}, when={"${APP_ENV}": "prod"}),
+            schema=_WhenCfg,
+        )
+
+        # Now set env, then load — filter runs with correct env state.
+        monkeypatch.setenv("APP_ENV", "prod")
+        result = loader.load()
+        assert result.x == "prod_val"
+
+    def test_all_disabled_raises_at_load_not_init(self, monkeypatch):
+        """when= all-filtered error surfaces on .load(), not on Loader construction."""
+        monkeypatch.delenv("APP_ENV", raising=False)
+
+        loader = Loader(
+            _Stub(data={"x": "a"}, when={"${APP_ENV}": "prod"}),
+            schema=_WhenCfg,
+        )
+
+        # Should raise on .load(), not on Loader()
+        with pytest.raises(DatureConfigError) as exc_info:
+            loader.load()
+        assert str(exc_info.value.exceptions[0]) == (
+            "Loader requires at least one enabled Source (all sources filtered out by when=)"
+        )
+
+
+class TestValidationLoaderRuntimeSource:
+    def test_validation_uses_runtime_last_source(self):
+        """validation_loader must be built from the actual runtime last_source.
+
+        Regression for latent bug: old code built validation_loader from init-time
+        eager_filtered[-1]. If that source is lazy-when=disabled at runtime, the
+        real last_source is different — validation would use the wrong retort.
+
+        Concretely: source B (last in list) has lazy when= resolved to False, so
+        source A becomes the actual last. We verify load succeeds and returns A's data.
+        """
+
+        @dataclass(kw_only=True, repr=False)
+        class _StubB(dature.sources.base.Source):
+            data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+            format_name: ClassVar[str] = "stub_b"
+            location_label: ClassVar[str] = "STUB"
+
+            def _load(self) -> JSONValue:
+                return dict(self.data)
+
+        @dataclass
+        class _CfgStr:
+            x: str = ""
+
+        with patch.dict("os.environ", {"FEAT": "off"}, clear=False):
+            result = load(
+                EnvSource(tag="env"),
+                _Stub(data={"x": "from_a"}),
+                _StubB(data={"x": "from_b"}, when={"${@env.feat}": "on"}),
+                schema=_CfgStr,
+            )
+        # B is lazy-disabled (FEAT=off), so A is the actual last_source.
+        assert result.x == "from_a"

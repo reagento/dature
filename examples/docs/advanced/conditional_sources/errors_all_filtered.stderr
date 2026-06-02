@@ -1,0 +1,4 @@
+  | dature.errors.exceptions.DatureConfigError: SecretsConfig loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.DatureError: Loader requires at least one enabled Source (all sources filtered out by when=)
+    +------------------------------------
