@@ -13,7 +13,7 @@ import hvac
 import pytest
 
 from dature import VaultSource, configure, load
-from dature.errors import SourceLocation
+from dature.errors import DatureConfigError, SourceLocation
 
 KV_PATH: Final = "myapp/config"
 KV1_MOUNT: Final = "kv1"
@@ -91,19 +91,24 @@ class TestVaultSourceTokenKv2:
         assert result == EXPECTED_DATACLASS
 
     def test_path_not_found_raises(self, vault_url, vault_root_token):
-        with pytest.raises(KeyError, match="Vault path not found"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 VaultSource(url=vault_url, token=vault_root_token, path="does/not/exist"),
                 schema=_Config,
             )
+        inner = exc_info.value.exceptions[0]
+        assert isinstance(inner, KeyError)
+        assert inner.args[0] == f"Vault path not found: {vault_url}/v1/secret/data/does/not/exist"
 
     @pytest.mark.usefixtures("_kv2_secret")
     def test_invalid_token_raises(self, vault_url):
-        with pytest.raises((PermissionError, hvac.exceptions.Forbidden, hvac.exceptions.Unauthorized)):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 VaultSource(url=vault_url, token="bad-token", path=KV_PATH),
                 schema=_Config,
             )
+        assert isinstance(exc_info.value.exceptions[0], PermissionError)
+        assert exc_info.value.exceptions[0].args[0] == f"Vault auth failed for {vault_url}"
 
     @pytest.mark.usefixtures("_kv2_secret")
     def test_resolve_location_renders_real_value(self, vault_url, vault_root_token):
@@ -144,7 +149,7 @@ class TestVaultSourceTokenKv1:
         assert result == EXPECTED_DATACLASS
 
     def test_path_not_found_raises(self, vault_url, vault_root_token):
-        with pytest.raises(KeyError, match="Vault path not found"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 VaultSource(
                     url=vault_url,
@@ -155,6 +160,9 @@ class TestVaultSourceTokenKv1:
                 ),
                 schema=_Config,
             )
+        inner = exc_info.value.exceptions[0]
+        assert isinstance(inner, KeyError)
+        assert inner.args[0] == f"Vault path not found: {vault_url}/v1/{KV1_MOUNT}/does/not/exist"
 
 
 @pytest.mark.usefixtures("_reset_config", "_kv2_secret")

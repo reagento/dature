@@ -94,18 +94,15 @@ def template_to_str(template: _Template) -> str:
         raise TypeError(msg)
 
     parts: list[str] = []
-    for arg in template.args:
-        if isinstance(arg, str):
-            parts.append(arg)
-        else:
-            # Interpolation object
-            value = arg.value
+    for i, s in enumerate(template.strings):
+        parts.append(s)
+        if i < len(template.interpolations):
+            interp = template.interpolations[i]
+            value = interp.value
             if not isinstance(value, _RefProxy):
-                # Non-proxy interpolation: the user put a regular Python expression
-                # in the t-string (e.g. t"{some_var}").  Stringify it.
                 parts.append(str(value))
                 continue
-            format_spec: str = arg.format_spec or ""
+            format_spec: str = interp.format_spec or ""
             default = format_spec or None
             parts.append(value.to_cross_ref(default=default))
 
