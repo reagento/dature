@@ -93,8 +93,13 @@ class TestTemplateToStr:
     ) -> None:
         from string.templatelib import Interpolation, Template  # type: ignore[import-not-found]  # noqa: PLC0415
 
-        interpolations = tuple(Interpolation(proxy, expr, None, fmt) for proxy, expr, fmt in interps)
-        t = Template(strings, interpolations)
+        interpolations = [Interpolation(proxy, expr, None, fmt) for proxy, expr, fmt in interps]
+        args: list[str | Interpolation] = []
+        for i, s in enumerate(strings):
+            args.append(s)
+            if i < len(interpolations):
+                args.append(interpolations[i])
+        t = Template(*args)
         assert template_to_str(t) == expected
 
     @pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
@@ -102,5 +107,5 @@ class TestTemplateToStr:
         from string.templatelib import Interpolation, Template  # noqa: PLC0415
 
         interp = Interpolation(42, "42", None, "")
-        t = Template(("value=", ""), (interp,))
+        t = Template("value=", interp, "")
         assert template_to_str(t) == "value=42"
