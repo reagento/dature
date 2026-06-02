@@ -23,15 +23,15 @@ On Python < 3.14 the ``Template`` type does not exist; users must use the
 from typing import Final
 
 try:
-    from string.templatelib import Template as _Template  # type: ignore[import-not-found]
+    from string.templatelib import Template  # type: ignore[import-not-found]
 
-    _TEMPLATE_SUPPORTED = True
+    TEMPLATE_SUPPORTED = True
 except ImportError:
 
-    class _Template:  # type: ignore[no-redef]
+    class Template:  # type: ignore[no-redef]
         """Stub used on Python < 3.14 where string.templatelib is unavailable."""
 
-    _TEMPLATE_SUPPORTED = False
+    TEMPLATE_SUPPORTED = False
 
 
 class _RefProxy:
@@ -77,7 +77,7 @@ class _Ref:
 ref: Final[_Ref] = _Ref()
 
 
-def template_to_str(template: _Template) -> str:
+def template_to_str(template: "Template") -> str:
     """Convert a t-string Template to an equivalent ``${@tag.key}`` string.
 
     Raises:
@@ -85,11 +85,11 @@ def template_to_str(template: _Template) -> str:
         TypeError: if *template* is not a ``Template`` instance.
         ValueError: if an interpolation value is not a :class:`_RefProxy`.
     """
-    if not _TEMPLATE_SUPPORTED:
+    if not TEMPLATE_SUPPORTED:
         msg = 't-string syntax requires Python 3.14+; use "${@tag.key}" syntax instead'
         raise ImportError(msg)
 
-    if not isinstance(template, _Template):
+    if not isinstance(template, Template):
         msg = f"expected a t-string Template, got {type(template).__name__!r}"
         raise TypeError(msg)
 

@@ -28,6 +28,7 @@ from dature.loaders import (
     str_from_scalar,
     time_from_string,
 )
+from dature.refs import TEMPLATE_SUPPORTED, Template, template_to_str  # type: ignore[attr-defined]
 from dature.types import (
     FILE_LIKE_TYPES,
     DotSeparatedPath,
@@ -413,6 +414,9 @@ class FileFieldMixin:
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:
+        # Convert t-string Template to string (Python 3.14+)
+        if TEMPLATE_SUPPORTED and isinstance(self.file, Template):
+            self.file = template_to_str(self.file)
         if isinstance(self.file, (str, Path)):
             self.file = expand_file_path(self.file, mode="strict")
 
