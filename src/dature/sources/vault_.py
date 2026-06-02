@@ -27,7 +27,7 @@ class VaultSource(RemoteSource):
             return f"{self.url}/v1/{self.mount_point}/{self.path}"
         return f"{self.url}/v1/{self.mount_point}/data/{self.path}"
 
-    def _validate(self) -> None:
+    def validate(self) -> None:
         if self.token is not None and (self.role_id is not None or self.secret_id is not None):
             msg = "VaultSource: token and role_id/secret_id are mutually exclusive"
             raise ValueError(msg)
@@ -57,9 +57,9 @@ class VaultSource(RemoteSource):
                 return cast("JSONValue", resp["data"])
             resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
             return cast("JSONValue", resp["data"]["data"])
-        except hvac.exceptions.InvalidPath as e:
+        except hvac.exceptions.InvalidPath:
             msg = f"Vault path not found: {self.remote_address()}"
-            raise KeyError(msg) from e
-        except (hvac.exceptions.Forbidden, hvac.exceptions.Unauthorized) as e:
+            raise KeyError(msg) from None
+        except (hvac.exceptions.Forbidden, hvac.exceptions.Unauthorized):
             msg = f"Vault auth failed for {self.url}"
-            raise PermissionError(msg) from e
+            raise PermissionError(msg) from None

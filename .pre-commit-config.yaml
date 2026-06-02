@@ -6,15 +6,18 @@ repos:
         entry: .venv/bin/ruff check --fix
         language: system
         types: [python]
+        exclude: "examples/docs/advanced/cross_source_refs/t_string\\.py"
 
       - id: ruff-format
         name: ruff format
         entry: .venv/bin/ruff format
         language: system
         types: [python]
+        exclude: "examples/docs/advanced/cross_source_refs/t_string\\.py"
 
       - id: mypy
         name: mypy
         entry: .venv/bin/mypy
         language: system
         types: [python]
+        exclude: "examples/docs/advanced/cross_source_refs/t_string\\.py"

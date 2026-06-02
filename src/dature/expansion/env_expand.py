@@ -3,13 +3,16 @@ import re
 from pathlib import Path
 
 from dature.errors import EnvVarExpandError, MissingEnvVarError
+from dature.expansion.cross_source import CROSS_REF_OPEN
 from dature.types import ExpandEnvVarsMode, FilePath, JSONValue
 
 # $VAR, ${VAR}, ${VAR:-default}, %VAR%, $$, %%
+# Note: ${@...} is intentionally excluded (negative lookahead) — cross-source refs
+# are handled by expansion/cross_source.py and must survive this pass intact.
 _VAR_RE = re.compile(
     r"\$\$"  # escaped $$
     r"|%%"  # escaped %%
-    r"|\$\{([^}]+)\}"  # ${VAR} or ${VAR:-default}
+    r"|\$\{(?!@)([^}]+)\}"  # ${VAR} or ${VAR:-default}, NOT ${@tag.key}
     r"|\$([A-Za-z_][A-Za-z0-9_]*)"  # $VAR
     r"|%([A-Za-z_][A-Za-z0-9_]*)%",  # %VAR%
 )
@@ -24,7 +27,7 @@ def _resolve_brace_default(content: str, full: str) -> str:
         value = os.environ.get(var_name)
         if value is not None:
             return value
-        return _expand_string_default(fallback)
+        return expand_string_default(fallback)
 
     value = os.environ.get(content)
     if value is not None:
@@ -53,6 +56,10 @@ class _EnvExpander:
         full = match.group(0)
 
         if full == "$$":
+            # Preserve $$ immediately before {@ so the cross-source pass can
+            # collapse it to a literal $, keeping ${@...} as a plain string.
+            if match.string[match.end() : match.end() + 2] == CROSS_REF_OPEN:
+                return "$$"
             return "$"
         if full == "%%":
             return "%"
@@ -102,13 +109,14 @@ def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
         return text
 
     if mode == "default":
-        return _expand_string_default(text)
+        return expand_string_default(text)
 
     expander = _EnvExpander(mode=mode, source_text=text)
     result = _VAR_RE.sub(expander, text)
 
     if expander.errors:
-        raise EnvVarExpandError(expander.errors)
+        msg = "Missing environment variables"
+        raise EnvVarExpandError(msg, expander.errors)
 
     return result
 
@@ -119,18 +127,20 @@ def _expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, 
         return text, []
 
     if mode == "default":
-        return _expand_string_default(text), []
+        return expand_string_default(text), []
 
     expander = _EnvExpander(mode=mode, source_text=text)
     result = _VAR_RE.sub(expander, text)
     return result, expander.errors
 
 
-def _expand_string_default(text: str) -> str:
+def expand_string_default(text: str) -> str:
     def _replace(match: re.Match[str]) -> str:
         full = match.group(0)
 
         if full == "$$":
+            if match.string[match.end() : match.end() + 2] == CROSS_REF_OPEN:
+                return "$$"
             return "$"
         if full == "%%":
             return "%"
@@ -165,7 +175,8 @@ def expand_env_vars(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
     all_errors: list[MissingEnvVarError] = []
     result = _expand_recursive_collect(data, mode=mode, path=[], errors=all_errors)
     if all_errors:
-        raise EnvVarExpandError(all_errors)
+        msg = "Missing environment variables"
+        raise EnvVarExpandError(msg, all_errors)
     return result
 
 

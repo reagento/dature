@@ -1,6 +1,6 @@
 """Multi-source merge machinery.
 
-Holds the merge core ``_load_and_merge`` and its helpers. Single-source loading
+Holds the merge core ``load_and_merge`` and its helpers. Single-source loading
 lives directly on ``Loader._do_load_single`` in ``loader.py``.
 """
 
@@ -28,10 +28,6 @@ from dature.strategies.source import resolve_source_strategy
 from dature.types import JSONValue, TypeLoaderMap
 
 logger = logging.getLogger("dature")
-
-
-def _collect_extra_secret_patterns(merge_meta: MergeConfig) -> tuple[str, ...]:
-    return merge_meta.secret_field_names or ()
 
 
 def _log_merge_step(
@@ -176,7 +172,7 @@ class _MergedData[T: DataclassInstance]:
     last_type_loaders: TypeLoaderMap | None
 
 
-def _load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
+def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     *,
     merge_meta: MergeConfig,
     schema: type[T],
@@ -185,7 +181,7 @@ def _load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     secret_paths: frozenset[str] = frozenset()
     mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
     if mask_secrets:
-        extra_patterns = _collect_extra_secret_patterns(merge_meta)
+        extra_patterns = merge_meta.secret_field_names or ()
         secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
     strategy = resolve_source_strategy(

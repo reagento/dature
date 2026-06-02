@@ -19,14 +19,14 @@ through ``loader.load()`` via a patched ``__init__``.
 
 import logging
 from collections.abc import Callable
-from dataclasses import asdict, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from datetime import timedelta
 from typing import Any
 
 from adaptix import Retort
 
 from dature.config import config
-from dature.errors import DatureConfigError
+from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import ErrorContext, SkippedFieldSource, read_file_content
 from dature.load_report import (
@@ -44,13 +44,12 @@ from dature.loading.context import (
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.merge import _collect_extra_secret_patterns, _load_and_merge
+from dature.loading.cross_source import clone_with_interpolation, evaluate_when_eager, when_has_cross_refs
+from dature.loading.merge import _MergedData, load_and_merge
 from dature.loading.merge_runtime import (
     MergeConfig,
     SourceMergeStrategy,
     SourceParams,
-    apply_source_config_defaults,
-    apply_source_init_params,
     resolve_type_loaders,
 )
 from dature.loading.source_loading import enrich_skipped_errors
@@ -76,6 +75,18 @@ from dature.types import (
 )
 
 logger = logging.getLogger("dature")
+
+
+def _make_retort_key(
+    source: Source, resolved_type_loaders: TypeLoaderMap | None
+) -> tuple[type[Source], frozenset[Any]]:
+    """Stable lookup key for pre-warmed retort dicts.
+
+    Uses type(source) rather than source identity: prepare_sources clones
+    sources, so the object changes but the type stays the same.
+    """
+    items = frozenset(resolved_type_loaders.items()) if resolved_type_loaders else frozenset()
+    return (type(source), items)
 
 
 def _log_single_source_load(
@@ -104,9 +115,9 @@ def _log_single_source_load(
 
 
 class Loader[T: DataclassInstance]:
-    """Encapsulates a ``load`` call. ``.load()`` honours the cache; ``.invalidate()`` clears it."""
+    """Encapsulates a ``load`` call. ``.load()`` honours the cache."""
 
-    def __init__(  # noqa: C901, PLR0913, PLR0915
+    def __init__(  # noqa: PLR0913, PLR0915, C901
         self,
         *sources: Source,
         schema: type[T],
@@ -140,10 +151,28 @@ class Loader[T: DataclassInstance]:
         if debug is None:
             debug = config.loading.debug
 
+        # All raw sources as passed — eager when= filter runs at .load() time so that
+        # env state is read at invocation time, not at import/construction time.
+        # This fixes the decorator-mode footgun where APP_ENV unset at import causes failure.
         self._sources = sources
         self._schema = schema
         self._cache: bool | timedelta = cache
-        self._debug = debug
+        self.debug = debug
+
+        # Loader-level parameters stored for deferred MergeConfig construction in _prepare_for_load.
+        self._strategy = strategy
+        self._field_merges = field_merges
+        self._field_groups = field_groups
+        self._skip_broken_sources = skip_broken_sources
+        self._skip_invalid_fields = skip_invalid_fields
+        self._secret_field_names = secret_field_names
+        self._mask_secrets_arg = mask_secrets
+        self._type_loaders_arg = type_loaders
+        self._source_params = SourceParams(
+            expand_env_vars=expand_env_vars,
+            nested_resolve_strategy=nested_resolve_strategy,
+            nested_resolve=nested_resolve,
+        )
 
         # State exposed to the decorator's patched __init__ / __post_init__
         # (satisfies the PatchContext protocol from ``loading.context``).
@@ -157,112 +186,86 @@ class Loader[T: DataclassInstance]:
         # Cache state.
         self._cached_data: T | None = None
         self._cached_at: float | None = None
+        # Tracks which source indices were enabled on the last load.
+        # When the enabled set changes (env var drove a different when= outcome),
+        # the cached result is auto-cleared before the freshness check.
+        self._enabled_sig: tuple[int, ...] | None = None
 
-        source_params = SourceParams(
-            expand_env_vars=expand_env_vars,
-            nested_resolve_strategy=nested_resolve_strategy,
-            nested_resolve=nested_resolve,
-        )
+        # Secret paths depend only on schema shape — computed once, env-free.
+        resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
+        self.secret_paths: frozenset[str] = frozenset()
+        if resolved_mask_secrets:
+            extra_patterns = secret_field_names or ()
+            self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
-        if len(sources) > 1:
-            self._merge_meta: MergeConfig | None = MergeConfig(
-                sources=sources,
-                source_params=source_params,
-                strategy=strategy,
-                field_merges=field_merges,
-                field_groups=field_groups,
-                skip_broken_sources=skip_broken_sources,
-                skip_invalid_fields=skip_invalid_fields,
-                secret_field_names=secret_field_names,
-                mask_secrets=mask_secrets,
-                type_loaders=type_loaders,
-            )
-            # Pre-prep retorts for every source in the merge.
-            for src in self._merge_meta.sources:
-                src_type_loaders = resolve_type_loaders(src, self._merge_meta.type_loaders)
-                ensure_retort(src, schema, resolved_type_loaders=src_type_loaders)
+        # Pre-warm retort caches for all sources (pure type analysis, no env read).
+        # Must happen before the decorator replaces schema.__init__ so that adaptix
+        # inspects the original dataclass signature, not the patched *args/**kwargs one.
+        # Both dicts are keyed by _make_retort_key(source, resolved_type_loaders) — stable
+        # across prepare_sources cloning — and reused in _build_validation_loader / _prepare_for_load.
+        self._validating_retorts: dict[tuple[type[Source], frozenset[Any]], Retort] = {}
+        self._probe_retorts: dict[tuple[type[Source], frozenset[Any]], Retort] = {}
+        for source in sources:
+            source_type_loaders = resolve_type_loaders(source, type_loaders)
+            retort_key = _make_retort_key(source, source_type_loaders)
+            ensure_retort(source, schema, resolved_type_loaders=source_type_loaders)
+            if retort_key not in self._validating_retorts:
+                validating_retort = create_validating_retort(source, schema, resolved_type_loaders=source_type_loaders)
+                validating_retort.get_loader(schema)
+                self._validating_retorts[retort_key] = validating_retort
+            if source.skip_field_if_invalid and retort_key not in self._probe_retorts:
+                probe_retort = create_probe_retort(source, resolved_type_loaders=source_type_loaders)
+                probe_retort.get_loader(schema)
+                self._probe_retorts[retort_key] = probe_retort
 
-            last_source = self._merge_meta.sources[-1]
-            last_type_loaders = resolve_type_loaders(last_source, self._merge_meta.type_loaders)
-            validating_retort = create_validating_retort(
-                last_source,
-                schema,
-                resolved_type_loaders=last_type_loaders,
-            )
-            self.validation_loader: Callable[[JSONValue], DataclassInstance] = validating_retort.get_loader(schema)
+        # Runtime state set by _prepare_for_load on each .load() call.
+        self._merge_meta: MergeConfig | None = None
+        self._is_single: bool = False
+        self._source: Source | None = None
+        self._type_loaders: TypeLoaderMap | None = None
+        self._probe_retort: Retort | None = None
 
-            resolved_mask_secrets = resolve_mask_secrets(load_level=self._merge_meta.mask_secrets)
-            self.secret_paths: frozenset[str] = frozenset()
-            if resolved_mask_secrets:
-                extra_patterns = _collect_extra_secret_patterns(self._merge_meta)
-                self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
-
-            self.error_ctx: ErrorContext = build_error_ctx(
-                last_source,
-                schema.__name__,
-                secret_paths=self.secret_paths,
-                mask_secrets=resolved_mask_secrets,
-            )
-
-            self._source: Source | None = None
-            self._type_loaders: TypeLoaderMap | None = None
-            self._probe_retort: Retort | None = None
-        else:
-            self._merge_meta = None
-            single_source = apply_source_config_defaults(apply_source_init_params(sources[0], source_params))
-            self._source = single_source
-            self._secret_field_names = secret_field_names
-            self._mask_secrets_arg = mask_secrets
-
-            self._type_loaders = resolve_type_loaders(single_source, type_loaders)
-            ensure_retort(single_source, schema, resolved_type_loaders=self._type_loaders)
-            validating_retort = create_validating_retort(
-                single_source,
-                schema,
-                resolved_type_loaders=self._type_loaders,
-            )
-            self.validation_loader = validating_retort.get_loader(schema)
-
-            resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
-            self.secret_paths = frozenset()
-            if resolved_mask_secrets:
-                extra_patterns = secret_field_names or ()
-                self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
-
-            self.error_ctx = build_error_ctx(
-                single_source,
-                schema.__name__,
-                secret_paths=self.secret_paths,
-                mask_secrets=resolved_mask_secrets,
-            )
-
-            # probe_retort is created early so adaptix sees the original signature.
-            self._probe_retort = None
-            if single_source.skip_field_if_invalid:
-                self._probe_retort = create_probe_retort(single_source, resolved_type_loaders=self._type_loaders)
-                self._probe_retort.get_loader(schema)
+        # Set by _build_validation_loader; exposed for decorator-protocol consumers.
+        self.validation_loader: Callable[[JSONValue], DataclassInstance] | None = None
+        self.error_ctx: ErrorContext | None = None
 
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
 
     def load(self) -> T:
+        """Load and return the parsed config instance.
+
+        ``when=`` conditions are evaluated on every call so env-var changes
+        take effect immediately.  The cache is cleared automatically when
+        the set of enabled sources changes between calls.
+        """
+        # Re-evaluate when= routing fresh on every call.
+        # If the enabled-source set changed, stale cached data is discarded.
+        new_sig = tuple(i for i, s in enumerate(self._sources) if when_has_cross_refs(s) or evaluate_when_eager(s.when))
+        if new_sig != self._enabled_sig:
+            self._cached_data = None
+            self._cached_at = None
+            self._enabled_sig = new_sig
+
         if self._cached_data is not None and cache_is_fresh(cache=self._cache, cached_at=self._cached_at):
             return self._cached_data
         self.loading = True
         try:
-            result = self._do_load()
+            try:
+                self._prepare_for_load()
+                result = self._do_load()
+            except (DatureError, DatureErrorGroup, DatureConfigError):
+                raise
+            except Exception as exc:  # noqa: BLE001
+                exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
+                raise DatureConfigError(self._schema.__name__, [exc]) from None
         finally:
             self.loading = False
         if self._cache is not False:
             self._cached_data = result
             self._cached_at = _aligned_now(self._cache)
         return result
-
-    def invalidate(self) -> None:
-        """Drop the cached result so the next ``.load()`` reloads from sources."""
-        self._cached_data = None
-        self._cached_at = None
 
     @staticmethod
     def as_decorator(  # noqa: PLR0913
@@ -305,7 +308,7 @@ class Loader[T: DataclassInstance]:
                 nested_resolve=nested_resolve,
             )
             target_cls.__init__ = _make_patched_init(loader)  # type: ignore[method-assign]
-            target_cls.__post_init__ = make_validating_post_init(loader)  # type: ignore[attr-defined]
+            target_cls.__post_init__ = make_validating_post_init(loader)  # type: ignore[attr-defined, arg-type]
             return target_cls
 
         return decorator
@@ -339,30 +342,101 @@ class Loader[T: DataclassInstance]:
     # Loading machinery
     # ------------------------------------------------------------------ #
 
+    def _prepare_for_load(self) -> None:
+        """Build env-dependent runtime state: filter when=, construct MergeConfig.
+
+        Called at the start of every .load() so that env vars are read at
+        invocation time, not at import/construction time (decorator-mode fix).
+        Invalidates the previous _merge_meta on each call so stale state from a
+        prior cache miss does not bleed into the next invocation.
+        """
+        enabled = tuple(s for s in self._sources if when_has_cross_refs(s) or evaluate_when_eager(s.when))
+        if not enabled:
+            msg = "Loader requires at least one enabled Source (all sources filtered out by when=)"
+            raise DatureConfigError(self._schema.__name__, [DatureError(msg)])
+
+        self._is_single = len(enabled) == 1
+
+        # Always build MergeConfig — it runs prepare_sources + build_cross_ref_plan
+        # (collision detection) on the enabled set. Single-source re-uses the same
+        # path, eliminating the separate prepare_single_source code path.
+        self._merge_meta = MergeConfig(
+            sources=enabled,
+            source_params=self._source_params,
+            strategy=self._strategy,
+            field_merges=self._field_merges,
+            field_groups=self._field_groups,
+            skip_broken_sources=self._skip_broken_sources,
+            skip_invalid_fields=self._skip_invalid_fields,
+            secret_field_names=self._secret_field_names,
+            mask_secrets=self._mask_secrets_arg,
+            type_loaders=self._type_loaders_arg,
+        )
+
+        if self._is_single:
+            source = self._merge_meta.sources[0]
+            # Apply $$ → $ escaping. Multi-mode does this inside LoadCtx._prepare_source
+            # where each source's context is already available; for single-mode there are
+            # no cross-ref deps, so we can run it with an empty context immediately.
+            source = clone_with_interpolation(source, {})
+            source.validate()
+            self._merge_meta.sources = (source,)
+            self._source = source
+            self._type_loaders = resolve_type_loaders(source, self._type_loaders_arg)
+            self._probe_retort = None
+            if source.skip_field_if_invalid:
+                retort_key = _make_retort_key(source, self._type_loaders)
+                # Pre-warm in __init__ guarantees this key exists; a miss means a logic error.
+                self._probe_retort = self._probe_retorts[retort_key]
+
+    def _build_validation_loader(self, source: Source) -> tuple[Callable[[JSONValue], DataclassInstance], ErrorContext]:
+        """Build (validation_loader_fn, error_ctx) for *source*, reusing the pre-warmed retort."""
+        source_type_loaders = resolve_type_loaders(source, self._type_loaders_arg)
+        retort_key = _make_retort_key(source, source_type_loaders)
+        # Reuse the retort pre-built in __init__ (before __init__ was patched by decorator).
+        # The pre-warm loop in __init__ covers every source passed at construction time,
+        # using the same _make_retort_key — stable across clone_source — so a miss here
+        # indicates a logic error in the pre-warm loop, not a legitimate code path.
+        validating_retort = self._validating_retorts[retort_key]
+        loader_fn = validating_retort.get_loader(self._schema)
+        resolved_mask_secrets = resolve_mask_secrets(load_level=self._mask_secrets_arg)
+        ctx = build_error_ctx(
+            source,
+            self._schema.__name__,
+            secret_paths=self.secret_paths,
+            mask_secrets=resolved_mask_secrets,
+        )
+        # Keep protocol-exposed attributes in sync for make_validating_post_init consumers.
+        self.validation_loader = loader_fn
+        self.error_ctx = ctx
+        return loader_fn, ctx
+
     def _do_load(self) -> T:
-        if self._merge_meta is not None:
-            return self._do_load_multi()
-        return self._do_load_single()
+        if self._is_single:
+            return self._do_load_single()
+        return self._do_load_multi()
 
     def _do_load_single(self) -> T:  # noqa: C901
-        assert self._source is not None  # noqa: S101 — invariant for single mode
-        source = self._source
+        source: Source = self._source  # type: ignore[assignment]  # set by _prepare_for_load
         schema = self._schema
+
+        validation_loader, error_ctx = self._build_validation_loader(source)
 
         load_result = handle_load_errors(
             func=source.load_raw,
-            ctx=self.error_ctx,
+            ctx=error_ctx,
         )
         raw_data = load_result.data
 
         if load_result.nested_conflicts:
-            self.error_ctx = build_error_ctx(
+            error_ctx = build_error_ctx(
                 source,
                 schema.__name__,
                 secret_paths=self.secret_paths,
-                mask_secrets=self.error_ctx.mask_secrets,
+                mask_secrets=error_ctx.mask_secrets,
                 nested_conflicts=load_result.nested_conflicts,
             )
+            self.error_ctx = error_ctx
 
         filter_result = apply_skip_invalid(
             raw=raw_data,
@@ -376,17 +450,17 @@ class Loader[T: DataclassInstance]:
 
         skipped_fields: dict[str, list[SkippedFieldSource]] = {}
         file_content = read_file_content(
-            self.error_ctx.source.file_path_for_errors(),
-            self.error_ctx.source.encoding_for_errors(),
+            error_ctx.source.file_path_for_errors(),
+            error_ctx.source.encoding_for_errors(),
         )
         for path in filter_result.skipped_paths:
             skipped_fields.setdefault(path, []).append(
-                SkippedFieldSource(source=source, error_ctx=self.error_ctx, file_content=file_content),
+                SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content),
             )
 
         format_name = source.format_name
         report: LoadReport | None = None
-        if self._debug:
+        if self.debug:
             source_path = source.file_path_for_errors()
             report_file_path = str(source_path) if source_path is not None else source.display_name()
             report = _build_single_source_report(
@@ -409,8 +483,8 @@ class Loader[T: DataclassInstance]:
 
         try:
             handle_load_errors(
-                func=lambda: self.validation_loader(raw_data),
-                ctx=self.error_ctx,
+                func=lambda: validation_loader(raw_data),
+                ctx=error_ctx,
             )
         except DatureConfigError as exc:
             if report is not None:
@@ -427,7 +501,7 @@ class Loader[T: DataclassInstance]:
                     schema,
                     resolved_type_loaders=self._type_loaders,
                 ),
-                ctx=self.error_ctx,
+                ctx=error_ctx,
             )
         except DatureConfigError as exc:
             if report is not None:
@@ -441,37 +515,33 @@ class Loader[T: DataclassInstance]:
 
         return result
 
-    def _do_load_multi(self) -> T:
-        assert self._merge_meta is not None  # noqa: S101 — invariant for multi mode
-        data = _load_and_merge(
-            merge_meta=self._merge_meta,
+    def _run_merge(self) -> "_MergedData[T]":
+        """Execute load_and_merge and return the raw MergeResult."""
+        return load_and_merge(
+            merge_meta=self._merge_meta,  # type: ignore[arg-type]  # set by _prepare_for_load
             schema=self._schema,
-            debug=self._debug,
+            debug=self.debug,
         )
 
-        # Re-validate against the last source's retort (already pre-built in __init__).
-        last_error_ctx = build_error_ctx(
-            data.last_source,
-            self._schema.__name__,
-            secret_paths=self.secret_paths,
-            mask_secrets=self.error_ctx.mask_secrets,
-        )
+    def _validate_merged(self, data: "_MergedData[T]") -> T:
+        """Validate the merged result using the runtime last_source's retort."""
+        validation_loader, last_error_ctx = self._build_validation_loader(data.last_source)
         try:
             handle_load_errors(
-                func=lambda: self.validation_loader(data.merged_raw),
+                func=lambda: validation_loader(data.merged_raw),
                 ctx=last_error_ctx,
             )
         except DatureConfigError:
-            if self._debug:
+            if self.debug:
                 report = get_load_report(data.result)
                 if report is not None:
                     attach_load_report(self._schema, report)
             raise
-
-        # Keep the error_ctx in sync with the last loaded source for
-        # subsequent re-entries (decorator mode).
-        self.error_ctx = last_error_ctx
         return data.result
+
+    def _do_load_multi(self) -> T:
+        data = self._run_merge()
+        return self._validate_merged(data)
 
 
 def _make_patched_init(loader: Loader[Any]) -> Callable[..., None]:
@@ -486,8 +556,8 @@ def _make_patched_init(loader: Loader[Any]) -> Callable[..., None]:
         complete_kwargs = merge_fields(loaded_data, loader.field_list, args, kwargs)
         loader.original_init(self, *args, **complete_kwargs)
 
-        if loader._debug:  # noqa: SLF001
-            _attach_debug_report(self, loader, loaded_data)
+        if loader.debug:
+            _attach_debug_report(self, loaded_data)
 
         if loader.original_post_init is None:
             self.__post_init__()  # type: ignore[attr-defined]
@@ -495,24 +565,8 @@ def _make_patched_init(loader: Loader[Any]) -> Callable[..., None]:
     return new_init
 
 
-def _attach_debug_report(instance: DataclassInstance, loader: Loader[Any], loaded_data: DataclassInstance) -> None:
+def _attach_debug_report(instance: DataclassInstance, loaded_data: DataclassInstance) -> None:
     """Attach a ``LoadReport`` to ``instance`` after a decorator-driven construction."""
-    if loader._merge_meta is not None:  # noqa: SLF001
-        report = get_load_report(loaded_data)
-        if report is not None:
-            attach_load_report(instance, report)
-        return
-
-    # Single-source: build a fresh report from the final dict so post-construction
-    # mutations (validators, __post_init__) are reflected.
-    result_dict = asdict(instance)
-    source = loader.source
-    source_path = source.file_path_for_errors()
-    report = _build_single_source_report(
-        dataclass_name=loader.cls.__name__,
-        loader_type=source.format_name,
-        file_path=str(source_path) if source_path is not None else source.display_name(),
-        raw_data=result_dict,
-        secret_paths=loader.secret_paths,
-    )
-    attach_load_report(instance, report)
+    report = get_load_report(loaded_data)
+    if report is not None:
+        attach_load_report(instance, report)

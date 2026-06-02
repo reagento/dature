@@ -17,24 +17,30 @@ in ``loading.source_loading`` so that ``source_loading`` can import
 ``MergeConfig`` at module level without forming a cycle.
 """
 
-import copy
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
 from typing import Protocol, TypeVar, runtime_checkable
 
 from dature.config import config
-from dature.errors import DatureConfigError, SourceLoadError, SourceLocation
+from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
 from dature.errors.formatter import handle_load_errors
 from dature.errors.location import SkippedFieldSource, SourceContext, read_file_content
 from dature.field_path import FieldPath
 from dature.loading.context import apply_skip_invalid, build_error_ctx
+from dature.loading.cross_source import (
+    CrossRefPlan,
+    build_cross_ref_plan,
+    clone_with_interpolation,
+    evaluate_when_lazy,
+    when_has_cross_refs,
+)
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.skip_field_provider import FilterResult
-from dature.sources.base import Source
+from dature.sources.base import Source, clone_source
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -91,49 +97,56 @@ def apply_source_init_params[T: Source](source: T, params: SourceParams) -> T:
     if not overrides:
         return source
 
-    new_source = copy.copy(source)
-    new_dict = vars(new_source)
-    new_dict.update(overrides)
-    # `FileFieldMixin._resolved_file_path` is a cached_property whose value lives in
-    # `__dict__`; drop it so it re-resolves against the overridden inputs
-    # (search_system_paths, system_config_dirs) instead of returning a stale result.
-    new_dict.pop("_resolved_file_path", None)
-    return new_source
+    return clone_source(source, overrides)
 
 
-def apply_source_config_defaults[T: Source](source: T) -> T:
-    """Fill None-valued source fields from ``dature.config.<source.config_group>``,
-    then invoke ``source._validate()`` so post-merge invariants are checked exactly once
-    on the path between source construction and ``load_raw()``.
+def apply_source_config_group[T: Source](source: T) -> T:
+    """Fill None-valued source fields from ``dature.config.<source.config_group>``.
 
     Sources whose connection/credential params are typically configured globally
     (e.g. ``VaultSource`` → ``config.vault``) opt in via the ClassVar
     ``config_group``. Source-level non-None values always win; this only fills gaps.
-    Sources without a ``config_group`` skip the merge step but still run ``_validate()``.
+    Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
+
+    Note: ``validate()`` is NOT called here — it runs lazily inside
+    ``LoadCtx.load`` after cross-ref interpolation has been applied so that
+    string fields contain real values before invariants are checked.
     """
     group_name: str | None = getattr(type(source), "config_group", None)
     cfg_group = getattr(config, group_name, None) if group_name is not None else None
 
-    if cfg_group is not None:
-        source_field_names = {f.name for f in fields(source) if f.init}
-        overrides: dict[str, object] = {}
-        for f in fields(cfg_group):
-            name = f.name
-            if name not in source_field_names:
-                continue
-            if getattr(source, name, None) is not None:
-                continue  # source-level wins
-            cfg_val = getattr(cfg_group, name)
-            if cfg_val is not None:
-                overrides[name] = cfg_val
+    if cfg_group is None:
+        return source
 
-        if overrides:
-            source = copy.copy(source)
-            vars(source).update(overrides)
+    source_field_names = {f.name for f in fields(source) if f.init}
+    overrides: dict[str, object] = {}
+    for f in fields(cfg_group):
+        name = f.name
+        if name not in source_field_names:
+            continue
+        if getattr(source, name, None) is not None:
+            continue  # source-level wins
+        cfg_val = getattr(cfg_group, name)
+        if cfg_val is not None:
+            overrides[name] = cfg_val
 
-    source._validate()  # noqa: SLF001
+    if overrides:
+        source = clone_source(source, overrides)
+
     return source
+
+
+def prepare_sources(
+    sources: tuple[Source, ...],
+    params: SourceParams,
+) -> tuple[Source, ...]:
+    """Run the two-step eager source preparation pipeline.
+
+    apply_source_init_params → apply_source_config_group
+    """
+    after_params = tuple(apply_source_init_params(s, params) for s in sources)
+    return tuple(apply_source_config_group(s) for s in after_params)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -148,11 +161,11 @@ class MergeConfig:
     secret_field_names: tuple[str, ...] | None = None
     mask_secrets: bool | None = None
     type_loaders: TypeLoaderMap | None = None
+    cross_ref_plan: CrossRefPlan | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
-        self.sources = tuple(
-            apply_source_config_defaults(apply_source_init_params(s, self.source_params)) for s in self.sources
-        )
+        self.sources = prepare_sources(self.sources, self.source_params)
+        self.cross_ref_plan = build_cross_ref_plan(self.sources)
 
 
 def _flatten_dict(data: JSONValue, *, prefix: str) -> list[tuple[str, JSONValue]]:
@@ -179,6 +192,13 @@ def resolve_type_loaders(
 
 
 def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
+    """Return True if a load failure for *source* should be silently skipped.
+
+    ``when=`` filtering happens *before* this check — a source disabled by
+    ``when=`` never reaches ``load_raw()`` and therefore never has a chance to
+    fail.  ``skip_if_broken`` / ``skip_broken_sources`` only apply to sources
+    that pass the ``when=`` gate and then raise during loading.
+    """
     if source.skip_if_broken is not None:
         if source.file_display() is None:
             logger.warning(
@@ -282,6 +302,7 @@ class LoadCtx:
         self._secret_paths = secret_paths
         self._mask_secrets = mask_secrets
         self._on_merge_step = on_merge_step
+        self._sources: list[Source] = list(merge_meta.sources)
 
         self._raw_dicts: list[JSONValue] = []
         self._source_entries: list[SourceEntry] = []
@@ -292,33 +313,119 @@ class LoadCtx:
         self._cache: dict[int, JSONValue | None] = {}
         self._next_index = 0
         self._merge_step_idx = 0
-        self._source_idx_by_id: dict[int, int] = {}
+        self._entry_pos_by_source_idx: dict[int, int] = {}
         self._field_origins: dict[str, FieldOrigin] = {}
+        self._enabled_by_tag: dict[str, int] = {}  # tag → source_idx, for lazy-collision check
 
     def merge(
         self,
         *,
-        source: Source,
+        source_idx: int,
         base: JSONValue,
         op: Callable[[JSONValue, JSONValue], JSONValue] = deep_merge_last_wins,
         skip_on_error: bool = False,
     ) -> JSONValue:
-        """Apply ``source`` to ``base`` using ``op``, recording the step.
+        """Apply a source to ``base`` using ``op``, recording the step.
 
-        Loads ``source`` (cached), runs ``op(base, source_data)``, registers a
+        *source_idx* is the position of the source in ``merge_meta.sources``.
+
+        Loads the source (cached), runs ``op(base, source_data)``, registers a
         merge step (drives debug logs and ``field_origins``). Returns the new
         base. If the source is broken and skipped, returns ``base`` unchanged.
-
-        This is the primary API for custom merge strategies — calling it after
-        each per-source step is the only thing a custom strategy needs to do
-        for full integration with dature's logging and ``LoadReport``.
         """
-        source_data = self.load(source, skip_on_error=skip_on_error)
+        idx = source_idx
+        source_data = self.load(idx, skip_on_error=skip_on_error)
         if source_data is None:
             return base
+        resolved_source = self._sources[idx]
         after = op(base, source_data)
-        self._record_merge_step(source=source, source_data=source_data, before=base, after=after)
+        self._record_merge_step(
+            source_idx=idx,
+            source=resolved_source,
+            source_data=source_data,
+            before=base,
+            after=after,
+        )
         return after
+
+    def _resolve_dep_refs(self, source_idx: int) -> "dict[str, dict[str, JSONValue]]":
+        """Load all declared dependencies and return a context dict for cross-ref expansion.
+
+        Disabled (when=-filtered) or skipped deps contribute an empty dict so that
+        ``${@tag.key:-default}`` fallbacks on downstream sources still resolve.
+        """
+        plan = self._merge_meta.cross_ref_plan
+        context: dict[str, dict[str, JSONValue]] = {}
+        if plan is None or not plan.deps[source_idx]:
+            return context
+        for dep_idx in plan.deps[source_idx]:
+            dep_raw = self.load(dep_idx)
+            dep_source = self._sources[dep_idx]
+            dep_tag = dep_source.resolved_tag
+            if dep_raw is None:
+                context[dep_tag] = {}
+                continue
+            if not isinstance(dep_raw, dict):
+                msg = (
+                    f"{type(dep_source).__name__}(tag='{dep_tag}') is referenced "
+                    f"by ${{@{dep_tag}.*}} but its loaded data is not a dict "
+                    f"(got {type(dep_raw).__name__}). Cross-source references require dict-shaped sources."
+                )
+                raise DatureError(msg)
+            context[dep_tag] = dep_raw
+        return context
+
+    def _eval_lazy_when(
+        self,
+        source: "Source",
+        context: "dict[str, dict[str, JSONValue]]",
+    ) -> bool:
+        """Return False if source has lazy when= and the condition is not met."""
+        return not when_has_cross_refs(source) or evaluate_when_lazy(source.when, context)
+
+    def _check_lazy_tag_collision(self, source: "Source", source_idx: int) -> None:
+        """Raise DatureError if two lazy-when sources with the same tag are both enabled.
+
+        This complements the *static* tag-collision check in ``_build_dep_graph``
+        (``cross_source.py``), which runs at ``MergeConfig.__post_init__`` time and
+        catches collisions that are statically visible in the enabled set.  That static
+        check cannot detect the case where two sources share a tag and each has a lazy
+        ``when=`` condition (resolved at load time from cross-source context) — because
+        both sources may pass the static filter and only reveal the collision when both
+        lazy conditions evaluate to ``True`` during the actual load.  This dynamic check
+        fills that gap.
+        """
+        if not when_has_cross_refs(source):
+            return
+        tag = source.resolved_tag
+        if tag in self._enabled_by_tag:
+            prev_idx = self._enabled_by_tag[tag]
+            prev_source = self._sources[prev_idx]
+            msg = (
+                f"Tag collision among enabled sources: resolved_tag={tag!r} is shared by "
+                f"{type(prev_source).__name__} (index {prev_idx}) and "
+                f"{type(source).__name__} (index {source_idx}), "
+                "both enabled by their lazy when= conditions. "
+                "Use mutually exclusive when= conditions."
+            )
+            raise DatureError(msg)
+        self._enabled_by_tag[tag] = source_idx
+
+    def _prepare_source_and_check_enabled(self, source_idx: int) -> bool:
+        """Coordinate lazy cross-ref resolution, when= evaluation, and validate().
+
+        Returns False when the source's lazy ``when=`` condition is not met —
+        the caller caches None and skips loading.
+        """
+        context = self._resolve_dep_refs(source_idx)
+        if context:
+            self._sources[source_idx] = clone_with_interpolation(self._sources[source_idx], context)
+        source = self._sources[source_idx]
+        if not self._eval_lazy_when(source, context):
+            return False
+        self._check_lazy_tag_collision(source, source_idx)
+        source.validate()
+        return True
 
     def field_origins(self) -> tuple[FieldOrigin, ...]:
         """Snapshot of accumulated field origins after the strategy has finished.
@@ -332,6 +439,7 @@ class LoadCtx:
     def _record_merge_step(
         self,
         *,
+        source_idx: int,
         source: Source,
         source_data: JSONValue,
         before: JSONValue,
@@ -349,23 +457,25 @@ class LoadCtx:
             )
             self._merge_step_idx += 1
 
-        idx = self._source_idx_by_id.get(id(source))
-        if idx is None or not isinstance(after, dict):
+        entry_pos = self._entry_pos_by_source_idx.get(source_idx)
+        if entry_pos is None or not isinstance(after, dict):
             return
-        entry = self._source_entries[idx]
+        entry = self._source_entries[entry_pos]
         before_flat = dict(_flatten_dict(before, prefix="")) if isinstance(before, dict) else {}
         for key, val in _flatten_dict(after, prefix=""):
             if before_flat.get(key, _MISSING) != val:
                 self._field_origins[key] = FieldOrigin(
                     key=key,
                     value=val,
-                    source_index=idx,
+                    source_index=source_idx,
                     source_file=entry.file_path,
                     source_loader_type=entry.loader_type,
                 )
 
-    def load(self, source: Source, *, skip_on_error: bool = False) -> JSONValue | None:
-        """Load one source with full pre-processing.
+    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:
+        """Load a source with full pre-processing.
+
+        *source_idx* is the position of the source in ``merge_meta.sources``.
 
         Returns ``None`` when the source is broken and ``skip_if_broken`` is
         active for it (or when ``skip_on_error=True``); raises
@@ -377,12 +487,19 @@ class LoadCtx:
         broken sources as a normal case (e.g. :class:`SourceFirstFound`,
         which tries sources in order and is meant to tolerate misses).
 
-        Repeated calls with the same source object return the cached result
-        without re-parsing.
+        Repeated calls with the same index return the cached result without
+        re-parsing. Cross-ref interpolation and ``validate()`` are applied
+        lazily on first call, before ``load_raw()`` is invoked.
         """
-        cache_key = id(source)
-        if cache_key in self._cache:
-            return self._cache[cache_key]
+        if source_idx in self._cache:
+            return self._cache[source_idx]
+
+        if not self._prepare_source_and_check_enabled(source_idx):
+            # Lazy when= condition not met — treat as skipped (same as broken+skipped).
+            self._cache[source_idx] = None
+            return None
+
+        source = self._sources[source_idx]
 
         i = self._next_index
         self._next_index += 1
@@ -406,9 +523,9 @@ class LoadCtx:
                 i,
                 source.display_name(),
             )
-            self._cache[cache_key] = None
+            self._cache[source_idx] = None
             return None
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 location = SourceLocation(
                     location_label=source.location_label,
@@ -421,14 +538,15 @@ class LoadCtx:
                     message=str(exc),
                     location=location,
                 )
-                raise DatureConfigError(self.dataclass_name, [source_error]) from exc
+                exc.__traceback__ = None
+                raise DatureConfigError(self.dataclass_name, [source_error]) from None
             logger.warning(
                 "[%s] Source %d skipped (broken): file=%s",
                 self.dataclass_name,
                 i,
                 source.display_name(),
             )
-            self._cache[cache_key] = None
+            self._cache[source_idx] = None
             return None
 
         raw = load_result.data
@@ -482,7 +600,7 @@ class LoadCtx:
             masked_raw,
         )
 
-        self._source_idx_by_id[id(source)] = len(self._source_entries)
+        self._entry_pos_by_source_idx[source_idx] = len(self._source_entries)
         self._source_entries.append(
             SourceEntry(
                 index=i,
@@ -498,7 +616,7 @@ class LoadCtx:
         self._last_source = source
         self._last_type_loaders = type_loaders
 
-        self._cache[cache_key] = raw
+        self._cache[source_idx] = raw
         return raw
 
     def loaded_raw_dicts(self) -> list[JSONValue]:

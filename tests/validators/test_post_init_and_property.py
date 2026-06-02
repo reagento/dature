@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from dature import JsonSource, load
+from dature.errors import DatureConfigError
 
 
 class TestPostInitValidationFunctionMode:
@@ -40,8 +41,11 @@ class TestPostInitValidationFunctionMode:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 99999, "host": "localhost"}')
 
-        with pytest.raises(ValueError, match="Invalid port: 99999"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(JsonSource(file=json_file), schema=Config)
+
+        assert isinstance(exc_info.value.exceptions[0], ValueError)
+        assert str(exc_info.value.exceptions[0]) == "Invalid port: 99999"
 
     def test_post_init_cross_field_validation(self, tmp_path: Path):
         @dataclass
@@ -57,8 +61,11 @@ class TestPostInitValidationFunctionMode:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"min_value": 100, "max_value": 10}')
 
-        with pytest.raises(ValueError, match=r"min_value \(100\) must be less than max_value \(10\)"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(JsonSource(file=json_file), schema=Config)
+
+        assert isinstance(exc_info.value.exceptions[0], ValueError)
+        assert str(exc_info.value.exceptions[0]) == "min_value (100) must be less than max_value (10)"
 
     def test_post_init_cross_field_success(self, tmp_path: Path):
         @dataclass

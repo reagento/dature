@@ -1,8 +1,10 @@
 import abc
+import contextlib
+import copy
 import json
 import logging
-from collections.abc import Iterable
-from dataclasses import dataclass, field
+from collections.abc import Iterable, Mapping
+from dataclasses import MISSING, dataclass, field, fields
 from datetime import date, datetime, time
 from functools import cached_property
 from pathlib import Path
@@ -26,6 +28,7 @@ from dature.loaders import (
     str_from_scalar,
     time_from_string,
 )
+from dature.refs import TEMPLATE_SUPPORTED, Template, template_to_str  # type: ignore[attr-defined]
 from dature.types import (
     FILE_LIKE_TYPES,
     DotSeparatedPath,
@@ -76,6 +79,8 @@ class Source(abc.ABC):
     skip_if_broken: bool | None = None
     skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
+    tag: str | None = None
+    when: "Mapping[str, str | tuple[str, ...]] | None" = None
 
     format_name: ClassVar[str]
     location_label: ClassVar[str]
@@ -89,7 +94,29 @@ class Source(abc.ABC):
 
     # --8<-- [end:load-metadata]
     def __repr__(self) -> str:
-        return self.format_name
+        parts = []
+        for f in fields(self):
+            if not f.init or not f.repr:
+                continue
+            value = getattr(self, f.name, MISSING)
+            if value is MISSING:
+                continue
+            if f.default is not MISSING and value == f.default:
+                continue
+            if f.default_factory is not MISSING:
+                with contextlib.suppress(Exception):
+                    if value == f.default_factory():
+                        continue
+            parts.append(f"{f.name}={value!r}")
+        return f"{type(self).__name__}({', '.join(parts)})"
+
+    @property
+    def resolved_tag(self) -> str:
+        """Tag used to identify this source in ${@tag.key} cross-refs.
+
+        Defaults to format_name when tag is not set explicitly.
+        """
+        return self.tag if self.tag is not None else self.format_name
 
     def file_display(self) -> str | None:
         return None
@@ -118,13 +145,14 @@ class Source(abc.ABC):
     def additional_loaders(self) -> "list[Provider]":
         return []
 
-    def _validate(self) -> None:
-        """Hook called by ``apply_source_config_defaults`` after global-config merge.
+    def validate(self) -> None:
+        """Hook called lazily inside ``LoadCtx.load`` after cross-ref interpolation.
 
         Default no-op. Subclasses with ``config_group`` set may override to
         check post-merge invariants (required fields, mutually exclusive
         options, etc.) — by the time this runs, all None instance fields
-        have been populated from ``dature.config.<config_group>``.
+        have been populated from ``dature.config.<config_group>`` and any
+        ``${@tag.key}`` refs in init-fields have been resolved.
         """
         return
 
@@ -364,6 +392,18 @@ class Source(abc.ABC):
         ]
 
 
+def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
+    """Return a shallow copy of *source* with *overrides* applied.
+
+    Drops the cached ``_resolved_file_path`` so it re-resolves against
+    the overridden fields instead of returning a stale result.
+    """
+    new = copy.copy(source)
+    vars(new).update(overrides)
+    vars(new).pop("_resolved_file_path", None)
+    return new
+
+
 # --8<-- [start:file-source]
 @dataclass(kw_only=True, repr=False)
 class FileFieldMixin:
@@ -374,6 +414,9 @@ class FileFieldMixin:
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:
+        # Convert t-string Template to string (Python 3.14+)
+        if TEMPLATE_SUPPORTED and isinstance(self.file, Template):
+            self.file = template_to_str(self.file)
         if isinstance(self.file, (str, Path)):
             self.file = expand_file_path(self.file, mode="strict")
 

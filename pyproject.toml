@@ -110,20 +110,6 @@ ignore = [
     "S310",    # URL open audit (hardcoded https)
     "BLE001",  # blind exception (graceful fallback)
 ]
-"examples/**/*.py" = [
-    "INP001",  # implicit namespace package
-    "T201",    # print
-    "S105",    # possible hardcoded password
-    "DTZ001",  # datetime without tzinfo
-    "PLR2004", # magic values in examples
-    "SIM103",  # return condition directly
-    "S104",    # possible hardcoded password
-    "ERA001",  # commented-out code
-    "S101",    # assert
-    "PT017",   # assertion on exception in except block
-    "TRY003",  # raise-vanilla-args
-    "EM101",   # raw-string-in-exception
-]
 
 [tool.ruff.lint.pylint]
 max-args = 6
@@ -131,6 +117,8 @@ max-returns = 8
 
 [tool.mypy]
 python_version = "3.12"
+# t_string.py uses Python 3.14 t-string syntax; mypy cannot parse it under 3.12.
+exclude = ["examples/docs/advanced/cross_source_refs/t_string\\.py"]
 strict = true
 warn_return_any = true
 warn_unused_configs = true

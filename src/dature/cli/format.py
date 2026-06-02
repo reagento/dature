@@ -1,17 +1,9 @@
 import json
-import traceback
 from dataclasses import asdict
 from typing import Any
 
 from dature.load_report import LoadReport
 from dature.report_types import FieldOrigin
-
-
-def format_dature_error(exc: BaseException) -> str:
-    """Render a DatureError / DatureConfigError (ExceptionGroup) as plain text."""
-    if isinstance(exc, BaseExceptionGroup):
-        return "".join(traceback.format_exception(type(exc), exc, None))
-    return str(exc)
 
 
 def _filter_origins(report: LoadReport, field: str | None) -> tuple[FieldOrigin, ...]:

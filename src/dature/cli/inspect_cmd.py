@@ -1,14 +1,15 @@
 import sys
 
 from dature import get_load_report, load
-from dature.cli.format import format_dature_error, format_json, format_text
+from dature.cli.format import format_json, format_text
 from dature.cli.parsing import (
     CliInspectArgs,
     build_load_kwargs_from_dataclass,
     build_sources,
     import_attr,
 )
-from dature.errors import DatureConfigError, DatureError
+from dature.errors import DatureError, DatureErrorGroup
+from dature.errors.format import format_dature_error
 
 
 def cmd_inspect(args: CliInspectArgs) -> int:
@@ -22,7 +23,7 @@ def cmd_inspect(args: CliInspectArgs) -> int:
 
     try:
         result = load(*sources, schema=schema, debug=True, **load_kwargs)
-    except (DatureError, DatureConfigError) as exc:
+    except (DatureError, DatureErrorGroup) as exc:
         print(format_dature_error(exc), file=sys.stderr)
         return 1
     except (FileNotFoundError, OSError) as exc:

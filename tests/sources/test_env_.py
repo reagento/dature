@@ -8,6 +8,7 @@ import pytest
 
 import dature
 from dature import EnvFileSource, EnvSource, load
+from dature.errors import DatureConfigError
 from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -484,7 +485,7 @@ class TestEnvFileSourceSearch:
         system_dir.mkdir()
         (system_dir / ".env").write_text("HOST=from-system")
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(
                 EnvFileSource(
                     file=".env",
@@ -493,3 +494,4 @@ class TestEnvFileSourceSearch:
                 ),
                 schema=self._Cfg,
             )
+        assert isinstance(exc_info.value.exceptions[0], FileNotFoundError)

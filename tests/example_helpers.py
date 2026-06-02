@@ -56,6 +56,8 @@ def build_env(script_path: Path) -> dict[str, str]:
         filter(None, [str(script_path.parent), str(PROJECT_SRC), env.get("PYTHONPATH", "")]),
     )
     env["PYTHONIOENCODING"] = "utf-8"
+    # Pass the current Python executable path for use in shell scripts
+    env["PYTHON"] = sys.executable
     return env
 
 

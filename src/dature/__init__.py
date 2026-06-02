@@ -1,9 +1,11 @@
 from dature._version import __version__
 from dature.config import configure
+from dature.errors import excepthook as _excepthook  # noqa: F401
 from dature.field_path import F
 from dature.load_report import get_load_report
 from dature.loading.loader import Loader
 from dature.main import load
+from dature.refs import ref
 from dature.sources.argparse_ import ArgparseSource
 from dature.sources.base import FileSource, RemoteSource, Source
 from dature.sources.cli_base import CliSource
@@ -41,4 +43,5 @@ __all__ = [
     "configure",
     "get_load_report",
     "load",
+    "ref",
 ]

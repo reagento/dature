@@ -1,0 +1,6 @@
+dature.errors.exceptions.DatureError: Cross-source reference cycle detected:
+  EnvSource(tag='env')  →  references ${@json.prefix_key}
+  JsonSource(tag='json')  →  references ${@env.config_path}
+  closes back to EnvSource(tag='env')
+
+Sources cannot reference each other's data in a cycle. Break the cycle by hardcoding one side or parsing one source imperatively.

@@ -23,6 +23,7 @@ from dature import (
     configure,
     load,
 )
+from dature.errors import DatureConfigError
 from dature.types import JSONValue
 
 
@@ -250,8 +251,10 @@ class TestFileNotFoundWithLoad:
 
         metadata = source_class(file="/non/existent/file.json")
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(metadata, schema=Config)
+
+        assert isinstance(exc_info.value.exceptions[0], FileNotFoundError)
 
     @pytest.mark.parametrize(
         "source_class",
@@ -265,8 +268,10 @@ class TestFileNotFoundWithLoad:
         class Config:
             name: str
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(DatureConfigError) as exc_info:
             Config()
+
+        assert isinstance(exc_info.value.exceptions[0], FileNotFoundError)
 
 
 @dataclass(kw_only=True, repr=False)
@@ -283,9 +288,9 @@ class _ConfigAwareSource(Source):
 
 
 @pytest.mark.usefixtures("_reset_config")
-class TestSingleSourceConfigDefaults:
-    def test_load_applies_config_defaults(self) -> None:
-        # Regression: single-source load() must call apply_source_config_defaults so that
+class TestSingleSourceConfigGroup:
+    def test_load_applies_config_group(self) -> None:
+        # Regression: single-source load() must call apply_source_config_group so that
         # ``configure(vault={...})`` (and ``DATURE_VAULT__*``) actually reach the source.
         configure(vault={"url": "http://from-config"})
 
@@ -296,7 +301,7 @@ class TestSingleSourceConfigDefaults:
         result = load(_ConfigAwareSource(), schema=Config)
         assert result.url_value == "http://from-config"
 
-    def test_decorator_applies_config_defaults(self) -> None:
+    def test_decorator_applies_config_group(self) -> None:
         configure(vault={"url": "http://from-config"})
 
         @load(_ConfigAwareSource())
@@ -307,11 +312,13 @@ class TestSingleSourceConfigDefaults:
         assert Config().url_value == "http://from-config"
 
     def test_validate_runs_for_single_source(self) -> None:
-        # Regression: single-source path used to skip _validate(); a misconfigured VaultSource
-        # would surface as a confusing failure inside _fetch() instead of a clean ValueError.
+        # Regression: single-source path used to skip validate(); a misconfigured VaultSource
+        # would surface as a confusing failure inside _fetch() instead of a clean error.
         @dataclass
         class Config:
             x: str | None = None
 
-        with pytest.raises(ValueError, match="VaultSource: url is required"):
+        with pytest.raises(DatureConfigError) as exc_info:
             load(VaultSource(path="p", token="t"), schema=Config)
+        expected = "VaultSource: url is required (set on instance or via configure(vault={...}) / DATURE_VAULT__URL)"
+        assert str(exc_info.value.exceptions[0]) == expected

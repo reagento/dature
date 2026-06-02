@@ -113,7 +113,13 @@ class TestValidateFailures:
         )
         assert code == 1
         assert out == ""
-        assert err == f"error: Config file not found: {absent}\n"
+        assert err == (
+            "  | dature.errors.exceptions.DatureConfigError: Settings loading errors (1)\n"
+            "  +-+---------------- 1 ----------------\n"
+            f"    | FileNotFoundError: Config file not found: {absent}\n"
+            "    +------------------------------------\n"
+            "\n"
+        )
 
     @pytest.mark.parametrize(
         ("schema_arg", "source_arg", "expected_err"),

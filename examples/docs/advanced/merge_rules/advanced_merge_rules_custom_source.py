@@ -31,13 +31,12 @@ class EnvOverrides:
         sources: Sequence[dature.Source],
         ctx: LoadCtx,
     ) -> JSONValue:
-        files = [s for s in sources if not isinstance(s, dature.EnvSource)]
-        envs = [s for s in sources if isinstance(s, dature.EnvSource)]
         base: JSONValue = {}
-        for src in files:
-            base = ctx.merge(source=src, base=base)
-        for src in envs:
-            base = ctx.merge(source=src, base=base, op=_dict_overlay)
+        for idx, s in enumerate(sources):
+            if isinstance(s, dature.EnvSource):
+                base = ctx.merge(source_idx=idx, base=base, op=_dict_overlay)
+            else:
+                base = ctx.merge(source_idx=idx, base=base)
         return base
 
 
