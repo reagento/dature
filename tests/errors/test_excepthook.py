@@ -11,10 +11,7 @@ import pytest
 import dature
 from dature.errors.excepthook import _dature_excepthook
 
-_SOURCES_DIR = Path(__file__).parent.parent.parent / "examples" / "docs" / "loading" / "sources"
-_VALIDATION_SOURCES_DIR = (
-    Path(__file__).parent.parent.parent / "examples" / "docs" / "features" / "validation" / "sources"
-)
+_FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 
 @dataclass
@@ -46,7 +43,7 @@ class TestDatureExcepthookSuppressesTraceback:
         [
             pytest.param(
                 lambda: dature.load(
-                    dature.Yaml12Source(file=_SOURCES_DIR / "missing_field.yaml"),
+                    dature.Yaml12Source(file=_FIXTURES_DIR / "missing_field.yaml"),
                     schema=_SimpleConfig,
                 ),
                 "DatureConfigError",
@@ -54,7 +51,7 @@ class TestDatureExcepthookSuppressesTraceback:
             ),
             pytest.param(
                 lambda: dature.load(
-                    dature.Yaml12Source(file=_SOURCES_DIR / "does_not_exist.yaml"),
+                    dature.Yaml12Source(file=_FIXTURES_DIR / "does_not_exist.yaml"),
                     schema=_SimpleConfig,
                 ),
                 "FileNotFoundError",
@@ -62,7 +59,7 @@ class TestDatureExcepthookSuppressesTraceback:
             ),
             pytest.param(
                 lambda: dature.load(
-                    dature.Yaml12Source(file=_SOURCES_DIR / "broken.yaml"),
+                    dature.Yaml12Source(file=_FIXTURES_DIR / "broken.yaml"),
                     schema=_SimpleConfig,
                 ),
                 "ScannerError",
@@ -70,7 +67,7 @@ class TestDatureExcepthookSuppressesTraceback:
             ),
             pytest.param(
                 lambda: dature.load(
-                    dature.Yaml12Source(file=_VALIDATION_SOURCES_DIR / "validation_post_init_invalid.yaml"),
+                    dature.Yaml12Source(file=_FIXTURES_DIR / "validation_post_init_invalid.yaml"),
                     schema=_PostInitConfig,
                 ),
                 "ValueError",
