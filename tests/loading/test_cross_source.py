@@ -446,7 +446,7 @@ class TestThreeSourceChain:
         data_file.write_text('{"value": "nested-json"}')
 
         ptr_file = tmp_path / "ptr.json"
-        ptr_file.write_text(json.dumps({"data_path": data_file}))
+        ptr_file.write_text(json.dumps({"data_path": str(data_file)}))
 
         result = load(
             JsonSource(file="${@ptr.data_path}", tag="data"),
