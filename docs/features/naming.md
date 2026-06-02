@@ -18,13 +18,13 @@ Automatically convert between naming conventions. Maps dataclass field names (sn
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/naming/naming_name_style.py"
+    --8<-- "docs/examples/features/naming/naming_name_style.py"
     ```
 
 === "naming_name_style.yaml"
 
     ```yaml
-    --8<-- "examples/docs/features/naming/sources/naming_name_style.yaml"
+    --8<-- "docs/examples/features/naming/sources/naming_name_style.yaml"
     ```
 
 ## field_mapping
@@ -34,13 +34,13 @@ Explicit field renaming using `F` objects. Takes priority over `name_style`:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/naming/naming_field_mapping.py"
+    --8<-- "docs/examples/features/naming/naming_field_mapping.py"
     ```
 
 === "naming_field_mapping.yaml"
 
     ```yaml
-    --8<-- "examples/docs/features/naming/sources/naming_field_mapping.yaml"
+    --8<-- "docs/examples/features/naming/sources/naming_field_mapping.yaml"
     ```
 
 ### Multiple Aliases
@@ -48,7 +48,7 @@ Explicit field renaming using `F` objects. Takes priority over `name_style`:
 A field can have multiple aliases — the first matching key in the source wins:
 
 ```python
---8<-- "examples/docs/features/naming/naming_field_mapping_aliases.py:aliases"
+--8<-- "docs/examples/features/naming/naming_field_mapping_aliases.py:aliases"
 ```
 
 ### Nested Fields
@@ -58,13 +58,13 @@ Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/naming/naming_nested_fields.py"
+    --8<-- "docs/examples/features/naming/naming_nested_fields.py"
     ```
 
 === "naming_nested_fields.yaml"
 
     ```yaml
-    --8<-- "examples/docs/features/naming/sources/naming_nested_fields.yaml"
+    --8<-- "docs/examples/features/naming/sources/naming_nested_fields.yaml"
     ```
 
 ### Decorator Mode
@@ -72,7 +72,7 @@ Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
 In decorator mode where the class is not yet defined, use a string:
 
 ```python
---8<-- "examples/docs/features/naming/naming_field_mapping_decorator.py:decorator"
+--8<-- "docs/examples/features/naming/naming_field_mapping_decorator.py:decorator"
 ```
 
 ## prefix
@@ -80,7 +80,7 @@ In decorator mode where the class is not yet defined, use a string:
 Filters keys for ENV, or extracts a nested object from files:
 
 ```python
---8<-- "examples/docs/features/naming/naming_prefix.py"
+--8<-- "docs/examples/features/naming/naming_prefix.py"
 ```
 
 For file-based sources, `prefix` navigates into nested objects using dot notation:
@@ -88,13 +88,13 @@ For file-based sources, `prefix` navigates into nested objects using dot notatio
 === "Python"
 
     ```python
-    --8<-- "examples/docs/features/naming/naming_prefix_nested.py"
+    --8<-- "docs/examples/features/naming/naming_prefix_nested.py"
     ```
 
 === "naming_prefix_nested.yaml"
 
     ```yaml
-    --8<-- "examples/docs/features/naming/sources/naming_prefix_nested.yaml"
+    --8<-- "docs/examples/features/naming/sources/naming_prefix_nested.yaml"
     ```
 
 ## nested_sep
@@ -102,5 +102,5 @@ For file-based sources, `prefix` navigates into nested objects using dot notatio
 Delimiter for building nested structures from flat ENV variables and Docker secrets file names. Default: `"__"`.
 
 ```python
---8<-- "examples/docs/features/naming/naming_nested_sep.py"
+--8<-- "docs/examples/features/naming/naming_nested_sep.py"
 ```

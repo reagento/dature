@@ -39,13 +39,13 @@ Given two sources with overlapping `tags`:
 === "merging_field_base.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/merge_rules/sources/merging_field_base.yaml"
+    --8<-- "docs/examples/advanced/merge_rules/sources/merging_field_base.yaml"
     ```
 
 === "merging_field_override.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/merge_rules/sources/merging_field_override.yaml"
+    --8<-- "docs/examples/advanced/merge_rules/sources/merging_field_override.yaml"
     ```
 
 Each strategy produces a different result:
@@ -53,37 +53,37 @@ Each strategy produces a different result:
 === "first_wins"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_first_wins.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_first_wins.py"
     ```
 
 === "last_wins"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_last_wins.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_last_wins.py"
     ```
 
 === "append"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_append.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_append.py"
     ```
 
 === "append_unique"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_append_unique.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_append_unique.py"
     ```
 
 === "prepend"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_prepend.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend.py"
     ```
 
 === "prepend_unique"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_field_prepend_unique.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend_unique.py"
     ```
 
 Nested fields are supported: `dature.F[Config].database.host`.
@@ -95,19 +95,19 @@ Fields with an explicit strategy are excluded from conflict detection:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/advanced_merge_rules_conflict.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_conflict.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_overrides.yaml"
+    --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
 ## Custom Field Strategy
@@ -129,25 +129,25 @@ Pick a plain function for one-off logic, or a class for a named, reusable reduce
 === "Function"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/advanced_merge_rules_callable.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_callable.py"
     ```
 
 === "Class"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/advanced_merge_rules_custom_field.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_field.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_overrides.yaml"
+    --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
 ## Custom Source Strategy
@@ -175,19 +175,19 @@ Override `op` to plug in your own merge function — e.g. shallow overlay for en
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/advanced_merge_rules_custom_source.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_source.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 === "common_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_overrides.yaml"
+    --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
 `isinstance(src, EnvSource)` (or any other concrete `Source` subclass) lets the strategy dispatch on source type — useful when env variables should override file content rather than merge with it. Pass `skip_on_error=True` to `ctx.merge(...)` (or `ctx.load(...)`) if you want broken sources to be skipped silently regardless of `skip_if_broken` (this is what `SourceFirstFound` does internally).
@@ -201,13 +201,13 @@ Skip sources that fail to load (missing file, invalid syntax):
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_skip_broken.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 Override per source with `skip_if_broken` on `Source` (takes priority over the global flag):
@@ -215,13 +215,13 @@ Override per source with `skip_if_broken` on `Source` (takes priority over the g
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_skip_broken_per_source.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken_per_source.py"
     ```
 
 === "common_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/shared/common_defaults.yaml"
+    --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
 If all sources fail to load, a `ValueError` is raised.
@@ -233,13 +233,13 @@ Drop fields with invalid values and let other sources or defaults fill them in:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_skip_invalid.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid.py"
     ```
 
 === "merging_skip_invalid_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/merge_rules/sources/merging_skip_invalid_defaults.yaml"
+    --8<-- "docs/examples/advanced/merge_rules/sources/merging_skip_invalid_defaults.yaml"
     ```
 
 Restrict skipping to specific fields:
@@ -247,19 +247,19 @@ Restrict skipping to specific fields:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/merge_rules/merging_skip_invalid_per_field.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid_per_field.py"
     ```
 
 === "merging_skip_invalid_per_field_defaults.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/merge_rules/sources/merging_skip_invalid_per_field_defaults.yaml"
+    --8<-- "docs/examples/advanced/merge_rules/sources/merging_skip_invalid_per_field_defaults.yaml"
     ```
 
 === "merging_skip_invalid_per_field_overrides.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/merge_rules/sources/merging_skip_invalid_per_field_overrides.yaml"
+    --8<-- "docs/examples/advanced/merge_rules/sources/merging_skip_invalid_per_field_overrides.yaml"
     ```
 
 Only `port` and `timeout` will be skipped if invalid; other fields still raise errors.

@@ -1,7 +1,7 @@
-extend = "../pyproject.toml"
+extend = "../../pyproject.toml"
 line-length = 80
 # t_string.py uses Python 3.14 t-string syntax; ruff cannot parse it under py312.
-extend-exclude = ["docs/advanced/cross_source_refs/t_string.py"]
+extend-exclude = ["**/advanced/cross_source_refs/t_string.py"]
 
 [lint.per-file-ignores]
 "**/*.py" = [

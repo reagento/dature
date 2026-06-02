@@ -71,6 +71,7 @@ version-file = "src/dature/_version.py"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["docs/examples/advanced/cross_source_refs/t_string.py"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -88,6 +89,11 @@ ignore = [
 "typing.TYPE_CHECKING".msg = "TYPE_CHECKING is banned in dature: move imports to module or function scope; resolve cycles by refactoring."
 
 [tool.ruff.lint.per-file-ignores]
+"examples/**/*.py" = [
+    "DTZ001",  # datetime without tzinfo (examples use naive datetime for simplicity)
+    "PLR2004", # magic values in examples
+    "S101",   # assert (examples use assert for simplicity)
+]
 "tests/**/*.py" = [
     "S101",    # assert
     "ANN",     # type annotations
@@ -118,7 +124,7 @@ max-returns = 8
 [tool.mypy]
 python_version = "3.12"
 # t_string.py uses Python 3.14 t-string syntax; mypy cannot parse it under 3.12.
-exclude = ["examples/docs/advanced/cross_source_refs/t_string\\.py"]
+exclude = ["docs/examples/advanced/cross_source_refs/t_string\\.py"]
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -139,7 +145,7 @@ module = "tests.*"
 disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-returns-value", "call-arg", "attr-defined", "index"]
 
 [[tool.mypy.overrides]]
-module = "examples.*"
+module = "docs.examples.*"
 disable_error_code = ["arg-type", "call-overload", "dict-item"]
 
 [[tool.mypy.overrides]]

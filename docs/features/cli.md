@@ -24,13 +24,13 @@ A schema module and a JSON config file:
 === "myschema.py"
 
     ```python
-    --8<-- "examples/docs/features/cli/myschema.py"
+    --8<-- "docs/examples/features/cli/myschema.py"
     ```
 
 === "sources/config.json"
 
     ```json
-    --8<-- "examples/docs/features/cli/sources/config.json"
+    --8<-- "docs/examples/features/cli/sources/config.json"
     ```
 
 Validate the config — exit `0`, prints `OK`:
@@ -38,13 +38,13 @@ Validate the config — exit `0`, prints `OK`:
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli/cli_quickstart_validate.sh"
+    --8<-- "docs/examples/features/cli/cli_quickstart_validate.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli/cli_quickstart_validate.stdout"
+    --8<-- "docs/examples/features/cli/cli_quickstart_validate.stdout"
     ```
 
 Inspect the load report in human-readable form:
@@ -52,13 +52,13 @@ Inspect the load report in human-readable form:
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli/cli_quickstart_inspect_text.sh"
+    --8<-- "docs/examples/features/cli/cli_quickstart_inspect_text.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli/cli_quickstart_inspect_text.stdout"
+    --8<-- "docs/examples/features/cli/cli_quickstart_inspect_text.stdout"
     ```
 
 ## `inspect`
@@ -66,7 +66,7 @@ Inspect the load report in human-readable form:
 Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/debug.md), and prints it.
 
 ```
---8<-- "examples/docs/features/cli/cli_inspect_help.stdout"
+--8<-- "docs/examples/features/cli/cli_inspect_help.stdout"
 ```
 
 | Flag | Maps to | Description |
@@ -79,13 +79,13 @@ Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/deb
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli/cli_inspect_json.sh"
+    --8<-- "docs/examples/features/cli/cli_inspect_json.sh"
     ```
 
 === "Output"
 
     ```json
-    --8<-- "examples/docs/features/cli/cli_inspect_json.stdout"
+    --8<-- "docs/examples/features/cli/cli_inspect_json.stdout"
     ```
 
 ### Field filter
@@ -95,13 +95,13 @@ Narrow the report to a single dotted path — `db.port` here resolves to a scala
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli/cli_inspect_field.sh"
+    --8<-- "docs/examples/features/cli/cli_inspect_field.sh"
     ```
 
 === "Output"
 
     ```json
-    --8<-- "examples/docs/features/cli/cli_inspect_field.stdout"
+    --8<-- "docs/examples/features/cli/cli_inspect_field.stdout"
     ```
 
 ## `validate`
@@ -109,7 +109,7 @@ Narrow the report to a single dotted path — `db.port` here resolves to a scala
 Runs `load(*sources, schema=Schema, ...)` and reports the result via exit code. Use it as the final gate in CI/CD.
 
 ```
---8<-- "examples/docs/features/cli/cli_validate_help.stdout"
+--8<-- "docs/examples/features/cli/cli_validate_help.stdout"
 ```
 
 | Exit code | Meaning |
@@ -123,13 +123,13 @@ Two sources merged with `last_wins`:
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli/cli_validate_two_sources.sh"
+    --8<-- "docs/examples/features/cli/cli_validate_two_sources.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "examples/docs/features/cli/cli_validate_two_sources.stdout"
+    --8<-- "docs/examples/features/cli/cli_validate_two_sources.stdout"
     ```
 
 When validation fails, the error includes the field path, the offending value, and the source location:
@@ -137,19 +137,19 @@ When validation fails, the error includes the field path, the offending value, a
 === "Command"
 
     ```bash
-    --8<-- "examples/docs/features/cli/cli_validate_fail.sh"
+    --8<-- "docs/examples/features/cli/cli_validate_fail.sh"
     ```
 
 === "sources/bad.json"
 
     ```json
-    --8<-- "examples/docs/features/cli/sources/bad.json"
+    --8<-- "docs/examples/features/cli/sources/bad.json"
     ```
 
 === "stderr (exit 1)"
 
     ```
-    --8<-- "examples/docs/features/cli/cli_validate_fail.stderr"
+    --8<-- "docs/examples/features/cli/cli_validate_fail.stderr"
     ```
 
 ## `--source` spec
@@ -185,7 +185,7 @@ User-defined `Source` subclasses work too — pass the full import path.
 Use `\,` and `\=` to keep literal `,` / `=` inside a value:
 
 ```python
---8<-- "examples/docs/features/cli/cli_source_escape.py"
+--8<-- "docs/examples/features/cli/cli_source_escape.py"
 ```
 
 ## `--schema MODULE:ATTR`

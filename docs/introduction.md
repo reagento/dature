@@ -5,27 +5,27 @@ dature offers two ways to load configuration: **function mode** and **decorator 
 === "Function mode"
 
     ```yaml title="common_app.yaml"
-    --8<-- "examples/docs/shared/common_app.yaml"
+    --8<-- "docs/examples/shared/common_app.yaml"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_yaml.py"
+    --8<-- "docs/examples/introduction/format_yaml.py"
     ```
 
 === "Decorator mode"
 
     ```yaml title="common_app.yaml"
-    --8<-- "examples/docs/shared/common_app.yaml"
+    --8<-- "docs/examples/shared/common_app.yaml"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/intro_decorator_file.py"
+    --8<-- "docs/examples/introduction/intro_decorator_file.py"
     ```
 
     Explicit arguments to `__init__` take priority over loaded values:
 
     ```python
-    --8<-- "examples/docs/introduction/intro_decorator_override.py:override"
+    --8<-- "docs/examples/introduction/intro_decorator_override.py:override"
     ```
 
 ## All Formats
@@ -35,61 +35,61 @@ Use the specific Source subclass for your format. Here's the same config loaded 
 === "YAML"
 
     ```yaml title="common_app.yaml"
-    --8<-- "examples/docs/shared/common_app.yaml"
+    --8<-- "docs/examples/shared/common_app.yaml"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_yaml.py"
+    --8<-- "docs/examples/introduction/format_yaml.py"
     ```
 
 === "JSON"
 
     ```json title="intro_app.json"
-    --8<-- "examples/docs/introduction/sources/intro_app.json"
+    --8<-- "docs/examples/introduction/sources/intro_app.json"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_json.py"
+    --8<-- "docs/examples/introduction/format_json.py"
     ```
 
 === "JSON5"
 
     ```json5 title="intro_app.json5"
-    --8<-- "examples/docs/introduction/sources/intro_app.json5"
+    --8<-- "docs/examples/introduction/sources/intro_app.json5"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_json5.py"
+    --8<-- "docs/examples/introduction/format_json5.py"
     ```
 
 === "TOML"
 
     ```toml title="intro_app.toml"
-    --8<-- "examples/docs/introduction/sources/intro_app.toml"
+    --8<-- "docs/examples/introduction/sources/intro_app.toml"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_toml.py"
+    --8<-- "docs/examples/introduction/format_toml.py"
     ```
 
 === "INI"
 
     ```ini title="intro_app.ini"
-    --8<-- "examples/docs/introduction/sources/intro_app.ini"
+    --8<-- "docs/examples/introduction/sources/intro_app.ini"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_ini.py"
+    --8<-- "docs/examples/introduction/format_ini.py"
     ```
 
 === "ENV"
 
     ```bash title="intro_app.env"
-    --8<-- "examples/docs/introduction/sources/intro_app.env"
+    --8<-- "docs/examples/introduction/sources/intro_app.env"
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_env.py"
+    --8<-- "docs/examples/introduction/format_env.py"
     ```
 
 === "Docker Secrets"
@@ -102,7 +102,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "examples/docs/introduction/format_docker.py"
+    --8<-- "docs/examples/introduction/format_docker.py"
     ```
 
 See the full list of Source classes and their extra dependencies on the [main page](index.md#supported-formats).
@@ -144,7 +144,7 @@ See the full list of Source classes and their extra dependencies on the [main pa
 `file` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass):
 
 ```python
---8<-- "examples/docs/introduction/intro_file_like.py"
+--8<-- "docs/examples/introduction/intro_file_like.py"
 ```
 
 !!! note

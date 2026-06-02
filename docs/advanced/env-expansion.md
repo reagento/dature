@@ -5,13 +5,13 @@ String values in all file formats support environment variable expansion:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion.py"
     ```
 
 === "advanced_env_expansion.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion.yaml"
+    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion.yaml"
     ```
 
 ## Supported Syntax
@@ -42,13 +42,13 @@ Set the mode on `Source`:
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_strict.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_strict.py"
     ```
 
 === "advanced_env_expansion_strict.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_strict.yaml"
+    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_strict.yaml"
     ```
 
 For merge mode, pass `expand_env_vars` to `dature.load()` as default for all sources:
@@ -56,25 +56,25 @@ For merge mode, pass `expand_env_vars` to `dature.load()` as default for all sou
 === "Python"
 
     ```python
-    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_merge.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py"
     ```
 
 === "advanced_env_expansion_merge_default.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_merge_default.yaml"
+    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge_default.yaml"
     ```
 
 === "advanced_env_expansion_merge_empty.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_merge_empty.yaml"
+    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge_empty.yaml"
     ```
 
 === "advanced_env_expansion_merge_disabled.yaml"
 
     ```yaml
-    --8<-- "examples/docs/advanced/env_expansion/sources/advanced_env_expansion_merge_disabled.yaml"
+    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge_disabled.yaml"
     ```
 
 In `"strict"` mode, all missing variables are collected and reported at once:
@@ -140,19 +140,19 @@ This works for both directory paths and file names:
 === "Variable in directory path"
 
     ```python
-    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_file_path_dir.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_dir.py"
     ```
 
 === "Variable in file name"
 
     ```python
-    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_file_path_name.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_name.py"
     ```
 
 === "Both"
 
     ```python
-    --8<-- "examples/docs/advanced/env_expansion/advanced_env_expansion_file_path_combined.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_combined.py"
     ```
 
 All [supported syntax](#supported-syntax) (`$VAR`, `${VAR}`, `${VAR:-default}`, `%VAR%`) works in file paths.

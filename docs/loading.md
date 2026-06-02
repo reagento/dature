@@ -15,13 +15,13 @@ raises a plain `FileNotFoundError` before any parsing happens.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/loading/loading_missing_file.py"
+    --8<-- "docs/examples/loading/loading_missing_file.py"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/loading/loading_missing_file.stderr"
+    --8<-- "docs/examples/loading/loading_missing_file.stderr"
     ```
 
 ## Source exists but is broken
@@ -33,19 +33,19 @@ propagates with the original file and line.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/loading/loading_broken_file.py"
+    --8<-- "docs/examples/loading/loading_broken_file.py"
     ```
 
 === "broken.yaml"
 
     ```yaml
-    --8<-- "examples/docs/loading/sources/broken.yaml"
+    --8<-- "docs/examples/loading/sources/broken.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/loading/loading_broken_file.stderr"
+    --8<-- "docs/examples/loading/loading_broken_file.stderr"
     ```
 
 ## Type mismatch
@@ -57,19 +57,19 @@ caret pointing at it, and the source location.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/loading/loading_type_mismatch.py"
+    --8<-- "docs/examples/loading/loading_type_mismatch.py"
     ```
 
 === "type_mismatch.yaml"
 
     ```yaml
-    --8<-- "examples/docs/loading/sources/type_mismatch.yaml"
+    --8<-- "docs/examples/loading/sources/type_mismatch.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/loading/loading_type_mismatch.stderr"
+    --8<-- "docs/examples/loading/loading_type_mismatch.stderr"
     ```
 
 ## Required field missing
@@ -80,19 +80,19 @@ the file but has no line — there is nothing in the source to highlight.
 === "Python"
 
     ```python
-    --8<-- "examples/docs/loading/loading_missing_field.py"
+    --8<-- "docs/examples/loading/loading_missing_field.py"
     ```
 
 === "missing_field.yaml"
 
     ```yaml
-    --8<-- "examples/docs/loading/sources/missing_field.yaml"
+    --8<-- "docs/examples/loading/sources/missing_field.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/loading/loading_missing_field.stderr"
+    --8<-- "docs/examples/loading/loading_missing_field.stderr"
     ```
 
 ## Multiple errors at once
@@ -104,19 +104,19 @@ instead of "fix, rerun, fix, rerun".
 === "Python"
 
     ```python
-    --8<-- "examples/docs/loading/loading_multiple_errors.py"
+    --8<-- "docs/examples/loading/loading_multiple_errors.py"
     ```
 
 === "multiple_errors.yaml"
 
     ```yaml
-    --8<-- "examples/docs/loading/sources/multiple_errors.yaml"
+    --8<-- "docs/examples/loading/sources/multiple_errors.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "examples/docs/loading/loading_multiple_errors.stderr"
+    --8<-- "docs/examples/loading/loading_multiple_errors.stderr"
     ```
 
 ## Recovering: skip a broken source
@@ -127,13 +127,13 @@ When merging multiple sources, a missing or malformed one can be skipped with
 === "Python"
 
     ```python
-    --8<-- "examples/docs/loading/loading_skip_broken.py"
+    --8<-- "docs/examples/loading/loading_skip_broken.py"
     ```
 
 === "fallback.yaml"
 
     ```yaml
-    --8<-- "examples/docs/loading/sources/fallback.yaml"
+    --8<-- "docs/examples/loading/sources/fallback.yaml"
     ```
 
 If **every** source fails, dature still raises — there is no value to load. The

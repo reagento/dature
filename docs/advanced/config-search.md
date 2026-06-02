@@ -20,25 +20,25 @@ When you specify a config file, dature searches in the following order:
 === "Default (Enabled)"
 
     ```python
-    --8<-- examples/docs/advanced/config_search/default.py
+    --8<-- docs/examples/advanced/config_search/default.py
     ```
 
 === "Custom Directories"
 
     ```python
-    --8<-- examples/docs/advanced/config_search/custom_dirs.py
+    --8<-- docs/examples/advanced/config_search/custom_dirs.py
     ```
 
 === "Disable Globally"
 
     ```python
-    --8<-- examples/docs/advanced/config_search/disable_global.py
+    --8<-- docs/examples/advanced/config_search/disable_global.py
     ```
 
 === "Disable Per-Source"
 
     ```python
-    --8<-- examples/docs/advanced/config_search/disable_local.py
+    --8<-- docs/examples/advanced/config_search/disable_local.py
     ```
 
 ## Configuration
