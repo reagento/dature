@@ -1,3 +1,43 @@
+## 0.20.0
+
+### Features
+
+- Add cross-source references: ``${@tag.key}`` syntax in source init-fields.
+  Sources are loaded in topological order resolved from their inter-dependencies.
+  Cycles and tag collisions on referenced tags raise ``DatureConfigError`` with a descriptive message.
+  ``$$`` escapes a literal ``$``.
+
+  Cross-ref interpolation is now applied lazily inside the loading pipeline: each source's
+  ``load_raw()`` is called exactly once, with ``${@...}`` fields resolved immediately before
+  that single call. ``_validate()`` also runs after interpolation, so credential sources like
+  ``VaultSource`` see real values in their URL/token fields instead of literal ``${@...}`` strings.
+
+  ``CliSource`` cross-refs now use the same dot-notation as all other sources (``${@cli.db.host}``)
+  instead of the flat separator notation (``${@cli.db__host}``).
+
+  When a dependency source is skipped (``skip_if_broken=True`` and the source fails to load),
+  its tag contributes an empty dict to the cross-ref context so that ``${@tag.key:-default}``
+  fallback expressions on downstream sources still resolve cleanly.
+
+  Exception hierarchy: introduced ``DatureErrorGroup`` as a base ExceptionGroup without ``dataclass_name``;
+  ``CrossRefExpandError`` inherits from it directly. ``DatureConfigError`` and all its subclasses
+  drop ``__new__`` overrides — construction uses ``__init__`` only. ([#cross_source_refs](https://github.com/reagento/dature/issues/cross_source_refs))
+- Add ``when=`` to ``Source``: a declarative condition that enables a source only when all key→value pairs match after template expansion.  Keys support env-var substitution (``${VAR}``, ``${VAR:-default}``) and cross-source references (``${@tag.key}``).  Disabled sources contribute no data to the merge and do not participate in the cross-ref dependency graph — enabling the prod/dev token pattern without ``if``/``else`` around ``load()``. ([#source_when](https://github.com/reagento/dature/issues/source_when))
+
+### Bugfixes
+
+- Unhandled exceptions out of `dature.load()` no longer print a Python traceback header. Non-dature exceptions raised inside dature (`FileNotFoundError`, parser errors, user `__post_init__` failures) are now wrapped at the `Loader.load()` boundary into `DatureConfigError`, so a single `sys.excepthook` (installed on import) renders them via `traceback.print_exception(..., tb=None)`. The same exception classes raised entirely from user code outside dature are unaffected and still print with the normal traceback. ([#clean_stderr_excepthook](https://github.com/reagento/dature/issues/clean_stderr_excepthook))
+- Fix field_mapping aliases not matching in sources that normalize key case (EnvSource, EnvFileSource, DockerSecretsSource, IniSource). Aliases such as "DB_PASSWORD" now correctly map to the dataclass field regardless of whether the source lowercases its keys. ([#field_mapping_uppercase](https://github.com/reagento/dature/issues/field_mapping_uppercase))
+- ``FieldRef`` is now typed as ``Any`` instead of a fixed union of primitive types.
+  Fields in user dataclasses can be of any type (including custom classes), so the previous union was incomplete and caused false mypy errors when using ``F[DataClass].field`` as a ``field_mapping`` key. ([#field_ref_any](https://github.com/reagento/dature/issues/field_ref_any))
+- Fix three related `Loader` bugs: decorator footgun (env vars read at import/construction time caused `DatureError` before first `load()`), validation_loader built from init-time last source instead of runtime last source (wrong retort used when lazy `when=` disables the init-chosen source), and `all sources filtered out by when=` raising a bare `DatureError` instead of a `DatureConfigError` group like all other load errors. ([#loader_defer_env](https://github.com/reagento/dature/issues/loader_defer_env))
+
+### Refactoring
+
+- Minor architectural cleanup: ``Loader.load()`` now re-evaluates ``when=`` conditions on every call and auto-clears the cache when the enabled-source set changes; ``DatureConfigError.__init__`` accepts ``BaseException`` items to avoid silent type-ignore; ``Loader._debug`` renamed to public ``Loader.debug``; ``should_skip_broken`` documents that ``when=False`` takes priority over ``skip_if_broken``; ``conditional_sources.md`` gains a section on ``when=``/``skip_if_broken`` precedence. ([#arch_cleanup](https://github.com/reagento/dature/issues/arch_cleanup))
+- Unify the single-source and multi-source loading paths through a single `MergeConfig` (removes `prepare_single_source`); split `_do_load_multi` into `_run_merge` + `_validate_merged` for readability; move all env-dependent setup out of `Loader.__init__` into `_prepare_for_load` called on each `.load()`; extract `_make_retort_key` helper and replace `_get_validation_loader` (id-based memoization) with a straightforward `_build_validation_loader`. ([#loader_unify_single_multi](https://github.com/reagento/dature/issues/loader_unify_single_multi))
+
+
 ## 0.19.1
 
 ### Bugfixes
