@@ -21,10 +21,10 @@ cfg = dature.load(
     dature.EnvFileSource(
         tag="secrets",
         file=str(dev_env_path),
-        when={
-            "${APP_ENV}": "prod",
-            "${REGION}": ("eu", "us"),  # both keys must match
-        },
+        when=(
+            (dature.When("${APP_ENV}") == "prod")
+            & dature.When("${REGION}").in_("eu", "us")
+        ),
     ),
     schema=SecretsConfig,
 )

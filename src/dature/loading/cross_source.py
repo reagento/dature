@@ -15,9 +15,9 @@ its init-fields immediately before that call.
 
 import dataclasses
 from collections import deque
-from collections.abc import Mapping
 from dataclasses import dataclass
 
+from dature.conditions import Condition
 from dature.errors.exceptions import DatureError
 from dature.expansion.cross_source import expand_cross_refs, find_refs, needs_cross_ref_expansion
 from dature.expansion.env_expand import expand_string_default
@@ -36,8 +36,8 @@ def _init_string_fields(source: Source) -> dict[str, str]:
 
 
 def when_has_cross_refs(source: Source) -> bool:
-    """Return True if any key in source.when contains a ${@tag.key} cross-ref."""
-    return any(needs_cross_ref_expansion(k) for k in (source.when or {}))
+    """Return True if source.when contains any ${@tag.key} cross-ref."""
+    return source.when is not None and source.when.has_cross_refs()
 
 
 def _extract_ref_tags(source: Source) -> set[str]:
@@ -46,50 +46,42 @@ def _extract_ref_tags(source: Source) -> set[str]:
     for value in _init_string_fields(source).values():
         for tag, _ in find_refs(value):
             tags.add(tag)
-    for key in source.when or {}:
-        for tag, _ in find_refs(key):
-            tags.add(tag)
+    if source.when is not None:
+        tags |= source.when.ref_tags()
     return tags
 
 
-def evaluate_when_eager(when: "Mapping[str, str | tuple[str, ...]] | None") -> bool:
-    """Return True if all when conditions pass using env-var substitution only.
+def evaluate_when_eager(when: "Condition | None") -> bool:
+    """Return True if when is None or all conditions pass using env-var expansion only.
 
     Called at the start of each ``.load()`` before any sources are fetched.
-    Cross-source refs in keys are left unexpanded; since they won't match any
-    expected value, the source is treated as enabled (deferred to lazy evaluation)
-    by the caller's ``when_has_cross_refs`` short-circuit, not by this function.
+    Cross-source refs are left unexpanded here; the caller's ``when_has_cross_refs``
+    short-circuit defers such sources to lazy evaluation.
     """
-    if not when:
+    if when is None:
         return True
-    for key, expected in when.items():
-        expanded = expand_string_default(key)
-        expected_tuple = (expected,) if isinstance(expected, str) else expected
-        if expanded not in expected_tuple:
-            return False
-    return True
+    return when.evaluate(expand_string_default)
+
+
+def _lazy_expand(s: str, context: dict[str, dict[str, JSONValue]]) -> str:
+    expanded = expand_string_default(s)
+    if needs_cross_ref_expansion(expanded):
+        expanded = expand_cross_refs(expanded, context=context)
+    return expanded
 
 
 def evaluate_when_lazy(
-    when: "Mapping[str, str | tuple[str, ...]] | None",
+    when: "Condition | None",
     context: dict[str, dict[str, JSONValue]],
 ) -> bool:
-    """Return True if all when conditions pass using env-var + cross-source expansion.
+    """Return True if when is None or all conditions pass using env-var + cross-source expansion.
 
     Called inside ``LoadCtx._prepare_source`` when the source's dependency context
-    is already available.  Both ``${VAR}`` env refs and ``${@tag.key}`` cross-refs
-    in condition keys are fully expanded before comparison.
+    is already available.
     """
-    if not when:
+    if when is None:
         return True
-    for key, expected in when.items():
-        expanded = expand_string_default(key)
-        if needs_cross_ref_expansion(expanded):
-            expanded = expand_cross_refs(expanded, context=context)
-        expected_tuple = (expected,) if isinstance(expected, str) else expected
-        if expanded not in expected_tuple:
-            return False
-    return True
+    return when.evaluate(lambda s: _lazy_expand(s, context))
 
 
 def clone_with_interpolation(

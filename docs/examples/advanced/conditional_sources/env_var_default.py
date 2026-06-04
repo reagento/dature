@@ -17,11 +17,14 @@ class SecretsConfig:
 
 
 cfg = dature.load(
-    dature.EnvSource(tag="secrets", when={"${APP_ENV:-dev}": "prod"}),
+    dature.EnvSource(
+        tag="secrets",
+        when=dature.When("${APP_ENV:-dev}") == "prod",
+    ),
     dature.EnvFileSource(
         tag="secrets",
         file=str(dev_env_path),
-        when={"${APP_ENV:-dev}": ("dev", "local")},
+        when=dature.When("${APP_ENV:-dev}").in_("dev", "local"),
     ),
     schema=SecretsConfig,
 )

@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from tests.example_helpers import EXAMPLES_DIR, run_script
+from tests.example_helpers import DOCS_EXAMPLES_DIR, run_script
 
-REMOTE_SOURCE_EXAMPLES_DIR = EXAMPLES_DIR / "docs" / "features" / "remote_source"
+REMOTE_SOURCE_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "features" / "remote_source"
 
 
 @pytest.fixture(scope="module")

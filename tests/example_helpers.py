@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
+DOCS_EXAMPLES_DIR = Path(__file__).parent.parent / "docs" / "examples"
+EXAMPLE_ROOTS = (EXAMPLES_DIR, DOCS_EXAMPLES_DIR)
 PROJECT_SRC = Path(__file__).parent.parent / "src"
 
 _IS_POSIX = hasattr(os, "posix_spawn")
