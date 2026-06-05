@@ -266,12 +266,9 @@ class CrossRefPlan:
     ``deps[i]`` is the list of source indices that source ``i`` depends on
     (i.e. sources whose data must be loaded first so their values can be
     substituted into source ``i``'s init fields).
-
-    ``topo_order`` is the full topological ordering — useful for debugging.
     """
 
     deps: tuple[tuple[int, ...], ...]
-    topo_order: tuple[int, ...]
 
 
 def build_cross_ref_plan(sources: tuple[Source, ...]) -> CrossRefPlan | None:
@@ -284,8 +281,5 @@ def build_cross_ref_plan(sources: tuple[Source, ...]) -> CrossRefPlan | None:
     deps = _build_dep_graph(sources)
     if not any(deps):
         return None
-    topo_order = _topological_sort(sources, deps)
-    return CrossRefPlan(
-        deps=tuple(tuple(d) for d in deps),
-        topo_order=tuple(topo_order),
-    )
+    _topological_sort(sources, deps)
+    return CrossRefPlan(deps=tuple(tuple(d) for d in deps))

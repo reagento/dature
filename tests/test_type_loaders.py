@@ -56,24 +56,6 @@ class TestTypeLoadersInSource:
         assert result.name == "test"
         assert result.color == Rgb(r=255, g=128, b=0)
 
-    def test_type_loader_overrides_default(self, tmp_path: Path) -> None:
-        """TypeLoader for int should override adaptix default."""
-
-        def int_times_two(value: str) -> int:
-            return int(value) * 2
-
-        p = tmp_path / "cfg.yaml"
-        p.write_text("name: app\ncolor: '10,20,30'\n")
-
-        result = load(
-            Yaml12Source(
-                file=p,
-                type_loaders={Rgb: rgb_from_string},
-            ),
-            schema=ConfigWithRgb,
-        )
-        assert result.color == Rgb(r=10, g=20, b=30)
-
 
 class TestTypeLoadersInConfigure:
     @pytest.mark.usefixtures("_reset_config")
