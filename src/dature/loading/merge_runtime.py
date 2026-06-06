@@ -20,7 +20,9 @@ in ``loading.source_loading`` so that ``source_loading`` can import
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
-from typing import Protocol, TypeVar, runtime_checkable
+from typing import Any, Protocol, TypeVar, runtime_checkable
+
+from adaptix import Retort
 
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
@@ -41,6 +43,7 @@ from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.skip_field_provider import FilterResult
 from dature.sources.base import Source, clone_source
+from dature.sources.retort import make_retort_key
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -224,6 +227,7 @@ def apply_merge_skip_invalid(
     merge_meta: MergeConfig,
     schema: type[DataclassInstance],
     source_index: int,
+    probe_retort: Retort | None = None,
 ) -> FilterResult:
     skip_value = resolve_skip_invalid(source, merge_meta)
     if not skip_value:
@@ -235,6 +239,7 @@ def apply_merge_skip_invalid(
         source=source,
         schema=schema,
         log_prefix=f"[{schema.__name__}] Source {source_index}:",
+        probe_retort=probe_retort,
     )
 
 
@@ -293,6 +298,7 @@ class LoadCtx:
         secret_paths: frozenset[str] = frozenset(),
         mask_secrets: bool = False,
         on_merge_step: Callable[[MergeStepEvent], None] | None = None,
+        probe_retorts: dict[tuple[type, frozenset[Any]], Retort] | None = None,
     ) -> None:
         self.dataclass_name = dataclass_name
         self.field_merge_paths = field_merge_paths
@@ -302,6 +308,7 @@ class LoadCtx:
         self._secret_paths = secret_paths
         self._mask_secrets = mask_secrets
         self._on_merge_step = on_merge_step
+        self._probe_retorts = probe_retorts
         self._sources: list[Source] = list(merge_meta.sources)
 
         self._raw_dicts: list[JSONValue] = []
@@ -472,7 +479,7 @@ class LoadCtx:
                     source_loader_type=entry.loader_type,
                 )
 
-    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:
+    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:  # noqa: C901
         """Load a source with full pre-processing.
 
         *source_idx* is the position of the source in ``merge_meta.sources``.
@@ -564,12 +571,16 @@ class LoadCtx:
             error_ctx.source.encoding_for_errors(),
         )
 
+        probe_retort: Retort | None = None
+        if self._probe_retorts is not None:
+            probe_retort = self._probe_retorts.get(make_retort_key(source, type_loaders))
         filter_result = apply_merge_skip_invalid(
             raw=raw,
             source=source,
             merge_meta=self._merge_meta,
             schema=self._schema,
             source_index=i,
+            probe_retort=probe_retort,
         )
 
         for path in filter_result.skipped_paths:
