@@ -49,7 +49,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
         with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", toml_rs.loads(file.read(), toml_version=self._toml_version()))
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         return _build_toml_line_map(content, self._toml_version())
 
     def additional_loaders(self) -> list[Provider]:

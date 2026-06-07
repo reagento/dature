@@ -245,7 +245,13 @@ class Source(abc.ABC):
         prefix_parts = prefix.split(".")
         return prefix_parts + field_path
 
-    def _build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None":  # noqa: ARG002
+    def build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None":  # noqa: ARG002
+        """Return a mapping from field-path tuples to line ranges within *content*.
+
+        Part of the error-location protocol: called by the errors layer to resolve
+        field positions in file content. Override in FileSource subclasses that support
+        line-number error reporting. Return ``None`` to opt out (default).
+        """
         return None
 
     @staticmethod
@@ -333,13 +339,19 @@ class Source(abc.ABC):
         return CaretSpan(start=0, end=len(line))
 
     @classmethod
-    def _compute_line_carets(
+    def compute_line_carets(
         cls,
         content_lines: list[str],
         *,
         input_value: JSONValue,
         field_key: str | None,
     ) -> "list[CaretSpan]":
+        """Compute caret spans for *content_lines* pointing at *input_value*.
+
+        Part of the error-location protocol: called by the errors layer when masking
+        is applied to already-extracted line content. The default implementation works
+        for most text formats; override for special caret placement logic.
+        """
         if len(content_lines) == 1:
             if input_value is None:
                 return [cls._caret_after_equals(content_lines[0])]
@@ -366,7 +378,7 @@ class Source(abc.ABC):
             return [self._empty_location(self.location_label, file_path)]
 
         search_path = self._build_search_path(field_path, self.prefix)
-        line_index = self._build_line_index(file_content)
+        line_index = self.build_line_index(file_content)
         if line_index is None:
             return [self._empty_location(self.location_label, file_path)]
 
@@ -384,7 +396,7 @@ class Source(abc.ABC):
             raw = lines[line_range.start - 1 : end]
             content_lines = self._strip_common_indent(raw)
             field_key = field_path[-1] if field_path else None
-            line_carets = self._compute_line_carets(
+            line_carets = self.compute_line_carets(
                 content_lines,
                 input_value=input_value,
                 field_key=field_key,

@@ -87,7 +87,7 @@ def _apply_masking(
 ) -> list[SourceLocation]:
     result: list[SourceLocation] = []
     field_key = field_path[-1] if field_path else None
-    line_index = ctx.source._build_line_index(file_content) if ctx.secret_paths and file_content is not None else None  # noqa: SLF001
+    line_index = ctx.source.build_line_index(file_content) if ctx.secret_paths and file_content is not None else None
     for location in locations:
         should_mask = is_secret
         if not should_mask and ctx.secret_paths and location.line_range is not None and line_index is not None:
@@ -103,7 +103,7 @@ def _apply_masking(
             )
             masked_carets: list[CaretSpan] | None = None
             if masked_lines is not None:
-                masked_carets = ctx.source._compute_line_carets(  # noqa: SLF001
+                masked_carets = ctx.source.compute_line_carets(
                     masked_lines,
                     input_value=input_value,
                     field_key=field_key,

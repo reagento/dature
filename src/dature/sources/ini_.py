@@ -77,7 +77,7 @@ class IniSource(FileSource):
             target[parts[-1]] = self._normalize_section(dict(config[section]))
         return all_sections
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         parser = MetadataConfigParser()
         parser.read_string(content)
         result: dict[tuple[str, ...], LineRange] = {}

@@ -56,7 +56,7 @@ class Json5Source(FileSource):
         with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", json5.load(file))
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         return _build_json5_line_map(content)
 
 

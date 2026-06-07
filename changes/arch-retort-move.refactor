@@ -1,0 +1,6 @@
+Move `sources/retort.py` → `loading/retort.py`.
+
+The retort-building engine (`build_base_recipe`, `create_validating_retort`,
+`transform_to_dataclass`, retort cache keys) had no Source subclass and was
+consumed exclusively by the `loading/` layer. Moving it there makes `sources/`
+a clean leaf package of config-source classes only.

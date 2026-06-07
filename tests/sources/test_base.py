@@ -10,8 +10,8 @@ from dature import JsonSource, Source, load
 from dature.errors import DatureConfigError, EnvVarExpandError, FieldLoadError
 from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
+from dature.loading.retort import transform_to_dataclass
 from dature.sources.base import FileFieldMixin, RemoteSource, string_value_loaders
-from dature.sources.retort import transform_to_dataclass
 from dature.sources.yaml_ import Yaml12Source
 from dature.types import JSONValue
 
