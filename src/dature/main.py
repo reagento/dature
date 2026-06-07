@@ -126,6 +126,11 @@ def load(  # noqa: PLR0913
         # To cache, construct ``Loader(...)`` explicitly and reuse it.
         return Loader(*sources, schema=schema, **common_kwargs).load()
 
+    # Decorator mode — the Loader persists for the class lifetime.
+    # Cache freshness is keyed on the enabled-source set (which sources are
+    # active), not on source content. If an env var changes value between
+    # .load() calls but the same sources remain enabled, cached data is
+    # returned until the TTL (cache=timedelta(...)) expires or cache=False.
     return Loader.as_decorator(*sources, **common_kwargs)
 
 
