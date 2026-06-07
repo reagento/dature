@@ -7,6 +7,7 @@ from typing import cast
 from adaptix import loader
 from adaptix.provider import Provider
 
+from dature._deps import require_dep
 from dature.errors import LineRange
 from dature.loaders import (
     bytearray_from_string,
@@ -41,6 +42,7 @@ class _BaseYamlSource(FileSource, abc.ABC):
         """
 
     def _load_file(self, path: FileOrStream) -> JSONValue:
+        require_dep("ruamel.yaml", "yaml")
         from ruamel.yaml import YAML  # noqa: PLC0415
 
         yaml = YAML(typ="safe")
@@ -87,6 +89,7 @@ class Yaml12Source(_BaseYamlSource):
 
 
 def _build_yaml_line_map(content: str, yaml_version: Version) -> dict[tuple[str, ...], LineRange]:
+    require_dep("ruamel.yaml", "yaml")
     from ruamel.yaml import YAML  # noqa: PLC0415
 
     yaml = YAML(typ="rt")

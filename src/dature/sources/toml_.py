@@ -6,6 +6,7 @@ from typing import Any, Literal, cast
 from adaptix import loader
 from adaptix.provider import Provider
 
+from dature._deps import require_dep
 from dature.errors import LineRange
 from dature.loaders import (
     bytearray_from_string,
@@ -37,6 +38,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
         """
 
     def _load_file(self, path: FileOrStream) -> JSONValue:
+        require_dep("toml_rs", "toml")
         import toml_rs  # noqa: PLC0415
 
         if isinstance(path, FILE_LIKE_TYPES):
@@ -79,6 +81,7 @@ class Toml11Source(_BaseTomlSource):
 
 
 def _build_toml_line_map(content: str, toml_version: _TomlVersionStr) -> dict[tuple[str, ...], LineRange]:
+    require_dep("toml_rs", "toml")
     import toml_rs  # noqa: PLC0415
 
     doc = toml_rs.load_with_metadata(content, toml_version=toml_version)

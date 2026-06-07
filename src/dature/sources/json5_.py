@@ -6,6 +6,7 @@ from typing import TextIO, cast
 from adaptix import loader
 from adaptix.provider import Provider
 
+from dature._deps import require_dep
 from dature.errors import LineRange
 from dature.loaders import (
     bytearray_from_string,
@@ -43,6 +44,7 @@ class Json5Source(FileSource):
         ]
 
     def _load_file(self, path: FileOrStream) -> JSONValue:
+        require_dep("json5", "json5")
         import json5  # noqa: PLC0415
 
         if isinstance(path, TEXT_IO_TYPES):
@@ -59,6 +61,7 @@ class Json5Source(FileSource):
 
 
 def _build_json5_line_map(content: str) -> dict[tuple[str, ...], LineRange]:
+    require_dep("json5", "json5")
     from json5.parser import parse_source  # noqa: PLC0415
 
     model = parse_source(content)

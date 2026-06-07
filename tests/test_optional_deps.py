@@ -1,9 +1,12 @@
 """Regression tests: optional deps must not be imported at `import dature` time."""
 
 import importlib
+import re
 import sys
 
 import pytest
+
+from dature._deps import require_dep
 
 
 @pytest.mark.parametrize(
@@ -34,3 +37,18 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
     assert dature.Toml10Source.format_name == "toml1.0"
     assert dature.Toml11Source.format_name == "toml1.1"
     assert dature.VaultSource.format_name == "vault"
+
+
+@pytest.mark.parametrize(
+    ("package", "extra"),
+    [
+        ("ruamel.yaml", "yaml"),
+        ("toml_rs", "toml"),
+        ("json5", "json5"),
+        ("hvac", "vault"),
+    ],
+)
+def test_missing_dep_error_mentions_install_command(package: str, extra: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(sys.modules, package, None)
+    with pytest.raises(ImportError, match=re.escape(f"pip install 'dature[{extra}]'")):
+        require_dep(package, extra)
