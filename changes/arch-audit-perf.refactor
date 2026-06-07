@@ -1,0 +1,19 @@
+Performance improvements and internal API cleanup (no behaviour change):
+
+- ``make_retort_key(source, type_loaders)`` replaces two private functions
+  (``_make_retort_key`` in ``loader`` and ``_retort_cache_key`` in ``retort``).
+  ``source.retorts`` is now keyed by source *type* instead of schema type —
+  one retort instance per (source-type, type-loaders) pair instead of one per
+  (schema, type-loaders).
+- ``create_retort`` / ``create_probe_retort`` accept a pre-built ``base_recipe``
+  directly; ``build_base_recipe`` is called once per source in ``Loader.__init__``
+  and shared across all three retort builders — was called 2-3× per source.
+- ``Loader.secret_paths`` is forwarded into ``load_and_merge`` so
+  ``build_secret_paths`` is not re-run on every multi-source ``.load()``.
+- Pre-warmed ``_probe_retorts`` are threaded through ``load_and_merge → LoadCtx``
+  so the merge path reuses the Loader cache instead of creating a new probe
+  retort per source per call.
+- ``get_type_hints(load)`` is resolved once via ``@cache`` (``_load_type_hints``)
+  instead of three times per CLI run.
+- ``build_secret_paths`` internal cache replaced with ``@lru_cache(maxsize=128)``
+  to bound memory when dynamically-created schemas accumulate.

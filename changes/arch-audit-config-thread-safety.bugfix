@@ -1,0 +1,4 @@
+Concurrent calls to ``configure()`` could silently lose each other's updates
+due to an unguarded read-modify-write. ``_ConfigProxy`` now uses a
+``threading.RLock`` around ``ensure_loaded``, ``set_instance``, and the full
+body of ``configure()`` so the read + merge + write is atomic.

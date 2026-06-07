@@ -6,6 +6,7 @@ from typing import ClassVar
 import pytest
 
 from dature import CliSource
+from dature.errors import CaretSpan
 from dature.types import JSONValue
 
 
@@ -81,6 +82,45 @@ class TestCliSourceCasePreservation:
             nested_conflict=None,
         )
         assert locations[0].env_var_name == "--db--host"
+
+
+class TestCliSourceResolveLocation:
+    @pytest.mark.parametrize(
+        ("input_value", "expected_line_content", "expected_carets"),
+        [
+            (
+                None,
+                ["--host"],
+                [CaretSpan(start=0, end=6)],
+            ),
+            (
+                "localhost",
+                ["--host localhost"],
+                [CaretSpan(start=7, end=16)],
+            ),
+            (
+                "line1\nline2",
+                ["--host line1", "line2"],
+                [CaretSpan(start=7, end=12), CaretSpan(start=0, end=5)],
+            ),
+        ],
+        ids=["no-value", "scalar-value", "multiline-value"],
+    )
+    def test_resolve_location_line_content(
+        self,
+        input_value: JSONValue,
+        expected_line_content: list[str],
+        expected_carets: list[CaretSpan],
+    ) -> None:
+        src = _DictCliSource(data={})
+        locations = src.resolve_location(
+            field_path=["host"],
+            file_content=None,
+            nested_conflict=None,
+            input_value=input_value,
+        )
+        assert locations[0].line_content == expected_line_content
+        assert locations[0].line_carets == expected_carets
 
 
 class TestCliSourceEnvExpansionDefault:

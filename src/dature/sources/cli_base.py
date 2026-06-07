@@ -106,12 +106,18 @@ class CliSource(FlatKeySource, abc.ABC):
         field_path: list[str],
         file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,
-        input_value: JSONValue = None,  # noqa: ARG002
+        input_value: JSONValue = None,
     ) -> list[SourceLocation]:
         flag_name = self._resolve_flag_name(field_path, nested_conflict)
         flag_display = f"--{flag_name}"
-        line_content = [flag_display]
-        line_carets = [CaretSpan(start=0, end=len(flag_display))]
+        if input_value is not None:
+            value_lines = str(input_value).split("\n")
+            value_start = len(flag_display) + 1  # after "--flag-name "
+            line_content = [f"{flag_display} {value_lines[0]}", *value_lines[1:]]
+            line_carets = self._value_line_carets(value_lines, value_start)
+        else:
+            line_content = [flag_display]
+            line_carets = [CaretSpan(start=0, end=len(flag_display))]
         return [
             SourceLocation(
                 location_label=self.location_label,

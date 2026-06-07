@@ -457,6 +457,30 @@ class TestThreeSourceChain:
         assert result.value == "nested-json"
 
 
+class TestDiamondDependency:
+    """A feeds both B and C (diamond); verifies runtime resolution, not just graph structure."""
+
+    def test_both_branches_resolve_shared_root(self) -> None:
+        a = _Stub(tag="a", data={"key": "diamond-val"})
+        b = _Stub(tag="b", url="${@a.key}", data={"path": "from-b"})
+        c = _Stub(tag="c", url="${@a.key}", data={})
+
+        result = load(a, b, c, schema=_StrConfig)
+
+        assert result.url == "diamond-val"
+        assert result.path == "from-b"
+
+    def test_diamond_with_distinct_branches_merge_correctly(self) -> None:
+        a = _Stub(tag="a", data={"base": "root"})
+        b = _Stub(tag="b", url="${@a.base}", data={})
+        c = _Stub(tag="c", url="${@a.base}", path="c-path", data={})
+
+        result = load(a, b, c, schema=_StrConfig)
+
+        assert result.url == "root"
+        assert result.path == "c-path"
+
+
 class TestWhenHasCrossRefs:
     @pytest.mark.parametrize(
         ("when", "expected"),

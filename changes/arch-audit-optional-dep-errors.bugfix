@@ -1,0 +1,5 @@
+Missing optional dependency now raises a human-readable ImportError that names
+the missing package and the install command (e.g. ``pip install 'dature[yaml]'``).
+Previously the bare ``ModuleNotFoundError: No module named 'ruamel.yaml'`` gave no
+hint about which dature extra to install. Affects yaml, toml, json5, and vault
+sources.

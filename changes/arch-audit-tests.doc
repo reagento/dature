@@ -1,0 +1,8 @@
+Add runtime load() tests for diamond cross-source dependency graphs (H3) and
+two tests for the mypy plugin (H6): one that verifies ``Config()`` is accepted
+without arguments when the plugin is active, and one that confirms mypy reports
+``call-arg`` errors when the plugin is absent.
+
+Add a comment to ``load()`` documenting that in decorator mode the cache is
+keyed on the enabled-source set, not on source content — stale data may be
+returned if an env var changes value within the same TTL window.

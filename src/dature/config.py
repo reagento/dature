@@ -1,3 +1,4 @@
+import threading
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from datetime import timedelta
@@ -159,6 +160,9 @@ class VaultOptions(TypedDict, total=False):
     kv_version: Literal[1, 2]
 
 
+_config_lock: threading.RLock = threading.RLock()
+
+
 class _ConfigProxy:
     _instance: DatureConfig | None = None
     _loading: bool = False
@@ -166,20 +170,22 @@ class _ConfigProxy:
 
     @staticmethod
     def ensure_loaded() -> DatureConfig:
-        if _ConfigProxy._instance is not None:
+        with _config_lock:
+            if _ConfigProxy._instance is not None:
+                return _ConfigProxy._instance
+            if _ConfigProxy._loading:
+                return DatureConfig()
+            _ConfigProxy._loading = True
+            try:
+                _ConfigProxy._instance = _load_config()
+            finally:
+                _ConfigProxy._loading = False
             return _ConfigProxy._instance
-        if _ConfigProxy._loading:
-            return DatureConfig()
-        _ConfigProxy._loading = True
-        try:
-            _ConfigProxy._instance = _load_config()
-        finally:
-            _ConfigProxy._loading = False
-        return _ConfigProxy._instance
 
     @staticmethod
     def set_instance(value: DatureConfig | None) -> None:
-        _ConfigProxy._instance = value
+        with _config_lock:
+            _ConfigProxy._instance = value
 
     @staticmethod
     def set_type_loaders(value: TypeLoaderMap) -> None:
@@ -227,20 +233,21 @@ def configure(
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
-    current = config.ensure_loaded()
+    with _config_lock:
+        current = config.ensure_loaded()
 
-    merged_masking = _merge_group(current.masking, masking, MaskingConfig)
-    merged_error = _merge_group(current.error_display, error_display, ErrorDisplayConfig)
-    merged_loading = _merge_group(current.loading, loading, LoadingConfig)
-    merged_vault = _merge_group(current.vault, vault, VaultConfig)
+        merged_masking = _merge_group(current.masking, masking, MaskingConfig)
+        merged_error = _merge_group(current.error_display, error_display, ErrorDisplayConfig)
+        merged_loading = _merge_group(current.loading, loading, LoadingConfig)
+        merged_vault = _merge_group(current.vault, vault, VaultConfig)
 
-    config.set_instance(
-        DatureConfig(
-            masking=merged_masking,
-            error_display=merged_error,
-            loading=merged_loading,
-            vault=merged_vault,
-        ),
-    )
-    if type_loaders is not None:
-        config.set_type_loaders(type_loaders)
+        config.set_instance(
+            DatureConfig(
+                masking=merged_masking,
+                error_display=merged_error,
+                loading=merged_loading,
+                vault=merged_vault,
+            ),
+        )
+        if type_loaders is not None:
+            config.set_type_loaders(type_loaders)

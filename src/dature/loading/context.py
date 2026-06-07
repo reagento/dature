@@ -13,7 +13,7 @@ from dature.field_path import FieldPath, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
 from dature.sources.base import Source
-from dature.sources.retort import create_probe_retort
+from dature.sources.retort import build_base_recipe, create_probe_retort
 from dature.types import JSONValue, NestedConflicts
 
 logger = logging.getLogger("dature")
@@ -83,7 +83,7 @@ def apply_skip_invalid(
     allowed_fields = get_allowed_fields(skip_value=skip_field_if_invalid, schema=schema)
 
     if probe_retort is None:
-        probe_retort = create_probe_retort(source)
+        probe_retort = create_probe_retort(build_base_recipe(source))
 
     result = filter_invalid_fields(raw, probe_retort, schema, allowed_fields)
     for path in result.skipped_paths:
@@ -120,8 +120,8 @@ class PatchContext(Protocol):
     validating: bool
     cls: type[DataclassInstance]
     original_post_init: Callable[..., None] | None
-    validation_loader: Callable[[JSONValue], DataclassInstance]
-    error_ctx: ErrorContext
+    validation_loader: Callable[[JSONValue], DataclassInstance] | None
+    error_ctx: ErrorContext | None
 
 
 def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
@@ -132,6 +132,14 @@ def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
         if ctx.validating:
             return
 
+        validation_loader = ctx.validation_loader
+        error_ctx = ctx.error_ctx
+        if validation_loader is None or error_ctx is None:
+            # Loader not yet initialised (e.g. Cls() called before first .load()).
+            if ctx.original_post_init is not None:
+                ctx.original_post_init(self)
+            return
+
         if ctx.original_post_init is not None:
             ctx.original_post_init(self)
 
@@ -139,8 +147,8 @@ def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
         try:
             obj_dict = coerce_flag_fields(asdict(self), ctx.cls)
             handle_load_errors(
-                func=lambda: ctx.validation_loader(obj_dict),
-                ctx=ctx.error_ctx,
+                func=lambda: validation_loader(obj_dict),
+                ctx=error_ctx,
             )
         finally:
             ctx.validating = False

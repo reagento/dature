@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar, Literal, cast
 
+from dature._deps import require_dep
 from dature.sources.base import RemoteSource
 from dature.types import JSONValue
 
@@ -42,6 +43,7 @@ class VaultSource(RemoteSource):
             raise ValueError(msg)
 
     def _fetch(self) -> JSONValue:
+        require_dep("hvac", "vault")
         import hvac  # noqa: PLC0415
         import hvac.exceptions  # noqa: PLC0415
 

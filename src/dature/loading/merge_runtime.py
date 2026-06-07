@@ -22,6 +22,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
 from typing import Protocol, TypeVar, runtime_checkable
 
+from adaptix import Retort
+
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
 from dature.errors.formatter import handle_load_errors
@@ -41,6 +43,7 @@ from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.skip_field_provider import FilterResult
 from dature.sources.base import Source, clone_source
+from dature.sources.retort import probe_retort_key
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -224,6 +227,7 @@ def apply_merge_skip_invalid(
     merge_meta: MergeConfig,
     schema: type[DataclassInstance],
     source_index: int,
+    probe_retort: Retort | None = None,
 ) -> FilterResult:
     skip_value = resolve_skip_invalid(source, merge_meta)
     if not skip_value:
@@ -235,6 +239,7 @@ def apply_merge_skip_invalid(
         source=source,
         schema=schema,
         log_prefix=f"[{schema.__name__}] Source {source_index}:",
+        probe_retort=probe_retort,
     )
 
 
@@ -564,12 +569,14 @@ class LoadCtx:
             error_ctx.source.encoding_for_errors(),
         )
 
+        probe_retort = source.retorts.get(probe_retort_key(type_loaders))
         filter_result = apply_merge_skip_invalid(
             raw=raw,
             source=source,
             merge_meta=self._merge_meta,
             schema=self._schema,
             source_index=i,
+            probe_retort=probe_retort,
         )
 
         for path in filter_result.skipped_paths:

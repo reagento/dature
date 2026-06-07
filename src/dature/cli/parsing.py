@@ -192,9 +192,14 @@ def add_typed_arg(parser: argparse.ArgumentParser, name: str, annotation: Any) -
     raise TypeError(msg)
 
 
+@cache
+def _load_type_hints() -> dict[str, Any]:
+    return get_type_hints(load)
+
+
 def add_load_args(parser: argparse.ArgumentParser) -> None:
     """Generate CLI flags for ``load()`` parameters listed in ``CLI_LOAD_PARAMS``."""
-    hints = get_type_hints(load)
+    hints = _load_type_hints()
     for name in CLI_LOAD_PARAMS:
         if name not in hints:
             msg = f"{name!r} not found in load() signature"
@@ -231,7 +236,7 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
     ``action="append"`` produces a list and adaptix does not coerce list to
     tuple), so we have to undo that before calling ``load()``.
     """
-    hints = get_type_hints(load)
+    hints = _load_type_hints()
     result: dict[str, Any] = {}
     for name in CLI_LOAD_PARAMS:
         value = getattr(args, name, None)
@@ -260,7 +265,7 @@ def derive_cli_schema() -> type:
     Cached: the same class is returned on every call so adaptix can reuse its
     Retort cache for repeated runs (e.g. test suites).
     """
-    hints = get_type_hints(load)
+    hints = _load_type_hints()
     common: list[tuple[str, Any, Any]] = [
         ("schema", str, field()),
         ("source", list[str], field()),

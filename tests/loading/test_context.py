@@ -19,7 +19,7 @@ from dature.loading.context import (
 )
 from dature.sources.env_ import EnvSource
 from dature.sources.json_ import JsonSource
-from dature.sources.retort import _retort_cache_key, ensure_retort
+from dature.sources.retort import build_base_recipe, ensure_retort, make_retort_key
 
 
 class TestMergeFields:
@@ -230,14 +230,15 @@ class TestEnsureRetort:
             name: str
 
         source = JsonSource(file=json_file)
-        key = _retort_cache_key(Cfg, None)
-        assert key not in source.retorts
+        key = make_retort_key(None)
 
-        ensure_retort(source, Cfg)
+        ensure_retort(source, Cfg, build_base_recipe(source))
+
         assert key in source.retorts
 
         first = source.retorts[key]
-        ensure_retort(source, Cfg)
+        ensure_retort(source, Cfg, build_base_recipe(source))
+
         assert source.retorts[key] is first
 
 
@@ -282,6 +283,35 @@ class TestMakeValidatingPostInit:
 
         post_init = make_validating_post_init(ctx)
         instance = self.Cfg(name="test")
+        post_init(instance)
+
+        original.assert_called_once_with(instance)
+
+    def test_none_validation_loader_skips_silently(self):
+        """Regression A3: Cls() called before first .load() must not raise TypeError."""
+        ctx = MagicMock()
+        ctx.loading = False
+        ctx.validating = False
+        ctx.original_post_init = None
+        ctx.validation_loader = None
+        ctx.error_ctx = None
+
+        post_init = make_validating_post_init(ctx)
+        instance = MagicMock()
+        post_init(instance)  # must not raise
+
+    def test_none_validation_loader_still_calls_original_post_init(self):
+        """Regression A3: original __post_init__ must still run even if loader not initialised."""
+        original = MagicMock()
+        ctx = MagicMock()
+        ctx.loading = False
+        ctx.validating = False
+        ctx.original_post_init = original
+        ctx.validation_loader = None
+        ctx.error_ctx = None
+
+        post_init = make_validating_post_init(ctx)
+        instance = MagicMock()
         post_init(instance)
 
         original.assert_called_once_with(instance)

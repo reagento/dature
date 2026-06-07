@@ -11,89 +11,100 @@ from dature.masking.detection import (
     build_secret_paths,
 )
 
+# --- module-level schemas for parametrize ---
+
+
+@dataclass
+class _SecretStrCfg:
+    api_key: SecretStr
+    host: str
+
+
+@dataclass
+class _PaymentCfg:
+    card: PaymentCardNumber
+    name: str
+
+
+@dataclass
+class _NameBasedCfg:
+    password: str
+    db_token: str
+    host: str
+
+
+@dataclass
+class _AnnotatedCfg:
+    key: Annotated[SecretStr, "some metadata"]
+    host: str
+
+
+@dataclass
+class _OptionalCfg:
+    key: SecretStr | None
+    host: str
+
+
+@dataclass
+class _InnerCfg:
+    secret: SecretStr
+    host: str
+
+
+@dataclass
+class _OuterCfg:
+    inner: _InnerCfg
+    name: str
+
+
+@dataclass
+class _DbConfig:
+    password: str
+    host: str
+
+
+@dataclass
+class _DatabaseCfg:
+    database: _DbConfig
+
+
+@dataclass
+class _ExtraPatternCfg:
+    my_custom_field: str
+    host: str
+
 
 class TestBuildSecretPaths:
-    def test_simple_secret_str(self):
-        @dataclass
-        class Cfg:
-            api_key: SecretStr
-            host: str
-
-        paths = build_secret_paths(Cfg)
-        assert paths == frozenset({"api_key"})
-
-    def test_payment_card_number(self):
-        @dataclass
-        class Cfg:
-            card: PaymentCardNumber
-            name: str
-
-        paths = build_secret_paths(Cfg)
-        assert paths == frozenset({"card"})
-
-    def test_name_based_detection(self):
-        @dataclass
-        class Cfg:
-            password: str
-            db_token: str
-            host: str
-
-        paths = build_secret_paths(Cfg)
-        assert paths == frozenset({"password", "db_token"})
-
-    def test_annotated_secret_str(self):
-        @dataclass
-        class Cfg:
-            key: Annotated[SecretStr, "some metadata"]
-            host: str
-
-        paths = build_secret_paths(Cfg)
-        assert paths == frozenset({"key"})
-
-    def test_optional_secret_str(self):
-        @dataclass
-        class Cfg:
-            key: SecretStr | None
-            host: str
-
-        paths = build_secret_paths(Cfg)
-        assert paths == frozenset({"key"})
-
-    def test_nested_dataclass(self):
-        @dataclass
-        class Inner:
-            secret: SecretStr
-            host: str
-
-        @dataclass
-        class Outer:
-            inner: Inner
-            name: str
-
-        paths = build_secret_paths(Outer)
-        assert paths == frozenset({"inner.secret"})
-
-    def test_nested_name_based(self):
-        @dataclass
-        class DbConfig:
-            password: str
-            host: str
-
-        @dataclass
-        class Cfg:
-            database: DbConfig
-
-        paths = build_secret_paths(Cfg)
-        assert paths == frozenset({"database.password"})
-
-    def test_extra_patterns(self):
-        @dataclass
-        class Cfg:
-            my_custom_field: str
-            host: str
-
-        paths = build_secret_paths(Cfg, extra_patterns=("custom",))
-        assert paths == frozenset({"my_custom_field"})
+    @pytest.mark.parametrize(
+        ("schema", "extra_patterns", "expected"),
+        [
+            (_SecretStrCfg, (), frozenset({"api_key"})),
+            (_PaymentCfg, (), frozenset({"card"})),
+            (_NameBasedCfg, (), frozenset({"password", "db_token"})),
+            (_AnnotatedCfg, (), frozenset({"key"})),
+            (_OptionalCfg, (), frozenset({"key"})),
+            (_OuterCfg, (), frozenset({"inner.secret"})),
+            (_DatabaseCfg, (), frozenset({"database.password"})),
+            (_ExtraPatternCfg, ("custom",), frozenset({"my_custom_field"})),
+        ],
+        ids=[
+            "secret-str",
+            "payment-card",
+            "name-based",
+            "annotated",
+            "optional",
+            "nested-dc",
+            "nested-name",
+            "extra-patterns",
+        ],
+    )
+    def test_schema_cases(
+        self,
+        schema: type,
+        extra_patterns: tuple[str, ...],
+        expected: frozenset[str],
+    ) -> None:
+        assert build_secret_paths(schema, extra_patterns=extra_patterns) == expected
 
     def test_caching(self):
         @dataclass

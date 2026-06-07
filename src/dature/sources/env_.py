@@ -49,8 +49,7 @@ class EnvSource(FlatKeySource):
             value_lines = env_var_value.split("\n")
             value_start = len(var_name) + 1  # after "VAR_NAME="
             line_content = [f"{var_name}={value_lines[0]}", *value_lines[1:]]
-            line_carets = [CaretSpan(start=value_start, end=value_start + len(value_lines[0]))]
-            line_carets.extend(CaretSpan(start=0, end=len(line)) for line in value_lines[1:])
+            line_carets = self._value_line_carets(value_lines, value_start)
         return [
             SourceLocation(
                 location_label=self.location_label,

@@ -1,5 +1,6 @@
 import types
 from dataclasses import fields, is_dataclass
+from functools import lru_cache
 from typing import Annotated, Union, get_args, get_origin, get_type_hints
 
 from dature.config import config
@@ -7,8 +8,6 @@ from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.type_utils import find_nested_dataclasses
 from dature.types import TypeAnnotation
-
-_secret_paths_cache: dict[tuple[type, tuple[str, ...]], frozenset[str]] = {}
 
 
 def _is_secret_type(field_type: TypeAnnotation) -> bool:
@@ -70,6 +69,14 @@ def _walk_dataclass_fields(
             )
 
 
+@lru_cache(maxsize=128)
+def _compute_secret_paths(dataclass_type: type, extra_patterns: tuple[str, ...]) -> frozenset[str]:
+    all_patterns = config.masking.secret_field_names + extra_patterns
+    result: set[str] = set()
+    _walk_dataclass_fields(dataclass_type, prefix="", all_patterns=all_patterns, result=result)
+    return frozenset(result)
+
+
 def build_secret_paths(
     dataclass_type: type,
     *,
@@ -77,21 +84,4 @@ def build_secret_paths(
 ) -> frozenset[str]:
     if not is_dataclass(dataclass_type):
         return frozenset()
-
-    cache_key = (dataclass_type, extra_patterns)
-    if cache_key in _secret_paths_cache:
-        return _secret_paths_cache[cache_key]
-
-    all_patterns = config.masking.secret_field_names + extra_patterns
-    result: set[str] = set()
-
-    _walk_dataclass_fields(
-        dataclass_type,
-        prefix="",
-        all_patterns=all_patterns,
-        result=result,
-    )
-
-    frozen = frozenset(result)
-    _secret_paths_cache[cache_key] = frozen
-    return frozen
+    return _compute_secret_paths(dataclass_type, extra_patterns)

@@ -57,7 +57,7 @@ def test_example_expected_stdout(script_path: Path, dature_shim_dir: Path) -> No
     )
 
     expected = resolve_placeholders(script_path.with_suffix(".stdout").read_text(), script_path)
-    assert normalize_output(expected.strip()) in normalize_output(result.stdout), (
+    assert normalize_output(expected.strip()) == normalize_output(result.stdout.strip()), (
         f"Script {script_path.name} stdout mismatch.\n\n"
-        f"Expected fragment:\n{expected.strip()}\n\nActual stdout:\n{result.stdout}"
+        f"Expected:\n{expected.strip()}\n\nActual stdout:\n{result.stdout}"
     )

@@ -177,12 +177,15 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     merge_meta: MergeConfig,
     schema: type[T],
     debug: bool = False,
+    secret_paths: frozenset[str] | None = None,
 ) -> _MergedData[T]:
-    secret_paths: frozenset[str] = frozenset()
     mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
-    if mask_secrets:
-        extra_patterns = merge_meta.secret_field_names or ()
-        secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
+    if secret_paths is None:
+        computed: frozenset[str] = frozenset()
+        if mask_secrets:
+            extra_patterns = merge_meta.secret_field_names or ()
+            computed = build_secret_paths(schema, extra_patterns=extra_patterns)
+        secret_paths = computed
 
     strategy = resolve_source_strategy(
         merge_meta.strategy,

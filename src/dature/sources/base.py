@@ -87,7 +87,7 @@ class Source(abc.ABC):
     location_label: ClassVar[str]
     config_group: ClassVar[str | None] = None
 
-    retorts: "dict[tuple[type, frozenset[tuple[type, Any]]], Retort]" = field(
+    retorts: "dict[Any, Retort]" = field(
         default_factory=dict,
         init=False,
         repr=False,
@@ -555,6 +555,21 @@ class FlatKeySource(Source, abc.ABC):
 
     def additional_loaders(self) -> "list[Provider]":
         return string_value_loaders()
+
+    @staticmethod
+    def _value_line_carets(
+        value_lines: list[str],
+        value_start: int,
+        first_caret: "CaretSpan | None" = None,
+    ) -> "list[CaretSpan]":
+        effective_first = (
+            first_caret
+            if first_caret is not None
+            else CaretSpan(start=value_start, end=value_start + len(value_lines[0]))
+        )
+        result = [effective_first]
+        result.extend(CaretSpan(start=0, end=len(line)) for line in value_lines[1:])
+        return result
 
     @staticmethod
     def _resolve_var_name(

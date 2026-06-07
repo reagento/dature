@@ -10,7 +10,6 @@ from unittest.mock import patch
 
 import pytest
 import time_machine
-from adaptix.load_error import ValidationLoadError
 
 from dature.config import _ConfigProxy
 
@@ -38,27 +37,6 @@ def time_control() -> Generator[time_machine.Traveller, None, None]:
             patch("time.perf_counter", side_effect=fake_monotonic),
         ):
             yield traveller
-
-
-def _collect_validation_errors(
-    exc: BaseException,
-    errors: list[ValidationLoadError],
-) -> None:
-    if isinstance(exc, ValidationLoadError):
-        errors.append(exc)
-    if hasattr(exc, "exceptions"):
-        for sub_exc in exc.exceptions:
-            _collect_validation_errors(sub_exc, errors)
-
-
-@pytest.fixture
-def collect_validation_errors() -> Callable[[BaseException], list[ValidationLoadError]]:
-    def _collect(exc: BaseException) -> list[ValidationLoadError]:
-        errors: list[ValidationLoadError] = []
-        _collect_validation_errors(exc, errors)
-        return errors
-
-    return _collect
 
 
 @pytest.fixture
