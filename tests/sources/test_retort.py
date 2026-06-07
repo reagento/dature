@@ -8,6 +8,7 @@ from dature import V
 from dature.field_path import F
 from dature.sources.base import Source
 from dature.sources.retort import (
+    _PLAIN_SENTINEL,
     build_base_recipe,
     create_probe_retort,
     create_retort,
@@ -211,37 +212,20 @@ class TestCreateValidatingRetort:
 
 class TestRetortCacheKey:
     def test_none_loaders_produces_empty_frozenset(self):
-        source = MockSource()
-        key = make_retort_key(source, None)
-        assert key == (MockSource, frozenset())
+        key = make_retort_key(None)
+        assert key == (_PLAIN_SENTINEL, frozenset())
 
     def test_same_loaders_produce_equal_keys(self):
-        source = MockSource()
         loaders = {str: lambda x: x}
-        key1 = make_retort_key(source, loaders)
-        key2 = make_retort_key(source, loaders)
+        key1 = make_retort_key(loaders)
+        key2 = make_retort_key(loaders)
         assert key1 == key2
 
     def test_different_loaders_produce_different_keys(self):
-        source = MockSource()
         loaders_a = {str: lambda x: x}
         loaders_b = {int: lambda x: x}
-        key_a = make_retort_key(source, loaders_a)
-        key_b = make_retort_key(source, loaders_b)
-        assert key_a != key_b
-
-    def test_different_source_types_produce_different_keys(self):
-        @dataclass(kw_only=True)
-        class AnotherMockSource(Source):
-            format_name = "another"
-            location_label = "ANOTHER"
-            test_data: JSONValue = None
-
-            def _load(self) -> JSONValue:
-                return {}
-
-        key_a = make_retort_key(MockSource(), None)
-        key_b = make_retort_key(AnotherMockSource(), None)
+        key_a = make_retort_key(loaders_a)
+        key_b = make_retort_key(loaders_b)
         assert key_a != key_b
 
 
@@ -265,8 +249,7 @@ class TestTransformToDataclass:
             name: str
 
         source = MockSource()
-        key = make_retort_key(source, None)
-        assert key not in source.retorts
+        key = make_retort_key(None)
 
         transform_to_dataclass(source, {"name": "a"}, Config)
 
@@ -279,7 +262,7 @@ class TestTransformToDataclass:
 
         source = MockSource()
         transform_to_dataclass(source, {"name": "a"}, Config)
-        key = make_retort_key(source, None)
+        key = make_retort_key(None)
         cached = source.retorts[key]
 
         transform_to_dataclass(source, {"name": "b"}, Config)
@@ -298,8 +281,9 @@ class TestTransformToDataclass:
         transform_to_dataclass(source, {"name": "hello"}, Config, resolved_type_loaders=loaders_a)
         transform_to_dataclass(source, {"name": "hello"}, Config, resolved_type_loaders=loaders_b)
 
-        key_a = make_retort_key(source, loaders_a)
-        key_b = make_retort_key(source, loaders_b)
+        key_a = make_retort_key(loaders_a)
+        key_b = make_retort_key(loaders_b)
+
         assert key_a in source.retorts
         assert key_b in source.retorts
         assert source.retorts[key_a] is not source.retorts[key_b]
@@ -315,8 +299,9 @@ class TestTransformToDataclass:
         transform_to_dataclass(source, {"name": "a"}, Config)
         transform_to_dataclass(source, {"name": "a"}, Config, resolved_type_loaders=custom_loaders)
 
-        key_none = make_retort_key(source, None)
-        key_custom = make_retort_key(source, custom_loaders)
+        key_none = make_retort_key(None)
+        key_custom = make_retort_key(custom_loaders)
+
         assert key_none in source.retorts
         assert key_custom in source.retorts
         assert source.retorts[key_none] is not source.retorts[key_custom]
@@ -330,7 +315,7 @@ class TestTransformToDataclass:
         custom_loaders = {str: lambda x: str(x).upper()}
 
         transform_to_dataclass(source, {"name": "a"}, Config, resolved_type_loaders=custom_loaders)
-        key = make_retort_key(source, custom_loaders)
+        key = make_retort_key(custom_loaders)
         cached = source.retorts[key]
 
         transform_to_dataclass(source, {"name": "b"}, Config, resolved_type_loaders=custom_loaders)
@@ -345,8 +330,7 @@ class TestEnsureRetort:
             name: str
 
         source = MockSource()
-        key = make_retort_key(source, None)
-        assert key not in source.retorts
+        key = make_retort_key(None)
 
         ensure_retort(source, Config, build_base_recipe(source))
 
@@ -359,7 +343,7 @@ class TestEnsureRetort:
 
         source = MockSource()
         ensure_retort(source, Config, build_base_recipe(source))
-        key = make_retort_key(source, None)
+        key = make_retort_key(None)
         existing = source.retorts[key]
 
         ensure_retort(source, Config, build_base_recipe(source))
@@ -380,8 +364,9 @@ class TestEnsureRetort:
         ensure_retort(source, Config, recipe_a, resolved_type_loaders=loaders_a)
         ensure_retort(source, Config, recipe_b, resolved_type_loaders=loaders_b)
 
-        key_a = make_retort_key(source, loaders_a)
-        key_b = make_retort_key(source, loaders_b)
+        key_a = make_retort_key(loaders_a)
+        key_b = make_retort_key(loaders_b)
+
         assert key_a in source.retorts
         assert key_b in source.retorts
         assert source.retorts[key_a] is not source.retorts[key_b]

@@ -62,8 +62,9 @@ from dature.sources.retort import (
     create_probe_retort,
     create_validating_retort,
     ensure_retort,
-    make_retort_key,
+    probe_retort_key,
     transform_to_dataclass,
+    validating_retort_key,
 )
 from dature.types import (
     ExpandEnvVarsMode,
@@ -191,23 +192,25 @@ class Loader[T: DataclassInstance]:
         # Pre-warm retort caches for all sources (pure type analysis, no env read).
         # Must happen before the decorator replaces schema.__init__ so that adaptix
         # inspects the original dataclass signature, not the patched *args/**kwargs one.
-        # Both dicts are keyed by make_retort_key(source, resolved_type_loaders) — stable
-        # across prepare_sources cloning — and reused in _build_validation_loader / _prepare_for_load.
-        self._validating_retorts: dict[tuple[type[Source], frozenset[Any]], Retort] = {}
-        self._probe_retorts: dict[tuple[type[Source], frozenset[Any]], Retort] = {}
+        # Retorts are stored in source.retorts (per-instance dict) using sentinel keys so
+        # that two sources of the same type with different configs never share a retort.
+        # clone_source does copy.copy → clone.retorts is source.retorts, so pre-warmed
+        # retorts are visible on clones without any extra work.
         for source in sources:
             source_type_loaders = resolve_type_loaders(source, type_loaders)
-            retort_key = make_retort_key(source, source_type_loaders)
             base_recipe = build_base_recipe(source, resolved_type_loaders=source_type_loaders)
             ensure_retort(source, schema, base_recipe, resolved_type_loaders=source_type_loaders)
-            if retort_key not in self._validating_retorts:
+            v_key = validating_retort_key(source_type_loaders)
+            if v_key not in source.retorts:
                 validating_retort = create_validating_retort(source, schema, base_recipe)
                 validating_retort.get_loader(schema)
-                self._validating_retorts[retort_key] = validating_retort
-            if source.skip_field_if_invalid and retort_key not in self._probe_retorts:
-                probe_retort = create_probe_retort(base_recipe)
-                probe_retort.get_loader(schema)
-                self._probe_retorts[retort_key] = probe_retort
+                source.retorts[v_key] = validating_retort
+            if source.skip_field_if_invalid:
+                p_key = probe_retort_key(source_type_loaders)
+                if p_key not in source.retorts:
+                    probe_retort = create_probe_retort(base_recipe)
+                    probe_retort.get_loader(schema)
+                    source.retorts[p_key] = probe_retort
 
         # Runtime state set by _prepare_for_load on each .load() call.
         self._merge_meta: MergeConfig | None = None
@@ -299,7 +302,7 @@ class Loader[T: DataclassInstance]:
                 nested_resolve=nested_resolve,
             )
             target_cls.__init__ = _make_patched_init(loader)  # type: ignore[method-assign]
-            target_cls.__post_init__ = make_validating_post_init(loader)  # type: ignore[attr-defined, arg-type]
+            target_cls.__post_init__ = make_validating_post_init(loader)  # type: ignore[attr-defined]
             return target_cls
 
         return decorator
@@ -374,21 +377,14 @@ class Loader[T: DataclassInstance]:
             self._merge_meta.sources = (source,)
             self._source = source
             self._type_loaders = resolve_type_loaders(source, self._type_loaders_arg)
-            self._probe_retort = None
-            if source.skip_field_if_invalid:
-                retort_key = make_retort_key(source, self._type_loaders)
-                # Pre-warm in __init__ guarantees this key exists; a miss means a logic error.
-                self._probe_retort = self._probe_retorts[retort_key]
+            self._probe_retort = source.retorts.get(probe_retort_key(self._type_loaders))
 
     def _build_validation_loader(self, source: Source) -> tuple[Callable[[JSONValue], DataclassInstance], ErrorContext]:
         """Build (validation_loader_fn, error_ctx) for *source*, reusing the pre-warmed retort."""
         source_type_loaders = resolve_type_loaders(source, self._type_loaders_arg)
-        retort_key = make_retort_key(source, source_type_loaders)
-        # Reuse the retort pre-built in __init__ (before __init__ was patched by decorator).
-        # The pre-warm loop in __init__ covers every source passed at construction time,
-        # using the same make_retort_key — stable across clone_source — so a miss here
-        # indicates a logic error in the pre-warm loop, not a legitimate code path.
-        validating_retort = self._validating_retorts[retort_key]
+        # Retort pre-built in __init__ and stored per-source; stable across clone_source
+        # (shallow copy shares the retorts dict). A KeyError here is a logic error.
+        validating_retort = source.retorts[validating_retort_key(source_type_loaders)]
         loader_fn = validating_retort.get_loader(self._schema)
         resolved_mask_secrets = resolve_mask_secrets(load_level=self._mask_secrets_arg)
         ctx = build_error_ctx(
@@ -513,7 +509,6 @@ class Loader[T: DataclassInstance]:
             schema=self._schema,
             debug=self.debug,
             secret_paths=self.secret_paths,
-            probe_retorts=self._probe_retorts,
         )
 
     def _validate_merged(self, data: "_MergedData[T]") -> T:

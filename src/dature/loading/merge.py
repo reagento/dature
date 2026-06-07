@@ -7,7 +7,6 @@ lives directly on ``Loader._do_load_single`` in ``loader.py``.
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass as stdlib_dataclass
-from typing import Any
 
 from dature.errors import DatureConfigError, SourceLoadError
 from dature.errors.formatter import handle_load_errors
@@ -179,7 +178,6 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     schema: type[T],
     debug: bool = False,
     secret_paths: frozenset[str] | None = None,
-    probe_retorts: dict[tuple[type, frozenset[Any]], Any] | None = None,
 ) -> _MergedData[T]:
     mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
     if secret_paths is None:
@@ -221,7 +219,6 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         secret_paths=secret_paths,
         mask_secrets=mask_secrets,
         on_merge_step=on_merge_step,
-        probe_retorts=probe_retorts,
     )
 
     field_group_paths: tuple[ResolvedFieldGroup, ...] = ()

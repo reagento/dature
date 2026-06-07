@@ -14,7 +14,7 @@ import time_machine
 
 import dature
 import dature.sources.base
-from dature import EnvFileSource, EnvSource, JsonSource, Loader, Source, load
+from dature import EnvFileSource, EnvSource, JsonSource, Loader, Source, V, load
 from dature.errors.exceptions import CrossRefExpandError, DatureConfigError, DatureError
 from dature.types import JSONValue
 
@@ -457,6 +457,28 @@ class TestLoaderFilelikeSources:
         result = Loader(JsonSource(file=stream), schema=Config, debug=False).load()
         assert result.name == "test"
         assert result.port == 3000
+
+
+class TestRetortCacheNoCollision:
+    """Regression: two sources of the same type with different per-source config
+    must each use their own retort, not share the first source's."""
+
+    def test_second_source_root_validator_fires(self) -> None:
+        """If the Loader shared retorts across same-type sources, source_b's
+        root_validator would be silently dropped and no error raised."""
+
+        @dataclass
+        class Config:
+            value: str
+
+        source_a = _Stub(data={"value": "bad"})
+        source_b = _Stub(
+            data={"value": "bad"},
+            root_validators=(V.root(lambda cfg: cfg.value != "bad", error_message="value must not be 'bad'"),),
+        )
+
+        with pytest.raises(DatureConfigError):
+            Loader(source_a, source_b, schema=Config, debug=False).load()
 
     def test_path_object_directly(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"

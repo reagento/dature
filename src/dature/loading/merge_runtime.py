@@ -20,7 +20,7 @@ in ``loading.source_loading`` so that ``source_loading`` can import
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
-from typing import Any, Protocol, TypeVar, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
 from adaptix import Retort
 
@@ -43,7 +43,7 @@ from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.skip_field_provider import FilterResult
 from dature.sources.base import Source, clone_source
-from dature.sources.retort import make_retort_key
+from dature.sources.retort import probe_retort_key
 from dature.types import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -298,7 +298,6 @@ class LoadCtx:
         secret_paths: frozenset[str] = frozenset(),
         mask_secrets: bool = False,
         on_merge_step: Callable[[MergeStepEvent], None] | None = None,
-        probe_retorts: dict[tuple[type, frozenset[Any]], Retort] | None = None,
     ) -> None:
         self.dataclass_name = dataclass_name
         self.field_merge_paths = field_merge_paths
@@ -308,7 +307,6 @@ class LoadCtx:
         self._secret_paths = secret_paths
         self._mask_secrets = mask_secrets
         self._on_merge_step = on_merge_step
-        self._probe_retorts = probe_retorts
         self._sources: list[Source] = list(merge_meta.sources)
 
         self._raw_dicts: list[JSONValue] = []
@@ -479,7 +477,7 @@ class LoadCtx:
                     source_loader_type=entry.loader_type,
                 )
 
-    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:  # noqa: C901
+    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:
         """Load a source with full pre-processing.
 
         *source_idx* is the position of the source in ``merge_meta.sources``.
@@ -571,9 +569,7 @@ class LoadCtx:
             error_ctx.source.encoding_for_errors(),
         )
 
-        probe_retort: Retort | None = None
-        if self._probe_retorts is not None:
-            probe_retort = self._probe_retorts.get(make_retort_key(source, type_loaders))
+        probe_retort = source.retorts.get(probe_retort_key(type_loaders))
         filter_result = apply_merge_skip_invalid(
             raw=raw,
             source=source,

@@ -120,8 +120,8 @@ class PatchContext(Protocol):
     validating: bool
     cls: type[DataclassInstance]
     original_post_init: Callable[..., None] | None
-    validation_loader: Callable[[JSONValue], DataclassInstance]
-    error_ctx: ErrorContext
+    validation_loader: Callable[[JSONValue], DataclassInstance] | None
+    error_ctx: ErrorContext | None
 
 
 def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
@@ -132,6 +132,14 @@ def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
         if ctx.validating:
             return
 
+        validation_loader = ctx.validation_loader
+        error_ctx = ctx.error_ctx
+        if validation_loader is None or error_ctx is None:
+            # Loader not yet initialised (e.g. Cls() called before first .load()).
+            if ctx.original_post_init is not None:
+                ctx.original_post_init(self)
+            return
+
         if ctx.original_post_init is not None:
             ctx.original_post_init(self)
 
@@ -139,8 +147,8 @@ def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
         try:
             obj_dict = coerce_flag_fields(asdict(self), ctx.cls)
             handle_load_errors(
-                func=lambda: ctx.validation_loader(obj_dict),
-                ctx=ctx.error_ctx,
+                func=lambda: validation_loader(obj_dict),
+                ctx=error_ctx,
             )
         finally:
             ctx.validating = False

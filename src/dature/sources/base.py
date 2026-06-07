@@ -86,7 +86,7 @@ class Source(abc.ABC):
     location_label: ClassVar[str]
     config_group: ClassVar[str | None] = None
 
-    retorts: "dict[tuple[type, frozenset[tuple[type, Any]]], Retort]" = field(
+    retorts: "dict[Any, Retort]" = field(
         default_factory=dict,
         init=False,
         repr=False,

@@ -1,6 +1,6 @@
 from dataclasses import fields
 from datetime import timedelta
-from typing import Any, cast, get_type_hints
+from typing import Any, Final, cast, get_type_hints
 
 from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort, loader, name_mapping
@@ -178,17 +178,28 @@ def create_validating_retort[T](
     )
 
 
-def make_retort_key(
-    source: Source,
-    resolved_type_loaders: TypeLoaderMap | None,
-) -> tuple[type[Source], frozenset[Any]]:
-    """Stable cache key for all retort dicts.
+_PLAIN_SENTINEL: Final[object] = object()
+_VALIDATING_SENTINEL: Final[object] = object()
+_PROBE_SENTINEL: Final[object] = object()
 
-    Keyed by source *type* rather than instance: prepare_sources clones
-    sources, so the object changes but the type stays the same.
-    """
-    loaders_key = frozenset(resolved_type_loaders.items()) if resolved_type_loaders is not None else frozenset()
-    return (type(source), loaders_key)
+
+def _loaders_frozenset(resolved_type_loaders: TypeLoaderMap | None) -> frozenset[Any]:
+    return frozenset(resolved_type_loaders.items()) if resolved_type_loaders is not None else frozenset()
+
+
+def make_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[object, frozenset[Any]]:
+    """Cache key for the basic (non-validating, non-probe) retort in ``source.retorts``."""
+    return (_PLAIN_SENTINEL, _loaders_frozenset(resolved_type_loaders))
+
+
+def validating_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[object, frozenset[Any]]:
+    """Cache key for the validating retort in ``source.retorts``."""
+    return (_VALIDATING_SENTINEL, _loaders_frozenset(resolved_type_loaders))
+
+
+def probe_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[object, frozenset[Any]]:
+    """Cache key for the probe retort in ``source.retorts``."""
+    return (_PROBE_SENTINEL, _loaders_frozenset(resolved_type_loaders))
 
 
 def transform_to_dataclass[T](
@@ -198,7 +209,7 @@ def transform_to_dataclass[T](
     *,
     resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> T:
-    key = make_retort_key(source, resolved_type_loaders)
+    key = make_retort_key(resolved_type_loaders)
     if key not in source.retorts:
         source.retorts[key] = create_retort(build_base_recipe(source, resolved_type_loaders=resolved_type_loaders))
     return source.retorts[key].load(data, schema)
@@ -211,7 +222,7 @@ def ensure_retort(
     *,
     resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> None:
-    key = make_retort_key(source, resolved_type_loaders)
+    key = make_retort_key(resolved_type_loaders)
     if key not in source.retorts:
         source.retorts[key] = create_retort(base_recipe)
     source.retorts[key].get_loader(cls)
