@@ -55,18 +55,15 @@ class DockerSecretsSource(FlatKeySource):
                 value_lines = raw.split("\n")
                 value_start = len(secret_name) + 3  # after "name = "
                 line_content = [f"{secret_name} = {value_lines[0]}", *value_lines[1:]]
-                first_caret = CaretSpan(start=value_start, end=value_start + len(value_lines[0]))
+                first_caret = None
                 if input_value is not None and len(value_lines) == 1:
-                    found = self._find_value_in_line(
+                    first_caret = self._find_value_in_line(
                         line_content[0],
                         input_value=input_value,
                         field_key=field_path[-1] if field_path else None,
                         search_from=value_start,
                     )
-                    if found is not None:
-                        first_caret = found
-                line_carets = [first_caret]
-                line_carets.extend(CaretSpan(start=0, end=len(line)) for line in value_lines[1:])
+                line_carets = self._value_line_carets(value_lines, value_start, first_caret)
         return [
             SourceLocation(
                 location_label=self.location_label,
