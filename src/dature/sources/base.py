@@ -3,7 +3,7 @@ import contextlib
 import copy
 import json
 import logging
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from dataclasses import MISSING, dataclass, field, fields
 from datetime import date, datetime, time
 from functools import cached_property
@@ -13,6 +13,7 @@ from typing import Any, ClassVar, Final, cast
 from adaptix import Retort, loader
 from adaptix.provider import Provider
 
+from dature.conditions import Condition
 from dature.config_paths import find_config
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars, expand_file_path
@@ -80,7 +81,7 @@ class Source(abc.ABC):
     skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
     tag: str | None = None
-    when: "Mapping[str, str | tuple[str, ...]] | None" = None
+    when: "Condition | None" = None
 
     format_name: ClassVar[str]
     location_label: ClassVar[str]
@@ -93,6 +94,15 @@ class Source(abc.ABC):
     )
 
     # --8<-- [end:load-metadata]
+    def __post_init__(self) -> None:
+        if self.when is not None and not isinstance(self.when, Condition):
+            msg = (
+                f"when= must be a Condition built with the When() DSL, "
+                f"got {type(self.when).__name__!r}. "
+                'Example: when=When("${APP_ENV}") == "prod"'
+            )
+            raise TypeError(msg)
+
     def __repr__(self) -> str:
         parts = []
         for f in fields(self):
@@ -414,6 +424,9 @@ class FileFieldMixin:
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:
+        _super = super()
+        if hasattr(_super, "__post_init__"):
+            _super.__post_init__()
         # Convert t-string Template to string (Python 3.14+)
         if TEMPLATE_SUPPORTED and isinstance(self.file, Template):
             self.file = template_to_str(self.file)

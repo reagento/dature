@@ -20,7 +20,7 @@ cfg = dature.load(
     dature.EnvFileSource(
         tag="secrets",
         file=str(dev_env_path),
-        when={"${APP_ENV}": ("dev", "local")},  # enabled for either value
+        when=dature.When("${APP_ENV}").in_("dev", "local"),
     ),
     schema=SecretsConfig,
 )

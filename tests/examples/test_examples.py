@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from tests.example_helpers import (
-    EXAMPLES_DIR,
+    EXAMPLE_ROOTS,
     normalize_output,
     resolve_placeholders,
     run_script,
@@ -12,13 +12,17 @@ from tests.example_helpers import (
 # When a .sh file shares stem and parent with a .py file, the .sh is the
 # canonical entry point (it usually invokes the .py with realistic args).
 # Skip the .py from direct execution to avoid double-running with mismatched argv.
-_sh_stems = {p.with_suffix("") for p in EXAMPLES_DIR.rglob("*.sh")}
+# Note: t_string.py is covered by this — t_string.sh silently exits 0 on Python < 3.14.
+_sh_stems = {p.with_suffix("") for root in EXAMPLE_ROOTS for p in root.rglob("*.sh")}
+
 # Examples needing live infrastructure (e.g. Vault) are exercised by the integration
 # suite under tests/integration/sources/ — keep them out of the generic runner.
 _INFRA_DIRS = {"remote_source"}
+
 example_scripts = sorted(
     p
-    for p in (*EXAMPLES_DIR.rglob("*.py"), *EXAMPLES_DIR.rglob("*.sh"))
+    for root in EXAMPLE_ROOTS
+    for p in (*root.rglob("*.py"), *root.rglob("*.sh"))
     if (p.suffix == ".sh" or p.with_suffix("") not in _sh_stems) and not _INFRA_DIRS.intersection(p.parts)
 )
 

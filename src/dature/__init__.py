@@ -1,4 +1,5 @@
 from dature._version import __version__
+from dature.conditions import When
 from dature.config import configure
 from dature.errors import excepthook as _excepthook  # noqa: F401
 from dature.field_path import F
@@ -37,6 +38,7 @@ __all__ = [
     "Toml11Source",
     "V",
     "VaultSource",
+    "When",
     "Yaml11Source",
     "Yaml12Source",
     "__version__",
