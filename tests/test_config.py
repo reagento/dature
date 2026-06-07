@@ -1,3 +1,4 @@
+import threading
 from typing import Any
 
 import pytest
@@ -220,6 +221,30 @@ class TestEnvLoading:
         _ConfigProxy.set_instance(None)
         group = getattr(config, attr_path[0])
         assert getattr(group, attr_path[1]) == expected
+
+
+@pytest.mark.usefixtures("_reset_config")
+class TestConcurrentConfigure:
+    @staticmethod
+    def test_concurrent_configure_no_lost_updates() -> None:
+        masks = [f"MASK_{i}" for i in range(20)]
+        errors: list[Exception] = []
+
+        def worker(mask: str) -> None:
+            try:
+                configure(masking={"mask": mask})
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker, args=(m,)) for m in masks]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors
+        # final mask must be one of the submitted values, not a corrupted mix
+        assert config.masking.mask in masks
 
 
 @pytest.mark.usefixtures("_reset_config")
