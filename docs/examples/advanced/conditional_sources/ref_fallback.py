@@ -24,7 +24,7 @@ class AppConfig:
 cfg = dature.load(
     dature.JsonSource(tag="cfg", file=str(config_path)),  # {"env": "dev"}
     dature.EnvSource(
-        tag="secrets", when={"${@cfg.env}": "prod"}
+        tag="secrets", when=dature.When("${@cfg.env}") == "prod"
     ),  # disabled: "dev" != "prod"
     dature.JsonSource(
         file=f"${{@secrets.remote_config:-{config_path}}}"

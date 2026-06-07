@@ -14,7 +14,7 @@ import time_machine
 
 import dature
 import dature.sources.base
-from dature import EnvFileSource, EnvSource, JsonSource, Loader, Source, load
+from dature import EnvFileSource, EnvSource, JsonSource, Loader, Source, When, load
 from dature.errors.exceptions import CrossRefExpandError, DatureConfigError, DatureError
 from dature.types import JSONValue
 
@@ -159,8 +159,8 @@ class TestLoaderCache:
         # the cache is automatically cleared and a fresh load runs.
         monkeypatch.setenv("APP_ENV", "dev")
         loader = Loader(
-            _Stub(data={"x": "prod"}, when={"${APP_ENV}": "prod"}),
-            _Stub(data={"x": "dev"}, when={"${APP_ENV}": "dev"}),
+            _Stub(data={"x": "prod"}, when=When("${APP_ENV}") == "prod"),
+            _Stub(data={"x": "dev"}, when=When("${APP_ENV}") == "dev"),
             schema=_WhenCfg,
             cache=True,
         )
@@ -487,8 +487,8 @@ class TestEagerWhen:
         """Mutually exclusive when= → exactly one source active."""
         monkeypatch.setenv("APP_ENV", env_value)
         result = load(
-            _Stub(data={"x": "prod_val"}, when={"${APP_ENV}": "prod"}),
-            _Stub(data={"x": "dev_val"}, when={"${APP_ENV}": "dev"}),
+            _Stub(data={"x": "prod_val"}, when=When("${APP_ENV}") == "prod"),
+            _Stub(data={"x": "dev_val"}, when=When("${APP_ENV}") == "dev"),
             schema=_WhenCfg,
         )
         assert result.x == expected_x
@@ -510,7 +510,7 @@ class TestEagerWhen:
 
         result = load(
             _Stub(data={"x": "default"}),
-            _Stub(data={"x": "override"}, when={"${APP_ENV}": "prod"}),
+            _Stub(data={"x": "override"}, when=When("${APP_ENV}") == "prod"),
             schema=_WhenCfg,
         )
         assert result.x == expected_x
@@ -530,8 +530,8 @@ class TestEagerWhen:
             monkeypatch.setenv("APP_ENV", env_value)
 
         result = load(
-            _Stub(data={"x": "prod_val"}, when={"${APP_ENV:-prod}": "prod"}),
-            _Stub(data={"x": "dev_val"}, when={"${APP_ENV:-prod}": "dev"}),
+            _Stub(data={"x": "prod_val"}, when=When("${APP_ENV:-prod}") == "prod"),
+            _Stub(data={"x": "dev_val"}, when=When("${APP_ENV:-prod}") == "dev"),
             schema=_WhenCfg,
         )
         assert result.x == expected_x
@@ -553,7 +553,7 @@ class TestEagerWhen:
 
         result = load(
             _Stub(data={"x": "fallback"}),
-            _Stub(data={"x": "from_stub"}, when={"${APP_ENV}": ("dev", "local")}),
+            _Stub(data={"x": "from_stub"}, when=When("${APP_ENV}").in_("dev", "local")),
             schema=_WhenCfg,
         )
         assert result.x == expected_x
@@ -580,15 +580,14 @@ class TestEagerWhen:
 
         result = load(
             _Stub(data={"x": "fallback"}),
-            _Stub(data={"x": "from_stub"}, when={"${A}": "1", "${B}": "2"}),
+            _Stub(data={"x": "from_stub"}, when=(When("${A}") == "1") & (When("${B}") == "2")),
             schema=_WhenCfg,
         )
         assert result.x == expected_x
 
-    @pytest.mark.parametrize("when_value", [None, {}])
-    def test_none_and_empty_always_enabled(self, when_value):
+    def test_none_always_enabled(self):
         result = load(
-            _Stub(data={"x": "ok"}, when=when_value),
+            _Stub(data={"x": "ok"}, when=None),
             schema=_WhenCfg,
         )
         assert result.x == "ok"
@@ -609,7 +608,7 @@ class TestEagerWhen:
                 return dict(self.data)
 
         result = load(
-            _Tracked(name="disabled", data={"x": "secret"}, when={"${APP_ENV}": "prod"}),
+            _Tracked(name="disabled", data={"x": "secret"}, when=When("${APP_ENV}") == "prod"),
             _Tracked(name="active", data={"x": "ok"}),
             schema=_WhenCfg,
         )
@@ -621,7 +620,7 @@ class TestEagerWhen:
         monkeypatch.setenv("APP_ENV", "dev")
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                _Stub(data={"x": "a"}, when={"${APP_ENV}": "prod"}),
+                _Stub(data={"x": "a"}, when=When("${APP_ENV}") == "prod"),
                 schema=_WhenCfg,
             )
         assert str(exc_info.value.exceptions[0]) == (
@@ -632,7 +631,7 @@ class TestEagerWhen:
         """Single enabled source after eager filter → _do_load_single path."""
         monkeypatch.setenv("APP_ENV", "prod")
         result = load(
-            _Stub(data={"x": "prod_val"}, when={"${APP_ENV}": "prod"}),
+            _Stub(data={"x": "prod_val"}, when=When("${APP_ENV}") == "prod"),
             schema=_WhenCfg,
         )
         assert result.x == "prod_val"
@@ -645,8 +644,8 @@ class TestLazyWhen:
         with patch.dict("os.environ", {"APP_ENV": "prod"}, clear=False):
             result = load(
                 EnvSource(tag="env"),
-                _Stub(data={"x": "conditional"}, when={"${@env.app_env}": "prod"}),
-                _Stub(data={"x": "fallback"}, when={"${@env.app_env}": "dev"}),
+                _Stub(data={"x": "conditional"}, when=When("${@env.app_env}") == "prod"),
+                _Stub(data={"x": "fallback"}, when=When("${@env.app_env}") == "dev"),
                 schema=_WhenCfg,
             )
         assert result.x == "conditional"
@@ -659,7 +658,7 @@ class TestLazyWhen:
             url: str = ""
 
         with patch.dict("os.environ", {"APP_ENV": "dev"}, clear=False):
-            disabled = _Stub(data={"x": "val"}, when={"${@env.app_env}": "prod"}, tag="data")
+            disabled = _Stub(data={"x": "val"}, when=When("${@env.app_env}") == "prod", tag="data")
             referencing = _StubUrl(url="${@data.x}")
 
             # disabled source contributes {} to context → "key not found" in sub-errors
@@ -675,7 +674,7 @@ class TestLazyWhen:
             url: str = ""
 
         with patch.dict("os.environ", {"APP_ENV": "dev"}, clear=False):
-            disabled = _Stub(data={"x": "val"}, when={"${@env.app_env}": "prod"}, tag="data")
+            disabled = _Stub(data={"x": "val"}, when=When("${@env.app_env}") == "prod", tag="data")
             referencing = _StubUrl(url="${@data.x:-fallback_url}")
             result = load(EnvSource(tag="env"), disabled, referencing, schema=_Cfg2)
         assert result.url == "fallback_url"
@@ -691,8 +690,8 @@ class TestWhenTagCollision:
             token: str = ""
 
         result = load(
-            _Stub(data={"token": "prod_token"}, tag="secrets", when={"${APP_ENV}": "prod"}),
-            _Stub(data={"token": "dev_token"}, tag="secrets", when={"${APP_ENV}": "dev"}),
+            _Stub(data={"token": "prod_token"}, tag="secrets", when=When("${APP_ENV}") == "prod"),
+            _Stub(data={"token": "dev_token"}, tag="secrets", when=When("${APP_ENV}") == "dev"),
             schema=_Cfg2,
         )
         assert result.token == "prod_token"
@@ -707,8 +706,8 @@ class TestWhenTagCollision:
 
         with pytest.raises(DatureError, match="Tag collision"):
             load(
-                _Stub(data={"x": "a"}, tag="secrets", when={"${APP_ENV}": "prod"}),
-                _Stub(data={"x": "b"}, tag="secrets", when={"${APP_ENV}": "prod"}),
+                _Stub(data={"x": "a"}, tag="secrets", when=When("${APP_ENV}") == "prod"),
+                _Stub(data={"x": "b"}, tag="secrets", when=When("${APP_ENV}") == "prod"),
                 _StubUrl(url="${@secrets.x}"),
                 schema=_Cfg2,
             )
@@ -735,7 +734,7 @@ class TestDecoratorFootgun:
         # Must NOT raise — env is unset, but filter happens at .load() time.
         loader = Loader(
             _Stub(data={"x": "fallback"}),
-            _Stub(data={"x": "prod_val"}, when={"${APP_ENV}": "prod"}),
+            _Stub(data={"x": "prod_val"}, when=When("${APP_ENV}") == "prod"),
             schema=_WhenCfg,
         )
 
@@ -749,7 +748,7 @@ class TestDecoratorFootgun:
         monkeypatch.delenv("APP_ENV", raising=False)
 
         loader = Loader(
-            _Stub(data={"x": "a"}, when={"${APP_ENV}": "prod"}),
+            _Stub(data={"x": "a"}, when=When("${APP_ENV}") == "prod"),
             schema=_WhenCfg,
         )
 
@@ -790,7 +789,7 @@ class TestValidationLoaderRuntimeSource:
             result = load(
                 EnvSource(tag="env"),
                 _Stub(data={"x": "from_a"}),
-                _StubB(data={"x": "from_b"}, when={"${@env.feat}": "on"}),
+                _StubB(data={"x": "from_b"}, when=When("${@env.feat}") == "on"),
                 schema=_CfgStr,
             )
         # B is lazy-disabled (FEAT=off), so A is the actual last_source.

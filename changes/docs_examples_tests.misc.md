@@ -1,0 +1,1 @@
+Re-enabled example tests for `docs/examples/` (broken since commit #126 moved files there). Both `examples/` and `docs/examples/` are now collected by `tests/examples/test_examples.py`. Fixed the stale path in `tests/integration/sources/test_remote_source_examples.py`.

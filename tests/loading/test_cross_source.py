@@ -9,7 +9,7 @@ from typing import ClassVar
 
 import pytest
 
-from dature import EnvSource, JsonSource, load
+from dature import EnvSource, JsonSource, When, load
 from dature.errors.exceptions import DatureError
 from dature.loading.cross_source import (
     build_cross_ref_plan,
@@ -462,14 +462,13 @@ class TestWhenHasCrossRefs:
         ("when", "expected"),
         [
             (None, False),
-            ({}, False),
-            ({"${APP_ENV}": "prod"}, False),
-            ({"${@env.mode}": "prod"}, True),
-            ({"${APP_ENV}": "prod", "${@env.mode}": "staging"}, True),
+            (When("${APP_ENV}") == "prod", False),
+            (When("${@env.mode}") == "prod", True),
+            ((When("${APP_ENV}") == "prod") & (When("${@env.mode}") == "staging"), True),
         ],
-        ids=["none", "empty", "env-only", "cross-ref", "mixed"],
+        ids=["none", "env-only", "cross-ref", "mixed"],
     )
-    def test_when_has_cross_refs(self, when: "dict[str, str] | None", expected: bool) -> None:
+    def test_when_has_cross_refs(self, when, expected: bool) -> None:
         @dataclass(kw_only=True, repr=False)
         class _S(Source):
             format_name = "s"
@@ -486,37 +485,34 @@ class TestEvaluateWhenEager:
     def test_none_when_returns_true(self) -> None:
         assert evaluate_when_eager(None) is True
 
-    def test_empty_when_returns_true(self) -> None:
-        assert evaluate_when_eager({}) is True
-
     def test_env_var_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("APP_ENV", "prod")
-        assert evaluate_when_eager({"${APP_ENV}": "prod"}) is True
+        assert evaluate_when_eager(When("${APP_ENV}") == "prod") is True
 
     def test_env_var_no_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("APP_ENV", "dev")
-        assert evaluate_when_eager({"${APP_ENV}": "prod"}) is False
+        assert evaluate_when_eager(When("${APP_ENV}") == "prod") is False
 
-    def test_tuple_expected_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_in_expected_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("APP_ENV", "staging")
-        assert evaluate_when_eager({"${APP_ENV}": ("prod", "staging")}) is True
+        assert evaluate_when_eager(When("${APP_ENV}").in_("prod", "staging")) is True
 
-    def test_tuple_expected_no_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_in_expected_no_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("APP_ENV", "dev")
-        assert evaluate_when_eager({"${APP_ENV}": ("prod", "staging")}) is False
+        assert evaluate_when_eager(When("${APP_ENV}").in_("prod", "staging")) is False
 
     def test_cross_ref_key_is_not_expanded(self) -> None:
-        assert evaluate_when_eager({"${@env.mode}": "prod"}) is False
+        assert evaluate_when_eager(When("${@env.mode}") == "prod") is False
 
     def test_multiple_conditions_all_must_pass(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("APP_ENV", "prod")
         monkeypatch.setenv("APP_REGION", "us")
-        assert evaluate_when_eager({"${APP_ENV}": "prod", "${APP_REGION}": "us"}) is True
-        assert evaluate_when_eager({"${APP_ENV}": "prod", "${APP_REGION}": "eu"}) is False
+        assert evaluate_when_eager((When("${APP_ENV}") == "prod") & (When("${APP_REGION}") == "us")) is True
+        assert evaluate_when_eager((When("${APP_ENV}") == "prod") & (When("${APP_REGION}") == "eu")) is False
 
     def test_unset_env_var_literal_returned(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("UNSET_VAR", raising=False)
-        assert evaluate_when_eager({"${UNSET_VAR}": "${UNSET_VAR}"}) is True
+        assert evaluate_when_eager(When("${UNSET_VAR}") == "${UNSET_VAR}") is True
 
 
 class TestEvaluateWhenLazy:
@@ -525,12 +521,12 @@ class TestEvaluateWhenLazy:
 
     def test_env_var_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("APP_ENV", "prod")
-        assert evaluate_when_lazy({"${APP_ENV}": "prod"}, {}) is True
+        assert evaluate_when_lazy(When("${APP_ENV}") == "prod", {}) is True
 
     def test_cross_ref_match(self) -> None:
         context = {"env": {"mode": "prod"}}
-        assert evaluate_when_lazy({"${@env.mode}": "prod"}, context) is True
+        assert evaluate_when_lazy(When("${@env.mode}") == "prod", context) is True
 
     def test_cross_ref_no_match(self) -> None:
         context = {"env": {"mode": "dev"}}
-        assert evaluate_when_lazy({"${@env.mode}": "prod"}, context) is False
+        assert evaluate_when_lazy(When("${@env.mode}") == "prod", context) is False

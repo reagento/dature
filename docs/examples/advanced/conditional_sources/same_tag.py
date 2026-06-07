@@ -30,12 +30,12 @@ class AppConfig:
 cfg = dature.load(
     dature.EnvFileSource(file=str(base_env_path)),  # always — DB_HOST, PORT
     dature.EnvSource(
-        tag="secrets", when={"${APP_ENV}": "prod"}
+        tag="secrets", when=dature.When("${APP_ENV}") == "prod"
     ),  # prod — VAULT_TOKEN from env
     dature.EnvFileSource(  # dev  — VAULT_TOKEN from file
         tag="secrets",
         file=str(vault_dev_path),
-        when={"${APP_ENV}": ("dev", "local")},
+        when=dature.When("${APP_ENV}").in_("dev", "local"),
     ),
     schema=AppConfig,
 )

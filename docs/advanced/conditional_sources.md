@@ -6,8 +6,9 @@ the network, or the dependency graph.
 
 ## Quick start
 
-Set `when=` to a mapping of template-string keys to expected values.
-The source is enabled if **every** key expands to the expected value.
+Set `when=` to a condition built with the `When()` DSL.
+`When("${TEMPLATE}") == "value"` is true when the template expands to that value.
+`when=None` (the default) means always enabled.
 
 === "Python"
 
@@ -21,34 +22,62 @@ The source is enabled if **every** key expands to the expected value.
     --8<-- "docs/examples/advanced/conditional_sources/sources/vault_dev.env"
     ```
 
-Keys support the same `${VAR}` and `${@tag.key}` expansion syntax as source
-init-fields.  `when=None` or `when={}` (the default) means always enabled.
+Templates support the same `${VAR}` and `${@tag.key}` expansion syntax as source
+init-fields.
 
-## Allowing multiple values
+## Combining conditions
 
-Pass a tuple to accept any of several values:
+=== "in_()"
 
-```python
---8<-- "docs/examples/advanced/conditional_sources/tuple_values.py"
-```
+    Use `.in_()` to enable the source when the template expands to **any** of several
+    values.  `APP_ENV=local` matches `("dev", "local")`, so the source is enabled.
 
-`APP_ENV=local` matches `("dev", "local")`, so the source is enabled.
+    ```python
+    --8<-- "docs/examples/advanced/conditional_sources/tuple_values.py"
+    ```
 
-## Combining conditions (AND)
+=== "not_in()"
 
-List multiple keys to require all of them to match simultaneously:
+    Use `.not_in()` to enable the source for every value **except** the listed ones.
+    Here the file source loads in all environments except prod.
 
-```python
---8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py"
-```
+    ```python
+    --8<-- "docs/examples/advanced/conditional_sources/not_in.py"
+    ```
 
-The source is enabled only when both `APP_ENV=prod` **and** `REGION` is `eu`
-or `us`.  If either key doesn't match, the source is skipped.
+=== "AND (&)"
+
+    Use `&` to require **all** conditions to match simultaneously.
+    The source is enabled only when both `APP_ENV=prod` and `REGION` is `eu` or `us`.
+
+    ```python
+    --8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py"
+    ```
+
+=== "OR (|)"
+
+    Use `|` to enable the source when **any** of the conditions matches.
+    `APP_ENV=staging` satisfies the second branch, so the source is enabled.
+
+    ```python
+    --8<-- "docs/examples/advanced/conditional_sources/or_conditions.py"
+    ```
+
+=== "NOT (~)"
+
+    Use `~` to invert a condition.
+    Here the source loads in every environment **except** prod.
+
+    ```python
+    --8<-- "docs/examples/advanced/conditional_sources/not_operator.py"
+    ```
+
+Conditions compose freely: `(When("${A}") == "x") & (~When("${B}").in_("y", "z"))`.
 
 ## Defaults for unset variables
 
-Use `${VAR:-default}` when the variable may not be set.  Both `when=` keys must
-share the **same** default so the conditions stay mutually exclusive:
+Use `${VAR:-default}` when the variable may not be set.  Both `when=` conditions must
+use the **same** default so they stay mutually exclusive:
 
 === "Python"
 
@@ -62,8 +91,8 @@ share the **same** default so the conditions stay mutually exclusive:
     --8<-- "docs/examples/advanced/conditional_sources/sources/vault_dev.env"
     ```
 
-Both keys expand to `"dev"` when `APP_ENV` is unset — exactly one source is
-enabled, no collision.
+Both conditions use the same default `"dev"` when `APP_ENV` is unset — exactly one source
+is enabled, no collision.
 
 ### Error: all sources filtered out
 
@@ -111,7 +140,7 @@ and both sources can safely share the same `tag="secrets"`.
 
 ## Toggle from another source
 
-Use `${@tag.key}` as a `when=` key when the toggle value lives in a file or
+Use `${@tag.key}` as a `When()` template when the toggle value lives in a file or
 another source rather than in an OS environment variable:
 
 === "Python"
@@ -211,8 +240,8 @@ when a downstream source references that tag:
     --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.stderr"
     ```
 
-Fix: use the same `:-default` in both `when=` keys so exactly one condition
-matches when the variable is unset.
+Fix: use the same `:-default` in both `when=` conditions so exactly one matches
+when the variable is unset.
 
 ## Interaction with `skip_if_broken`
 
@@ -220,15 +249,19 @@ matches when the variable is unset.
 `when=` condition is never opened, never loaded, and never considered broken.
 `skip_if_broken=True` (or the `skip_broken_sources=True` load-level flag) only
 applies to sources that *pass* the `when=` gate and then raise during loading
-(e.g. file not found).  In other words, `when=False` always takes priority over
-`skip_if_broken`.
+(e.g. file not found).  In other words, a source disabled by its `when=` condition
+always takes priority over `skip_if_broken`.
 
 ## Syntax reference
 
-| Key form | Section |
+| Condition | Section |
 |---|---|
-| `"${APP_ENV}": "prod"` | [Quick start](#quick-start) |
-| `"${APP_ENV}": ("dev", "local")` | [Multiple values](#allowing-multiple-values) |
-| `"${APP_ENV:-dev}": "prod"`, two keys with same default | [Defaults for unset variables](#defaults-for-unset-variables) |
-| `"${A}": …, "${B}": …` — multiple keys | [Combining conditions](#combining-conditions-and) |
-| `"${@tag.key}": "prod"` | [Toggle from another source](#toggle-from-another-source) |
+| `When("${APP_ENV}") == "prod"` | [Quick start](#quick-start) |
+| `When("${APP_ENV}") != "prod"` | [Combining conditions](#combining-conditions) |
+| `When("${APP_ENV}").in_("dev", "local")` | [Combining conditions](#combining-conditions) |
+| `When("${APP_ENV}").not_in("prod", "staging")` | [Combining conditions](#combining-conditions) |
+| `(When("${A}") == "x") & (When("${B}") == "y")` — AND | [Combining conditions](#combining-conditions) |
+| `(When("${A}") == "x") \| (When("${B}") == "y")` — OR | [Combining conditions](#combining-conditions) |
+| `~(When("${APP_ENV}") == "prod")` — NOT | [Combining conditions](#combining-conditions) |
+| `When("${APP_ENV:-dev}") == "prod"` — default when unset | [Defaults for unset variables](#defaults-for-unset-variables) |
+| `When("${@tag.key}") == "prod"` | [Toggle from another source](#toggle-from-another-source) |

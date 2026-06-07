@@ -1,4 +1,4 @@
 dature.errors.exceptions.DatureError: Tag collision: multiple sources share resolved_tag='secrets':
-  EnvSource(expand_env_vars='default', tag='secrets', when={'${APP_ENV:-prod}': 'prod'}, nested_resolve_strategy='flat')
+  EnvSource(expand_env_vars='default', tag='secrets', when=Match(template='${APP_ENV:-prod}', expected=('prod',)), nested_resolve_strategy='flat')
   envfile 'sources/vault_dev.env'
 Set an explicit tag= on at least one of them.

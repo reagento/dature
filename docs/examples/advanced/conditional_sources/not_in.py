@@ -1,4 +1,4 @@
-"""Conditional sources — dev environment."""
+"""Conditional sources — not_in() excludes specific values."""
 
 import os
 from dataclasses import dataclass
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import dature
 
-os.environ["APP_ENV"] = "dev"
+os.environ["APP_ENV"] = "staging"
 
 dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
@@ -17,13 +17,13 @@ class SecretsConfig:
 
 
 cfg = dature.load(
-    dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
     dature.EnvFileSource(
         tag="secrets",
         file=str(dev_env_path),
-        when=dature.When("${APP_ENV}").in_("dev", "local"),
+        when=dature.When("${APP_ENV}").not_in("prod"),  # disabled in prod only
     ),
     schema=SecretsConfig,
 )
 
+# APP_ENV=staging is not "prod" → source is active
 assert cfg.vault_token == "dev-token-from-file"

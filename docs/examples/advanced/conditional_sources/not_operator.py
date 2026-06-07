@@ -1,4 +1,4 @@
-"""Conditional sources — dev environment."""
+"""Conditional sources — NOT (~): enable when a condition does NOT match."""
 
 import os
 from dataclasses import dataclass
@@ -17,13 +17,13 @@ class SecretsConfig:
 
 
 cfg = dature.load(
-    dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
     dature.EnvFileSource(
         tag="secrets",
         file=str(dev_env_path),
-        when=dature.When("${APP_ENV}").in_("dev", "local"),
+        when=~(dature.When("${APP_ENV}") == "prod"),  # disabled in prod only
     ),
     schema=SecretsConfig,
 )
 
+# APP_ENV=dev is not "prod" → condition is True → source is active
 assert cfg.vault_token == "dev-token-from-file"

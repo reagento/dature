@@ -7,7 +7,7 @@ from typing import ClassVar, Literal
 
 import pytest
 
-from dature import JsonSource, Yaml12Source, configure, load
+from dature import JsonSource, When, Yaml12Source, configure, load
 from dature.errors.exceptions import DatureError
 from dature.loading.merge_runtime import (
     MergeConfig,
@@ -243,7 +243,7 @@ class TestEvalLazyWhen:
 
     def test_lazy_when_enabled_when_context_matches(self) -> None:
         result = load(
-            _StubSource(data={"value": "from-stub"}, when={"${@ctrl.mode}": "active"}, tag="stub"),
+            _StubSource(data={"value": "from-stub"}, when=When("${@ctrl.mode}") == "active", tag="stub"),
             _StubSource(data={"mode": "active"}, tag="ctrl"),
             schema=_ValCfg,
         )
@@ -251,7 +251,7 @@ class TestEvalLazyWhen:
 
     def test_lazy_when_disabled_when_context_not_matched(self) -> None:
         result = load(
-            _StubSource(data={"value": "should-not-load"}, when={"${@ctrl.mode}": "active"}, tag="stub"),
+            _StubSource(data={"value": "should-not-load"}, when=When("${@ctrl.mode}") == "active", tag="stub"),
             _StubSource(data={"mode": "inactive", "value": "fallback"}, tag="ctrl"),
             schema=_ValCfg,
         )
@@ -284,8 +284,8 @@ class TestCheckLazyTagCollision:
         # Both sources share resolved_tag="stubmr" (via format_name) and pass their lazy when=.
         with pytest.raises(DatureError, match="Tag collision among enabled sources"):
             load(
-                _StubSource(data={"value": "a"}, when={"${@ctrl.flag}": "yes"}),
-                _StubSourceB(data={"value": "b"}, when={"${@ctrl.flag}": "yes"}),
+                _StubSource(data={"value": "a"}, when=When("${@ctrl.flag}") == "yes"),
+                _StubSourceB(data={"value": "b"}, when=When("${@ctrl.flag}") == "yes"),
                 _StubSource(data={"flag": "yes"}, tag="ctrl"),
                 schema=_ValCfg,
             )
@@ -293,8 +293,8 @@ class TestCheckLazyTagCollision:
     def test_no_collision_when_one_lazy_disabled(self) -> None:
         # Only one source's lazy condition is met, so no collision.
         result = load(
-            _StubSource(data={"value": "active"}, when={"${@ctrl.flag}": "yes"}),
-            _StubSourceB(data={"value": "inactive"}, when={"${@ctrl.flag}": "no"}),
+            _StubSource(data={"value": "active"}, when=When("${@ctrl.flag}") == "yes"),
+            _StubSourceB(data={"value": "inactive"}, when=When("${@ctrl.flag}") == "no"),
             _StubSource(data={"flag": "yes"}, tag="ctrl"),
             schema=_ValCfg,
         )
