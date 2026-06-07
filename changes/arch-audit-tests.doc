@@ -1,0 +1,4 @@
+Add runtime load() tests for diamond cross-source dependency graphs (H3) and
+two tests for the mypy plugin (H6): one that verifies ``Config()`` is accepted
+without arguments when the plugin is active, and one that confirms mypy reports
+``call-arg`` errors when the plugin is absent.
