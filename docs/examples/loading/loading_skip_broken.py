@@ -15,6 +15,7 @@ class Config:
     debug: bool = False
 
 
+# --8<-- [start:included]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "does_not_exist.yaml",
@@ -23,6 +24,7 @@ config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "fallback.yaml"),
     schema=Config,
 )
+# --8<-- [end:included]
 
 assert config.host == "localhost"
 assert config.port == 8080

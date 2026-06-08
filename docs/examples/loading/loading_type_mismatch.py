@@ -7,15 +7,15 @@ import dature
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
-
+# --8<-- [start:included]
 @dataclass
 class Config:
     host: str
     port: int
     debug: bool = False
 
-
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "type_mismatch.yaml"),
     schema=Config,
 )
+# --8<-- [end:included]

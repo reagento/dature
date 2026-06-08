@@ -15,7 +15,9 @@ class Config:
     debug: bool = False
 
 
+# --8<-- [start:included]
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "missing_field.yaml"),
     schema=Config,
 )
+# --8<-- [end:included]

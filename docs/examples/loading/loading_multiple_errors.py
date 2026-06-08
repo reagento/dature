@@ -8,6 +8,7 @@ import dature
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
+# --8<-- [start:included]
 @dataclass
 class Config:
     host: str
@@ -19,3 +20,4 @@ dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "multiple_errors.yaml"),
     schema=Config,
 )
+# --8<-- [end:included]
