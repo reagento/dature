@@ -44,7 +44,7 @@ from dature.sources.presentation import (
 from dature.sources.presentation import (
     compute_line_carets as _compute_line_carets,
 )
-from dature.types import (
+from dature.type_aliases import (
     DotSeparatedPath,
     ExpandEnvVarsMode,
     FieldMapping,
@@ -54,8 +54,8 @@ from dature.types import (
     NestedConflict,
     TypeLoaderMap,
 )
+from dature.validators.aliases import FieldValidators
 from dature.validators.root import RootPredicate
-from dature.validators.types import FieldValidators
 
 logger = logging.getLogger("dature")
 
@@ -161,14 +161,16 @@ class Source(abc.ABC):
     def additional_loaders(self) -> "list[Provider]":
         return []
 
-    def validate(self) -> None:
-        """Hook called lazily inside ``LoadCtx.load`` after cross-ref interpolation.
+    def check_invariants(self) -> None:
+        """Called after cross-ref interpolation, before the source is loaded.
 
-        Default no-op. Subclasses with ``config_group`` set may override to
-        check post-merge invariants (required fields, mutually exclusive
-        options, etc.) — by the time this runs, all None instance fields
-        have been populated from ``dature.config.<config_group>`` and any
-        ``${@tag.key}`` refs in init-fields have been resolved.
+        Override in subclasses with ``config_group`` to assert post-merge invariants
+        (required fields present, mutually exclusive options, etc.).  By the time
+        this runs all ``None`` init-fields have been populated from
+        ``dature.config.<config_group>`` and any ``${@tag.key}`` refs resolved.
+
+        Raise ``ValueError`` with a descriptive message prefixed by the source class
+        name, e.g. ``"VaultSource: url is required"``.  Default: no-op.
         """
         return
 

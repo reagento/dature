@@ -1,4 +1,6 @@
-"""Error message formatting helpers."""
+"""Error display rendering helpers: field-path/location text and exception stringification."""
+
+import traceback
 
 from dature.config import config
 from dature.errors.loc_types import CaretSpan, SourceLocation
@@ -70,3 +72,10 @@ def format_location(
 
     lines.append(_format_fileline(loc, connector=connector, suffix=suffix))
     return lines
+
+
+def format_dature_error(exc: BaseException) -> str:
+    """Render a DatureError / DatureConfigError (ExceptionGroup) as plain text."""
+    if isinstance(exc, BaseExceptionGroup):
+        return "".join(traceback.format_exception(type(exc), exc, None))
+    return str(exc)

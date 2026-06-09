@@ -5,7 +5,7 @@ from typing import ClassVar, cast
 
 from dature.errors import CaretSpan, SourceLocation
 from dature.sources.flat_key import FlatKeySource
-from dature.types import (
+from dature.type_aliases import (
     ExpandEnvVarsMode,
     JSONValue,
     NestedConflict,

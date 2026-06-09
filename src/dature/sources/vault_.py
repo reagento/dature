@@ -3,7 +3,7 @@ from typing import ClassVar, Literal, cast
 
 from dature._deps import require_dep
 from dature.sources.remote import RemoteSource
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True, repr=False)
@@ -28,7 +28,7 @@ class VaultSource(RemoteSource):
             return f"{self.url}/v1/{self.mount_point}/{self.path}"
         return f"{self.url}/v1/{self.mount_point}/data/{self.path}"
 
-    def validate(self) -> None:
+    def check_invariants(self) -> None:
         if self.token is not None and (self.role_id is not None or self.secret_id is not None):
             msg = "VaultSource: token and role_id/secret_id are mutually exclusive"
             raise ValueError(msg)

@@ -5,7 +5,7 @@ from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from dature.expansion.env_expand import _expand_string_collect
-from dature.types import SystemConfigDirsArg
+from dature.type_aliases import SystemConfigDirsArg
 
 logger = logging.getLogger("dature")
 

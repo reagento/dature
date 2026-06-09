@@ -15,7 +15,7 @@ from dature.sources.presentation import (
     resolve_var_name,
     value_line_carets,
 )
-from dature.types import (
+from dature.type_aliases import (
     JSONValue,
     LoadRawResult,
     NestedConflict,

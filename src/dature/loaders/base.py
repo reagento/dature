@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
-from dature.types import URL, Base64UrlBytes, Base64UrlStr
+from dature.type_aliases import URL, Base64UrlBytes, Base64UrlStr
 
 _TIMEDELTA_RE = re.compile(
     r"^(?:(?P<weeks>-?\d+)\s+weeks?(?:,\s*|\s+|$))?"

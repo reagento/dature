@@ -20,13 +20,13 @@ class ClickSource(dature.CliSource):
     discriminator: str = "command"
     format_name: ClassVar[str] = "click"
 
-    def _parse_argv(self) -> dict[str, dature.types.JSONValue]:
+    def _parse_argv(self) -> dict[str, dature.type_aliases.JSONValue]:
         ctx = self.cli.make_context(
             info_name=self.cli.name or "cli",
             args=sys.argv[1:],
             resilient_parsing=False,
         )
-        out: dict[str, dature.types.JSONValue] = {}
+        out: dict[str, dature.type_aliases.JSONValue] = {}
         self._walk(ctx, self.cli, prefix=[], out=out)
         return out
 
@@ -36,7 +36,7 @@ class ClickSource(dature.CliSource):
         cmd: click.Command,
         *,
         prefix: list[str],
-        out: dict[str, dature.types.JSONValue],
+        out: dict[str, dature.type_aliases.JSONValue],
     ) -> None:
         sep = self.nested_sep
         for param in cmd.params:

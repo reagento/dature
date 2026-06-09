@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 
 from dature.sources.remote import RemoteSource
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True, repr=False)

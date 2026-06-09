@@ -17,7 +17,7 @@ from dature.loaders import (
 )
 from dature.loaders.yaml_ import time_from_int
 from dature.sources.file_source import FileSource
-from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
+from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 try:
     from ruamel.yaml.comments import CommentedMap, CommentedSeq

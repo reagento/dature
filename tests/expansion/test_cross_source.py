@@ -5,7 +5,7 @@ from dature.expansion.cross_source import (
     expand_cross_refs,
     find_refs,
 )
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 class TestFindRefs:

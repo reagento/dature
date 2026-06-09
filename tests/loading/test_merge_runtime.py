@@ -19,7 +19,7 @@ from dature.loading.merge_runtime import (
 )
 from dature.sources.base import Source
 from dature.sources.env_ import EnvSource
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 class TestApplySourceInitParamsNestedStrategy:

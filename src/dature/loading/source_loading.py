@@ -25,7 +25,7 @@ from dature.field_path import FieldPath
 from dature.loading.context import apply_skip_invalid, build_error_ctx
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
-from dature.types import JSONValue, LoadRawResult
+from dature.type_aliases import JSONValue, LoadRawResult
 
 
 @dataclass(frozen=True, slots=True)

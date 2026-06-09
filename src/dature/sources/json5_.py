@@ -17,7 +17,7 @@ from dature.loaders import (
 )
 from dature.loaders.json5_ import str_from_json_identifier
 from dature.sources.file_source import FileSource
-from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
+from dature.type_aliases import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 try:
     from json5.model import Identifier, JSONArray, JSONObject, String, Value

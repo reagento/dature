@@ -7,7 +7,7 @@ from pathlib import Path
 import dature
 from dature.loaders import Provider, bool_loader, float_from_string, loader
 from dature.sources.file_source import FileSource
-from dature.types import FileOrStream, JSONValue
+from dature.type_aliases import FileOrStream, JSONValue
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 

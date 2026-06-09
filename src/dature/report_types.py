@@ -9,7 +9,7 @@ snapshot ``_LoadCtxSnapshot`` lives in :mod:`dature.loading.merge_runtime`.
 
 from dataclasses import dataclass
 
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 # --8<-- [start:value-types]

@@ -4,7 +4,7 @@ from typing import get_type_hints
 from dature.field_path import FieldPath, extract_field_path, resolve_field_type
 from dature.protocols import DataclassInstance
 from dature.strategies.field import FieldMergeStrategy, resolve_field_strategy
-from dature.types import FieldGroupTuple, FieldMergeMap
+from dature.type_aliases import FieldGroupTuple, FieldMergeMap
 
 
 @dataclass(frozen=True, slots=True)

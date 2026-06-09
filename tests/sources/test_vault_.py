@@ -70,7 +70,7 @@ class TestVaultSourceValidation:
     )
     def test_validate_raises_when_invalid(self, kwargs, match):
         with pytest.raises(ValueError, match=match):
-            apply_source_config_group(VaultSource(**kwargs)).validate()
+            apply_source_config_group(VaultSource(**kwargs)).check_invariants()
 
     @pytest.mark.parametrize(
         ("env_vars", "instance_kwargs"),
@@ -91,7 +91,7 @@ class TestVaultSourceValidation:
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
         merged = apply_source_config_group(VaultSource(path="p", **instance_kwargs))
-        merged.validate()
+        merged.check_invariants()
 
 
 @pytest.mark.usefixtures("_reset_config")

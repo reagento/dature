@@ -9,7 +9,7 @@ from typing import ClassVar, Final
 from dature.errors import SourceLocation
 from dature.sources.base import Source
 from dature.sources.presentation import build_search_path
-from dature.types import JSONValue, NestedConflict
+from dature.type_aliases import JSONValue, NestedConflict
 
 _NOT_FOUND: Final[object] = object()
 

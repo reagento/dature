@@ -9,7 +9,7 @@ from adaptix._internal.provider.request_checkers import AlwaysTrueRequestChecker
 
 from dature.field_path import FieldPath
 from dature.protocols import DataclassInstance
-from dature.types import FieldMapping, JSONValue
+from dature.type_aliases import FieldMapping, JSONValue
 
 
 @dataclass(frozen=True, slots=True)

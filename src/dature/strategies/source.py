@@ -6,7 +6,7 @@ from dature.errors import DatureConfigError, SourceLoadError
 from dature.loading.merge_runtime import LoadCtx, SourceMergeStrategy
 from dature.merging.deep_merge import deep_merge_first_wins, raise_on_conflict
 from dature.sources.base import Source
-from dature.types import JSONValue, MergeStrategyName
+from dature.type_aliases import JSONValue, MergeStrategyName
 
 
 class SourceLastWins:

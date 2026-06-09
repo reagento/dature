@@ -12,7 +12,7 @@ from dature.loaders.base import (
     timedelta_from_string,
     url_from_string,
 )
-from dature.loaders.common import (
+from dature.loaders.scalars import (
     bool_loader,
     bytearray_from_json_string,
     bytearray_from_string,

@@ -27,7 +27,7 @@ from adaptix import Retort
 
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
-from dature.errors.formatter import handle_load_errors
+from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext, SkippedFieldSource
 from dature.load_report import (
     LoadReport,
@@ -36,7 +36,6 @@ from dature.load_report import (
     get_load_report,
 )
 from dature.loading.cache import _aligned_now, cache_is_fresh
-from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import (
     build_error_ctx,
     coerce_flag_fields,
@@ -44,6 +43,7 @@ from dature.loading.context import (
     merge_fields,
 )
 from dature.loading.cross_source import clone_with_interpolation, evaluate_when_eager, when_has_cross_refs
+from dature.loading.mask_config import resolve_mask_secrets
 from dature.loading.merge import _MergedData, load_and_merge
 from dature.loading.merge_runtime import (
     MergeConfig,
@@ -65,7 +65,7 @@ from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
-from dature.types import (
+from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
@@ -372,7 +372,7 @@ class Loader[T: DataclassInstance]:
             # where each source's context is already available; for single-mode there are
             # no cross-ref deps, so we can run it with an empty context immediately.
             source = clone_with_interpolation(source, {})
-            source.validate()
+            source.check_invariants()
             self._merge_meta.sources = (source,)
             self._source = source
             self._type_loaders = resolve_type_loaders(source, self._type_loaders_arg)

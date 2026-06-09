@@ -9,10 +9,10 @@ from collections.abc import Callable
 from dataclasses import dataclass as stdlib_dataclass
 
 from dature.errors import DatureConfigError, SourceLoadError
-from dature.errors.formatter import handle_load_errors
+from dature.errors.extraction import handle_load_errors
 from dature.load_report import LoadReport, _build_merge_report, attach_load_report
-from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import coerce_flag_fields
+from dature.loading.mask_config import resolve_mask_secrets
 from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent
 from dature.loading.retort import transform_to_dataclass
 from dature.loading.source_loading import enrich_skipped_errors
@@ -25,7 +25,7 @@ from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin
 from dature.sources.base import Source
 from dature.strategies.source import resolve_source_strategy
-from dature.types import JSONValue, TypeLoaderMap
+from dature.type_aliases import JSONValue, TypeLoaderMap
 
 logger = logging.getLogger("dature")
 

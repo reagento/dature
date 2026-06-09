@@ -5,7 +5,7 @@ from pathlib import Path
 from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
 from dature.sources.base import Source
-from dature.types import JSONValue, NestedConflict, NestedConflicts
+from dature.type_aliases import JSONValue, NestedConflict, NestedConflicts
 
 
 @dataclass(frozen=True)

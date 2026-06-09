@@ -9,7 +9,7 @@ from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
 from dature.loading.retort import transform_to_dataclass
 from dature.sources.base import string_value_loaders
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True)

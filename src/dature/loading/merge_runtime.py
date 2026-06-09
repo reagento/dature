@@ -33,7 +33,7 @@ from typing import Protocol, TypeVar, runtime_checkable
 
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
-from dature.errors.formatter import handle_load_errors
+from dature.errors.extraction import handle_load_errors
 from dature.errors.location import SkippedFieldSource, SourceContext
 from dature.field_path import FieldPath
 from dature.loading.context import build_error_ctx
@@ -51,7 +51,7 @@ from dature.merging.deep_merge import deep_merge_last_wins
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.sources.base import Source, clone_source
-from dature.types import (
+from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
@@ -119,7 +119,7 @@ def apply_source_config_group[T: Source](source: T) -> T:
     Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
 
-    Note: ``validate()`` is NOT called here — it runs lazily inside
+    Note: ``check_invariants()`` is NOT called here — it runs lazily inside
     ``LoadCtx.load`` after cross-ref interpolation has been applied so that
     string fields contain real values before invariants are checked.
     """
@@ -402,7 +402,7 @@ class LoadCtx:
         self._enabled_by_tag[tag] = source_idx
 
     def _prepare_source_and_check_enabled(self, source_idx: int) -> bool:
-        """Coordinate lazy cross-ref resolution, when= evaluation, and validate().
+        """Coordinate lazy cross-ref resolution, when= evaluation, and check_invariants().
 
         Returns False when the source's lazy ``when=`` condition is not met —
         the caller caches None and skips loading.
@@ -414,7 +414,7 @@ class LoadCtx:
         if not self._eval_lazy_when(source, context):
             return False
         self._check_lazy_tag_collision(source, source_idx)
-        source.validate()
+        source.check_invariants()
         return True
 
     def field_origins(self) -> tuple[FieldOrigin, ...]:
@@ -478,7 +478,7 @@ class LoadCtx:
         which tries sources in order and is meant to tolerate misses).
 
         Repeated calls with the same index return the cached result without
-        re-parsing. Cross-ref interpolation and ``validate()`` are applied
+        re-parsing. Cross-ref interpolation and ``check_invariants()`` are applied
         lazily on first call, before ``load_raw()`` is invoked.
         """
         if source_idx in self._cache:

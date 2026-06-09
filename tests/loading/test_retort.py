@@ -20,7 +20,7 @@ from dature.loading.retort import (
     transform_to_dataclass,
 )
 from dature.sources.base import Source
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True)

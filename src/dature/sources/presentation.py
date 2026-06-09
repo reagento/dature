@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from dature.errors import CaretSpan, LineRange, SourceLocation
-from dature.types import JSONValue, NestedConflict
+from dature.type_aliases import JSONValue, NestedConflict
 
 
 def empty_location(location_label: str, file_path: Path | None) -> SourceLocation:

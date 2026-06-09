@@ -8,7 +8,7 @@ from dature.cli.parsing import (
     import_attr,
 )
 from dature.errors import DatureError, DatureErrorGroup
-from dature.errors.format import format_dature_error
+from dature.errors.rendering import format_dature_error
 
 
 def cmd_validate(args: CliCommonArgs) -> int:

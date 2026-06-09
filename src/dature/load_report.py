@@ -16,7 +16,7 @@ from typing import Any
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 logger = logging.getLogger("dature")
 

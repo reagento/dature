@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import dature
 from dature.sources.base import Source
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True, repr=False)

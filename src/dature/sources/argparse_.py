@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import Any, ClassVar
 
 from dature.sources.cli_base import CliSource
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 _BoolActionTypes = (
     argparse._StoreTrueAction,  # noqa: SLF001

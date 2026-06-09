@@ -10,7 +10,7 @@ from dature import EnvFileSource, IniSource, JsonSource, Toml11Source, Yaml12Sou
 from dature.errors import DatureConfigError, EnvVarExpandError
 from dature.loading.context import build_error_ctx
 from dature.loading.source_loading import prepare_loaded_source
-from dature.types import LoadRawResult
+from dature.type_aliases import LoadRawResult
 
 
 class TestSkipBrokenSources:

@@ -22,12 +22,11 @@ from dature.loaders.base import (
     timedelta_from_string,
     url_from_string,
 )
-from dature.loaders.common import float_passthrough, int_from_string
+from dature.loaders.scalars import float_passthrough, int_from_string
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import ModelToDictProvider, SkipFieldProvider
 from dature.sources.base import Source
-from dature.type_utils import find_nested_dataclasses
-from dature.types import (
+from dature.type_aliases import (
     URL,
     Base64UrlBytes,
     Base64UrlStr,
@@ -36,6 +35,7 @@ from dature.types import (
     NameStyle,
     TypeLoaderMap,
 )
+from dature.type_utils import find_nested_dataclasses
 from dature.validators.base import (
     create_metadata_validator_providers,
     create_root_validator_providers,
