@@ -1,3 +1,145 @@
+## 0.21.0
+
+### Features
+
+- Added `When` DSL for expressive conditional source conditions.
+
+  `When("${VAR}") == "value"`, `.in_(...)`, `.not_in(...)`, and the `&`, `|`, `~` combinators enable OR, NOT, and nested logic that the old dict-based `when=` could not express.
+
+  ```python
+  from dature import When
+
+  # OR across different templates
+  when=(When("${APP_ENV}") == "prod") | (When("${REGION}") == "eu")
+
+  # NOT
+  when=~(When("${APP_ENV}") == "prod")
+
+  # AND (explicit)
+  when=(When("${APP_ENV}") == "prod") & When("${REGION}").in_("eu", "us")
+  ``` ([#when_dsl](https://github.com/reagento/dature/issues/when_dsl))
+
+### Bugfixes
+
+- fix retort cache collision when two sources of the same type have different
+  per-source config (name_style, field_mapping, validators, root_validators).
+  Validating and probe retorts are now stored in source.retorts per-instance using
+  sentinel keys instead of a Loader-level shared dict keyed by source type — clones
+  produced by prepare_sources share the retorts dict via copy.copy shallow copy so
+  pre-warmed retorts survive cloning without any extra work.
+
+  PatchContext.validation_loader / error_ctx declared non-optional in protocol
+  but initialised to None — calling Cls() in decorator mode before first .load()
+  raised TypeError. Protocol updated to reflect real nullability; new_post_init now
+  guards on None and runs original __post_init__ without validation in that case. ([#arch-audit-bugfix](https://github.com/reagento/dature/issues/arch-audit-bugfix))
+- Concurrent calls to ``configure()`` could silently lose each other's updates
+  due to an unguarded read-modify-write. ``_ConfigProxy`` now uses a
+  ``threading.RLock`` around ``ensure_loaded``, ``set_instance``, and the full
+  body of ``configure()`` so the read + merge + write is atomic. ([#arch-audit-config-thread-safety](https://github.com/reagento/dature/issues/arch-audit-config-thread-safety))
+- Missing optional dependency now raises a human-readable ImportError that names
+  the missing package and the install command (e.g. ``pip install 'dature[yaml]'``).
+  Previously the bare ``ModuleNotFoundError: No module named 'ruamel.yaml'`` gave no
+  hint about which dature extra to install. Affects yaml, toml, json5, and vault
+  sources. ([#arch-audit-optional-dep-errors](https://github.com/reagento/dature/issues/arch-audit-optional-dep-errors))
+
+### Docs
+
+- Add runtime load() tests for diamond cross-source dependency graphs (H3) and
+  two tests for the mypy plugin (H6): one that verifies ``Config()`` is accepted
+  without arguments when the plugin is active, and one that confirms mypy reports
+  ``call-arg`` errors when the plugin is absent.
+
+  Add a comment to ``load()`` documenting that in decorator mode the cache is
+  keyed on the enabled-source set, not on source content — stale data may be
+  returned if an env var changes value within the same TTL window. ([#arch-audit-tests](https://github.com/reagento/dature/issues/arch-audit-tests))
+- Restructured `conditional_sources` doc: merged "Allowing multiple values", "Combining conditions (AND)", and "OR conditions" into a single tabbed `## Combining conditions` section, one tab per operator (`in_()`, `not_in()`, `&`, `|`, `~`). Fixed stale dict-era wording and broken syntax-reference table links. ([#conditional_sources_doc_tabs](https://github.com/reagento/dature/issues/conditional_sources_doc_tabs))
+- Documentation examples have been moved from `examples/docs/` to `docs/examples/` to align with MkDocs conventions and simplify the build configuration. ([#docs_examples_move](https://github.com/reagento/dature/issues/docs_examples_move))
+
+### Refactoring
+
+- Reimplement field-alias expansion on adaptix's public `loader()` + `Chain.FIRST`
+  API instead of a custom internal `Provider`, removing all `adaptix._internal`
+  imports from `expansion/alias_provider.py`. ([#alias-provider-public-api](https://github.com/reagento/dature/issues/alias-provider-public-api))
+- Remove unused topo_order field from CrossRefPlan; keep cycle detection via _topological_sort. ([#arch-audit-dead-code](https://github.com/reagento/dature/issues/arch-audit-dead-code))
+- CLI/argparse error locations now show the argument value alongside the flag
+  (``--host localhost`` instead of just ``--host``) and place the caret under
+  the value, matching the detail level of env and docker-secrets locations.
+
+  Extracted the duplicated "value → line_content + line_carets" arithmetic from
+  EnvSource and DockerSecretsSource into a shared ``FlatKeySource._value_line_carets``
+  static method, eliminating the two copies of the same multi-line caret loop. ([#arch-audit-error-rendering](https://github.com/reagento/dature/issues/arch-audit-error-rendering))
+- Performance improvements and internal API cleanup (no behaviour change):
+
+  - ``make_retort_key(source, type_loaders)`` replaces two private functions
+    (``_make_retort_key`` in ``loader`` and ``_retort_cache_key`` in ``retort``).
+    ``source.retorts`` is now keyed by source *type* instead of schema type —
+    one retort instance per (source-type, type-loaders) pair instead of one per
+    (schema, type-loaders).
+  - ``create_retort`` / ``create_probe_retort`` accept a pre-built ``base_recipe``
+    directly; ``build_base_recipe`` is called once per source in ``Loader.__init__``
+    and shared across all three retort builders — was called 2-3× per source.
+  - ``Loader.secret_paths`` is forwarded into ``load_and_merge`` so
+    ``build_secret_paths`` is not re-run on every multi-source ``.load()``.
+  - Pre-warmed ``_probe_retorts`` are threaded through ``load_and_merge → LoadCtx``
+    so the merge path reuses the Loader cache instead of creating a new probe
+    retort per source per call.
+  - ``get_type_hints(load)`` is resolved once via ``@cache`` (``_load_type_hints``)
+    instead of three times per CLI run.
+  - ``build_secret_paths`` internal cache replaced with ``@lru_cache(maxsize=128)``
+    to bound memory when dynamically-created schemas accumulate.
+
+  ([#arch-audit-perf](https://github.com/reagento/dature/issues/arch-audit-perf))
+- Fix five stale docstring references to ``multi.py`` in ``merge_runtime.py`` — the module was renamed to ``merge.py`` during a previous loading-layer refactor and these were left behind. ([#arch-dead-multi-refs](https://github.com/reagento/dature/issues/arch-dead-multi-refs))
+- Extract ``prepare_loaded_source`` (+ ``PreparedSource``) into
+  ``loading/source_loading.py`` as a shared helper for the five identical
+  pre-processing steps that ``_do_load_single`` and ``LoadCtx.load`` previously
+  duplicated: error_ctx rebuild on nested_conflicts, file_content read, and
+  ``apply_skip_invalid`` filtering. Remove the now-dead ``apply_merge_skip_invalid``
+  wrapper from ``merge_runtime.py``. ([#arch-dedup-single-multi-load](https://github.com/reagento/dature/issues/arch-dedup-single-multi-load))
+- Rename internal modules for clarity: extraction/rendering in errors/, scalars/mask_config in loaders/loading/, validators/aliases,
+    type_aliases; formalize Source.check_invariants() hook with Protocol. ([#arch-naming-cleanup](https://github.com/reagento/dature/issues/arch-naming-cleanup))
+- Promote `Source._build_line_index` and `Source._compute_line_carets` to public methods.
+
+  Both methods are part of the error-location protocol and were already called
+  cross-package from `errors/location.py` with `# noqa: SLF001` suppressions.
+  Making them public removes the suppressions and makes the contract explicit for
+  authors of custom Source subclasses. ([#arch-public-line-index](https://github.com/reagento/dature/issues/arch-public-line-index))
+- Rename internal ``_LoadReport`` to ``_LoadCtxSnapshot`` in ``merge_runtime.py`` to
+  distinguish it from the public ``LoadReport`` aggregate. Add ownership docstrings
+  to ``report_types.py``, ``load_report.py``, and ``merge_runtime.py`` making the
+  three-layer separation explicit. ([#arch-report-types-ownership](https://github.com/reagento/dature/issues/arch-report-types-ownership))
+- Move `sources/retort.py` → `loading/retort.py`.
+
+  The retort-building engine (`build_base_recipe`, `create_validating_retort`,
+  `transform_to_dataclass`, retort cache keys) had no Source subclass and was
+  consumed exclusively by the `loading/` layer. Moving it there makes `sources/`
+  a clean leaf package of config-source classes only. ([#arch-retort-move](https://github.com/reagento/dature/issues/arch-retort-move))
+- Split ``sources/base.py`` (776 lines) into four focused modules: ``presentation.py``
+  (caret/line-range helpers as free functions), ``file_source.py`` (``FileFieldMixin``
+  and ``FileSource``), ``flat_key.py`` (``FlatKeySource``), and ``remote.py``
+  (``RemoteSource``). Test files mirrored accordingly (``test_file_source.py``,
+  ``test_remote.py``). ([#arch-split-base-sources](https://github.com/reagento/dature/issues/arch-split-base-sources))
+- Switch `Loader`, `Mediator`, `Provider` to adaptix's public API; funnel remaining
+  adaptix internals through a single `_adaptix_compat` shim so an adaptix version
+  bump only needs fixing in one place. ([#reduce-adaptix-internal-coupling](https://github.com/reagento/dature/issues/reduce-adaptix-internal-coupling))
+
+### Removals
+
+- The dict-based `when={"${VAR}": "value"}` syntax has been removed.
+
+  Migrate to the `When()` DSL:
+
+  | Old | New |
+  |-----|-----|
+  | `when={"${ENV}": "prod"}` | `when=When("${ENV}") == "prod"` |
+  | `when={"${ENV}": ("dev", "local")}` | `when=When("${ENV}").in_("dev", "local")` |
+  | `when={"${A}": "x", "${B}": "y"}` | `when=(When("${A}") == "x") & (When("${B}") == "y")` | ([#when_dict](https://github.com/reagento/dature/issues/when_dict))
+
+### Misc
+
+- [#ci-typing-extensions-compat](https://github.com/reagento/dature/issues/ci-typing-extensions-compat), [#docs_examples_tests](https://github.com/reagento/dature/issues/docs_examples_tests)
+
+
 ## 0.20.0
 
 ### Features

@@ -1,6 +1,0 @@
-Extract ``prepare_loaded_source`` (+ ``PreparedSource``) into
-``loading/source_loading.py`` as a shared helper for the five identical
-pre-processing steps that ``_do_load_single`` and ``LoadCtx.load`` previously
-duplicated: error_ctx rebuild on nested_conflicts, file_content read, and
-``apply_skip_invalid`` filtering. Remove the now-dead ``apply_merge_skip_invalid``
-wrapper from ``merge_runtime.py``.
