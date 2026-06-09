@@ -6,7 +6,7 @@ from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort, loader, name_mapping
 from adaptix.provider import Provider
 
-from dature.expansion.alias_provider import AliasProvider, resolve_nested_owner
+from dature.expansion.alias_provider import build_alias_loaders, resolve_nested_owner
 from dature.field_path import FieldPath
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
@@ -62,6 +62,7 @@ def get_adaptix_name_style(name_style: NameStyle | None) -> AdaptixNameStyle | N
 def get_name_mapping_providers(
     name_style: NameStyle | None,
     field_mapping: FieldMapping | None,
+    schema: type[DataclassInstance] | None = None,
 ) -> list[Provider]:
     providers: list[Provider] = []
 
@@ -88,7 +89,7 @@ def get_name_mapping_providers(
             else:
                 providers.append(name_mapping(owner, map=identity_map))
 
-        providers.append(AliasProvider(field_mapping))
+        providers.extend(build_alias_loaders(field_mapping, schema))
 
     return providers
 
@@ -119,6 +120,7 @@ def build_base_recipe(
     source: Source,
     *,
     resolved_type_loaders: TypeLoaderMap | None = None,
+    schema: type[DataclassInstance] | None = None,
 ) -> list[Provider]:
     user_loaders: list[Provider] = [
         loader(type_, func) for type_, func in (resolved_type_loaders or source.type_loaders or {}).items()
@@ -140,7 +142,7 @@ def build_base_recipe(
         *user_loaders,
         *source.additional_loaders(),
         *default_loaders,
-        *get_name_mapping_providers(source.name_style, source.field_mapping),
+        *get_name_mapping_providers(source.name_style, source.field_mapping, schema),
     ]
 
 
@@ -202,7 +204,7 @@ def probe_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[objec
     return (_PROBE_SENTINEL, _loaders_frozenset(resolved_type_loaders))
 
 
-def transform_to_dataclass[T](
+def transform_to_dataclass[T: DataclassInstance](
     source: Source,
     data: JSONValue,
     schema: type[T],
@@ -211,7 +213,9 @@ def transform_to_dataclass[T](
 ) -> T:
     key = make_retort_key(resolved_type_loaders)
     if key not in source.retorts:
-        source.retorts[key] = create_retort(build_base_recipe(source, resolved_type_loaders=resolved_type_loaders))
+        source.retorts[key] = create_retort(
+            build_base_recipe(source, resolved_type_loaders=resolved_type_loaders, schema=schema),
+        )
     return source.retorts[key].load(data, schema)
 
 

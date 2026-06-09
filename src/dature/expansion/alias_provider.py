@@ -1,15 +1,13 @@
-from collections.abc import Callable, Sequence
 from dataclasses import dataclass, is_dataclass
-from typing import cast, get_type_hints
+from functools import partial
+from typing import get_type_hints
 
-from adaptix._internal.common import Loader
-from adaptix._internal.morphing.request_cls import LoaderRequest
-from adaptix._internal.provider.essential import Mediator, Provider, RequestHandlerRegisterRecord
-from adaptix._internal.provider.request_checkers import AlwaysTrueRequestChecker
+from adaptix import Chain, Provider, loader
 
 from dature.field_path import FieldPath
 from dature.protocols import DataclassInstance
 from dature.type_aliases import FieldMapping, JSONValue
+from dature.type_utils import find_nested_dataclasses
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,21 +148,6 @@ def _build_alias_map(
     return alias_map
 
 
-def _get_entries_for_type(
-    alias_map: dict[type[DataclassInstance] | str, list[AliasMapEntry]],
-    target_type: type[DataclassInstance],
-) -> list[AliasMapEntry] | None:
-    entries = alias_map.get(target_type)
-    if entries is not None:
-        return entries
-
-    for owner, owner_entries in alias_map.items():
-        if isinstance(owner, str) and owner == target_type.__name__:
-            return owner_entries
-
-    return None
-
-
 def _navigate_to(data: dict[str, JSONValue], path: tuple[str, ...]) -> dict[str, JSONValue] | None:
     current = data
     for key in path:
@@ -210,33 +193,53 @@ def _transform_dict(data: JSONValue, entries: list[AliasMapEntry]) -> JSONValue:
     return result
 
 
-class AliasProvider(Provider):
-    def __init__(self, field_mapping: FieldMapping) -> None:
-        self._alias_map = _build_alias_map(field_mapping)
-
-    def _wrap_handler(
-        self,
-        mediator: Mediator[Loader[JSONValue]],
-        request: LoaderRequest,
-    ) -> Callable[[JSONValue], JSONValue]:
-        next_handler = mediator.provide_from_next()
-        target_type = request.last_loc.type
-
-        if not is_dataclass(target_type):
-            return next_handler
-
-        entries = _get_entries_for_type(
-            self._alias_map,
-            cast("type[DataclassInstance]", target_type),
+def _collect_reachable_dataclasses(schema: type[DataclassInstance]) -> dict[str, type]:
+    """Map ``__name__`` to type for *schema* and every dataclass reachable from its fields."""
+    by_name: dict[str, type] = {}
+    queue: list[type] = [schema]
+    while queue:
+        current = queue.pop()
+        if current.__name__ in by_name:
+            continue
+        by_name[current.__name__] = current
+        queue.extend(
+            nested
+            for field_type in get_type_hints(current).values()
+            for nested in find_nested_dataclasses(field_type)
+            if nested.__name__ not in by_name
         )
-        if entries is None:
-            return next_handler
+    return by_name
 
-        def aliased_handler(data: JSONValue) -> JSONValue:
-            transformed = _transform_dict(data, entries)
-            return next_handler(transformed)
 
-        return aliased_handler
+def build_alias_loaders(
+    field_mapping: FieldMapping,
+    schema: type[DataclassInstance] | None,
+) -> list[Provider]:
+    """Build public ``loader(owner, transform, Chain.FIRST)`` providers from *field_mapping*.
 
-    def get_request_handlers(self) -> Sequence[RequestHandlerRegisterRecord]:
-        return [(LoaderRequest, AlwaysTrueRequestChecker(), self._wrap_handler)]
+    Each owner dataclass gets one loader that rewrites raw-dict keys (alias renames and
+    cross-level moves) before the model loader runs. String owners are resolved to their
+    type by name against *schema* and its reachable dataclasses; a type owner takes
+    precedence over a string owner naming the same type.
+    """
+    alias_map = _build_alias_map(field_mapping)
+
+    resolved: dict[type, list[AliasMapEntry]] = {}
+    string_keyed: list[tuple[str, list[AliasMapEntry]]] = []
+    for owner, entries in alias_map.items():
+        if isinstance(owner, type):
+            resolved[owner] = entries
+        else:
+            string_keyed.append((owner, entries))
+
+    if string_keyed and schema is not None:
+        by_name = _collect_reachable_dataclasses(schema)
+        for name, entries in string_keyed:
+            owner_type = by_name.get(name)
+            if owner_type is not None and owner_type not in resolved:
+                resolved[owner_type] = entries
+
+    return [
+        loader(owner_type, partial(_transform_dict, entries=entries), Chain.FIRST)
+        for owner_type, entries in resolved.items()
+    ]

@@ -83,7 +83,7 @@ def apply_skip_invalid(
     allowed_fields = get_allowed_fields(skip_value=skip_field_if_invalid, schema=schema)
 
     if probe_retort is None:
-        probe_retort = create_probe_retort(build_base_recipe(source))
+        probe_retort = create_probe_retort(build_base_recipe(source, schema=schema))
 
     result = filter_invalid_fields(raw, probe_retort, schema, allowed_fields)
     for path in result.skipped_paths:

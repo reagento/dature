@@ -197,7 +197,7 @@ class Loader[T: DataclassInstance]:
         # retorts are visible on clones without any extra work.
         for source in sources:
             source_type_loaders = resolve_type_loaders(source, type_loaders)
-            base_recipe = build_base_recipe(source, resolved_type_loaders=source_type_loaders)
+            base_recipe = build_base_recipe(source, resolved_type_loaders=source_type_loaders, schema=schema)
             ensure_retort(source, schema, base_recipe, resolved_type_loaders=source_type_loaders)
             v_key = validating_retort_key(source_type_loaders)
             if v_key not in source.retorts:
