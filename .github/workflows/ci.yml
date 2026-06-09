@@ -277,7 +277,7 @@ jobs:
         run: uv sync --all-extras --dev --upgrade-package typing-extensions
 
       - name: Show resolved typing_extensions version
-        run: uv run python -c "import typing_extensions as te; print('typing_extensions', te.__version__)"
+        run: uv run python -c "from importlib.metadata import version; print('typing_extensions', version('typing-extensions'))"
 
       - name: Run tests
         run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples
