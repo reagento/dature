@@ -12,7 +12,6 @@ from dature.errors.exceptions import DatureError
 from dature.loading.merge_runtime import (
     MergeConfig,
     SourceParams,
-    apply_merge_skip_invalid,
     apply_source_config_group,
     apply_source_init_params,
     resolve_skip_invalid,
@@ -20,7 +19,7 @@ from dature.loading.merge_runtime import (
 )
 from dature.sources.base import Source
 from dature.sources.env_ import EnvSource
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 class TestApplySourceInitParamsNestedStrategy:
@@ -194,31 +193,6 @@ class TestResolveSkipInvalid:
         merge = MergeConfig(sources=(source,), skip_invalid_fields=merge_skip)
 
         assert resolve_skip_invalid(source, merge) is expected
-
-
-class TestApplyMergeSkipInvalid:
-    def test_skip_false_returns_raw(self, tmp_path: Path):
-        json_file = tmp_path / "c.json"
-        json_file.write_text("{}")
-
-        @dataclass
-        class Cfg:
-            name: str
-
-        source = JsonSource(file=json_file)
-        merge = MergeConfig(sources=(source,), skip_invalid_fields=False)
-        raw = {"name": "hello"}
-
-        result = apply_merge_skip_invalid(
-            raw=raw,
-            source=source,
-            merge_meta=merge,
-            schema=Cfg,
-            source_index=0,
-        )
-
-        assert result.cleaned_dict == raw
-        assert result.skipped_paths == []
 
 
 @dataclass(kw_only=True, repr=False)

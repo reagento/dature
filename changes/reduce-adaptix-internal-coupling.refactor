@@ -1,0 +1,3 @@
+Switch `Loader`, `Mediator`, `Provider` to adaptix's public API; funnel remaining
+adaptix internals through a single `_adaptix_compat` shim so an adaptix version
+bump only needs fixing in one place.

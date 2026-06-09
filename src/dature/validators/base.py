@@ -9,10 +9,10 @@ from adaptix.struct_trail import append_trail
 from dature.expansion.alias_provider import resolve_nested_owner
 from dature.field_path import FieldPath
 from dature.protocols import DataclassInstance
+from dature.validators.aliases import FieldValidators
 from dature.validators.collection import EachPredicate
 from dature.validators.predicate import AndPredicate, Predicate
 from dature.validators.root import RootPredicate
-from dature.validators.types import FieldValidators
 
 
 def _flatten(predicate: Predicate) -> list[Predicate]:

@@ -1,5 +1,12 @@
 """Merge-runtime triangle: ``MergeConfig`` ↔ ``SourceMergeStrategy`` ↔ ``LoadCtx``.
 
+Owns the internal accumulator machinery: ``LoadCtx`` collects per-source
+raw dicts, source entries, and error contexts during strategy execution, then
+exposes them via ``_LoadCtxSnapshot`` (an internal bridge to ``merge.py``,
+not a report type). Does *not* own the public ``LoadReport`` aggregate (that
+lives in ``dature.load_report``) nor the frozen leaf types (``SourceEntry`` /
+``FieldOrigin`` live in ``dature.report_types``).
+
 These three types form a mutual-annotation triangle that must live in one
 module to keep every import on the module top-level without ``TYPE_CHECKING``:
 
@@ -11,10 +18,12 @@ Value types touched by ``LoadCtx`` (``SourceEntry`` / ``FieldOrigin`` from
 ``report_types``, ``SkippedFieldSource`` from ``errors.location``) are
 imported on the module top-level — those modules no longer pull in
 ``merge_runtime`` (``LoadReport`` itself lives in ``dature.load_report``).
-Per-source helpers (``resolve_type_loaders``, ``should_skip_broken``,
-``resolve_skip_invalid``, ``apply_merge_skip_invalid``) live here rather than
-in ``loading.source_loading`` so that ``source_loading`` can import
-``MergeConfig`` at module level without forming a cycle.
+Per-source helpers that need ``MergeConfig`` (``resolve_type_loaders``,
+``should_skip_broken``, ``resolve_skip_invalid``) live here rather than in
+``loading.source_loading`` so that ``source_loading`` can import ``MergeConfig``
+at module level without forming a cycle. The shared deterministic load-tail
+(nested_conflicts rebuild, file_content read, skip_field_if_invalid filter)
+lives in ``source_loading.prepare_loaded_source``.
 """
 
 import logging
@@ -22,14 +31,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
 from typing import Protocol, TypeVar, runtime_checkable
 
-from adaptix import Retort
-
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
-from dature.errors.formatter import handle_load_errors
-from dature.errors.location import SkippedFieldSource, SourceContext, read_file_content
+from dature.errors.extraction import handle_load_errors
+from dature.errors.location import SkippedFieldSource, SourceContext
 from dature.field_path import FieldPath
-from dature.loading.context import apply_skip_invalid, build_error_ctx
+from dature.loading.context import build_error_ctx
 from dature.loading.cross_source import (
     CrossRefPlan,
     build_cross_ref_plan,
@@ -37,14 +44,14 @@ from dature.loading.cross_source import (
     evaluate_when_lazy,
     when_has_cross_refs,
 )
+from dature.loading.retort import probe_retort_key
+from dature.loading.source_loading import prepare_loaded_source
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.skip_field_provider import FilterResult
 from dature.sources.base import Source, clone_source
-from dature.sources.retort import probe_retort_key
-from dature.types import (
+from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
@@ -112,7 +119,7 @@ def apply_source_config_group[T: Source](source: T) -> T:
     Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
 
-    Note: ``validate()`` is NOT called here — it runs lazily inside
+    Note: ``check_invariants()`` is NOT called here — it runs lazily inside
     ``LoadCtx.load`` after cross-ref interpolation has been applied so that
     string fields contain real values before invariants are checked.
     """
@@ -220,35 +227,13 @@ def resolve_skip_invalid(
     return merge_meta.skip_invalid_fields
 
 
-def apply_merge_skip_invalid(
-    *,
-    raw: JSONValue,
-    source: Source,
-    merge_meta: MergeConfig,
-    schema: type[DataclassInstance],
-    source_index: int,
-    probe_retort: Retort | None = None,
-) -> FilterResult:
-    skip_value = resolve_skip_invalid(source, merge_meta)
-    if not skip_value:
-        return FilterResult(cleaned_dict=raw, skipped_paths=[])
-
-    return apply_skip_invalid(
-        raw=raw,
-        skip_field_if_invalid=skip_value,
-        source=source,
-        schema=schema,
-        log_prefix=f"[{schema.__name__}] Source {source_index}:",
-        probe_retort=probe_retort,
-    )
-
-
 @dataclass(frozen=True, slots=True)
-class _LoadReport:
-    """Snapshot of metadata accumulated by ``LoadCtx`` during strategy execution.
+class _LoadCtxSnapshot:
+    """Snapshot of accumulator state from ``LoadCtx`` after strategy execution.
 
-    Internal type — used by ``multi.py`` caller to drive transform_to_dataclass,
-    get_load_report, and error enrichment. Not exposed to merge strategies.
+    Internal bridge from ``LoadCtx`` to ``merge.py::load_and_merge`` — carries
+    raw_dicts, source_ctxs, and type_loaders needed to finalize the load. Not
+    a report type; not exposed to merge strategies.
     """
 
     raw_dicts: list[JSONValue]
@@ -285,7 +270,7 @@ class LoadCtx:
     Strategies call :meth:`load` for each source they want to consume; results
     are cached so repeated calls do not re-parse the source. Internal
     accumulators are exposed only via private API for built-in strategies and
-    the caller in ``multi.py``.
+    the caller in ``merge.py`` (``load_and_merge``).
     """
 
     def __init__(  # noqa:PLR0913
@@ -417,7 +402,7 @@ class LoadCtx:
         self._enabled_by_tag[tag] = source_idx
 
     def _prepare_source_and_check_enabled(self, source_idx: int) -> bool:
-        """Coordinate lazy cross-ref resolution, when= evaluation, and validate().
+        """Coordinate lazy cross-ref resolution, when= evaluation, and check_invariants().
 
         Returns False when the source's lazy ``when=`` condition is not met —
         the caller caches None and skips loading.
@@ -429,7 +414,7 @@ class LoadCtx:
         if not self._eval_lazy_when(source, context):
             return False
         self._check_lazy_tag_collision(source, source_idx)
-        source.validate()
+        source.check_invariants()
         return True
 
     def field_origins(self) -> tuple[FieldOrigin, ...]:
@@ -493,7 +478,7 @@ class LoadCtx:
         which tries sources in order and is meant to tolerate misses).
 
         Repeated calls with the same index return the cached result without
-        re-parsing. Cross-ref interpolation and ``validate()`` are applied
+        re-parsing. Cross-ref interpolation and ``check_invariants()`` are applied
         lazily on first call, before ``load_raw()`` is invoked.
         """
         if source_idx in self._cache:
@@ -554,37 +539,24 @@ class LoadCtx:
             self._cache[source_idx] = None
             return None
 
-        raw = load_result.data
-        if load_result.nested_conflicts:
-            error_ctx = build_error_ctx(
-                source,
-                self.dataclass_name,
-                secret_paths=self._secret_paths,
-                mask_secrets=self._mask_secrets,
-                nested_conflicts=load_result.nested_conflicts,
-            )
-
-        file_content = read_file_content(
-            error_ctx.source.file_path_for_errors(),
-            error_ctx.source.encoding_for_errors(),
-        )
-
         probe_retort = source.retorts.get(probe_retort_key(type_loaders))
-        filter_result = apply_merge_skip_invalid(
-            raw=raw,
+        prepared = prepare_loaded_source(
+            load_result=load_result,
             source=source,
-            merge_meta=self._merge_meta,
             schema=self._schema,
-            source_index=i,
+            dataclass_name=self.dataclass_name,
+            base_error_ctx=error_ctx,
+            skip_value=resolve_skip_invalid(source, self._merge_meta),
+            secret_paths=self._secret_paths,
+            mask_secrets=self._mask_secrets,
+            log_prefix=f"[{self.dataclass_name}] Source {i}:",
             probe_retort=probe_retort,
         )
-
-        for path in filter_result.skipped_paths:
-            self._skipped_fields.setdefault(path, []).append(
-                SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content),
-            )
-
-        raw = filter_result.cleaned_dict
+        raw = prepared.raw_data
+        error_ctx = prepared.error_ctx
+        file_content = prepared.file_content
+        for path, skipped_source in prepared.skipped:
+            self._skipped_fields.setdefault(path, []).append(skipped_source)
 
         format_name = type(source).format_name
 
@@ -629,7 +601,7 @@ class LoadCtx:
     def loaded_raw_dicts(self) -> list[JSONValue]:
         """Snapshot of all successfully-loaded raw dicts in load order.
 
-        Internal API for the caller in ``multi.py`` and built-in strategies
+        Internal API for the caller in ``merge.py`` and built-in strategies
         that need access to raw data post-load (e.g. ``SourceRaiseOnConflict``
         for conflict detection). Custom strategies should not need this.
         """
@@ -638,20 +610,20 @@ class LoadCtx:
     def loaded_source_ctxs(self) -> list[SourceContext]:
         """Snapshot of source-contexts for successfully-loaded sources.
 
-        Internal API for the caller in ``multi.py`` and built-in strategies
+        Internal API for the caller in ``merge.py`` and built-in strategies
         that need it (conflict detection, error reporting). Custom strategies
         should not need this.
         """
         return list(self._source_ctxs)
 
-    def build_report(self) -> _LoadReport:
+    def build_report(self) -> _LoadCtxSnapshot:
         """Snapshot of accumulated metadata after strategy execution.
 
-        Internal API consumed by ``multi.py`` to drive transform_to_dataclass,
-        get_load_report, and error enrichment. Custom strategies should not
-        need this.
+        Internal API consumed by ``merge.py`` (``load_and_merge``) to drive
+        transform_to_dataclass, get_load_report, and error enrichment. Custom
+        strategies should not need this.
         """
-        return _LoadReport(
+        return _LoadCtxSnapshot(
             raw_dicts=list(self._raw_dicts),
             source_entries=list(self._source_entries),
             source_ctxs=list(self._source_ctxs),

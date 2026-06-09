@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Any, ClassVar, Literal, TypedDict, cast
 
 from dature.protocols import DataclassInstance
-from dature.types import ExpandEnvVarsMode, NestedResolveStrategy, SystemConfigDirsArg, TypeLoaderMap
+from dature.type_aliases import ExpandEnvVarsMode, NestedResolveStrategy, SystemConfigDirsArg, TypeLoaderMap
 
 
 # --8<-- [start:masking-config]

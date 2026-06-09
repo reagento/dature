@@ -1,0 +1,6 @@
+Promote `Source._build_line_index` and `Source._compute_line_carets` to public methods.
+
+Both methods are part of the error-location protocol and were already called
+cross-package from `errors/location.py` with `# noqa: SLF001` suppressions.
+Making them public removes the suppressions and makes the contract explicit for
+authors of custom Source subclasses.

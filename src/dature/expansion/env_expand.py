@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dature.errors import EnvVarExpandError, MissingEnvVarError
 from dature.expansion.cross_source import CROSS_REF_OPEN
-from dature.types import ExpandEnvVarsMode, FilePath, JSONValue
+from dature.type_aliases import ExpandEnvVarsMode, FilePath, JSONValue
 
 # $VAR, ${VAR}, ${VAR:-default}, %VAR%, $$, %%
 # Note: ${@...} is intentionally excluded (negative lookahead) — cross-source refs

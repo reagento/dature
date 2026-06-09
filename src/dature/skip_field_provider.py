@@ -3,19 +3,24 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from typing import cast
 
-from adaptix import Retort
-from adaptix._internal.common import Loader
-from adaptix._internal.model_tools.definitions import DefaultValue, InputShape, Param, ParamKind
-from adaptix._internal.morphing.model.loader_provider import ModelLoaderProvider
-from adaptix._internal.morphing.request_cls import LoaderRequest
-from adaptix._internal.provider.essential import Mediator, Provider, RequestHandlerRegisterRecord
-from adaptix._internal.provider.located_request import LocatedRequest
-from adaptix._internal.provider.request_checkers import AlwaysTrueRequestChecker
-from adaptix._internal.provider.shape_provider import InputShapeRequest, provide_generic_resolved_shape
+from adaptix import Loader, Mediator, Provider, Retort
 from adaptix.load_error import LoadError
 
+from dature._adaptix_compat import (
+    AlwaysTrueRequestChecker,
+    DefaultValue,
+    InputShape,
+    InputShapeRequest,
+    LoaderRequest,
+    LocatedRequest,
+    ModelLoaderProvider,
+    Param,
+    ParamKind,
+    RequestHandlerRegisterRecord,
+    provide_generic_resolved_shape,
+)
 from dature.protocols import DataclassInstance
-from dature.types import NOT_LOADED, JSONValue, NotLoaded, ProbeDict
+from dature.type_aliases import NOT_LOADED, JSONValue, NotLoaded, ProbeDict
 
 
 class SkipFieldProvider(Provider):

@@ -1,7 +1,7 @@
 """Frozen value types describing a location inside a source file.
 
 Lives in its own module so that ``errors.exceptions`` (which embeds these in
-exception objects) and ``errors.message`` (which formats them for display) can
+exception objects) and ``errors.rendering`` (which formats them for display) can
 share the same definitions without an import cycle. Public consumers continue
 to import them via ``dature.errors`` thanks to the re-export there.
 """

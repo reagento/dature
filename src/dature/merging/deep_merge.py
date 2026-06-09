@@ -1,6 +1,6 @@
 from dature.errors import MergeConflictError, MergeConflictFieldError, SourceLocation
 from dature.errors.location import SourceContext, resolve_source_location
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 _MIN_CONFLICT_SOURCES = 2
 

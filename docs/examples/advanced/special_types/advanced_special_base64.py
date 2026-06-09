@@ -3,7 +3,7 @@
 from base64 import urlsafe_b64decode
 from dataclasses import dataclass
 
-from dature.types import Base64UrlBytes, Base64UrlStr
+from dature.type_aliases import Base64UrlBytes, Base64UrlStr
 
 encoded = "aGVsbG8gd29ybGQ="
 

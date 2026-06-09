@@ -1,7 +1,7 @@
 import pytest
 
 from dature.config import DatureConfig, MaskingConfig
-from dature.loading.common import resolve_mask_secrets
+from dature.loading.mask_config import resolve_mask_secrets
 
 
 @pytest.mark.parametrize(
@@ -26,6 +26,6 @@ def test_resolve_mask_secrets(
     expected: bool,
 ) -> None:
     fake_config = DatureConfig(masking=MaskingConfig(mask_secrets=config_default))
-    monkeypatch.setattr("dature.loading.common.config", fake_config)
+    monkeypatch.setattr("dature.loading.mask_config.config", fake_config)
     result = resolve_mask_secrets(load_level=load_level)
     assert result == expected

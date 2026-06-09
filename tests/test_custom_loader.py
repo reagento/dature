@@ -7,7 +7,7 @@ from typing import ClassVar
 
 from dature import FileSource, load
 from dature.loaders import Provider, bool_loader, float_from_string, loader
-from dature.types import FileOrStream, JSONValue
+from dature.type_aliases import FileOrStream, JSONValue
 
 
 @dataclass(kw_only=True)

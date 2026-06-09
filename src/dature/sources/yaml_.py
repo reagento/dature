@@ -16,8 +16,8 @@ from dature.loaders import (
     time_from_string,
 )
 from dature.loaders.yaml_ import time_from_int
-from dature.sources.base import FileSource
-from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
+from dature.sources.file_source import FileSource
+from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 try:
     from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -52,7 +52,7 @@ class _BaseYamlSource(FileSource, abc.ABC):
         with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", yaml.load(file))
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         return _build_yaml_line_map(content, Version(*self._yaml_version()))
 
 

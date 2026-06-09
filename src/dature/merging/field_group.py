@@ -3,7 +3,7 @@ from typing import Any
 
 from dature.errors import FieldGroupError, FieldGroupViolationError
 from dature.merging.predicate import ResolvedFieldGroup
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 _SENTINEL = object()
 

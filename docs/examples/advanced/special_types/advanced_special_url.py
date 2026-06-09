@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from dature.types import URL
+from dature.type_aliases import URL
 
 
 @dataclass

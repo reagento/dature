@@ -12,7 +12,7 @@ from dature import JsonSource, load
 from dature.errors import DatureConfigError, MergeConflictError
 from dature.field_path import F
 from dature.strategies import SourceFirstWins, SourceLastWins
-from dature.types import FieldMergeStrategyName
+from dature.type_aliases import FieldMergeStrategyName
 
 
 class TestFieldMergesFunction:

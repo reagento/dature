@@ -428,9 +428,9 @@ Constructor strips spaces and dashes, validates digit-only 12–19 chars, and ru
 
 | Type | Module | Description |
 |------|--------|-------------|
-| `URL` | `dature.types` | Alias for `urllib.parse.ParseResult`. Parsed from URL strings. |
-| `Base64UrlStr` | `dature.types` | `NewType` over `str`. Decoded from base64url-encoded strings. |
-| `Base64UrlBytes` | `dature.types` | `NewType` over `bytes`. Decoded from base64url-encoded strings. |
+| `URL` | `dature.type_aliases` | Alias for `urllib.parse.ParseResult`. Parsed from URL strings. |
+| `Base64UrlStr` | `dature.type_aliases` | `NewType` over `str`. Decoded from base64url-encoded strings. |
+| `Base64UrlBytes` | `dature.type_aliases` | `NewType` over `bytes`. Decoded from base64url-encoded strings. |
 
 ---
 
@@ -682,25 +682,25 @@ Frozen dataclass for file line ranges.
 
 | Alias | Definition | Module |
 |-------|------------|--------|
-| `FileLike` | `TextIOBase \| BufferedIOBase \| RawIOBase` | `dature.types` |
-| `FilePath` | `str \| Path` | `dature.types` |
-| `FileOrStream` | `Path \| FileLike` | `dature.types` |
-| `NameStyle` | `Literal["lower_snake", "upper_snake", "lower_camel", "upper_camel", "lower_kebab", "upper_kebab"]` | `dature.types` |
-| `ExpandEnvVarsMode` | `Literal["disabled", "default", "empty", "strict"]` | `dature.types` |
-| `FieldRef` | `FieldPath \| str \| int \| float \| bool \| list \| dict \| tuple \| set \| bytes \| None` | `dature.types` |
-| `FieldMapping` | `dict[FieldRef, str \| tuple[str, ...]]` | `dature.types` |
-| `FieldValidators` | `dict[FieldRef, ValidatorProtocol \| tuple[ValidatorProtocol, ...]]` | `dature.types` |
-| `FieldMergeMap` | `dict[FieldRef, FieldMergeStrategyName \| Callable[..., Any]]` | `dature.types` |
-| `FieldMergeCallable` | `Callable[[list[JSONValue]], JSONValue]` | `dature.types` |
-| `FieldMergeStrategyName` | `Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]` | `dature.types` |
+| `FileLike` | `TextIOBase \| BufferedIOBase \| RawIOBase` | `dature.type_aliases` |
+| `FilePath` | `str \| Path` | `dature.type_aliases` |
+| `FileOrStream` | `Path \| FileLike` | `dature.type_aliases` |
+| `NameStyle` | `Literal["lower_snake", "upper_snake", "lower_camel", "upper_camel", "lower_kebab", "upper_kebab"]` | `dature.type_aliases` |
+| `ExpandEnvVarsMode` | `Literal["disabled", "default", "empty", "strict"]` | `dature.type_aliases` |
+| `FieldRef` | `FieldPath \| str \| int \| float \| bool \| list \| dict \| tuple \| set \| bytes \| None` | `dature.type_aliases` |
+| `FieldMapping` | `dict[FieldRef, str \| tuple[str, ...]]` | `dature.type_aliases` |
+| `FieldValidators` | `dict[FieldRef, ValidatorProtocol \| tuple[ValidatorProtocol, ...]]` | `dature.type_aliases` |
+| `FieldMergeMap` | `dict[FieldRef, FieldMergeStrategyName \| Callable[..., Any]]` | `dature.type_aliases` |
+| `FieldMergeCallable` | `Callable[[list[JSONValue]], JSONValue]` | `dature.type_aliases` |
+| `FieldMergeStrategyName` | `Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]` | `dature.type_aliases` |
 | `FieldMergeStrategy` | `Protocol` with `__call__(values: list[JSONValue]) -> JSONValue` | `dature.strategies.field` |
-| `FieldGroupTuple` | `tuple[FieldRef, ...]` | `dature.types` |
-| `TypeLoaderMap` | `dict[type, Callable[..., Any]]` | `dature.types` |
-| `MergeStrategyName` | `Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]` | `dature.types` |
+| `FieldGroupTuple` | `tuple[FieldRef, ...]` | `dature.type_aliases` |
+| `TypeLoaderMap` | `dict[type, Callable[..., Any]]` | `dature.type_aliases` |
+| `MergeStrategyName` | `Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]` | `dature.type_aliases` |
 | `SourceMergeStrategy` | `Protocol` with `__call__(sources: Sequence[Source], ctx: LoadCtx) -> JSONValue` | `dature.strategies.source` |
 | `LoadCtx` | Helper passed to `SourceMergeStrategy.__call__`. Primary API: `ctx.merge(source=src, base=base, op=deep_merge_last_wins)` — applies one source to the running base, drives debug logs and `field_origins` automatically. Also: `ctx.load(src)` for raw access (cached), `ctx.field_origins()` for the accumulated `tuple[FieldOrigin, ...]`. | `dature.strategies.source` |
 | `MergeStepEvent` | Frozen dataclass: `step_idx: int`, `source: Source`, `source_data: JSONValue`, `before: JSONValue`, `after: JSONValue`. Delivered to `LoadCtx(on_merge_step=...)` callback for each `ctx.merge` call. | `dature.strategies.source` |
-| `NestedResolveStrategy` | `Literal["flat", "json"]` | `dature.types` |
-| `NestedResolve` | `dict[NestedResolveStrategy, tuple[FieldPath \| Any, ...]]` | `dature.types` |
-| `JSONValue` | `dict[str, JSONValue] \| list[JSONValue] \| str \| int \| float \| bool \| None` | `dature.types` |
-| `LoadRawResult` | `dataclass(data: JSONValue, nested_conflicts: NestedConflicts)` | `dature.types` |
+| `NestedResolveStrategy` | `Literal["flat", "json"]` | `dature.type_aliases` |
+| `NestedResolve` | `dict[NestedResolveStrategy, tuple[FieldPath \| Any, ...]]` | `dature.type_aliases` |
+| `JSONValue` | `dict[str, JSONValue] \| list[JSONValue] \| str \| int \| float \| bool \| None` | `dature.type_aliases` |
+| `LoadRawResult` | `dataclass(data: JSONValue, nested_conflicts: NestedConflicts)` | `dature.type_aliases` |

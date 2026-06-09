@@ -6,8 +6,7 @@ from adaptix import Retort
 
 from dature import V
 from dature.field_path import F
-from dature.sources.base import Source
-from dature.sources.retort import (
+from dature.loading.retort import (
     _PLAIN_SENTINEL,
     build_base_recipe,
     create_probe_retort,
@@ -20,7 +19,8 @@ from dature.sources.retort import (
     make_retort_key,
     transform_to_dataclass,
 )
-from dature.types import JSONValue
+from dature.sources.base import Source
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True)

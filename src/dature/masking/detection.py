@@ -6,8 +6,8 @@ from typing import Annotated, Union, get_args, get_origin, get_type_hints
 from dature.config import config
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
+from dature.type_aliases import TypeAnnotation
 from dature.type_utils import find_nested_dataclasses
-from dature.types import TypeAnnotation
 
 
 def _is_secret_type(field_type: TypeAnnotation) -> bool:

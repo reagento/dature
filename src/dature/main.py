@@ -8,7 +8,7 @@ from dature.loading.loader import Loader
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
-from dature.types import (
+from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,

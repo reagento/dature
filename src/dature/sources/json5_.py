@@ -16,8 +16,8 @@ from dature.loaders import (
     time_from_string,
 )
 from dature.loaders.json5_ import str_from_json_identifier
-from dature.sources.base import FileSource
-from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
+from dature.sources.file_source import FileSource
+from dature.type_aliases import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 try:
     from json5.model import Identifier, JSONArray, JSONObject, String, Value
@@ -56,7 +56,7 @@ class Json5Source(FileSource):
         with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", json5.load(file))
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         return _build_json5_line_map(content)
 
 

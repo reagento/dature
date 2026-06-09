@@ -9,8 +9,9 @@ from adaptix.provider import Provider
 from dature.errors import LineRange
 from dature.expansion.env_expand import expand_env_vars
 from dature.field_path import FieldPath
-from dature.sources.base import FileSource, string_value_loaders
-from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue
+from dature.sources.base import string_value_loaders
+from dature.sources.file_source import FileSource
+from dature.type_aliases import BINARY_IO_TYPES, TEXT_IO_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue
 
 
 @dataclass(kw_only=True, repr=False)
@@ -77,7 +78,7 @@ class IniSource(FileSource):
             target[parts[-1]] = self._normalize_section(dict(config[section]))
         return all_sections
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         parser = MetadataConfigParser()
         parser.read_string(content)
         result: dict[tuple[str, ...], LineRange] = {}
