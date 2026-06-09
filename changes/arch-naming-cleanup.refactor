@@ -1,2 +1,0 @@
-Rename internal modules for clarity: extraction/rendering in errors/, scalars/mask_config in loaders/loading/, validators/aliases,
-  type_aliases; formalize Source.check_invariants() hook with Protocol.

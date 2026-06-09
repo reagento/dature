@@ -1,3 +1,0 @@
-Reimplement field-alias expansion on adaptix's public `loader()` + `Chain.FIRST`
-API instead of a custom internal `Provider`, removing all `adaptix._internal`
-imports from `expansion/alias_provider.py`.

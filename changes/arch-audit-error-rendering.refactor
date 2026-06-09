@@ -1,7 +1,0 @@
-CLI/argparse error locations now show the argument value alongside the flag
-(``--host localhost`` instead of just ``--host``) and place the caret under
-the value, matching the detail level of env and docker-secrets locations.
-
-Extracted the duplicated "value → line_content + line_carets" arithmetic from
-EnvSource and DockerSecretsSource into a shared ``FlatKeySource._value_line_carets``
-static method, eliminating the two copies of the same multi-line caret loop.

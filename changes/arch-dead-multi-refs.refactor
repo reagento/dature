@@ -1,1 +1,0 @@
-Fix five stale docstring references to ``multi.py`` in ``merge_runtime.py`` — the module was renamed to ``merge.py`` during a previous loading-layer refactor and these were left behind.

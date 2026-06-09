@@ -1,5 +1,0 @@
-Split ``sources/base.py`` (776 lines) into four focused modules: ``presentation.py``
-(caret/line-range helpers as free functions), ``file_source.py`` (``FileFieldMixin``
-and ``FileSource``), ``flat_key.py`` (``FlatKeySource``), and ``remote.py``
-(``RemoteSource``). Test files mirrored accordingly (``test_file_source.py``,
-``test_remote.py``).
