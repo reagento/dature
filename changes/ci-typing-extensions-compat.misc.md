@@ -1,0 +1,1 @@
+Added CI job that runs unit tests against the latest stable `typing_extensions` on Linux for all supported Python versions.
