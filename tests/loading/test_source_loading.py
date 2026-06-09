@@ -8,6 +8,9 @@ import pytest
 
 from dature import EnvFileSource, IniSource, JsonSource, Toml11Source, Yaml12Source, load
 from dature.errors import DatureConfigError, EnvVarExpandError
+from dature.loading.context import build_error_ctx
+from dature.loading.source_loading import prepare_loaded_source
+from dature.types import LoadRawResult
 
 
 class TestSkipBrokenSources:
@@ -380,3 +383,42 @@ class TestEnvVarExpandErrorFormat:
                │   {" " * caret_pos}{"^" * caret_len}
                └── {source_label} '{file}', line {line}
         """)
+
+
+class TestPrepareLoadedSource:
+    """Unit tests for the shared per-source pre-processing tail."""
+
+    @pytest.mark.parametrize(
+        ("skip_value", "raw_data"),
+        [
+            pytest.param(None, {"name": "hello"}, id="skip_none_passes_through"),
+            pytest.param(False, {"name": "hello"}, id="skip_false_passes_through"),
+        ],
+    )
+    def test_no_filtering_returns_raw(self, tmp_path: Path, skip_value, raw_data):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+
+        @dataclass
+        class Cfg:
+            name: str
+
+        source = JsonSource(file=json_file)
+        error_ctx = build_error_ctx(source, "Cfg")
+        load_result = LoadRawResult(data=raw_data)
+
+        result = prepare_loaded_source(
+            load_result=load_result,
+            source=source,
+            schema=Cfg,
+            dataclass_name="Cfg",
+            base_error_ctx=error_ctx,
+            skip_value=skip_value,
+            secret_paths=frozenset(),
+            mask_secrets=False,
+            log_prefix="[Cfg]",
+            probe_retort=None,
+        )
+
+        assert result.raw_data == raw_data
+        assert result.skipped == []

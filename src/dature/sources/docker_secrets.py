@@ -5,7 +5,7 @@ from typing import ClassVar
 
 from dature.errors import CaretSpan, SourceLocation
 from dature.expansion.env_expand import expand_file_path
-from dature.sources.base import FlatKeySource
+from dature.sources.flat_key import FlatKeySource
 from dature.types import FilePath, JSONValue, NestedConflict
 
 

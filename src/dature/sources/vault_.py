@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar, Literal, cast
 
 from dature._deps import require_dep
-from dature.sources.base import RemoteSource
+from dature.sources.remote import RemoteSource
 from dature.types import JSONValue
 
 

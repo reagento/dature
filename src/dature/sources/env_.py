@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import ClassVar, cast
 
 from dature.errors import CaretSpan, LineRange, SourceLocation
-from dature.sources.base import FileFieldMixin, FlatKeySource
+from dature.sources.file_source import FileFieldMixin
+from dature.sources.flat_key import FlatKeySource
 from dature.types import (
     BINARY_IO_TYPES,
     TEXT_IO_TYPES,

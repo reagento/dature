@@ -1,3 +1,13 @@
+"""Public load report: aggregate description of a completed dature load.
+
+Owns ``LoadReport`` — the frozen aggregate that callers receive via
+:func:`get_load_report`. Holds tuples of leaf types (``SourceEntry``,
+``FieldOrigin``) from :mod:`dature.report_types`, applies secret masking, and
+attaches the report to the loaded instance. Not the same as
+``_LoadCtxSnapshot`` in :mod:`dature.loading.merge_runtime`, which is an
+internal accumulator bridge and not exposed to callers.
+"""
+
 import logging
 import warnings
 from dataclasses import dataclass

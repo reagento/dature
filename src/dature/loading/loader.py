@@ -28,7 +28,7 @@ from adaptix import Retort
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.formatter import handle_load_errors
-from dature.errors.location import ErrorContext, SkippedFieldSource, read_file_content
+from dature.errors.location import ErrorContext, SkippedFieldSource
 from dature.load_report import (
     LoadReport,
     _build_single_source_report,
@@ -38,7 +38,6 @@ from dature.load_report import (
 from dature.loading.cache import _aligned_now, cache_is_fresh
 from dature.loading.common import resolve_mask_secrets
 from dature.loading.context import (
-    apply_skip_invalid,
     build_error_ctx,
     coerce_flag_fields,
     make_validating_post_init,
@@ -61,7 +60,7 @@ from dature.loading.retort import (
     transform_to_dataclass,
     validating_retort_key,
 )
-from dature.loading.source_loading import enrich_skipped_errors
+from dature.loading.source_loading import enrich_skipped_errors, prepare_loaded_source
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
 from dature.protocols import DataclassInstance
@@ -403,7 +402,7 @@ class Loader[T: DataclassInstance]:
             return self._do_load_single()
         return self._do_load_multi()
 
-    def _do_load_single(self) -> T:  # noqa: C901
+    def _do_load_single(self) -> T:
         source: Source = self._source  # type: ignore[assignment]  # set by _prepare_for_load
         schema = self._schema
 
@@ -413,37 +412,24 @@ class Loader[T: DataclassInstance]:
             func=source.load_raw,
             ctx=error_ctx,
         )
-        raw_data = load_result.data
 
-        if load_result.nested_conflicts:
-            error_ctx = build_error_ctx(
-                source,
-                schema.__name__,
-                secret_paths=self.secret_paths,
-                mask_secrets=error_ctx.mask_secrets,
-                nested_conflicts=load_result.nested_conflicts,
-            )
-            self.error_ctx = error_ctx
-
-        filter_result = apply_skip_invalid(
-            raw=raw_data,
-            skip_field_if_invalid=source.skip_field_if_invalid,
+        prepared = prepare_loaded_source(
+            load_result=load_result,
             source=source,
             schema=schema,
+            dataclass_name=schema.__name__,
+            base_error_ctx=error_ctx,
+            skip_value=source.skip_field_if_invalid,
+            secret_paths=self.secret_paths,
+            mask_secrets=error_ctx.mask_secrets,
             log_prefix=f"[{schema.__name__}]",
             probe_retort=self._probe_retort,
         )
-        raw_data = filter_result.cleaned_dict
-
+        raw_data = prepared.raw_data
+        self.error_ctx = error_ctx = prepared.error_ctx
         skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-        file_content = read_file_content(
-            error_ctx.source.file_path_for_errors(),
-            error_ctx.source.encoding_for_errors(),
-        )
-        for path in filter_result.skipped_paths:
-            skipped_fields.setdefault(path, []).append(
-                SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content),
-            )
+        for path, skipped_source in prepared.skipped:
+            skipped_fields.setdefault(path, []).append(skipped_source)
 
         format_name = source.format_name
         report: LoadReport | None = None

@@ -1,9 +1,10 @@
-"""Frozen value types describing a load report.
+"""Frozen leaf value types for load reports.
 
-``SourceEntry`` and ``FieldOrigin`` describe individual entries of a load
-report. The aggregate ``LoadReport`` itself lives in :mod:`dature.load_report`
-next to its helpers — keeping this module free of any ``merge_runtime``
-import.
+Owns ``SourceEntry`` and ``FieldOrigin`` — the atomic entries that describe
+individual sources and field origins within a report. Intentionally free of
+any ``merge_runtime`` import (no cycle). The public aggregate
+``LoadReport`` lives in :mod:`dature.load_report`; the internal accumulator
+snapshot ``_LoadCtxSnapshot`` lives in :mod:`dature.loading.merge_runtime`.
 """
 
 from dataclasses import dataclass

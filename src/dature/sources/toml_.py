@@ -16,7 +16,7 @@ from dature.loaders import (
     optional_from_empty_string,
 )
 from dature.loaders.toml_ import time_passthrough
-from dature.sources.base import FileSource
+from dature.sources.file_source import FileSource
 from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 type _TomlVersionStr = Literal["1.0.0", "1.1.0"]

@@ -9,7 +9,8 @@ from adaptix.provider import Provider
 from dature.errors import LineRange
 from dature.expansion.env_expand import expand_env_vars
 from dature.field_path import FieldPath
-from dature.sources.base import FileSource, string_value_loaders
+from dature.sources.base import string_value_loaders
+from dature.sources.file_source import FileSource
 from dature.types import BINARY_IO_TYPES, TEXT_IO_TYPES, ExpandEnvVarsMode, FileOrStream, JSONValue
 
 

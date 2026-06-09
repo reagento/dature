@@ -1,0 +1,4 @@
+Rename internal ``_LoadReport`` to ``_LoadCtxSnapshot`` in ``merge_runtime.py`` to
+distinguish it from the public ``LoadReport`` aggregate. Add ownership docstrings
+to ``report_types.py``, ``load_report.py``, and ``merge_runtime.py`` making the
+three-layer separation explicit.
