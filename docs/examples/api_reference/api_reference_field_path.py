@@ -1,3 +1,4 @@
+# --8<-- [start:setup]
 from dataclasses import dataclass
 
 import dature
@@ -13,7 +14,7 @@ class Database:
 class Config:
     database: Database
     host: str
-
+# --8<-- [end:setup]
 
 # --8<-- [start:example]
 path_eager = dature.F[Config].host

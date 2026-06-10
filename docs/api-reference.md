@@ -368,7 +368,7 @@ All validators accept an optional `error_message` parameter to override the defa
 ### Root Validator (`dature.validators.root`)
 
 ```python
---8<-- "src/dature/validators/root.py:root-validator"
+--8<-- "src/dature/validators/root.py"
 ```
 
 | Field | Type | Default | Description |
