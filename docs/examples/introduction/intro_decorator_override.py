@@ -1,5 +1,4 @@
-"""Decorator mode — explicit __init__ args override loaded values."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,11 +13,11 @@ class Config:
     host: str
     port: int
     debug: bool = False
+# --8<-- [end:setup]
 
-
-# --8<-- [start:override]
-config = Config(port=9090)  # host from source, port overridden
-# --8<-- [end:override]
+# --8<-- [start:example]
+config = Config(port=9090)
 
 assert config.host == "localhost"
 assert config.port == 9090
+# --8<-- [end:example]

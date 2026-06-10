@@ -9,7 +9,9 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_yaml.py"
+    --8<-- "docs/examples/introduction/format_yaml.py:setup"
+    --8<-- "docs/examples/introduction/format_yaml.py:example"
+    --8<-- "docs/examples/introduction/format_yaml.py:example-assertations"
     ```
 
 === "Decorator mode"
@@ -19,13 +21,14 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/intro_decorator_file.py"
+    --8<-- "docs/examples/introduction/intro_decorator_file.py:setup"
+    --8<-- "docs/examples/introduction/intro_decorator_file.py:example"
     ```
 
     Explicit arguments to `__init__` take priority over loaded values:
 
     ```python
-    --8<-- "docs/examples/introduction/intro_decorator_override.py:override"
+    --8<-- "docs/examples/introduction/intro_decorator_override.py:example"
     ```
 
 ## All Formats
@@ -39,7 +42,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_yaml.py"
+    --8<-- "docs/examples/introduction/format_yaml.py:example"
     ```
 
 === "JSON"
@@ -49,7 +52,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_json.py"
+    --8<-- "docs/examples/introduction/format_json.py:example"
     ```
 
 === "JSON5"
@@ -59,7 +62,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_json5.py"
+    --8<-- "docs/examples/introduction/format_json5.py:example"
     ```
 
 === "TOML"
@@ -69,7 +72,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_toml.py"
+    --8<-- "docs/examples/introduction/format_toml.py:example"
     ```
 
 === "INI"
@@ -79,7 +82,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_ini.py"
+    --8<-- "docs/examples/introduction/format_ini.py:example"
     ```
 
 === "ENV"
@@ -89,7 +92,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_env.py"
+    --8<-- "docs/examples/introduction/format_env.py:example"
     ```
 
 === "Docker Secrets"
@@ -102,7 +105,7 @@ Use the specific Source subclass for your format. Here's the same config loaded 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_docker.py"
+    --8<-- "docs/examples/introduction/format_docker.py:example"
     ```
 
 See the full list of Source classes and their extra dependencies on the [main page](index.md#supported-formats).
@@ -144,7 +147,8 @@ See the full list of Source classes and their extra dependencies on the [main pa
 `file` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass):
 
 ```python
---8<-- "docs/examples/introduction/intro_file_like.py"
+--8<-- "docs/examples/introduction/intro_file_like.py:setup"
+--8<-- "docs/examples/introduction/intro_file_like.py:example"
 ```
 
 !!! note
