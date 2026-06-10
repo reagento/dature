@@ -1,5 +1,4 @@
-"""FIRST_WINS — first source wins on conflict."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,8 +12,9 @@ class Config:
     host: str
     port: int
     tags: list[str]
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -25,3 +25,4 @@ config = dature.load(
 assert config.host == "localhost"
 assert config.port == 3000
 assert config.tags == ["default"]
+# --8<-- [end:example]

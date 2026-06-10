@@ -1,5 +1,4 @@
-"""Root validator — error example."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,8 +19,9 @@ def check_debug_not_on_production(obj: Config) -> bool:
     if obj.host != "localhost" and obj.debug:
         return False
     return True
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "validation_root_invalid.yaml",
@@ -36,3 +36,4 @@ dature.load(
     ),
     schema=Config,
 )
+# --8<-- [end:example]

@@ -1,5 +1,4 @@
-"""Heuristic masking — random tokens are masked in error messages."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -8,14 +7,17 @@ import dature
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 
 @dataclass
 class Config:
     connection_id: Literal["conn-1", "conn-2"]
     host: str
 
-
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_heuristic.yaml"),
     schema=Config,
 )
+# --8<-- [end:example]

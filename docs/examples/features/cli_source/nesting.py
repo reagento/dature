@@ -1,5 +1,4 @@
-"""Nesting via double underscore in dest names."""
-
+# --8<-- [start:setup]
 import argparse
 from dataclasses import dataclass, field
 
@@ -20,8 +19,9 @@ class Config:
 parser = argparse.ArgumentParser()
 parser.add_argument("--db--host")
 parser.add_argument("--db--port", type=int)
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 def main() -> None:
     config = dature.load(dature.ArgparseSource(parser=parser), schema=Config)
     print(config)
@@ -29,3 +29,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# --8<-- [end:example]

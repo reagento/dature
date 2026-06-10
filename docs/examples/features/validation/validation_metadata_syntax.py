@@ -1,5 +1,4 @@
-"""Metadata validators syntax — single predicate vs tuple vs `&` composition."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 
 import dature
@@ -10,16 +9,15 @@ from dature import V
 class Config:
     host: str
     port: int
+# --8<-- [end:setup]
 
-
-# --8<-- [start:syntax]
+# --8<-- [start:example]
 validators = {
-    dature.F[Config].port: (V > 0) & (V < 65536),  # composed with & (preferred)
-    dature.F[Config].host: V.len() >= 1,  # single predicate
+    dature.F[Config].port: (V > 0) & (V < 65536),
+    dature.F[Config].host: V.len() >= 1,
 }
 
-# alternative: tuple of predicates — equivalent to &
 validators_tuple = {
     dature.F[Config].port: (V > 0, V < 65536),
 }
-# --8<-- [end:syntax]
+# --8<-- [end:example]

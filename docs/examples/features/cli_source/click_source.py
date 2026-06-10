@@ -1,9 +1,4 @@
-"""Custom CliSource backed by click — copy into your project.
-
-click is not a dature dependency; this script exits silently if click isn't
-installed in the current environment.
-"""
-
+# --8<-- [start:setup]
 import sys
 from dataclasses import dataclass
 from typing import ClassVar
@@ -11,11 +6,13 @@ from typing import ClassVar
 import click
 import dature
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
+
 
 @dataclass(kw_only=True, repr=False)
 class ClickSource(dature.CliSource):
-    """CLI source backed by a click Group/Command. Supports nested groups."""
-
     cli: click.Command
     discriminator: str = "command"
     format_name: ClassVar[str] = "click"
@@ -52,8 +49,6 @@ class ClickSource(dature.CliSource):
         if not isinstance(cmd, click.Group):
             return
 
-        # Click 8.x stores the chosen subcommand name in ctx.protected_args[0]
-        # (deprecated in 9.0 — ctx.args will contain everything in 9.x).
         rest = [*getattr(ctx, "protected_args", ()), *ctx.args]
         if not rest:
             return
@@ -105,7 +100,6 @@ class Config:
     create: CreateArgs | None = None
     delete: DeleteArgs | None = None
 
-
 def main() -> None:
     config = dature.load(ClickSource(cli=cli), schema=Config)
     print(config)
@@ -113,3 +107,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# --8<-- [end:example]

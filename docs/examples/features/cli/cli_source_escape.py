@@ -1,5 +1,3 @@
-"""Escaping commas inside ``--source`` values (``\\,``)."""
-
 from dature import EnvSource
 from dature.cli.parsing import parse_source_spec
 

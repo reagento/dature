@@ -1,5 +1,4 @@
-"""Set Vault connection settings globally via configure()."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -11,8 +10,9 @@ class Config:
     db_password: str
     port: int
     name: str
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 dature.configure(
     vault={
         "url": os.environ["VAULT_ADDR"],
@@ -23,3 +23,4 @@ dature.configure(
 config = dature.load(dature.VaultSource(path="myapp/config"), schema=Config)
 
 assert config == Config(db_password="s3cret", port=5432, name="myapp")  # noqa: S106
+# --8<-- [end:example]

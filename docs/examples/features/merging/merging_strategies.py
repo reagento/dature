@@ -1,5 +1,4 @@
-"""Merge strategies — LAST_WINS vs FIRST_WINS."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,8 +12,9 @@ class Config:
     host: str
     port: int
     tags: list[str]
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 last_wins = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -31,3 +31,4 @@ first_wins = dature.load(
 
 assert last_wins.host == "production.example.com"
 assert first_wins.host == "localhost"
+# --8<-- [end:example]

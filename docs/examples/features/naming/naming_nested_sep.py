@@ -1,5 +1,4 @@
-"""nested_sep — build nested structures from flat ENV variables."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -18,8 +17,9 @@ class Database:
 @dataclass
 class Config:
     db: Database
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 config = dature.load(
     dature.EnvSource(prefix="NS_", nested_sep="__"),
     schema=Config,
@@ -27,3 +27,4 @@ config = dature.load(
 
 assert config.db.host == "localhost"
 assert config.db.port == 5432
+# --8<-- [end:example]

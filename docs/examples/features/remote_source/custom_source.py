@@ -1,5 +1,4 @@
-"""Custom RemoteSource subclass — pure Python, no external services."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -10,8 +9,6 @@ from dature.type_aliases import JSONValue
 
 @dataclass(kw_only=True, repr=False)
 class InMemorySource(RemoteSource):
-    """Demonstrates the RemoteSource contract: override two methods."""
-
     backend: dict[str, dict[str, JSONValue]]
     key: str
 
@@ -32,9 +29,13 @@ class Config:
 
 
 backend = {"myapp/config": {"db_password": "s3cret", "port": 5432}}
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     InMemorySource(backend=backend, key="myapp/config"),
     schema=Config,
 )
 
-assert config == Config(db_password="s3cret", port=5432)  # noqa: S106
+assert config == Config(db_password="s3cret", port=5432)
+# --8<-- [end:example]

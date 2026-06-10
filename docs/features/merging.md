@@ -9,7 +9,8 @@ Pass multiple `Source` objects to `dature.load()`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_basic.py"
+    --8<-- "docs/examples/features/merging/merging_basic.py:setup"
+    --8<-- "docs/examples/features/merging/merging_basic.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -31,7 +32,8 @@ Multiple sources use `"last_wins"` by default:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_tuple_shorthand.py"
+    --8<-- "docs/examples/features/merging/merging_tuple_shorthand.py:setup"
+    --8<-- "docs/examples/features/merging/merging_tuple_shorthand.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -46,12 +48,13 @@ Multiple sources use `"last_wins"` by default:
     --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
-Works as a decorator too:
+The decorator also uses `"last_wins"``:
 
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_tuple_shorthand_decorator.py"
+    --8<-- "docs/examples/features/merging/merging_tuple_shorthand_decorator.py:setup"
+    --8<-- "docs/examples/features/merging/merging_tuple_shorthand_decorator.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -76,7 +79,8 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Last source overrides earlier ones. This is the default strategy.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_last_wins.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_last_wins.py:setup"
+    --8<-- "docs/examples/features/merging/merging_strategy_last_wins.py:example"
     ```
 
     === "common_defaults.yaml"
@@ -96,7 +100,8 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     First source wins on conflict. Later sources only fill in missing keys.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_first_wins.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_first_wins.py:setup"
+    --8<-- "docs/examples/features/merging/merging_strategy_first_wins.py:example"
     ```
 
     === "common_defaults.yaml"
@@ -116,7 +121,8 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Uses the first source that loads successfully and ignores the rest. Broken sources (missing file, parse error) are skipped automatically — no `skip_if_broken` needed. Type errors (wrong type, missing field) are **not** skipped.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_first_found.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_first_found.py:setup"
+    --8<-- "docs/examples/features/merging/merging_strategy_first_found.py:example"
     ```
 
     === "common_defaults.yaml"
@@ -130,7 +136,8 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Raises `MergeConflictError` if the same key appears in multiple sources with different values. Works best when sources have disjoint keys.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_raise_on_conflict.py"
+    --8<-- "docs/examples/features/merging/merging_strategy_raise_on_conflict.py:setup"
+    --8<-- "docs/examples/features/merging/merging_strategy_raise_on_conflict.py:example"
     ```
 
     === "common_raise_on_conflict_a.yaml"

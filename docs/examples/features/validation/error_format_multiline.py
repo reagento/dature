@@ -1,21 +1,20 @@
-"""Error format — value spans multiple source lines."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated
 
 import dature
-from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
 class Config:
-    tags: Annotated[list[str], V.unique_items()]
+    message: str
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "error_format_multiline.yaml"),
     schema=Config,
 )
+# --8<-- [end:example]
