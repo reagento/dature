@@ -1,5 +1,4 @@
-"""Custom field strategy — a class implementing FieldMergeStrategy."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -17,10 +16,10 @@ class Config:
     port: int
     tags: list[str]
 
+# --8<-- [end:setup]
 
+# --8<-- [start:example]
 class SortedUnion:
-    """Concatenate lists across all sources, deduplicate, sort."""
-
     def __call__(self, values: list[JSONValue]) -> JSONValue:
         merged: set[str] = set()
         for chunk in values:
@@ -29,7 +28,6 @@ class SortedUnion:
         return cast("JSONValue", sorted(merged))
 
 
-# Type-check that the class satisfies the public Protocol.
 strategy: FieldMergeStrategy = SortedUnion()
 
 config = dature.load(
@@ -40,3 +38,5 @@ config = dature.load(
 )
 
 assert config.tags == ["api", "default", "web"]
+
+# --8<-- [end:example]

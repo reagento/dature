@@ -1,5 +1,4 @@
-"""Conditional sources — OR: enable when any of several conditions match."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,11 +15,13 @@ class SecretsConfig:
     vault_token: str = ""
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 cfg = dature.load(
     dature.EnvFileSource(
         tag="secrets",
         file=str(dev_env_path),
-        # enabled in prod OR staging
         when=(
             (dature.When("${APP_ENV}") == "prod")
             | (dature.When("${APP_ENV}") == "staging")
@@ -29,5 +30,6 @@ cfg = dature.load(
     schema=SecretsConfig,
 )
 
-# APP_ENV=staging satisfies the OR condition → source is active
 assert cfg.vault_token == "dev-token-from-file"
+
+# --8<-- [end:example]

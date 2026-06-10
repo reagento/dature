@@ -1,9 +1,4 @@
-"""Conditional sources — error: all sources filtered out.
-
-APP_ENV is not set, so ${APP_ENV} expands to "" which matches neither "prod"
-nor ("dev", "local"). dature raises DatureError at construction time.
-"""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +14,9 @@ class SecretsConfig:
     vault_token: str = ""
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 dature.load(
     dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
     dature.EnvFileSource(
@@ -28,3 +26,5 @@ dature.load(
     ),
     schema=SecretsConfig,
 )
+
+# --8<-- [end:example]

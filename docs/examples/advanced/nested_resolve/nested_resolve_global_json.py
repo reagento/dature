@@ -1,5 +1,4 @@
-"""Global nested_resolve_strategy="json" — use JSON value, ignore flat keys."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -21,10 +20,15 @@ class Config:
     database: Database
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
-    dature.EnvSource(prefix="APP__", nested_resolve_strategy="json"),
+    dature.EnvSource(prefix="APP__", nested_resolve_strategy="json"),  # priority - json values
     schema=Config,
 )
 
 assert config.database.host == "json-host"
 assert config.database.port == 5432
+
+# --8<-- [end:example]

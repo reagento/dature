@@ -1,4 +1,4 @@
-"""Report on error — get_load_report() from the type after a failed load."""
+# --8<-- [start:setup]
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,7 +17,9 @@ class Config:
     port: int
     tags: list[str]
 
+# --8<-- [end:setup]
 
+# --8<-- [start:example]
 try:
     config = dature.load(
         dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -63,3 +65,5 @@ except DatureConfigError:
     for origin in report.field_origins:
         assert origin.source_index == 1
         assert "advanced_debug_error_defaults" in str(origin.source_file)
+
+# --8<-- [end:example]

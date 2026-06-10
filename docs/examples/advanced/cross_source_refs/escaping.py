@@ -1,5 +1,4 @@
-"""Cross-source references — $$ escaping in init-fields."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,14 +10,14 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 @dataclass
 class Config:
     value: str = ""
+# --8<-- [end:setup]
 
-
-# SOURCES_DIR contains a file literally named "${@env.something}".
-# $${@env.something} in the file= argument escapes to "${@env.something}",
-# so dature opens the file by that exact name instead of treating it as a ref.
+# --8<-- [start:example]
 cfg = dature.load(
     dature.JsonSource(file=str(SOURCES_DIR / "$${@env.something}")),
     schema=Config,
 )
 
 assert cfg.value == "hello"
+
+# --8<-- [end:example]

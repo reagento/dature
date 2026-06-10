@@ -1,5 +1,4 @@
-"""The problem: both JSON and flat keys exist for the same nested field."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -21,8 +20,12 @@ class Config:
     database: Database
 
 
-# Without nested_resolve_strategy, flat keys win by default
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(dature.EnvSource(prefix="APP__"), schema=Config)
 
 assert config.database.host == "flat-host"
 assert config.database.port == 3306
+
+# --8<-- [end:example]

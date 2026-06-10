@@ -1,5 +1,4 @@
-"""skip_invalid_fields — drop invalid fields, let defaults fill in."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,6 +13,9 @@ class Config:
     port: int = 3000
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "merging_skip_invalid_defaults.yaml",
@@ -23,4 +25,6 @@ config = dature.load(
 )
 
 assert config.host == "localhost"
-assert config.port == 3000
+assert config.port == 3000  # filled with default value
+
+# --8<-- [end:example]

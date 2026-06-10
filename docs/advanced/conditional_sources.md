@@ -13,7 +13,8 @@ Set `when=` to a condition built with the `When()` DSL.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/dev.py"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py:example"
     ```
 
 === "vault_dev.env"
@@ -33,7 +34,8 @@ init-fields.
     values.  `APP_ENV=local` matches `("dev", "local")`, so the source is enabled.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/tuple_values.py"
+    --8<-- "docs/examples/advanced/conditional_sources/tuple_values.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/tuple_values.py:example"
     ```
 
 === "not_in()"
@@ -42,7 +44,8 @@ init-fields.
     Here the file source loads in all environments except prod.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/not_in.py"
+    --8<-- "docs/examples/advanced/conditional_sources/not_in.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/not_in.py:example"
     ```
 
 === "AND (&)"
@@ -51,7 +54,8 @@ init-fields.
     The source is enabled only when both `APP_ENV=prod` and `REGION` is `eu` or `us`.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py"
+    --8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py:example"
     ```
 
 === "OR (|)"
@@ -60,7 +64,8 @@ init-fields.
     `APP_ENV=staging` satisfies the second branch, so the source is enabled.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/or_conditions.py"
+    --8<-- "docs/examples/advanced/conditional_sources/or_conditions.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/or_conditions.py:example"
     ```
 
 === "NOT (~)"
@@ -69,7 +74,8 @@ init-fields.
     Here the source loads in every environment **except** prod.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/not_operator.py"
+    --8<-- "docs/examples/advanced/conditional_sources/not_operator.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/not_operator.py:example"
     ```
 
 Conditions compose freely: `(When("${A}") == "x") & (~When("${B}").in_("y", "z"))`.
@@ -82,7 +88,8 @@ use the **same** default so they stay mutually exclusive:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/env_var_default.py"
+    --8<-- "docs/examples/advanced/conditional_sources/env_var_default.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/env_var_default.py:example"
     ```
 
 === "vault_dev.env"
@@ -102,7 +109,8 @@ If every source is conditional and none matches, dature raises immediately:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.py"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.py:example"
     ```
 
 === "Error"
@@ -120,13 +128,15 @@ The `dature.load()` call is identical in both environments:
 === "prod"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/prod.py"
+    --8<-- "docs/examples/advanced/conditional_sources/prod.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/prod.py:example"
     ```
 
 === "dev"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/dev.py"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py:example"
     ```
 
 === "vault_dev.env"
@@ -146,7 +156,8 @@ another source rather than in an OS environment variable:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/source_toggle.py"
+    --8<-- "docs/examples/advanced/conditional_sources/source_toggle.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/source_toggle.py:example"
     ```
 
 === "config.json"
@@ -168,7 +179,8 @@ default raises.  Use `:-` to provide a fallback:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/ref_fallback.py"
+    --8<-- "docs/examples/advanced/conditional_sources/ref_fallback.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/ref_fallback.py:example"
     ```
 
 === "config.json"
@@ -190,7 +202,8 @@ most one is active at a time.  Use separate instances with different
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/same_tag.py"
+    --8<-- "docs/examples/advanced/conditional_sources/same_tag.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/same_tag.py:example"
     ```
 
 === "base.env"
@@ -215,7 +228,8 @@ enabled — dature raises `DatureError` at construction time:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py:example"
     ```
 
 === "Error"
@@ -231,7 +245,8 @@ when a downstream source references that tag:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py:setup"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py:example"
     ```
 
 === "Error"
@@ -265,3 +280,5 @@ always takes priority over `skip_if_broken`.
 | `~(When("${APP_ENV}") == "prod")` — NOT | [Combining conditions](#combining-conditions) |
 | `When("${APP_ENV:-dev}") == "prod"` — default when unset | [Defaults for unset variables](#defaults-for-unset-variables) |
 | `When("${@tag.key}") == "prod"` | [Toggle from another source](#toggle-from-another-source) |
+
+

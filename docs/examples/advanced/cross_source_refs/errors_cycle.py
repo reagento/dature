@@ -1,5 +1,4 @@
-"""Cross-source references — error: cycle."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 
 import dature
@@ -10,10 +9,13 @@ class Config:
     host: str = ""
 
 
-# EnvSource depends on JsonSource (via prefix) and JsonSource depends on
-# EnvSource (via file) — dature detects the cycle and raises immediately.
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 dature.load(
     dature.EnvSource(prefix="${@json.prefix_key}"),
     dature.JsonSource(file="${@env.config_path}"),
     schema=Config,
 )
+
+# --8<-- [end:example]

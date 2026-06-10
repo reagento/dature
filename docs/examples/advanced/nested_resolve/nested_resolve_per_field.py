@@ -1,5 +1,4 @@
-"""Per-field nested_resolve — different strategies for different fields."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -31,7 +30,9 @@ class Config:
     cache: Cache
 
 
-# database uses JSON, cache uses flat keys
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.EnvSource(
         prefix="APP__",
@@ -47,3 +48,5 @@ assert config.database.host == "json-host"
 assert config.database.port == 5432
 assert config.cache.host == "flat-cache"
 assert config.cache.ttl == 120
+
+# --8<-- [end:example]

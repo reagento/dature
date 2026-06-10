@@ -1,13 +1,4 @@
-"""Conditional sources — referencing a disabled source with a fallback.
-
-config.json contains {"env": "dev"}.  The "secrets" source is disabled lazily
-(its when= depends on ${@cfg.env}) because env != "prod".
-
-Disabled sources still occupy their tag slot in the dependency graph, so
-${@secrets.remote_config} is a valid reference — it just resolves to absent.
-The :- default kicks in and points to the local config.json instead.
-"""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,16 +12,16 @@ class AppConfig:
     env: str = ""
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 cfg = dature.load(
-    dature.JsonSource(tag="cfg", file=str(config_path)),  # {"env": "dev"}
-    dature.EnvSource(
-        tag="secrets", when=dature.When("${@cfg.env}") == "prod"
-    ),  # disabled: "dev" != "prod"
-    dature.JsonSource(
-        file=f"${{@secrets.remote_config:-{config_path}}}"
-    ),  # fallback fires
+    dature.JsonSource(tag="cfg", file=str(config_path)),                         # {"env": "dev"}
+    dature.EnvSource(tag="secrets", when=dature.When("${@cfg.env}") == "prod"),  # disabled: "dev" != "prod"
+    dature.JsonSource(file=f"${{@secrets.remote_config:-{config_path}}}"),       # fallback
     schema=AppConfig,
 )
 
-# secrets disabled → remote_config absent → fallback to config.json → env="dev"
 assert cfg.env == "dev"
+
+# --8<-- [end:example]

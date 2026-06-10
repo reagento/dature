@@ -1,5 +1,4 @@
-"""RAISE_ON_CONFLICT with per-field override."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +14,9 @@ class Config:
     tags: list[str]
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -32,3 +34,5 @@ assert config.port == 8080
 assert config.tags == ["default", "web", "api"]
 assert config.tags == ["default", "web", "api"]
 assert config.tags == ["default", "web", "api"]
+
+# --8<-- [end:example]

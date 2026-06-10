@@ -1,5 +1,4 @@
-"""Per-field merge — APPEND_UNIQUE concatenates lists, removing duplicates."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,12 +12,17 @@ class Config:
     tags: list[str]
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_base.yaml"),
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_override.yaml"),
     schema=Config,
-    field_merges={dature.F[Config].tags: "append_unique"},
+    field_merges={dature.F[Config].tags: "append_unique"},  # UNIQUE(a + b)
 )
 
 assert config.tags == ["web", "default", "api"]
 assert config.tags == ["web", "default", "api"]
+
+# --8<-- [end:example]

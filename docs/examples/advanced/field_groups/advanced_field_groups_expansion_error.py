@@ -1,5 +1,4 @@
-"""Field groups — error on partial override with nested dataclass expansion."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,14 +20,16 @@ class Config:
     database: Database
 
 
-# (dature.F[Config].database, dature.F[Config].port)
-# expands to (database.host, database.port, port)
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
     dature.Yaml12Source(
-        file=SOURCES_DIR
-        / "advanced_field_groups_expansion_error_overrides.yaml",
+        file=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml",
     ),
     schema=Config,
     field_groups=((dature.F[Config].database, dature.F[Config].port),),
 )
+
+# --8<-- [end:example]

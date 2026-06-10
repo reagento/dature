@@ -1,7 +1,4 @@
-"""Example 3: Disable system path search globally
-
-demonstrates error when file not found."""
-
+# --8<-- [start:setup]
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,14 +14,14 @@ class Config:
     name: str = "default"
 
 
-# Create temp directory with config file
 with tempfile.TemporaryDirectory() as tmpdir:
     tmpdir_path = Path(tmpdir)
     config_file = tmpdir_path / "config.yaml"
     config_file.write_text((SHARED_DIR / "common_app.yaml").read_text())
 
-    # Disable system search globally,
-    # even though config exists in system_config_dirs
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
     dature.configure(
         loading={
             "search_system_paths": False,
@@ -32,9 +29,9 @@ with tempfile.TemporaryDirectory() as tmpdir:
         },
     )
 
-    # This will fail because search_system_paths=False
-    # prevents searching in system_config_dirs
-    config = dature.load(
+    dature.load(
         dature.Yaml12Source(file="config.yaml"),
         schema=Config,
-    )
+    )  # Failed
+
+# --8<-- [end:example]

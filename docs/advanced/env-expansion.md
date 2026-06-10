@@ -5,7 +5,8 @@ String values in all file formats support environment variable expansion:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion.py:setup"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion.py:example"
     ```
 
 === "advanced_env_expansion.yaml"
@@ -42,7 +43,8 @@ Set the mode on `Source`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_strict.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_strict.py:setup"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_strict.py:example"
     ```
 
 === "advanced_env_expansion_strict.yaml"
@@ -56,7 +58,8 @@ For merge mode, pass `expand_env_vars` to `dature.load()` as default for all sou
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py:setup"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py:example"
     ```
 
 === "advanced_env_expansion_merge_default.yaml"
@@ -140,19 +143,22 @@ This works for both directory paths and file names:
 === "Variable in directory path"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_dir.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_dir.py:setup"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_dir.py:example"
     ```
 
 === "Variable in file name"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_name.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_name.py:setup"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_name.py:example"
     ```
 
 === "Both"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_combined.py"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_combined.py:setup"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_combined.py:example"
     ```
 
 All [supported syntax](#supported-syntax) (`$VAR`, `${VAR}`, `${VAR:-default}`, `%VAR%`) works in file paths.
@@ -161,3 +167,5 @@ All [supported syntax](#supported-syntax) (`$VAR`, `${VAR}`, `${VAR:-default}`, 
 
 !!! note
     File path expansion is always `"strict"`, independent of the `expand_env_vars` setting. The `expand_env_vars` parameter controls expansion of values **inside** config files, while file paths are expanded at `Source` creation time. A missing variable in a file path would lead to a confusing `FileNotFoundError`, so strict validation is enforced.
+
+

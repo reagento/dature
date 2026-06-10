@@ -1,5 +1,4 @@
-"""skip_if_broken per source — override the global flag per Source."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,21 +15,26 @@ class Config:
     tags: list[str]
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
-        file=SHARED_DIR / "common_defaults.yaml",
-    ),  # uses global
+        file=SHARED_DIR / "common_defaults.yaml",  # uses global
+    ),
     dature.Yaml12Source(
-        file=SOURCES_DIR / "optional.yaml",
+        file=SOURCES_DIR / "optional.yaml",  # always skip, ignores global
         skip_if_broken=True,
-    ),  # always skip if broken
+    ),
     dature.Yaml12Source(
-        file=SHARED_DIR / "common_overrides.yaml",
+        file=SHARED_DIR / "common_overrides.yaml",  # never skip, ignores global
         skip_if_broken=False,
-    ),  # never skip, even if global is True
+    ),
     schema=Config,
     skip_broken_sources=True,  # global default
 )
 
 assert config.host == "production.example.com"
 assert config.port == 8080
+
+# --8<-- [end:example]

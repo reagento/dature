@@ -5,7 +5,8 @@
 Wraps a string value so it is never exposed in `str()`, `repr()`, or logs:
 
 ```python
---8<-- "docs/examples/advanced/special_types/advanced_special_secret_str.py"
+--8<-- "docs/examples/advanced/special_types/advanced_special_secret_str.py:setup"
+--8<-- "docs/examples/advanced/special_types/advanced_special_secret_str.py:example"
 ```
 
 Works with `mask_secrets=True` — fields of type `SecretStr` are always detected regardless of field name.
@@ -15,7 +16,8 @@ Works with `mask_secrets=True` — fields of type `SecretStr` are always detecte
 Parses human-readable sizes into bytes. Supports comparison operators.
 
 ```python
---8<-- "docs/examples/advanced/special_types/advanced_special_byte_size.py"
+--8<-- "docs/examples/advanced/special_types/advanced_special_byte_size.py:setup"
+--8<-- "docs/examples/advanced/special_types/advanced_special_byte_size.py:example"
 ```
 
 Supported units: B, KB, MB, GB, TB, PB, KiB, MiB, GiB, TiB, PiB.
@@ -25,7 +27,8 @@ Supported units: B, KB, MB, GB, TB, PB, KiB, MiB, GiB, TiB, PiB.
 Validates using the Luhn algorithm and detects the brand:
 
 ```python
---8<-- "docs/examples/advanced/special_types/advanced_special_payment_card.py"
+--8<-- "docs/examples/advanced/special_types/advanced_special_payment_card.py:setup"
+--8<-- "docs/examples/advanced/special_types/advanced_special_payment_card.py:example"
 ```
 
 ## URL
@@ -33,7 +36,8 @@ Validates using the Luhn algorithm and detects the brand:
 Type alias for `urllib.parse.ParseResult`:
 
 ```python
---8<-- "docs/examples/advanced/special_types/advanced_special_url.py"
+--8<-- "docs/examples/advanced/special_types/advanced_special_url.py:setup"
+--8<-- "docs/examples/advanced/special_types/advanced_special_url.py:example"
 ```
 
 ## Base64UrlBytes / Base64UrlStr
@@ -41,5 +45,8 @@ Type alias for `urllib.parse.ParseResult`:
 Type aliases decoded from Base64 string in the config. `Base64UrlStr` decodes to `str`, `Base64UrlBytes` decodes to `bytes`:
 
 ```python
---8<-- "docs/examples/advanced/special_types/advanced_special_base64.py"
+--8<-- "docs/examples/advanced/special_types/advanced_special_base64.py:setup"
+--8<-- "docs/examples/advanced/special_types/advanced_special_base64.py:example"
 ```
+
+

@@ -1,5 +1,4 @@
-"""Example 1: Default behavior - system path search enabled by default."""
-
+# --8<-- [start:setup]
 import os
 import sys
 import tempfile
@@ -23,12 +22,15 @@ with tempfile.TemporaryDirectory() as tmp:
         (SHARED_DIR / "common_app.yaml").read_text(),
     )
 
-    # Redirect the platform-appropriate env var so search lands in our temp dir
-    # instead of the real user config location.
     os.environ["APPDATA" if sys.platform == "win32" else "XDG_CONFIG_HOME"] = (
         str(config_dir)
     )
 
+
+
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
     config = dature.load(
         dature.Yaml12Source(file="app.yaml"),
         schema=Config,
@@ -36,3 +38,5 @@ with tempfile.TemporaryDirectory() as tmp:
 
     assert config.host == "localhost"
     assert config.port == 8080
+
+# --8<-- [end:example]

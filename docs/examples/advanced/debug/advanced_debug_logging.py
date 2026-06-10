@@ -1,5 +1,4 @@
-"""Debug logging — loading steps are logged at DEBUG under "dature"."""
-
+# --8<-- [start:setup]
 import difflib
 import io
 import logging
@@ -24,6 +23,9 @@ class Config:
     tags: list[str]
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -70,3 +72,5 @@ expected_log_lines = [
 
 diff = difflib.ndiff(expected_log_lines, log_lines)
 assert log_lines == expected_log_lines, f"Difference:\n{'\n'.join(diff)}"
+
+# --8<-- [end:example]

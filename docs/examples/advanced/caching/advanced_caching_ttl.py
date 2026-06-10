@@ -1,5 +1,4 @@
-"""Caching — TTL via timedelta (decorator mode)."""
-
+# --8<-- [start:setup]
 import os
 import time
 from dataclasses import dataclass
@@ -7,14 +6,14 @@ from datetime import timedelta
 
 import dature
 
-os.environ["TTL_HOST"] = "localhost"
 os.environ["TTL_PORT"] = "6379"
 
+# --8<-- [end:setup]
 
+# --8<-- [start:example]
 @dature.load(dature.EnvSource(prefix="TTL_"), cache=timedelta(seconds=30))
 @dataclass
 class TtlConfig:
-    host: str
     port: int
 
 
@@ -22,12 +21,14 @@ config1 = TtlConfig()
 os.environ["TTL_PORT"] = "9999"
 
 config2 = TtlConfig()
+
 assert config1.port == 6379
 assert config2.port == 6379
 
-# Simulate TTL expiration by monkey-patching the monotonic clock used internally
 real_monotonic = time.monotonic
 time.monotonic = lambda: real_monotonic() + 60.0
 config3 = TtlConfig()
 time.monotonic = real_monotonic
 assert config3.port == 9999
+
+# --8<-- [end:example]

@@ -1,5 +1,4 @@
-"""ENV expansion — variable in directory path."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +16,9 @@ class Config:
     port: int
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file="$DATURE_SOURCES_DIR/advanced_env_expansion_file_path.yaml",
@@ -26,3 +28,5 @@ config = dature.load(
 
 assert config.host == "localhost"
 assert config.port == 8080
+
+# --8<-- [end:example]

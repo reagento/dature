@@ -1,13 +1,4 @@
-"""Conditional sources — same tag, different conditions.
-
-when= enables or disables a Source instance as a whole.  To load some keys
-unconditionally and others only in a specific environment, use separate Source
-instances with different prefixes or field_mapping= targeting different subsets.
-
-Here base.env (DB_HOST, PORT) is always loaded, while the vault token comes
-from the OS environment in prod and from a local file in dev.
-"""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,12 +18,13 @@ class AppConfig:
     vault_token: str = ""
 
 
+# --8<-- [end:setup]
+
+# --8<-- [start:example]
 cfg = dature.load(
-    dature.EnvFileSource(file=str(base_env_path)),  # always — DB_HOST, PORT
-    dature.EnvSource(
-        tag="secrets", when=dature.When("${APP_ENV}") == "prod"
-    ),  # prod — VAULT_TOKEN from env
-    dature.EnvFileSource(  # dev  — VAULT_TOKEN from file
+    dature.EnvFileSource(file=str(base_env_path)),
+    dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
+    dature.EnvFileSource(
         tag="secrets",
         file=str(vault_dev_path),
         when=dature.When("${APP_ENV}").in_("dev", "local"),
@@ -43,3 +35,5 @@ cfg = dature.load(
 assert cfg.db_host == "db.internal"
 assert cfg.port == 5432
 assert cfg.vault_token == "dev-token-from-file"
+
+# --8<-- [end:example]

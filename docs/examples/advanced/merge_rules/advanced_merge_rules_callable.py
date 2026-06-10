@@ -1,5 +1,4 @@
-"""Callable merge — custom merge function for a field."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -15,10 +14,11 @@ class Config:
     port: int
     tags: list[str]
 
+# --8<-- [end:setup]
 
+# --8<-- [start:example]
 def merge_tags(values: list[Any]) -> list[str]:
     return sorted({v for lst in values for v in lst})
-
 
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
@@ -31,3 +31,5 @@ config = dature.load(
 assert config.host == "production.example.com"
 assert config.port == 8080
 assert config.tags == ["api", "default", "web"]
+
+# --8<-- [end:example]
