@@ -1,5 +1,4 @@
-"""Decorator mode — auto-load config on instantiation."""
-
+# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -16,10 +15,12 @@ class AppConfig:
     host: str
     port: int
     debug: bool = False
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 config = AppConfig()
 
 assert config.host == "0.0.0.0"
 assert config.port == 8080
 assert config.debug is True
+# --8<-- [end:example]

@@ -1,5 +1,3 @@
-"""F[] factory for building field paths with validation."""
-
 from dataclasses import dataclass
 
 import dature
@@ -17,6 +15,8 @@ class Config:
     host: str
 
 
+# --8<-- [start:example]
 path_eager = dature.F[Config].host
 path_nested = dature.F[Config].database.host
 path_string = dature.F["Config"].host
+# --8<-- [end:example]

@@ -1,5 +1,4 @@
-"""Decorator mode — omit schema, get a decorator."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,10 +13,12 @@ class Config:
     host: str
     port: int
     debug: bool = False
+# --8<-- [end:setup]
 
-
+# --8<-- [start:example]
 config = Config()
 
 assert config.host == "localhost"
 assert config.port == 8080
 assert config.debug is False
+# --8<-- [end:example]
