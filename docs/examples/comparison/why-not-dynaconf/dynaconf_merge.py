@@ -1,5 +1,4 @@
-"""dature vs Dynaconf — explicit merge strategies in code."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,9 +11,9 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 class Config:
     host: str
     port: int
+# --8<-- [end:setup]
 
-
-# --8<-- [start:merge]
+# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "dynaconf_merge_defaults.yaml"),
     dature.Yaml12Source(
@@ -24,7 +23,7 @@ config = dature.load(
     schema=Config,
     strategy="last_wins",
 )
-# --8<-- [end:merge]
 
 assert config.host == "localhost"
 assert config.port == 9090
+# --8<-- [end:example]

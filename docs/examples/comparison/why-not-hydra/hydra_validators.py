@@ -1,5 +1,4 @@
-"""dature vs Hydra — Annotated validators for value constraints."""
-
+# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
@@ -9,14 +8,15 @@ from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
-
+# --8<-- [end:setup]
+# --8<-- [start:example]
 @dataclass
 class Config:
     host: str
     port: Annotated[int, (V > 0) & (V < 65536)] = 8080
 
-
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "hydra_validators_invalid.yaml"),
     schema=Config,
 )
+# --8<-- [end:example]

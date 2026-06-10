@@ -34,7 +34,7 @@ pydantic-settings requires your config to inherit from `BaseSettings`, which is 
 dature uses **stdlib `@dataclass`** — no vendor lock-in, no magic metaclasses, no performance overhead on instantiation. Your config classes are plain Python that works with any library.
 
 ```python
---8<-- "docs/examples/comparison/why-not-pydantic-settings/pydantic_settings_basic.py:basic"
+--8<-- "docs/examples/comparison/why-not-pydantic-settings/pydantic_settings_basic.py:example"
 ```
 
 ## Multi-Source Merging That Actually Works
@@ -44,7 +44,7 @@ pydantic-settings merges sources by simple priority: env vars override `.env` fi
 dature gives you **real merge control**:
 
 ```python
---8<-- "docs/examples/comparison/why-not-pydantic-settings/pydantic_settings_merge.py:merge"
+--8<-- "docs/examples/comparison/why-not-pydantic-settings/pydantic_settings_merge.py:example"
 ```
 
 - Broken or missing `local.yaml`? Silently skipped.
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
 dature uses explicit Source subclasses — no boilerplate:
 
 ```python
---8<-- "docs/examples/comparison/why-not-pydantic-settings/pydantic_settings_formats.py:formats"
+--8<-- "docs/examples/comparison/why-not-pydantic-settings/pydantic_settings_formats.py:example"
 ```
 
 dature also supports INI, JSON5, and YAML 1.1/1.2 + TOML 1.0/1.1 version variants — formats that pydantic-settings doesn't cover.
