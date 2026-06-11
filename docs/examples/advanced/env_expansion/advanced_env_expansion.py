@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,9 +21,6 @@ class Config:
     escape_percent: str
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "advanced_env_expansion.yaml",
@@ -40,5 +36,3 @@ assert config.fallback_var == "postgres://fallback:5432/db"
 assert config.windows == "https://api.example.com"
 assert config.escape_dollar == "$100"
 assert config.escape_percent == "100%"
-
-# --8<-- [end:example]

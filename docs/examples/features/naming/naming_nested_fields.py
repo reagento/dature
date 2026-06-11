@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,9 +16,7 @@ class Address:
 class User:
     name: str
     address: Address
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "naming_nested_fields.yaml",
@@ -36,4 +33,3 @@ config = dature.load(
 assert config.name == "Alice"
 assert config.address.city == "Paris"
 assert config.address.street == "Rue de Rivoli"
-# --8<-- [end:example]

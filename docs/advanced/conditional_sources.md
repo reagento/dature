@@ -13,8 +13,7 @@ Set `when=` to a condition built with the `When()` DSL.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/dev.py:setup"
-    --8<-- "docs/examples/advanced/conditional_sources/dev.py:example"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py"
     ```
 
 === "vault_dev.env"

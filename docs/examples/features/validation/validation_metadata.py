@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,9 +12,7 @@ class Config:
     host: str
     port: int
     debug: bool = False
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "validation_metadata_invalid.yaml",
@@ -26,4 +23,3 @@ dature.load(
     ),
     schema=Config,
 )
-# --8<-- [end:example]

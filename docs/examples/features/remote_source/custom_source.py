@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -29,13 +28,10 @@ class Config:
 
 
 backend = {"myapp/config": {"db_password": "s3cret", "port": 5432}}
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     InMemorySource(backend=backend, key="myapp/config"),
     schema=Config,
 )
 
 assert config == Config(db_password="s3cret", port=5432)
-# --8<-- [end:example]

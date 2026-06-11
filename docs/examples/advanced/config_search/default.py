@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 import sys
 import tempfile
@@ -26,11 +25,6 @@ with tempfile.TemporaryDirectory() as tmp:
         str(config_dir)
     )
 
-
-
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
     config = dature.load(
         dature.Yaml12Source(file="app.yaml"),
         schema=Config,
@@ -38,5 +32,3 @@ with tempfile.TemporaryDirectory() as tmp:
 
     assert config.host == "localhost"
     assert config.port == 8080
-
-# --8<-- [end:example]

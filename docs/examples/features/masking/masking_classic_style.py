@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,8 +12,6 @@ class Config:
     password: str
     host: str
 
-# --8<-- [end:setup]
-# --8<-- [start:example]
 dature.configure(
     masking={"mask": "*****", "visible_prefix": 2, "visible_suffix": 2},
 )
@@ -25,4 +22,3 @@ config = dature.load(
 )
 assert mask_value("my_secret_password") == "my*****rd"
 assert mask_value("ab") == "ab"
-# --8<-- [end:example]

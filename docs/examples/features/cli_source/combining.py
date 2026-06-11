@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,9 +17,7 @@ class Config:
 parser = argparse.ArgumentParser()
 parser.add_argument("--host")
 parser.add_argument("--port", type=int)
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 def main() -> None:
     config = dature.load(
         dature.JsonSource(file=SOURCES_DIR / "config.json"),
@@ -33,4 +30,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-# --8<-- [end:example]

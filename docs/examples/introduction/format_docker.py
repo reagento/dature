@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,14 +11,11 @@ class Config:
     host: str
     port: int
     debug: bool = False
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.DockerSecretsSource(dir_=SOURCES_DIR / "intro_app_docker_secrets"),
     schema=Config,
 )
-# --8<-- [end:example]
 
 
 # --8<-- [start:example-assertations]

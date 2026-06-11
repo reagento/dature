@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -8,9 +7,7 @@ from dature.fields.secret_str import SecretStr
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 @dataclass
 class Config:
     api_key: SecretStr
@@ -21,4 +18,3 @@ dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_secret_str.yaml"),
     schema=Config,
 )
-# --8<-- [end:example]

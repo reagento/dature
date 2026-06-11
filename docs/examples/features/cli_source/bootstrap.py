@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,9 +12,7 @@ class AppConfig:
     env: str = "dev"
     host: str = "localhost"
     port: int = 8080
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", default="dev")
@@ -34,4 +31,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-# --8<-- [end:example]

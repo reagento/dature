@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,16 +24,13 @@ class AppConfig:
     color: Rgb
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "custom_type_common.yaml"),
     dature.Yaml12Source(file=SOURCES_DIR / "custom_type_merge_override.yaml"),
     schema=AppConfig,
-    type_loaders={Rgb: rgb_from_string},  # applies to all sources within a single load() call
+
+    # applies to all sources within a single load() call
+    type_loaders={Rgb: rgb_from_string},
 )
 
 assert config == AppConfig(name="my-app", color=Rgb(r=100, g=200, b=50))
-
-# --8<-- [end:example]

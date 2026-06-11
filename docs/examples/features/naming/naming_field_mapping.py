@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,9 +11,7 @@ class DbConfig:
     database_url: str
     secret_key: str
     pool_size: int
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "naming_field_mapping.yaml",
@@ -30,4 +27,3 @@ config = dature.load(
 assert config.database_url == "postgresql://localhost:5432/mydb"
 assert config.secret_key == "my-secret-key"
 assert config.pool_size == 10
-# --8<-- [end:example]

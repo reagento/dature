@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,9 +13,6 @@ class Config:
     tags: list[str]
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -44,5 +40,3 @@ assert origins[2].key == "tags"
 assert origins[2].value == ["web", "api"]
 assert origins[2].source_index == 1
 assert origins[2].source_file == str(SHARED_DIR / "common_overrides.yaml")
-
-# --8<-- [end:example]

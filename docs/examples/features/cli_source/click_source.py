@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import sys
 from dataclasses import dataclass
 from typing import ClassVar
@@ -6,9 +5,7 @@ from typing import ClassVar
 import click
 import dature
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 
 
 @dataclass(kw_only=True, repr=False)
@@ -107,4 +104,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-# --8<-- [end:example]

@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,9 +12,6 @@ class AppConfig:
     vault_token: str = ""
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 cfg = dature.load(
     dature.JsonSource(tag="cfg", file=str(cfg_path)),
     dature.EnvFileSource(
@@ -27,5 +23,3 @@ cfg = dature.load(
 )
 
 assert cfg.vault_token == "dev-token-from-file"
-
-# --8<-- [end:example]

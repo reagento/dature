@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -22,14 +21,9 @@ class Config:
     port: int
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     DictSource(data={"host": "localhost", "port": 8080}),
     schema=Config,
 )
 
 assert config == Config(host="localhost", port=8080)
-
-# --8<-- [end:example]

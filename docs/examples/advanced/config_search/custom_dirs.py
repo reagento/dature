@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,9 +19,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
     config_file = custom_dir / "app.yaml"
     config_file.write_text((SHARED_DIR / "common_app.yaml").read_text())
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
     config = dature.load(
         dature.Yaml12Source(
             file="app.yaml",
@@ -33,5 +29,3 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
     assert config.host == "localhost"
     assert config.port == 8080
-
-# --8<-- [end:example]

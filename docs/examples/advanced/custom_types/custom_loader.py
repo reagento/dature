@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -41,9 +40,6 @@ class Config:
     debug: bool
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     XmlSource(
         file=SOURCES_DIR / "custom_loader.xml",
@@ -52,5 +48,3 @@ config = dature.load(
 )
 
 assert config == Config(host="localhost", port=9090, debug=True)
-
-# --8<-- [end:example]

@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from datetime import timedelta
@@ -13,9 +12,6 @@ class FunctionConfig:
     port: int
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 loader = dature.Loader(
     dature.EnvSource(prefix="FN_"),
     schema=FunctionConfig,
@@ -28,5 +24,3 @@ second = loader.load()
 
 assert first.port == 6379
 assert second.port == 6379  # cache still fresh — same Loader instance
-
-# --8<-- [end:example]

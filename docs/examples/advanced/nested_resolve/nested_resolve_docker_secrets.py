@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -25,9 +24,7 @@ with TemporaryDirectory() as secrets_dir:
     (secrets_path / "database__host").write_text("flat-host")
     (secrets_path / "database__port").write_text("3306")
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
     config = dature.load(
         dature.DockerSecretsSource(
             dir_=secrets_path,
@@ -39,4 +36,3 @@ with TemporaryDirectory() as secrets_dir:
     assert config.database.host == "json-host"
     assert config.database.port == 5432
 
-# --8<-- [end:example]

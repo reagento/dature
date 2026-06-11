@@ -1,5 +1,3 @@
-# --8<-- [start:setup]
-
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,9 +15,6 @@ class Config:
     password: str
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_field_groups_overrides.yaml"),
@@ -31,5 +26,3 @@ assert config.host == "production.example.com"
 assert config.port == 8080
 assert config.user == "admin"
 assert config.password == "secret"
-
-# --8<-- [end:example]

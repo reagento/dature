@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,9 +15,6 @@ class Config:
     port: int
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=str(SOURCES_DIR / "config.$DATURE_APP_ENV.yaml")),
     schema=Config,
@@ -26,5 +22,3 @@ config = dature.load(
 
 assert config.host == "prod.example.com"
 assert config.port == 443
-
-# --8<-- [end:example]

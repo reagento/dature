@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,9 +15,6 @@ class Config:
     fallback_url: str
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "advanced_env_expansion_strict.yaml",
@@ -29,5 +25,3 @@ config = dature.load(
 
 assert config.resolved_url == "https://api.example.com/api/v1"
 assert config.fallback_url == "postgres://localhost:5432/dev"
-
-# --8<-- [end:example]

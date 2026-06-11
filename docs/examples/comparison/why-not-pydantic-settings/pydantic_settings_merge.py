@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,9 +10,7 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 class Config:
     host: str
     port: int
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "pydantic_settings_merge_defaults.yaml",
@@ -28,4 +25,3 @@ config = dature.load(
 
 assert config.host == "localhost"
 assert config.port == 9090
-# --8<-- [end:example]

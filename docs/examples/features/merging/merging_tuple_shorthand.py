@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,9 +11,7 @@ class Config:
     host: str
     port: int
     tags: list[str]
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
@@ -24,4 +21,3 @@ config = dature.load(
 assert config.host == "production.example.com"
 assert config.port == 8080
 assert config.tags == ["web", "api"]
-# --8<-- [end:example]

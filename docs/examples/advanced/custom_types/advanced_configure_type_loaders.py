@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,9 +24,6 @@ class AppConfig:
     color: Rgb
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 # Register Rgb parser globally — no need to pass type_loaders
 # to every load() call
 dature.configure(type_loaders={Rgb: rgb_from_string})
@@ -37,5 +33,3 @@ config = dature.load(
     schema=AppConfig,
 )
 assert config == AppConfig(name="my-app", color=Rgb(r=255, g=128, b=0))
-
-# --8<-- [end:example]

@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,9 +14,6 @@ class AppConfig:
     host: str = "localhost"
     port: int = 8080
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 cfg = dature.load(
     dature.JsonSource(file="${@env.config_path}"),
     dature.EnvSource(prefix="APP_"),
@@ -26,5 +22,3 @@ cfg = dature.load(
 
 assert cfg.host == "db.internal"
 assert cfg.port == 5432
-
-# --8<-- [end:example]

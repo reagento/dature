@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -12,9 +11,6 @@ class SecretsConfig:
     vault_token: str = ""
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 dature.load(
     dature.EnvSource(
         tag="secrets",
@@ -27,5 +23,3 @@ dature.load(
     ),
     schema=SecretsConfig,
 )
-
-# --8<-- [end:example]

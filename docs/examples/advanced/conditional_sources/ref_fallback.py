@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,9 +11,6 @@ class AppConfig:
     env: str = ""
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 cfg = dature.load(
     # {"env": "dev"}
     dature.JsonSource(tag="cfg", file=str(config_path)),
@@ -28,5 +24,3 @@ cfg = dature.load(
 )
 
 assert cfg.env == "dev"
-
-# --8<-- [end:example]

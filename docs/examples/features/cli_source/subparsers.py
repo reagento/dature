@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import argparse
 from dataclasses import dataclass
 
@@ -32,9 +31,7 @@ create.add_argument("--name")
 
 delete = subs.add_parser("delete")
 delete.add_argument("--item-id", type=int)
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 def main() -> None:
     config = dature.load(dature.ArgparseSource(parser=parser), schema=Config)
     print(config)
@@ -42,4 +39,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-# --8<-- [end:example]

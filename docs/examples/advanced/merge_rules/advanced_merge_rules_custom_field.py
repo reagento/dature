@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -16,9 +15,7 @@ class Config:
     port: int
     tags: list[str]
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 class SortedUnion:
     def __call__(self, values: list[JSONValue]) -> JSONValue:
         merged: set[str] = set()
@@ -39,4 +36,3 @@ config = dature.load(
 
 assert config.tags == ["api", "default", "web"]
 
-# --8<-- [end:example]

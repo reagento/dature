@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,9 +16,6 @@ class Config:
     password: str
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_field_groups_defaults.yaml"),
     dature.Yaml12Source(
@@ -31,5 +27,3 @@ dature.load(
         (dature.F[Config].user, dature.F[Config].password),
     ),
 )
-
-# --8<-- [end:example]

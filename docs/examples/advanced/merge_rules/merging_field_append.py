@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,9 +11,7 @@ class Config:
     tags: list[str]
 
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_base.yaml"),
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_override.yaml"),
@@ -25,4 +22,3 @@ config = dature.load(
 assert config.tags == ["web", "default", "web", "api"]
 assert config.tags == ["web", "default", "web", "api"]
 
-# --8<-- [end:example]

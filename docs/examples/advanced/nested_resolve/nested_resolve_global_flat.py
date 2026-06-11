@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 
@@ -20,9 +19,7 @@ class Config:
     database: Database
 
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 config = dature.load(
     dature.EnvSource(prefix="APP__", nested_resolve_strategy="flat"),   # priority - flat values
     schema=Config,
@@ -31,4 +28,3 @@ config = dature.load(
 assert config.database.host == "flat-host"
 assert config.database.port == 3306
 
-# --8<-- [end:example]

@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,9 +15,6 @@ class SecretsConfig:
     vault_token: str = ""
 
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
 cfg = dature.load(
     dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
     dature.EnvFileSource(
@@ -30,5 +26,3 @@ cfg = dature.load(
 )
 
 assert cfg.vault_token == "prod-token-from-env"
-
-# --8<-- [end:example]

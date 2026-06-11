@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,9 +18,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
     config_file = tmpdir_path / "config.yaml"
     config_file.write_text((SHARED_DIR / "common_app.yaml").read_text())
 
-# --8<-- [end:setup]
-
-# --8<-- [start:example]
     dature.configure(
         loading={
             "search_system_paths": False,
@@ -33,5 +29,3 @@ with tempfile.TemporaryDirectory() as tmpdir:
         dature.Yaml12Source(file="config.yaml"),
         schema=Config,
     )  # Failed
-
-# --8<-- [end:example]

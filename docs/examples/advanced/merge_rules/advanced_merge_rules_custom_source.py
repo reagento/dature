@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,9 +15,7 @@ class Config:
     port: int
     tags: list[str]
 
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 def _dict_overlay(a: JSONValue, b: JSONValue) -> JSONValue:
     return {**a, **b} if isinstance(a, dict) and isinstance(b, dict) else b
 
@@ -50,4 +47,3 @@ config = dature.load(
 assert config.host == "production.example.com"
 assert config.port == 8080
 
-# --8<-- [end:example]

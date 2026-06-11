@@ -1,4 +1,3 @@
-# --8<-- [start:setup]
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
@@ -7,9 +6,7 @@ import dature
 from dature import V
 
 SOURCES_DIR = Path(__file__).parent / "sources"
-# --8<-- [end:setup]
 
-# --8<-- [start:example]
 @dataclass
 class Config:
     host: str
@@ -33,4 +30,3 @@ dature.load(
     ),
     schema=Config,
 )
-# --8<-- [end:example]
