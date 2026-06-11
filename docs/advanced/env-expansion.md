@@ -5,7 +5,6 @@ String values in all file formats support environment variable expansion:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion.py:setup"
     --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion.py:example"
     ```
 
@@ -43,7 +42,6 @@ Set the mode on `Source`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_strict.py:setup"
     --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_strict.py:example"
     ```
 
@@ -58,7 +56,6 @@ For merge mode, pass `expand_env_vars` to `dature.load()` as default for all sou
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py:setup"
     --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py:example"
     ```
 
@@ -143,21 +140,18 @@ This works for both directory paths and file names:
 === "Variable in directory path"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_dir.py:setup"
     --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_dir.py:example"
     ```
 
 === "Variable in file name"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_name.py:setup"
     --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_name.py:example"
     ```
 
 === "Both"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_combined.py:setup"
     --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_file_path_combined.py:example"
     ```
 

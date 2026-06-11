@@ -1,12 +1,13 @@
-import os
-from dataclasses import dataclass
 from pathlib import Path
-
-import dature
-
+import os
 os.environ["APP_CONFIG_PATH"] = str(
     Path(__file__).parent / "sources" / "app.json"
 )
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -22,3 +23,4 @@ cfg = dature.load(
 
 assert cfg.host == "db.internal"
 assert cfg.port == 5432
+# --8<-- [end:example]

@@ -1,8 +1,11 @@
+from pathlib import Path
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
 import difflib
 import io
 import logging
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
@@ -11,8 +14,6 @@ handler = logging.StreamHandler(log_stream)
 handler.setLevel(logging.DEBUG)
 logging.getLogger("dature").addHandler(handler)
 logging.getLogger("dature").setLevel(logging.DEBUG)
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -68,3 +69,4 @@ expected_log_lines = [
 
 diff = difflib.ndiff(expected_log_lines, log_lines)
 assert log_lines == expected_log_lines, f"Difference:\n{'\n'.join(diff)}"
+# --8<-- [end:example]

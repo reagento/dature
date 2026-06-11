@@ -1,12 +1,13 @@
-from dataclasses import dataclass
 from pathlib import Path
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 from typing import cast
 
 import dature
 from dature.strategies.field import FieldMergeStrategy
 from dature.type_aliases import JSONValue
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -35,4 +36,4 @@ config = dature.load(
 )
 
 assert config.tags == ["api", "default", "web"]
-
+# --8<-- [end:example]

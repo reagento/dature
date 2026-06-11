@@ -1,12 +1,13 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
 from dature.errors import DatureConfigError
 from dature.strategies.source import SourceLastWins
-
-SOURCES_DIR = Path(__file__).parent / "sources"
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -60,3 +61,4 @@ except DatureConfigError:
     for origin in report.field_origins:
         assert origin.source_index == 1
         assert "advanced_debug_error_defaults" in str(origin.source_file)
+# --8<-- [end:example]

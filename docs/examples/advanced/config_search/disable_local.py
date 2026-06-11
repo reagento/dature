@@ -1,10 +1,11 @@
+from pathlib import Path
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
 import tempfile
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -26,3 +27,4 @@ with tempfile.TemporaryDirectory() as tmpdir:
         ),
         schema=Config,
     )
+# --8<-- [end:example]

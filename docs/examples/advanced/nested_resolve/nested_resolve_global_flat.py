@@ -27,4 +27,3 @@ config = dature.load(
 
 assert config.database.host == "flat-host"
 assert config.database.port == 3306
-

@@ -1,10 +1,11 @@
+from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 os.environ["KNOWN_HOST"] = "https://api.example.com"
 
@@ -41,3 +42,4 @@ assert config.empty_set_url == "https://api.example.com/api"
 assert config.empty_unset_url == "/api"
 assert config.disabled_set_url == "$KNOWN_HOST/api"
 assert config.disabled_unset_url == "$UNSET_VAR/api"
+# --8<-- [end:example]

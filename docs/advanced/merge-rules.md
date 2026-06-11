@@ -53,42 +53,36 @@ Each strategy produces a different result:
 === "first_wins"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_first_wins.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_field_first_wins.py:example"
     ```
 
 === "last_wins"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_last_wins.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_field_last_wins.py:example"
     ```
 
 === "append"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_append.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_field_append.py:example"
     ```
 
 === "append_unique"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_append_unique.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_field_append_unique.py:example"
     ```
 
 === "prepend"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend.py:example"
     ```
 
 === "prepend_unique"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend_unique.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend_unique.py:example"
     ```
 
@@ -101,7 +95,6 @@ Fields with an explicit strategy are excluded from conflict detection:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_conflict.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_conflict.py:example"
     ```
 
@@ -124,7 +117,6 @@ Use `strategy="first_found"` to stop merging as soon as a source provides a valu
 === "Python"
  
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_first_found.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_first_found.py:example"
     ```
  
@@ -159,14 +151,12 @@ Pick a plain function for one-off logic, or a class for a named, reusable reduce
 === "Function"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_callable.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_callable.py:example"
     ```
 
 === "Class"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_field.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_field.py:example"
     ```
 
@@ -207,7 +197,6 @@ Override `op` to plug in your own merge function — e.g. shallow overlay for en
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_source.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_source.py:example"
     ```
 
@@ -234,7 +223,6 @@ Skip sources that fail to load (missing file, invalid syntax):
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken.py:example"
     ```
 
@@ -249,7 +237,6 @@ Override per source with `skip_if_broken` on `Source` (takes priority over the g
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken_per_source.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken_per_source.py:example"
     ```
 
@@ -268,7 +255,6 @@ Drop fields with invalid values and let other sources or defaults fill them in:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid.py:example"
     ```
 
@@ -283,7 +269,6 @@ Restrict skipping to specific fields:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid_per_field.py:setup"
     --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid_per_field.py:example"
     ```
 

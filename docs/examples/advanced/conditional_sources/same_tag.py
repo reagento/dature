@@ -1,13 +1,14 @@
+from pathlib import Path
+base_env_path = Path(__file__).parent / "sources" / "base.env"
+vault_dev_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ["APP_ENV"] = "dev"
-
-base_env_path = Path(__file__).parent / "sources" / "base.env"
-vault_dev_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -31,3 +32,4 @@ cfg = dature.load(
 assert cfg.db_host == "db.internal"
 assert cfg.port == 5432
 assert cfg.vault_token == "dev-token-from-file"
+# --8<-- [end:example]

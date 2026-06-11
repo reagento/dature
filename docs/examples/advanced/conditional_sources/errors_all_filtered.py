@@ -1,11 +1,13 @@
+from pathlib import Path
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ.pop("APP_ENV", None)
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -22,3 +24,4 @@ dature.load(
     ),
     schema=SecretsConfig,
 )
+# --8<-- [end:example]

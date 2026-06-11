@@ -5,7 +5,6 @@ Pass `debug=True` to collect a `LoadReport`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/debug/advanced_debug_report.py:setup"
     --8<-- "docs/examples/advanced/debug/advanced_debug_report.py:example"
     ```
 
@@ -35,7 +34,6 @@ All loading steps are logged at `DEBUG` level under the `"dature"` logger regard
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/debug/advanced_debug_logging.py:setup"
     --8<-- "docs/examples/advanced/debug/advanced_debug_logging.py:example"
     ```
 
@@ -58,7 +56,6 @@ If loading fails with `DatureConfigError` and `debug=True` was passed, the repor
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/debug/advanced_debug_error.py:setup"
     --8<-- "docs/examples/advanced/debug/advanced_debug_error.py:example"
     ```
 

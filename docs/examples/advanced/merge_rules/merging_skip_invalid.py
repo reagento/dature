@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
@@ -23,4 +24,4 @@ config = dature.load(
 
 assert config.host == "localhost"
 assert config.port == 3000  # filled with default value
-
+# --8<-- [end:example]

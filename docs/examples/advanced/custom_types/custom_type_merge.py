@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,3 +35,4 @@ config = dature.load(
 )
 
 assert config == AppConfig(name="my-app", color=Rgb(r=100, g=200, b=50))
+# --8<-- [end:example]

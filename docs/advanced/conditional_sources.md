@@ -13,7 +13,7 @@ Set `when=` to a condition built with the `When()` DSL.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/dev.py"
+    --8<-- "docs/examples/advanced/conditional_sources/dev.py:example"
     ```
 
 === "vault_dev.env"
@@ -33,7 +33,6 @@ init-fields.
     values.  `APP_ENV=local` matches `("dev", "local")`, so the source is enabled.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/tuple_values.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/tuple_values.py:example"
     ```
 
@@ -43,7 +42,6 @@ init-fields.
     Here the file source loads in all environments except prod.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/not_in.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/not_in.py:example"
     ```
 
@@ -53,7 +51,6 @@ init-fields.
     The source is enabled only when both `APP_ENV=prod` and `REGION` is `eu` or `us`.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/multiple_keys.py:example"
     ```
 
@@ -63,7 +60,6 @@ init-fields.
     `APP_ENV=staging` satisfies the second branch, so the source is enabled.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/or_conditions.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/or_conditions.py:example"
     ```
 
@@ -73,7 +69,6 @@ init-fields.
     Here the source loads in every environment **except** prod.
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/not_operator.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/not_operator.py:example"
     ```
 
@@ -87,7 +82,6 @@ use the **same** default so they stay mutually exclusive:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/env_var_default.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/env_var_default.py:example"
     ```
 
@@ -111,7 +105,6 @@ immediately at construction time.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/errors_all_filtered.py:example"
     ```
 
@@ -130,14 +123,12 @@ The `dature.load()` call is identical in both environments:
 === "prod"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/prod.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/prod.py:example"
     ```
 
 === "dev"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/dev.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/dev.py:example"
     ```
 
@@ -161,7 +152,6 @@ For example, if the toggle value lives in `config.json`, not in an OS environmen
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/source_toggle.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/source_toggle.py:example"
     ```
 
@@ -190,7 +180,6 @@ In this case, the :- default is used and falls back to the local config.json ins
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/ref_fallback.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/ref_fallback.py:example"
     ```
 
@@ -215,7 +204,6 @@ while the vault token is sourced from the OS environment in `prod` and from a lo
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/same_tag.py:setup"
     --8<-- "docs/examples/advanced/conditional_sources/same_tag.py:example"
     ```
 
@@ -246,8 +234,7 @@ Fix: use a consistent default across all conditions (see the `"no APP_ENV"` exam
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py:setup"
-    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py:example"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision_explicit.py"
     ```
 
 === "Error"
@@ -263,8 +250,7 @@ when a downstream source references that tag:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py:setup"
-    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py:example"
+    --8<-- "docs/examples/advanced/conditional_sources/errors_tag_collision.py"
     ```
 
 === "Error"

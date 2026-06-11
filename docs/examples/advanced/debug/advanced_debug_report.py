@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -40,3 +41,4 @@ assert origins[2].key == "tags"
 assert origins[2].value == ["web", "api"]
 assert origins[2].source_index == 1
 assert origins[2].source_file == str(SHARED_DIR / "common_overrides.yaml")
+# --8<-- [end:example]

@@ -9,7 +9,6 @@ Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion func
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_type.py:setup"
     --8<-- "docs/examples/advanced/custom_types/custom_type.py:example"
     ```
 
@@ -26,21 +25,18 @@ Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion func
 === "Per-source (Source)"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_type.py:setup"
     --8<-- "docs/examples/advanced/custom_types/custom_type.py:example"
     ```
 
 === "Per-merge (load)"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_type_merge.py:setup"
     --8<-- "docs/examples/advanced/custom_types/custom_type_merge.py:example"
     ```
 
 === "Global (configure)"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/advanced_configure_type_loaders.py:setup"
     --8<-- "docs/examples/advanced/custom_types/advanced_configure_type_loaders.py:example"
     ```
 
@@ -87,12 +83,11 @@ Every custom source needs:
 The most common case — reading a file format:
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_loader.py:setup"
     --8<-- "docs/examples/advanced/custom_types/custom_loader.py:example"
 ```
 
-```xml title="custom_loader.xml"
---8<-- "docs/examples/advanced/custom_types/sources/custom_loader.xml"
+    ```xml title="custom_loader.xml"
+    --8<-- "docs/examples/advanced/custom_types/sources/custom_loader.xml"
 ```
 
 `FileSource` handles the `file` parameter, path expansion, and stream detection. Your `_load_file()` receives a `Path` or file-like object and returns a dict.
@@ -102,8 +97,7 @@ The most common case — reading a file format:
 For sources that don't read files — e.g. an API, a database, or an in-memory dict:
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_dict_source.py:setup"
-    --8<-- "docs/examples/advanced/custom_types/custom_dict_source.py:example"
+    --8<-- "docs/examples/advanced/custom_types/custom_dict_source.py"
 ```
 
 ### Tips

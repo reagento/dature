@@ -10,7 +10,6 @@ without imperative glue code.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/quickstart.py:setup"
     --8<-- "docs/examples/advanced/cross_source_refs/quickstart.py:example"
     ```
 
@@ -47,7 +46,6 @@ should contain `${@...}` literally rather than be treated as a cross-ref:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/escaping.py:setup"
     --8<-- "docs/examples/advanced/cross_source_refs/escaping.py:example"
     ```
 
@@ -69,7 +67,6 @@ t-string is exactly equivalent to `"${@tag.key}"` as a plain string:
 === "Python 3.14+"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/t_string.py:setup"
     --8<-- "docs/examples/advanced/cross_source_refs/t_string.py:example"
     ```
 
@@ -89,8 +86,7 @@ the same as `"${@env.log_level:-INFO}"`.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/errors_unknown_tag.py:setup"
-    --8<-- "docs/examples/advanced/cross_source_refs/errors_unknown_tag.py:example"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_unknown_tag.py"
     ```
 
 === "Error"
@@ -104,8 +100,7 @@ the same as `"${@env.log_level:-INFO}"`.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/errors_cycle.py:setup"
-    --8<-- "docs/examples/advanced/cross_source_refs/errors_cycle.py:example"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_cycle.py"
     ```
 
 === "Error"
@@ -124,8 +119,7 @@ explicitly setting a tag on at least one of them will cause a collision:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/errors_tag_collision.py:setup"
-    --8<-- "docs/examples/advanced/cross_source_refs/errors_tag_collision.py:example"
+    --8<-- "docs/examples/advanced/cross_source_refs/errors_tag_collision.py"
     ```
 
 === "Error"

@@ -19,7 +19,6 @@ class Config:
     database: Database
 
 
-
 config = dature.load(dature.EnvSource(prefix="APP__"), schema=Config)
 
 assert config.database.host == "flat-host"

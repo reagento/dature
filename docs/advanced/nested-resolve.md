@@ -16,8 +16,7 @@ When **both** forms are present for the same field, dature needs to know which o
 ## The Problem
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_problem.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_problem.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_problem.py"
 ```
 
 By default, flat keys win (`nested_resolve_strategy="flat"`). This is usually what you want — flat keys are more specific and easier to override in CI/CD.
@@ -35,22 +34,19 @@ Set `nested_resolve_strategy` on `Source` to choose the source for **all** neste
     The strategy only determines **priority** when both forms are present. If only one form exists, it is always used. For example, with `nested_resolve_strategy="flat"`, a JSON value `APP__DATABASE={"host": "x"}` will still be parsed normally when there are no flat keys like `APP__DATABASE__HOST`.
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_no_conflict.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_no_conflict.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_no_conflict.py"
     ```
 
 === "flat (default)"
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_flat.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_flat.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_flat.py"
     ```
 
 === "json"
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_json.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_json.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_json.py"
     ```
 
 ## Per-Field Strategy
@@ -58,8 +54,7 @@ Set `nested_resolve_strategy` on `Source` to choose the source for **all** neste
 Use `nested_resolve` to set different strategies for individual fields:
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_per_field.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_per_field.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_per_field.py"
 ```
 
 ## Per-Field Overrides Global
@@ -67,8 +62,7 @@ Use `nested_resolve` to set different strategies for individual fields:
 When both `nested_resolve_strategy` and `nested_resolve` are set, per-field takes priority:
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_override.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_override.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_override.py"
 ```
 
 ## All Flat-Key Sources
@@ -78,14 +72,12 @@ The mechanism works identically across all flat-key sources:
 === "ENV"
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_json.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_json.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_global_json.py"
     ```
 
 === ".env file"
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_envfile.py:setup"
     --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_envfile.py:example"
     ```
 
@@ -96,8 +88,7 @@ The mechanism works identically across all flat-key sources:
 === "Docker secrets"
 
     ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_docker_secrets.py:setup"
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_docker_secrets.py:example"
+    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_docker_secrets.py"
     ```
 
 ## Error Messages

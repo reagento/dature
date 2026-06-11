@@ -1,10 +1,11 @@
-from dataclasses import dataclass
 from pathlib import Path
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -29,3 +30,4 @@ dature.load(
         (dature.F[Config].user, dature.F[Config].password),
     ),
 )
+# --8<-- [end:example]

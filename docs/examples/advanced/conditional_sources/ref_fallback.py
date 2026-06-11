@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+config_path = Path(__file__).parent / "sources" / "config.json"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-config_path = Path(__file__).parent / "sources" / "config.json"
 
 
 @dataclass
@@ -24,3 +25,4 @@ cfg = dature.load(
 )
 
 assert cfg.env == "dev"
+# --8<-- [end:example]

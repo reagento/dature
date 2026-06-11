@@ -22,28 +22,24 @@ When you specify a config file, dature searches in the following order:
     By default, file-based sources search standard config locations. This example writes `app.yaml` into a directory, where the search occurs, and points the platform config env var there so the loader finds it through system search.
 
     ```python
-    --8<-- "docs/examples/advanced/config_search/default.py:setup"
     --8<-- "docs/examples/advanced/config_search/default.py:example"
     ```
 
 === "Custom Directories"
 
     ```python
-    --8<-- "docs/examples/advanced/config_search/custom_dirs.py:setup"
     --8<-- "docs/examples/advanced/config_search/custom_dirs.py:example"
     ```
 
 === "Disable Globally"
 
     ```python
-    --8<-- "docs/examples/advanced/config_search/disable_global.py:setup"
     --8<-- "docs/examples/advanced/config_search/disable_global.py:example"
     ```
 
 === "Disable Per-Source"
 
     ```python
-    --8<-- "docs/examples/advanced/config_search/disable_local.py:setup"
     --8<-- "docs/examples/advanced/config_search/disable_local.py:example"
     ```
 
