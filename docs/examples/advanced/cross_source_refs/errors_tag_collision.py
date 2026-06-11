@@ -13,8 +13,8 @@ class Config:
 
 # --8<-- [start:example]
 dature.load(
-    dature.EnvSource(prefix="APP_"),
-    dature.EnvSource(prefix="DB_"),  # collision
+    dature.EnvSource(prefix="APP_"), # resolve to tag = 'env'
+    dature.EnvSource(prefix="DB_"),  # resolve to tag = 'env' => collision
     dature.JsonSource(file="${@env.config_path}"),
     schema=Config,
 )

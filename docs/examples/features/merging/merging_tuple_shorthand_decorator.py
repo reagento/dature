@@ -8,13 +8,6 @@ import dature
 SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 os.environ["APP_HOST"] = "env_localhost"
-
-
-@dataclass
-class Config:
-    host: str
-    port: int
-    debug: bool = False
 # --8<-- [end:setup]
 
 # --8<-- [start:example]

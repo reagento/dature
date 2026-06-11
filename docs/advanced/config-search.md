@@ -19,7 +19,7 @@ When you specify a config file, dature searches in the following order:
 
 === "Default (Enabled)"
 
-    By default, file-based sources search standard config locations. This example writes `app.yaml` into a temp directory and points the platform config env var there so the loader finds it through system search.
+    By default, file-based sources search standard config locations. This example writes `app.yaml` into a directory, where the search occurs, and points the platform config env var there so the loader finds it through system search.
 
     ```python
     --8<-- "docs/examples/advanced/config_search/default.py:setup"

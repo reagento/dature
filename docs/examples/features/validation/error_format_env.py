@@ -1,9 +1,12 @@
 # --8<-- [start:setup]
+import os
 from dataclasses import dataclass
 from typing import Annotated
 
 import dature
 from dature import V
+
+os.environ["APP_PORT"] = "0"
 
 
 @dataclass
@@ -13,7 +16,7 @@ class Config:
 
 # --8<-- [start:example]
 dature.load(
-    dature.EnvSource(prefix="ERROR_FORMAT_"),
+    dature.EnvSource(prefix="APP_"),
     schema=Config,
 )
 # --8<-- [end:example]

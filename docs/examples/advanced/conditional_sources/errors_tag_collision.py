@@ -13,8 +13,8 @@ class AppConfig:
 
 # --8<-- [start:example]
 dature.load(
-    dature.EnvSource(),
-    dature.EnvSource(prefix="BACKUP_"),  # collision
+    dature.EnvSource(),  # auto-tag = "env"
+    dature.EnvSource(prefix="BACKUP_"),  # auto-tag = "env" => collision
     dature.VaultSource(path="secret/app", token="${@env.VAULT_TOKEN}"),
     schema=AppConfig,
 )

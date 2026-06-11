@@ -21,12 +21,12 @@ def main() -> None:
     parser.add_argument("--env", default="dev")
     parser.add_argument("--port", type=int)
 
-    ns = parser.parse_args()  # 1. reading env
+    ns = parser.parse_args()  # 1. parsing argv manually
     env = ns.env
 
     config = dature.load(
-        dature.JsonSource(file=SOURCES_DIR / f"config.{env}.json"),  # 2. using env
-        dature.ArgparseSource(parser=parser),  # 3. parsing env again
+        dature.JsonSource(file=SOURCES_DIR / f"config.{env}.json"),
+        dature.ArgparseSource(parser=parser),  # 2. parsing argv again
         schema=AppConfig,
     )
     print(config)

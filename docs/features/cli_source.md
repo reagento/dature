@@ -143,12 +143,13 @@ Args of subparsers that were **not** chosen are simply absent — adaptix uses
     --8<-- "docs/examples/features/cli_source/subparsers.stdout"
     ```
 
-## Bootstrap pattern — peek before `load()`
+## Bootstrap pattern — peek `argv` before `load()`
 
 Sometimes a CLI flag selects which other config file to read. Since
 `argparse.ArgumentParser` is stateless across `parse_args()` calls, you can
-parse it yourself first, read the value, then hand the same parser to
-`ArgparseSource` — the source will parse it again internally, which is cheap.
+parse `argv` manually first to read the value (e.g. `--env`), then pass
+the same parser to `ArgparseSource` — the source will parse it again internally
+during load(), which is cheap.
 
 === "Script"
 

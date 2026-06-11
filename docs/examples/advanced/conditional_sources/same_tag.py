@@ -22,7 +22,7 @@ class AppConfig:
 
 # --8<-- [start:example]
 cfg = dature.load(
-    dature.EnvFileSource(file=str(base_env_path)),
+    dature.EnvFileSource(file=str(base_env_path)), # always — DB_HOST, PORT
     dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
     dature.EnvFileSource(
         tag="secrets",

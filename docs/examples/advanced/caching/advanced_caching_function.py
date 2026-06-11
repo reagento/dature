@@ -27,6 +27,6 @@ os.environ["FN_PORT"] = "9999"
 second = loader.load()
 
 assert first.port == 6379
-assert second.port == 6379
+assert second.port == 6379  # cache still fresh — same Loader instance
 
 # --8<-- [end:example]

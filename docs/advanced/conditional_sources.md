@@ -104,7 +104,10 @@ is enabled, no collision.
 ### Error: all sources filtered out
 
 Without a `:-default`, an unset variable expands to `""`, which matches nothing.
-If every source is conditional and none matches, dature raises immediately:
+For example, if `APP_ENV` is not set, `${APP_ENV}` expands to an empty string 
+and matches neither `"prod"` nor (`"dev"`, `"local"`). 
+If all sources are conditional and none matches, `dature` raises a`DatureError`
+immediately at construction time.
 
 === "Python"
 
@@ -150,8 +153,11 @@ and both sources can safely share the same `tag="secrets"`.
 
 ## Toggle from another source
 
-Use `${@tag.key}` as a `When()` template when the toggle value lives in a file or
-another source rather than in an OS environment variable:
+Use `${@tag.key}` as a `When()` template when the toggle value lives in a file
+or another source rather than in an OS environment variable.
+For example, if the toggle value lives in `config.json`, not in an OS environment variable,
+`JsonSource` loads first, and its `"env"` key drives the `when=` condition of `EnvFileSource`.
+
 
 === "Python"
 
@@ -174,7 +180,13 @@ after the referenced source loads.
 
 A source disabled by a `${@tag.key}`-based `when=` still occupies its tag slot
 in the dependency graph.  Its data is empty, so a cross-ref to it without a
-default raises.  Use `:-` to provide a fallback:
+default raises.  Use `:-` to provide a fallback.
+
+For example, config.json contains {"env": "dev"}. The "secrets" source is disabled lazily
+because its when= depends on ${@cfg.env}, and env != "prod".
+Even when disabled, sources still occupy their tag slot in the dependency graph,
+so ${@secrets.remote_config} remains a valid reference — it simply resolves to absent.
+In this case, the :- default is used and falls back to the local config.json instead.
 
 === "Python"
 
@@ -197,7 +209,9 @@ default raises.  Use `:-` to provide a fallback:
 `when=` enables or disables a **Source instance** as a whole.  Multiple sources
 can share the same `tag=` as long as their conditions are mutually exclusive — at
 most one is active at a time.  Use separate instances with different
-`prefix=` or `field_mapping=` to load different subsets of keys conditionally:
+`prefix=` or `field_mapping=` to load different subsets of keys conditionally.
+For example, `base.env` (e.g. `DB_HOST`, `PORT`) is always loaded,
+while the vault token is sourced from the OS environment in `prod` and from a local file in `dev`.
 
 === "Python"
 
@@ -222,8 +236,13 @@ most one is active at a time.  Use separate instances with different
 
 ### Error: tag collision
 
-If conditions overlap, two sources with the same explicit `tag=` are both
-enabled — dature raises `DatureError` at construction time:
+If conditions overlap, two sources with the same explicit `tag=` are both enabled,
+and `dature` raises a `DatureError` at construction time.
+For example, if `APP_ENV` is not set, both `when=` conditions may fire simultaneously
+because they use different defaults, resulting in two active sources under the same 
+explicit `tag="secrets"`. Unlike a tag collision caused by `${@tag.key}` references,
+this is detected at construction time whenever `tag=` is explicitly set - no consumer source is required.
+Fix: use a consistent default across all conditions (see the `"no APP_ENV"` example).
 
 === "Python"
 

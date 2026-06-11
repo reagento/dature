@@ -107,6 +107,8 @@ Classic `ab*****cd` style:
 ```python
 --8<-- "docs/examples/features/masking/masking_classic_style.py:example"
 ```
+* `"my_secret_password"` → `"my*****rd"`
+* `"ab"` → `"ab"` (too short — shown as-is)
 
 ## Configuration
 

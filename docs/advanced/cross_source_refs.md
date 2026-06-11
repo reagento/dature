@@ -116,6 +116,11 @@ the same as `"${@env.log_level:-INFO}"`.
 
 ### Tag collision
 
+Each source resolves to a tag that uniquely identifies it within a dature.load() call.
+If two sources resolve to the same tag, dature raises an error.
+EnvSource defaults to tag='env'. Loading two EnvSource instances without
+explicitly setting a tag on at least one of them will cause a collision:
+
 === "Python"
 
     ```python

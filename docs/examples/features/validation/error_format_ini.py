@@ -16,7 +16,10 @@ class Config:
 
 # --8<-- [start:example]
 dature.load(
-    dature.IniSource(file=SOURCES_DIR / "error_format_config.ini"),
+    dature.IniSource(
+        file=SOURCES_DIR / "error_format_config.ini",
+        prefix="app",
+    ),
     schema=Config,
 )
 # --8<-- [end:example]

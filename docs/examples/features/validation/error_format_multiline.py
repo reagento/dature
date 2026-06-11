@@ -9,7 +9,8 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 
 @dataclass
 class Config:
-    message: str
+    tags: Annotated[list[str], V.unique_items()]
+
 # --8<-- [end:setup]
 
 # --8<-- [start:example]

@@ -25,6 +25,7 @@ config2 = TtlConfig()
 assert config1.port == 6379
 assert config2.port == 6379
 
+# Simulate TTL expiration by replacing the internal clock
 real_monotonic = time.monotonic
 time.monotonic = lambda: real_monotonic() + 60.0
 config3 = TtlConfig()
