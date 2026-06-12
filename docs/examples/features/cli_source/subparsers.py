@@ -32,6 +32,7 @@ create.add_argument("--name")
 delete = subs.add_parser("delete")
 delete.add_argument("--item-id", type=int)
 
+
 def main() -> None:
     config = dature.load(dature.ArgparseSource(parser=parser), schema=Config)
     print(config)

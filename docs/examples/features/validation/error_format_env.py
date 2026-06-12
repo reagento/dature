@@ -12,6 +12,7 @@ os.environ["APP_PORT"] = "0"
 class Config:
     port: Annotated[int, V >= 1]
 
+
 dature.load(
     dature.EnvSource(prefix="APP_"),
     schema=Config,

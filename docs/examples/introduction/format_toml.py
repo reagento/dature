@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -11,6 +12,7 @@ class Config:
     host: str
     port: int
     debug: bool = False
+
 
 config = dature.load(
     dature.Toml11Source(file=SOURCES_DIR / "intro_app.toml"),

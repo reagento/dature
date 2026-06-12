@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -18,6 +19,7 @@ class Config:
 parser = argparse.ArgumentParser()
 parser.add_argument("--host")
 parser.add_argument("--port", type=int)
+
 
 def main() -> None:
     config = dature.load(

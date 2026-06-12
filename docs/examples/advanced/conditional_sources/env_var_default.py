@@ -1,4 +1,5 @@
 from pathlib import Path
+
 dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 # --8<-- [start:example]
@@ -13,6 +14,7 @@ os.environ.pop("APP_ENV", None)
 @dataclass
 class SecretsConfig:
     vault_token: str = ""
+
 
 cfg = dature.load(
     dature.EnvSource(

@@ -14,6 +14,7 @@ class AppConfig:
     port: int
     debug: bool = False
 
+
 config = dature.load(dature.EnvSource(prefix="APP_"), schema=AppConfig)
 
 assert config.host == "0.0.0.0"

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -17,6 +18,7 @@ class Address:
 class User:
     name: str
     address: Address
+
 
 config = dature.load(
     dature.Yaml12Source(

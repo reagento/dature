@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -16,7 +17,6 @@ config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_base.yaml"),
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_override.yaml"),
     schema=Config,
-
     # UNIQUE(a + b, keep="last")
     field_merges={dature.F[Config].tags: "last_wins"},
 )

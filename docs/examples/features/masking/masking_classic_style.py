@@ -12,6 +12,7 @@ class Config:
     password: str
     host: str
 
+
 dature.configure(
     masking={"mask": "*****", "visible_prefix": 2, "visible_suffix": 2},
 )

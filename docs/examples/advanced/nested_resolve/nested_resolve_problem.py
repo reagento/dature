@@ -23,4 +23,3 @@ config = dature.load(dature.EnvSource(prefix="APP__"), schema=Config)
 
 assert config.database.host == "flat-host"
 assert config.database.port == 3306
-

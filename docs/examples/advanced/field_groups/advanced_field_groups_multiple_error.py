@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SHARED_DIR = Path(__file__).parents[2] / "shared"
 SOURCES_DIR = Path(__file__).parent / "sources"
 

@@ -10,10 +10,12 @@ class Config:
     port: int = 8080
     debug: bool = False
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--name")
 parser.add_argument("--port", type=int)
 parser.add_argument("--debug", action="store_true")
+
 
 def main() -> None:
     config = dature.load(dature.ArgparseSource(parser=parser), schema=Config)

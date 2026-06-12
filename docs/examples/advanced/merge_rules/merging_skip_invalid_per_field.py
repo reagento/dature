@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -12,7 +13,6 @@ class Config:
     host: str
     port: int
     timeout: int
-
 
 
 config = dature.load(

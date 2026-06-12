@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -21,6 +22,7 @@ class Config:
     @property
     def address(self) -> str:
         return f"{self.host}:{self.port}"
+
 
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "validation_post_init_invalid.yaml"),

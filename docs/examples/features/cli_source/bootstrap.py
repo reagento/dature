@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -13,6 +14,7 @@ class AppConfig:
     env: str = "dev"
     host: str = "localhost"
     port: int = 8080
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()

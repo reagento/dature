@@ -17,6 +17,7 @@ class Database:
 class Config:
     db: Database
 
+
 config = dature.load(
     dature.EnvSource(prefix="NS_", nested_sep="__"),
     schema=Config,

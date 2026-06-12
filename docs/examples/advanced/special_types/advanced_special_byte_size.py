@@ -17,4 +17,3 @@ assert repr(config.max_upload) == "ByteSize(1500000000)"
 assert config.max_upload.human_readable() == "1.4GiB"
 assert config.max_upload.human_readable(decimal=True) == "1.5GB"
 assert ByteSize(1024) > ByteSize(512)
-

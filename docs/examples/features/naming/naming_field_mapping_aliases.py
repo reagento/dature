@@ -7,4 +7,5 @@ import dature
 class Config:
     name: str
 
+
 field_mapping = {dature.F[Config].name: ("fullName", "userName")}

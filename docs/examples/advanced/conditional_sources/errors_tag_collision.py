@@ -11,8 +11,9 @@ class AppConfig:
 dature.load(
     dature.EnvSource(),  # auto-tag = "env"
     dature.EnvSource(prefix="BACKUP_"),  # auto-tag = "env" => collision
-    dature.VaultSource(path="secret/app",
-        token="${@env.VAULT_TOKEN}"  # noqa: S106
+    dature.VaultSource(
+        path="secret/app",
+        token="${@env.VAULT_TOKEN}",  # noqa: S106
     ),
     schema=AppConfig,
 )

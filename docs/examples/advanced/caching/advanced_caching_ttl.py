@@ -7,6 +7,7 @@ import dature
 
 os.environ["TTL_PORT"] = "6379"
 
+
 @dature.load(dature.EnvSource(prefix="TTL_"), cache=timedelta(seconds=30))
 @dataclass
 class TtlConfig:

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -19,6 +20,7 @@ def check_debug_not_on_production(obj: Config) -> bool:
     if obj.host != "localhost" and obj.debug:
         return False
     return True
+
 
 dature.load(
     dature.Yaml12Source(

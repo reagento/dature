@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -11,7 +12,6 @@ import dature
 class Config:
     host: str
     port: int = 3000
-
 
 
 config = dature.load(

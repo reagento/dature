@@ -5,6 +5,7 @@ import dature
 
 os.environ["NOCACHE_PORT"] = "6379"
 
+
 @dature.load(dature.EnvSource(prefix="NOCACHE_"), cache=False)
 @dataclass
 class UncachedConfig:

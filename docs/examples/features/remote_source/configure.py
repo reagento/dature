@@ -10,6 +10,7 @@ class Config:
     port: int
     name: str
 
+
 dature.configure(
     vault={
         "url": os.environ["VAULT_ADDR"],
@@ -19,5 +20,4 @@ dature.configure(
 
 config = dature.load(dature.VaultSource(path="myapp/config"), schema=Config)
 
-assert config == Config(
-                 db_password="s3cret", port=5432, name="myapp")  # noqa: S106
+assert config == Config(db_password="s3cret", port=5432, name="myapp")  # noqa: S106

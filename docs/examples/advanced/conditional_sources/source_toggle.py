@@ -1,4 +1,5 @@
 from pathlib import Path
+
 cfg_path = Path(__file__).parent / "sources" / "config.json"
 vault_dev_path = Path(__file__).parent / "sources" / "vault_dev.env"
 

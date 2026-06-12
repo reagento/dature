@@ -19,7 +19,6 @@ class Config:
     database: Database
 
 
-
 config = dature.load(
     # priority - flat values
     dature.EnvSource(prefix="APP__", nested_resolve_strategy="flat"),

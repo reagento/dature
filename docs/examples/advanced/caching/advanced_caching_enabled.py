@@ -5,6 +5,7 @@ import dature
 
 os.environ["CACHE_PORT"] = "6379"
 
+
 @dature.load(dature.EnvSource(prefix="CACHE_"), cache=True)
 @dataclass
 class CachedConfig:

@@ -20,7 +20,6 @@ class Config:
     database: Database
 
 
-
 config = dature.load(
     dature.EnvSource(prefix="APP__", nested_resolve_strategy="flat"),
     schema=Config,
@@ -29,4 +28,3 @@ config = dature.load(
 # priority flat values not found -> parsing JSON
 assert config.database.host == "json-host"
 assert config.database.port == 5432
-

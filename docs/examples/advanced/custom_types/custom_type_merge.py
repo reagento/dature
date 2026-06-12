@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -29,7 +30,6 @@ config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "custom_type_common.yaml"),
     dature.Yaml12Source(file=SOURCES_DIR / "custom_type_merge_override.yaml"),
     schema=AppConfig,
-
     # applies to all sources within a single load() call
     type_loaders={Rgb: rgb_from_string},
 )

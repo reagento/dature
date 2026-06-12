@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -7,6 +8,7 @@ from typing import Annotated
 
 import dature
 from dature import V
+
 
 @dataclass
 class Config:

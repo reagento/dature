@@ -29,7 +29,6 @@ class Config:
     cache: Cache
 
 
-
 config = dature.load(
     dature.EnvSource(
         prefix="APP__",
@@ -45,4 +44,3 @@ assert config.database.host == "json-host"
 assert config.database.port == 5432
 assert config.cache.host == "flat-cache"
 assert config.cache.ttl == 120
-

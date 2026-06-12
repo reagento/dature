@@ -24,4 +24,3 @@ assert config.api_url.fragment == "section"
 assert (
     config.api_url.geturl() == "https://api.example.com:8080/v1?key=abc#section"
 )
-

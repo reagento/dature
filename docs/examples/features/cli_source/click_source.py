@@ -6,8 +6,6 @@ import click
 import dature
 
 
-
-
 @dataclass(kw_only=True, repr=False)
 class ClickSource(dature.CliSource):
     cli: click.Command
@@ -96,6 +94,7 @@ class Config:
     verbose: bool = False
     create: CreateArgs | None = None
     delete: DeleteArgs | None = None
+
 
 def main() -> None:
     config = dature.load(ClickSource(cli=cli), schema=Config)

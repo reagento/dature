@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -24,6 +25,7 @@ class Config:
             error_message="Endpoint host must not be empty",
         ),
     ]
+
 
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "error_format_dataclass.yaml"),

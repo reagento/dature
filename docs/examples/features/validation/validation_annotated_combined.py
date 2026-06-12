@@ -3,6 +3,7 @@ from typing import Annotated
 
 from dature import V
 
+
 @dataclass
 class Config:
     port: Annotated[int, (V >= 1) & (V <= 65535)]

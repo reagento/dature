@@ -15,6 +15,7 @@ class AppConfig:
     port: int
     debug: bool = False
 
+
 config = AppConfig()
 
 assert config.host == "0.0.0.0"

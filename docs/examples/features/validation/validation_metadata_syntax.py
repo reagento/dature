@@ -9,6 +9,7 @@ class Config:
     host: str
     port: int
 
+
 validators = {
     dature.F[Config].port: (V > 0) & (V < 65536),
     dature.F[Config].host: V.len() >= 1,

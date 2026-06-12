@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -14,6 +15,7 @@ class Config:
     api_key: SecretStr
     card_number: PaymentCardNumber
     host: str
+
 
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_secret_str.yaml"),

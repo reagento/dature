@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -12,6 +13,7 @@ import dature
 class Config:
     password: Literal["admin", "root"]
     host: str
+
 
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_by_name.yaml"),

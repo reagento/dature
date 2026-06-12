@@ -1,4 +1,5 @@
 from pathlib import Path
+
 base_env_path = Path(__file__).parent / "sources" / "base.env"
 vault_dev_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
@@ -19,7 +20,7 @@ class AppConfig:
 
 
 cfg = dature.load(
-    dature.EnvFileSource(file=str(base_env_path)), # always — DB_HOST, PORT
+    dature.EnvFileSource(file=str(base_env_path)),  # always — DB_HOST, PORT
     dature.EnvSource(tag="secrets", when=dature.When("${APP_ENV}") == "prod"),
     dature.EnvFileSource(
         tag="secrets",

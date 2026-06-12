@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -22,6 +23,7 @@ class ServiceConfig:
             error_message="Value must be divisible by 2",
         ),
     ]
+
 
 dature.load(
     dature.Json5Source(file=SOURCES_DIR / "validation_custom_invalid.json5"),

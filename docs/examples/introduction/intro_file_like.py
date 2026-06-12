@@ -10,6 +10,7 @@ class Config:
     port: int
     debug: bool = False
 
+
 text_stream = StringIO('{"host": "localhost", "port": 8080, "debug": true}')
 config = dature.load(dature.JsonSource(file=text_stream), schema=Config)
 

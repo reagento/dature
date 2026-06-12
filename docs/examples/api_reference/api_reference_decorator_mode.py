@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SHARED_DIR = Path(__file__).parents[1] / "shared"
 
 # --8<-- [start:example]
@@ -13,6 +14,7 @@ class Config:
     host: str
     port: int
     debug: bool = False
+
 
 config = Config()
 

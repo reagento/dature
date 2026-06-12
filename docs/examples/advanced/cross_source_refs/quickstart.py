@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+
 os.environ["APP_CONFIG_PATH"] = str(
     Path(__file__).parent / "sources" / "app.json"
 )
@@ -14,6 +15,7 @@ import dature
 class AppConfig:
     host: str = "localhost"
     port: int = 8080
+
 
 cfg = dature.load(
     dature.JsonSource(file="${@env.config_path}"),

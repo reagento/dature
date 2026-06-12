@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -13,6 +14,7 @@ class ApiConfig:
     max_retries: int
     is_active: bool
     base_url: str
+
 
 config = dature.load(
     dature.Yaml12Source(

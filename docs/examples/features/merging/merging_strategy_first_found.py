@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 # --8<-- [start:example]
@@ -12,6 +13,7 @@ class Config:
     host: str
     port: int
     tags: list[str]
+
 
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "nonexistent.yaml"),

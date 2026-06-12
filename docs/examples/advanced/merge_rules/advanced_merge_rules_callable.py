@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 # --8<-- [start:example]
@@ -17,6 +18,7 @@ class Config:
 
 def merge_tags(values: list[Any]) -> list[str]:
     return sorted({v for lst in values for v in lst})
+
 
 config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),

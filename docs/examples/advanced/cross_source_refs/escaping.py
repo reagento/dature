@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -10,6 +11,7 @@ import dature
 @dataclass
 class Config:
     value: str = ""
+
 
 cfg = dature.load(
     dature.JsonSource(file=str(SOURCES_DIR / "$${@env.something}")),

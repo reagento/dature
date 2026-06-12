@@ -22,4 +22,3 @@ assert config.token == "hello world"
 assert type(config.token) is str
 assert config.data == b"hello world"
 assert type(config.data) is bytes
-

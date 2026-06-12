@@ -45,6 +45,12 @@ When you specify a config file, dature searches in the following order:
     --8<-- "docs/examples/advanced/config_search/disable_local.py:example"
     ```
 
+=== "common_app.yaml"
+
+    ```yaml
+    --8<-- "docs/examples/advanced/shared/common_app.yaml"
+    ```
+
 ## Configuration
 
 For global and per-source configuration options, see [Configure](../features/configure.md).

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -12,6 +13,7 @@ class DbConfig:
     database_url: str
     secret_key: str
     pool_size: int
+
 
 config = dature.load(
     dature.Yaml12Source(

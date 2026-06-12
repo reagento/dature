@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -13,6 +14,7 @@ from dature import V
 class Config:
     api_key: Annotated[str, V.len() >= 20]
     host: str
+
 
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_per_source.yaml"),

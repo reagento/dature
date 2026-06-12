@@ -1,4 +1,5 @@
 from pathlib import Path
+
 SOURCES_DIR = Path(__file__).parent / "sources"
 SHARED_DIR = Path(__file__).parents[2] / "shared"
 
@@ -15,6 +16,7 @@ class Config:
     host: str
     port: int
     tags: list[str]
+
 
 try:
     config = dature.load(
