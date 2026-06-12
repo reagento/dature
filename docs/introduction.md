@@ -121,7 +121,8 @@ See the full list of Source classes and their extra dependencies on the [main pa
 | `root_validators` | Post-load validation of the entire object. See [Validation](features/validation.md) |
 | `validators` | Per-field validators in metadata. See [Validation](features/validation.md) |
 | `expand_env_vars` | ENV variable expansion mode. See [Advanced — ENV Expansion](advanced/env-expansion.md) |
-| `skip_if_broken` | Skip this source if it fails to load. See [Advanced — Skipping Broken Sources](advanced/merge-rules.md#skipping-broken-sources) |
+| `skip_if_broken` | Skip this source if it fails to parse. See [Skipping Sources with Parse Errors](advanced/merge-rules.md#skipping-sources-with-parse-errors) |
+| `skip_if_missing` | Skip this source if its file does not exist. See [Skipping Missing Sources](advanced/merge-rules.md#skipping-missing-sources) |
 | `skip_field_if_invalid` | Skip invalid fields from this source. See [Advanced — Skipping Invalid Fields](advanced/merge-rules.md#skipping-invalid-fields) |
 | `type_loaders` | Custom type converters for this source. See [Custom Types & Loaders](advanced/custom_types.md#custom-types) |
 

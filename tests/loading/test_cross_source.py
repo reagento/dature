@@ -253,14 +253,14 @@ class TestInterpolation:
         assert result.url == "${@a.url}"
 
     def test_skipped_dep_contributes_empty_context_for_default_fallback(self) -> None:
-        # Regression: when a dependency source is skipped (skip_if_broken=True and
+        # Regression: when a dependency source is skipped (skip_if_missing=True and
         # the file doesn't exist), _resolve_dep_refs writes context[dep_tag] = {} so
         # that ${@dep.key:-fallback} default expressions still resolve, rather than
         # raising "unknown tag".
-        broken = _BrokenDepStub(tag="dep", skip_if_broken=True)
+        broken = _BrokenDepStub(tag="dep", skip_if_missing=True)
         consumer = _Stub(tag="consumer", url="${@dep.key:-used-fallback}", data={})
 
-        result = load(broken, consumer, schema=_StrConfig, skip_broken_sources=True)
+        result = load(broken, consumer, schema=_StrConfig, skip_if_missing=True)
 
         assert result.url == "used-fallback"
 

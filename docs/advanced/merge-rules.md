@@ -194,9 +194,9 @@ Override `op` to plug in your own merge function — e.g. shallow overlay for en
 
 `ctx.merge` is the single hook — once your strategy funnels every per-source step through it, debug logs (`[Cls] Merge step N ...`, `State after step N: ...`) and `LoadReport.field_origins` are populated automatically; there's no separate registration call to remember.
 
-## Skipping Broken Sources
+## Skipping Sources with Parse Errors
 
-Skip sources that fail to load (missing file, invalid syntax):
+`skip_if_broken=True` silently skips a source whose file **exists but fails to parse** (invalid syntax, config error).
 
 === "Python"
 
@@ -210,7 +210,25 @@ Skip sources that fail to load (missing file, invalid syntax):
     --8<-- "docs/examples/shared/common_defaults.yaml"
     ```
 
-Override per source with `skip_if_broken` on `Source` (takes priority over the global flag):
+## Skipping Missing Sources
+
+`skip_if_missing=True` silently skips a source whose file **does not exist**.
+
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_missing.py:example"
+    ```
+
+=== "common_defaults.yaml"
+
+    ```yaml
+    --8<-- "docs/examples/shared/common_defaults.yaml"
+    ```
+
+## Per-source Skip Overrides
+
+Both `skip_if_broken` and `skip_if_missing` can be set directly on a `Source` instance, which takes priority over the global `load()` flag:
 
 === "Python"
 

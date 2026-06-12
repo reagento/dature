@@ -84,6 +84,7 @@ class Source(abc.ABC):
     validators: "FieldValidators | None" = None
     expand_env_vars: "ExpandEnvVarsMode | None" = None
     skip_if_broken: bool | None = None
+    skip_if_missing: bool | None = None
     skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
     tag: str | None = None

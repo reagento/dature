@@ -266,10 +266,10 @@ when the variable is unset.
 
 `when=` filtering runs **before** any I/O: a source that doesn't match its
 `when=` condition is never opened, never loaded, and never considered broken.
-`skip_if_broken=True` (or the `skip_broken_sources=True` load-level flag) only
-applies to sources that *pass* the `when=` gate and then raise during loading
-(e.g. file not found).  In other words, a source disabled by its `when=` condition
-always takes priority over `skip_if_broken`.
+`skip_if_broken=True` / `skip_if_missing=True` (or the matching load-level flags)
+only apply to sources that *pass* the `when=` gate and then raise during loading.
+`skip_if_broken` covers parse/config errors; `skip_if_missing` covers absent files.
+A source disabled by its `when=` condition always takes priority over either flag.
 
 ## Syntax reference
 
