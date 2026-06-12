@@ -34,7 +34,7 @@ config = dature.load(
     dature.EnvSource(
         prefix="APP__",
         nested_resolve_strategy="flat",  # global strategy
-        nested_resolve={"json": (dature.F[Config].database,)},  # exclusion for database
+        nested_resolve={"json": (dature.F[Config].database,)}, # exclusion for db
     ),
     schema=Config,
 )

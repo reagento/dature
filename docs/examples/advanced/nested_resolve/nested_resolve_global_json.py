@@ -21,7 +21,8 @@ class Config:
 
 
 config = dature.load(
-    dature.EnvSource(prefix="APP__", nested_resolve_strategy="json"),  # priority - json values
+    # priority - json values
+    dature.EnvSource(prefix="APP__", nested_resolve_strategy="json"),
     schema=Config,
 )
 

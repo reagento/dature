@@ -17,7 +17,9 @@ config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_base.yaml"),
     dature.Yaml12Source(file=SOURCES_DIR / "merging_field_override.yaml"),
     schema=Config,
-    field_merges={dature.F[Config].tags: "first_wins"},  # UNIQUE(a + b, keep="first")
+
+    # UNIQUE(a + b, keep="first")
+    field_merges={dature.F[Config].tags: "first_wins"},
 )
 
 assert config.tags == ["web", "default"]
