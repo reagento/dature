@@ -112,7 +112,8 @@ Fields with an explicit strategy are excluded from conflict detection:
 
 ## First-Found Source Strategy
  
-Use `strategy="first_found"` to stop merging as soon as a source provides a value for each field — later sources are only consulted for fields that are still missing:
+With the `first-found strategy`, each field is taken from the first source that provides it —
+remaining sources are not consulted for that field once a value is found.
  
 === "Python"
  
