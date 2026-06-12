@@ -38,7 +38,9 @@ When you specify a config file, dature searches in the following order:
     ```
 
 === "Disable Per-Source"
-
+    Disable search only for one source while the global setting remains unchanged.
+    Even though `system_config_dirs` contains the directory with the file,
+    it won't be searched — `search_system_paths=False` overrides it locally.
     ```python
     --8<-- "docs/examples/advanced/config_search/disable_local.py:example"
     ```
