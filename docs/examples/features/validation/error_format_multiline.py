@@ -3,8 +3,10 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
 from dataclasses import dataclass
+from typing import Annotated
 
 import dature
+from dature import V
 
 
 @dataclass

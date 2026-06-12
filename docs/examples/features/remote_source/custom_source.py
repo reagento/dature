@@ -34,4 +34,4 @@ config = dature.load(
     schema=Config,
 )
 
-assert config == Config(db_password="s3cret", port=5432)
+assert config == Config(db_password="s3cret", port=5432)  # noqa: S106

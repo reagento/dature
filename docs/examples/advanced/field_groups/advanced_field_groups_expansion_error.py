@@ -23,7 +23,7 @@ class Config:
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "field_groups_nested_defaults.yaml"),
     dature.Yaml12Source(
-        file=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml",
+      file=SOURCES_DIR / "advanced_field_groups_expansion_error_overrides.yaml",
     ),
     schema=Config,
     field_groups=(
