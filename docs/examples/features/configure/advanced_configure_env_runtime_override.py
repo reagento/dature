@@ -24,7 +24,7 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is not None
 
 # 2. Runtime override disables debug (ignores env)
@@ -34,7 +34,7 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is None
 
 # 3. Reset to start behavior
@@ -44,6 +44,6 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is not None
 # --8<-- [end:example]

@@ -22,7 +22,7 @@ config = dature.load(
     debug=True,
 )
 
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is not None
 
 origins = report.field_origins

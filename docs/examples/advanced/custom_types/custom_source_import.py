@@ -1,5 +1,3 @@
-from dature.sources.base import Source
-from dature.sources.file_source import FileSource
-from dature.sources.flat_key import FlatKeySource
+from dature.sources.base import FileSource, FlatKeySource, Source
 
 __all__ = ["FileSource", "FlatKeySource", "Source"]

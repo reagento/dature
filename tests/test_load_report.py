@@ -8,9 +8,9 @@ from typing import Annotated
 
 import pytest
 
-from dature import JsonSource, V, get_load_report, load
+from dature import JsonSource, V, load, load_report
 from dature.errors import DatureConfigError
-from dature.load_report import LoadReport
+from dature.report import LoadReport
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.strategies.source import SourceFirstWins, SourceLastWins
 
@@ -35,7 +35,7 @@ class TestGetLoadReportMergeFunction:
             debug=True,
         )
 
-        report = get_load_report(result)
+        report = load_report(result)
 
         assert report is not None
         assert report.dataclass_name == "Config"
@@ -92,7 +92,7 @@ class TestGetLoadReportMergeFunction:
             debug=True,
         )
 
-        report = get_load_report(result)
+        report = load_report(result)
 
         assert report is not None
         assert report.dataclass_name == "Config"
@@ -152,7 +152,7 @@ class TestGetLoadReportMergeFunction:
             debug=True,
         )
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
 
         expected_origins = (
@@ -186,7 +186,7 @@ class TestGetLoadReportSingleSource:
 
         result = load(JsonSource(file=json_file), schema=Config, debug=True)
 
-        report = get_load_report(result)
+        report = load_report(result)
 
         expected = LoadReport(
             dataclass_name="Config",
@@ -235,7 +235,7 @@ class TestGetLoadReportDecorator:
             port: int
 
         config = Config()
-        report = get_load_report(config)
+        report = load_report(config)
         assert report is not None
         assert isinstance(report.strategy, SourceLastWins)
         assert len(report.sources) == 2
@@ -251,7 +251,7 @@ class TestGetLoadReportDecorator:
             port: int
 
         config = Config()
-        report = get_load_report(config)
+        report = load_report(config)
         assert report is not None
         assert report.strategy is None
         assert len(report.sources) == 1
@@ -261,7 +261,7 @@ class TestGetLoadReportWithoutDebug:
     def test_returns_none_with_warning(self):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = get_load_report("hello")
+            result = load_report("hello")
 
         assert result is None
         assert len(w) == 1
@@ -280,7 +280,7 @@ class TestGetLoadReportWithoutDebug:
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            report = get_load_report(result)
+            report = load_report(result)
 
         assert report is None
         assert len(w) == 1
@@ -371,7 +371,7 @@ class TestLoadReportOnError:
                 debug=True,
             )
 
-        report = get_load_report(Config)
+        report = load_report(Config)
         assert report is not None
         assert report.dataclass_name == "Config"
         assert isinstance(report.strategy, SourceLastWins)
@@ -410,7 +410,7 @@ class TestLoadReportOnError:
                 debug=True,
             )
 
-        report = get_load_report(Config)
+        report = load_report(Config)
         assert report is not None
         assert report.dataclass_name == "Config"
         assert isinstance(report.strategy, SourceLastWins)
@@ -459,7 +459,7 @@ class TestLoadReportOnError:
             ),
             merged_data={"host": "localhost"},
         )
-        assert expected == get_load_report(Config)
+        assert expected == load_report(Config)
 
     def test_single_source_validation_error(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
@@ -487,4 +487,4 @@ class TestLoadReportOnError:
             ),
             merged_data={"port": -1},
         )
-        assert expected == get_load_report(Config)
+        assert expected == load_report(Config)

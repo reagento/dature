@@ -29,7 +29,7 @@ Main entry point. Two calling patterns:
 | `*sources` | `Source` | — | One or more source descriptors (e.g. `JsonSource(file=...)`, `EnvSource()`). Multiple sources → merge mode. |
 | `schema` | `type[T] \| None` | `None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
 | `cache` | `bool \| timedelta \| None` | `None` | Enable caching. `True`/`False` toggle, `timedelta` sets TTL. Default from `configure()`. **Effective in decorator mode only** — function mode `load(...)` creates a throwaway loader each call. For function-mode caching, use `dature.Loader` explicitly; see [Caching](advanced/caching.md). |
-| `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `configure()`. Retrieve with `get_load_report()`. |
+| `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `configure()`. Retrieve with `load_report()`. |
 | `strategy` | `MergeStrategyName \| SourceMergeStrategy` | `"last_wins"` | Merge strategy: a built-in name or a custom object implementing `SourceMergeStrategy`. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
 | `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy name, callable, or any object implementing `FieldMergeStrategy`. See [Field Merge Strategies](#field-merge-strategies). |
 | `field_groups` | `tuple[FieldGroupTuple, ...]` | `()` | Groups of fields that must change together. Each group is a tuple of `F[Config].field` references. |
@@ -73,7 +73,7 @@ Public class that carries all the load-time parameters and the cache state. Use 
 ### `Source`
 
 ```python
---8<-- "src/dature/sources/base.py:load-metadata"
+--8<-- "src/dature/sources/base/source.py:load-metadata"
 ```
 
 Abstract base class for all sources. See [Introduction — Source Reference](introduction.md#source-reference) for parameter descriptions.
@@ -110,7 +110,7 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 Base class for file-based sources (`JsonSource`, `Yaml11Source`, `Toml10Source`, `IniSource`, etc.).
 
 ```python
---8<-- "src/dature/sources/base.py:file-source"
+--8<-- "src/dature/sources/base/file.py:file-source"
 ```
 
 | Parameter | Type | Default | Description |
@@ -130,7 +130,7 @@ Base class for file-based sources (`JsonSource`, `Yaml11Source`, `Toml10Source`,
 Base class for flat key=value sources (`EnvSource`, `EnvFileSource`, `DockerSecretsSource`).
 
 ```python
---8<-- "src/dature/sources/base.py:flat-key-source"
+--8<-- "src/dature/sources/base/flat_key.py:flat-key-source"
 ```
 
 | Parameter | Type | Default | Description |
@@ -203,10 +203,10 @@ Immutable dataclass (`frozen=True, slots=True`) created via `F[Config].field_nam
 
 ## Report
 
-### `get_load_report()`
+### `load_report()`
 
 ```python
---8<-- "src/dature/load_report.py:get-load-report"
+--8<-- "src/dature/report.py:load-report"
 ```
 
 Retrieves the `LoadReport` attached to a loaded instance. Returns `None` and emits a warning if `debug=True` was not passed to `load()`.
@@ -219,7 +219,7 @@ Retrieves the `LoadReport` attached to a loaded instance. Returns `None` and emi
 
 ```python
 --8<-- "src/dature/report_types.py:value-types"
---8<-- "src/dature/load_report.py:report-structure"
+--8<-- "src/dature/report.py:report-structure"
 ```
 
 #### `SourceEntry`

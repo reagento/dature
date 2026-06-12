@@ -2,7 +2,7 @@ import json
 from dataclasses import asdict
 from typing import Any
 
-from dature.load_report import LoadReport
+from dature.report import LoadReport
 from dature.report_types import FieldOrigin
 
 

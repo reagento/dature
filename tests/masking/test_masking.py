@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dature import JsonSource, configure, get_load_report, load
+from dature import JsonSource, configure, load, load_report
 from dature.errors import DatureConfigError
 from dature.fields.secret_str import SecretStr
 from dature.masking.masking import mask_env_line, mask_field_origins, mask_json_value, mask_source_entries, mask_value
@@ -217,7 +217,7 @@ class TestSecretMaskingIntegration:
 
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
 
         assert report.merged_data == {"password": _MASKED_SECRET, "host": _PUBLIC_VALUE}
@@ -246,7 +246,7 @@ class TestSecretMaskingIntegration:
             debug=True,
         )
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
 
         assert report.merged_data == {"password": _MASKED_SECRET, "host": _PUBLIC_VALUE}
@@ -268,7 +268,7 @@ class TestSecretMaskingIntegration:
 
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
 
         assert report.merged_data == {"api_key": _MASKED_SECRET, "host": _PUBLIC_VALUE}
@@ -411,7 +411,7 @@ class TestSecretMaskingIntegration:
         configure(masking={"mask_secrets": mask_secrets})
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
 
         assert report.merged_data == {"password": expected_password, "host": _PUBLIC_VALUE}
@@ -468,7 +468,7 @@ class TestLoadLevelMaskingParams:
 
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True, mask_secrets=True)
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
         assert report.merged_data == {"password": _MASKED_SECRET, "host": _PUBLIC_VALUE}
 
@@ -489,6 +489,6 @@ class TestLoadLevelMaskingParams:
             secret_field_names=("my_token",),
         )
 
-        report = get_load_report(result)
+        report = load_report(result)
         assert report is not None
         assert report.merged_data == {"my_token": _MASKED_SECRET, "host": _PUBLIC_VALUE}

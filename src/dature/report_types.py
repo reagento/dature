@@ -3,7 +3,7 @@
 Owns ``SourceEntry`` and ``FieldOrigin`` — the atomic entries that describe
 individual sources and field origins within a report. Intentionally free of
 any ``merge_runtime`` import (no cycle). The public aggregate
-``LoadReport`` lives in :mod:`dature.load_report`; the internal accumulator
+``LoadReport`` lives in :mod:`dature.report`; the internal accumulator
 snapshot ``_LoadCtxSnapshot`` lives in :mod:`dature.loading.merge_runtime`.
 """
 

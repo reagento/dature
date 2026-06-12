@@ -4,10 +4,11 @@ from typing import ClassVar
 
 import click
 import dature
+from dature.sources.base import CliSource
 
 
 @dataclass(kw_only=True, repr=False)
-class ClickSource(dature.CliSource):
+class ClickSource(CliSource):
     cli: click.Command
     discriminator: str = "command"
     format_name: ClassVar[str] = "click"

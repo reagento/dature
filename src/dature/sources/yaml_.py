@@ -16,7 +16,7 @@ from dature.loaders import (
     time_from_string,
 )
 from dature.loaders.yaml_ import time_from_int
-from dature.sources.file_source import FileSource
+from dature.sources.base import FileSource
 from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 try:

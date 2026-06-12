@@ -17,7 +17,7 @@ from dature.loaders import (
     float_from_string,
     time_from_string,
 )
-from dature.sources.file_source import FileSource
+from dature.sources.base import FileSource
 from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 _ScanOnce = Callable[[str, int], tuple[JSONValue, int]]

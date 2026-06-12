@@ -1,6 +1,6 @@
 import sys
 
-from dature import get_load_report, load
+from dature import load, load_report
 from dature.cli.format import format_json, format_text
 from dature.cli.parsing import (
     CliInspectArgs,
@@ -30,7 +30,7 @@ def cmd_inspect(args: CliInspectArgs) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    report = get_load_report(result)
+    report = load_report(result)
     if report is None:
         print("error: failed to obtain load report", file=sys.stderr)
         return 1

@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import ClassVar, cast
 
 from dature.errors import CaretSpan, SourceLocation
-from dature.sources.flat_key import FlatKeySource
+from dature.sources.base.flat_key import FlatKeySource
 from dature.type_aliases import (
     ExpandEnvVarsMode,
     JSONValue,

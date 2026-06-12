@@ -14,7 +14,6 @@ from dature import (
     IniSource,
     Json5Source,
     JsonSource,
-    Source,
     Toml10Source,
     Toml11Source,
     VaultSource,
@@ -24,6 +23,7 @@ from dature import (
     load,
 )
 from dature.errors import DatureConfigError
+from dature.sources.base import Source
 from dature.type_aliases import JSONValue
 
 

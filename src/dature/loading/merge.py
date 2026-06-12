@@ -10,7 +10,6 @@ from dataclasses import dataclass as stdlib_dataclass
 
 from dature.errors import DatureConfigError, SourceLoadError
 from dature.errors.extraction import handle_load_errors
-from dature.load_report import LoadReport, _build_merge_report, attach_load_report
 from dature.loading.context import coerce_flag_fields
 from dature.loading.mask_config import resolve_mask_secrets
 from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent
@@ -22,6 +21,7 @@ from dature.merging.deep_merge import deep_merge_last_wins
 from dature.merging.field_group import FieldGroupContext, validate_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
 from dature.protocols import DataclassInstance
+from dature.report import LoadReport, _build_merge_report, attach_load_report
 from dature.report_types import FieldOrigin
 from dature.sources.base import Source
 from dature.strategies.source import resolve_source_strategy

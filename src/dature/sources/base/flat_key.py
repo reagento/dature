@@ -9,7 +9,7 @@ from adaptix.provider import Provider
 from dature.errors import CaretSpan
 from dature.expansion.env_expand import expand_env_vars
 from dature.field_path import FieldPath
-from dature.sources.base import Source, string_value_loaders
+from dature.sources.base.source import Source, string_value_loaders
 from dature.sources.presentation import (
     find_value_in_line,
     resolve_var_name,

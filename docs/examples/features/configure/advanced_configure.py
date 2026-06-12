@@ -20,7 +20,7 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is None
 
 # 2. Enable debug globally via runtime configuration
@@ -30,7 +30,7 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is not None
 
 # 3. Reset to defaults
@@ -40,6 +40,6 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
-report = dature.get_load_report(config)
+report = dature.load_report(config)
 assert report is None
 # --8<-- [end:example]
