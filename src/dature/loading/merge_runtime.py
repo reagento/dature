@@ -4,7 +4,7 @@ Owns the internal accumulator machinery: ``LoadCtx`` collects per-source
 raw dicts, source entries, and error contexts during strategy execution, then
 exposes them via ``_LoadCtxSnapshot`` (an internal bridge to ``merge.py``,
 not a report type). Does *not* own the public ``LoadReport`` aggregate (that
-lives in ``dature.load_report``) nor the frozen leaf types (``SourceEntry`` /
+lives in ``dature.report``) nor the frozen leaf types (``SourceEntry`` /
 ``FieldOrigin`` live in ``dature.report_types``).
 
 These three types form a mutual-annotation triangle that must live in one
@@ -17,7 +17,7 @@ module to keep every import on the module top-level without ``TYPE_CHECKING``:
 Value types touched by ``LoadCtx`` (``SourceEntry`` / ``FieldOrigin`` from
 ``report_types``, ``SkippedFieldSource`` from ``errors.location``) are
 imported on the module top-level — those modules no longer pull in
-``merge_runtime`` (``LoadReport`` itself lives in ``dature.load_report``).
+``merge_runtime`` (``LoadReport`` itself lives in ``dature.report``).
 Per-source helpers that need ``MergeConfig`` (``resolve_type_loaders``,
 ``should_skip_broken``, ``resolve_skip_invalid``) live here rather than in
 ``loading.source_loading`` so that ``source_loading`` can import ``MergeConfig``
@@ -620,7 +620,7 @@ class LoadCtx:
         """Snapshot of accumulated metadata after strategy execution.
 
         Internal API consumed by ``merge.py`` (``load_and_merge``) to drive
-        transform_to_dataclass, get_load_report, and error enrichment. Custom
+        transform_to_dataclass, load_report, and error enrichment. Custom
         strategies should not need this.
         """
         return _LoadCtxSnapshot(

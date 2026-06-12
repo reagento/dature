@@ -5,8 +5,8 @@ from typing import ClassVar
 
 import pytest
 
-from dature import CliSource
 from dature.errors import CaretSpan
+from dature.sources.base import CliSource
 from dature.type_aliases import JSONValue
 
 

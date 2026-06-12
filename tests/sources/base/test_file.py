@@ -8,7 +8,7 @@ import pytest
 import dature
 from dature import JsonSource
 from dature.errors import DatureConfigError, FieldLoadError
-from dature.sources.file_source import FileFieldMixin
+from dature.sources.base import FileFieldMixin
 from dature.sources.yaml_ import Yaml12Source
 
 

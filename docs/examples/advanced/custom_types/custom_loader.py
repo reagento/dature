@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import dature
 from dature.loaders import Provider, bool_loader, float_from_string, loader
-from dature.sources.file_source import FileSource
+from dature.sources.base import FileSource
 from dature.type_aliases import FileOrStream, JSONValue
 
 

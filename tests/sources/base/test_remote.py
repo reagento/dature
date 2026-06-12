@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from dature.sources.remote import RemoteSource
+from dature.sources.base import RemoteSource
 from dature.type_aliases import JSONValue
 
 

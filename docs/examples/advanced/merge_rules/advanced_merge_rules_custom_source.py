@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 import dature
+from dature.sources.base import Source
 from dature.strategies import LoadCtx, SourceMergeStrategy
 from dature.type_aliases import JSONValue
 
@@ -25,7 +26,7 @@ def _dict_overlay(a: JSONValue, b: JSONValue) -> JSONValue:
 class EnvOverrides:
     def __call__(
         self,
-        sources: Sequence[dature.Source],
+        sources: Sequence[Source],
         ctx: LoadCtx,
     ) -> JSONValue:
         base: JSONValue = {}

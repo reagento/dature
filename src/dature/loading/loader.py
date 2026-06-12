@@ -29,12 +29,6 @@ from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext, SkippedFieldSource
-from dature.load_report import (
-    LoadReport,
-    _build_single_source_report,
-    attach_load_report,
-    get_load_report,
-)
 from dature.loading.cache import _aligned_now, cache_is_fresh
 from dature.loading.context import (
     build_error_ctx,
@@ -64,6 +58,12 @@ from dature.loading.source_loading import enrich_skipped_errors, prepare_loaded_
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
 from dature.protocols import DataclassInstance
+from dature.report import (
+    LoadReport,
+    _build_single_source_report,
+    attach_load_report,
+    load_report,
+)
 from dature.sources.base import Source
 from dature.type_aliases import (
     ExpandEnvVarsMode,
@@ -507,7 +507,7 @@ class Loader[T: DataclassInstance]:
             )
         except DatureConfigError:
             if self.debug:
-                report = get_load_report(data.result)
+                report = load_report(data.result)
                 if report is not None:
                     attach_load_report(self._schema, report)
             raise
@@ -541,6 +541,6 @@ def _make_patched_init(loader: Loader[Any]) -> Callable[..., None]:
 
 def _attach_debug_report(instance: DataclassInstance, loaded_data: DataclassInstance) -> None:
     """Attach a ``LoadReport`` to ``instance`` after a decorator-driven construction."""
-    report = get_load_report(loaded_data)
+    report = load_report(loaded_data)
     if report is not None:
         attach_load_report(instance, report)

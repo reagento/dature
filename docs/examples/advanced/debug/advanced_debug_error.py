@@ -28,7 +28,7 @@ try:
         debug=True,
     )
 except DatureConfigError:
-    report = dature.get_load_report(Config)
+    report = dature.load_report(Config)
     assert report is not None
 
     assert report.dataclass_name == "Config"

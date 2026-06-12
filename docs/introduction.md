@@ -110,7 +110,7 @@ See the full list of Source classes and their extra dependencies on the [main pa
 ## Source Reference
 
 ```python
---8<-- "src/dature/sources/base.py:load-metadata"
+--8<-- "src/dature/sources/base/source.py:load-metadata"
 ```
 
 | Parameter | Description |

@@ -24,7 +24,7 @@ Pass `debug=True` to collect a `LoadReport`:
 
 ```python
 --8<-- "src/dature/report_types.py:value-types"
---8<-- "src/dature/load_report.py:report-structure"
+--8<-- "src/dature/report.py:report-structure"
 ```
 
 ## Debug Logging
@@ -71,6 +71,6 @@ If loading fails with `DatureConfigError` and `debug=True` was passed, the repor
     --8<-- "docs/examples/advanced/debug/sources/advanced_debug_error_defaults.yaml"
     ```
 
-Without `debug=True`, `get_load_report()` returns `None` and emits a warning.
+Without `debug=True`, `load_report()` returns `None` and emits a warning.
 
 

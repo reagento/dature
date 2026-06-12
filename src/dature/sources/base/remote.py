@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import ClassVar, Final
 
 from dature.errors import SourceLocation
-from dature.sources.base import Source
+from dature.sources.base.source import Source
 from dature.sources.presentation import build_search_path
 from dature.type_aliases import JSONValue, NestedConflict
 

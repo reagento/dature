@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from dature import JsonSource, Source, load
+from dature import JsonSource, load
 from dature.errors import EnvVarExpandError
 from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
 from dature.loading.retort import transform_to_dataclass
-from dature.sources.base import string_value_loaders
+from dature.sources.base import Source, string_value_loaders
 from dature.type_aliases import JSONValue
 
 
@@ -523,7 +523,7 @@ class TestExpandEnvVars:
         loader = apply_source_init_params(MockSource(test_data=data), SourceParams())
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)
+        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
         assert result == {"host": "localhost", "port": 8080}
 
@@ -533,7 +533,7 @@ class TestExpandEnvVars:
         loader = apply_source_init_params(MockSource(test_data=data), SourceParams())
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)
+        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
         assert result == {"host": "$DATURE_MISSING", "port": 8080}
 
@@ -543,7 +543,7 @@ class TestExpandEnvVars:
         loader = MockSource(test_data=data, expand_env_vars="disabled")
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)
+        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
         assert result == {"host": "$DATURE_TEST_HOST", "port": 8080}
 
@@ -553,7 +553,7 @@ class TestExpandEnvVars:
         loader = MockSource(test_data=data, expand_env_vars="empty")
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)
+        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
         assert result == {"host": "", "port": 8080}
 
@@ -571,7 +571,7 @@ class TestExpandEnvVars:
         loader = MockSource(test_data=data, expand_env_vars="strict")
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)
+        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
         assert result == {"host": "localhost", "port": 8080}
 

@@ -9,7 +9,7 @@ from typing import ClassVar
 from dature.config_paths import find_config
 from dature.expansion.env_expand import expand_file_path
 from dature.refs import TEMPLATE_SUPPORTED, Template, template_to_str  # type: ignore[attr-defined]
-from dature.sources.base import Source
+from dature.sources.base.source import Source
 from dature.type_aliases import (
     FILE_LIKE_TYPES,
     FileLike,

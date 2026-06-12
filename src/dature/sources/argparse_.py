@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, ClassVar
 
-from dature.sources.cli_base import CliSource
+from dature.sources.base import CliSource
 from dature.type_aliases import JSONValue
 
 _BoolActionTypes = (

@@ -17,8 +17,7 @@ from dature.loading.cross_source import (
     evaluate_when_lazy,
     when_has_cross_refs,
 )
-from dature.sources.base import Source
-from dature.sources.cli_base import CliSource
+from dature.sources.base import CliSource, Source
 from dature.type_aliases import JSONValue
 
 

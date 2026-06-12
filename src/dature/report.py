@@ -1,7 +1,7 @@
 """Public load report: aggregate description of a completed dature load.
 
 Owns ``LoadReport`` — the frozen aggregate that callers receive via
-:func:`get_load_report`. Holds tuples of leaf types (``SourceEntry``,
+:func:`load_report`. Holds tuples of leaf types (``SourceEntry``,
 ``FieldOrigin``) from :mod:`dature.report_types`, applies secret masking, and
 attaches the report to the loaded instance. Not the same as
 ``_LoadCtxSnapshot`` in :mod:`dature.loading.merge_runtime`, which is an
@@ -36,8 +36,8 @@ class LoadReport:
 # --8<-- [end:report-structure]
 
 
-# --8<-- [start:get-load-report]
-def get_load_report(instance: Any) -> LoadReport | None:  # noqa: ANN401
+# --8<-- [start:load-report]
+def load_report(instance: Any) -> LoadReport | None:  # noqa: ANN401
     report = getattr(instance, _REPORT_ATTR, None)
     if isinstance(report, LoadReport):
         return report
@@ -48,7 +48,7 @@ def get_load_report(instance: Any) -> LoadReport | None:  # noqa: ANN401
     return None
 
 
-# --8<-- [end:get-load-report]
+# --8<-- [end:load-report]
 
 
 def attach_load_report(target: Any, report: LoadReport) -> None:  # noqa: ANN401

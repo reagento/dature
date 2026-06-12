@@ -255,6 +255,7 @@ jobs:
 
   typing-extensions-test:
     name: typing-extensions-test (py${{ matrix.python-version }})
+    needs: [lint]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -323,7 +324,9 @@ jobs:
           echo "total=$BASELINE" >> "$GITHUB_OUTPUT"
 
       - name: Post coverage comment on PR
-        if: github.event_name == 'pull_request'
+        if: >-
+          github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURRENT: ${{ steps.cov.outputs.total }}

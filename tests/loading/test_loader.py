@@ -14,8 +14,9 @@ import time_machine
 
 import dature
 import dature.sources.base
-from dature import EnvFileSource, EnvSource, JsonSource, Loader, Source, V, When, load
+from dature import EnvFileSource, EnvSource, JsonSource, Loader, V, When, load
 from dature.errors.exceptions import CrossRefExpandError, DatureConfigError, DatureError
+from dature.sources.base import Source
 from dature.type_aliases import JSONValue
 
 
