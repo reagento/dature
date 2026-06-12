@@ -15,7 +15,6 @@ class Config:
     port: int
     debug: bool = False
 
-
 # --8<-- [start:override]
 config = Config(port=9090)  # host from source, port overridden
 # --8<-- [end:override]

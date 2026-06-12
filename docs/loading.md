@@ -12,17 +12,13 @@ All examples share the same schema
 Wrong path or wrong working directory — the most common first error. dature
 raises a plain `FileNotFoundError` before any parsing happens.
 
-=== "Python"
+```python title="Code"
+--8<-- "docs/examples/loading/loading_missing_file.py:included"
+```
 
-    ```python
-    --8<-- "docs/examples/loading/loading_missing_file.py"
-    ```
-
-=== "Error"
-
-    ```
-    --8<-- "docs/examples/loading/loading_missing_file.stderr"
-    ```
+``` title="Error"
+--8<-- "docs/examples/loading/loading_missing_file.stderr"
+```
 
 ## Source exists but is broken
 
@@ -30,23 +26,17 @@ The file is present but the parser can't read it (here: invalid YAML
 indentation). dature does not swallow parser errors — the underlying exception
 propagates with the original file and line.
 
-=== "Python"
+```yaml title="broken.yaml"
+--8<-- "docs/examples/loading/sources/broken.yaml"
+```
 
-    ```python
-    --8<-- "docs/examples/loading/loading_broken_file.py"
-    ```
+```python title="Code"
+--8<-- "docs/examples/loading/loading_broken_file.py:included"
+```
 
-=== "broken.yaml"
-
-    ```yaml
-    --8<-- "docs/examples/loading/sources/broken.yaml"
-    ```
-
-=== "Error"
-
-    ```
-    --8<-- "docs/examples/loading/loading_broken_file.stderr"
-    ```
+``` title="Error"
+--8<-- "docs/examples/loading/loading_broken_file.stderr"
+```
 
 ## Type mismatch
 
@@ -54,46 +44,34 @@ The source parses, but a value can't be coerced to the field's annotated type.
 dature raises a `FieldLoadError` with the field path, the offending value, a
 caret pointing at it, and the source location.
 
-=== "Python"
+```yaml title="type_mismatch.yaml"
+--8<-- "docs/examples/loading/sources/type_mismatch.yaml"
+```
 
-    ```python
-    --8<-- "docs/examples/loading/loading_type_mismatch.py"
-    ```
+```python title="Code"
+--8<-- "docs/examples/loading/loading_type_mismatch.py:included"
+```
 
-=== "type_mismatch.yaml"
-
-    ```yaml
-    --8<-- "docs/examples/loading/sources/type_mismatch.yaml"
-    ```
-
-=== "Error"
-
-    ```
-    --8<-- "docs/examples/loading/loading_type_mismatch.stderr"
-    ```
+``` title="Error"
+--8<-- "docs/examples/loading/loading_type_mismatch.stderr"
+```
 
 ## Required field missing
 
 A field with no default value is absent from the source. The error points at
 the file but has no line — there is nothing in the source to highlight.
 
-=== "Python"
+```yaml title="missing_field.yaml"
+--8<-- "docs/examples/loading/sources/missing_field.yaml"
+```
 
-    ```python
-    --8<-- "docs/examples/loading/loading_missing_field.py"
-    ```
+```python title="Code"
+--8<-- "docs/examples/loading/loading_missing_field.py:included"
+```
 
-=== "missing_field.yaml"
-
-    ```yaml
-    --8<-- "docs/examples/loading/sources/missing_field.yaml"
-    ```
-
-=== "Error"
-
-    ```
-    --8<-- "docs/examples/loading/loading_missing_field.stderr"
-    ```
+``` title="Error"
+--8<-- "docs/examples/loading/loading_missing_field.stderr"
+```
 
 ## Multiple errors at once
 
@@ -101,40 +79,30 @@ dature does not stop at the first error — it keeps going and reports every
 failed field together as an `ExceptionGroup`. You fix the config in one pass
 instead of "fix, rerun, fix, rerun".
 
-=== "Python"
+```yaml title="multiple_errors.yaml"
+--8<-- "docs/examples/loading/sources/multiple_errors.yaml"
+```
 
-    ```python
-    --8<-- "docs/examples/loading/loading_multiple_errors.py"
-    ```
+```python title="Code"
+--8<-- "docs/examples/loading/loading_multiple_errors.py:included"
+```
 
-=== "multiple_errors.yaml"
-
-    ```yaml
-    --8<-- "docs/examples/loading/sources/multiple_errors.yaml"
-    ```
-
-=== "Error"
-
-    ```
-    --8<-- "docs/examples/loading/loading_multiple_errors.stderr"
-    ```
+``` title="Error"
+--8<-- "docs/examples/loading/loading_multiple_errors.stderr"
+```
 
 ## Recovering: skip a broken source
 
 When merging multiple sources, a missing or malformed one can be skipped with
 `skip_if_broken=True` so the next source supplies the values:
 
-=== "Python"
+```yaml title="fallback.yaml"
+--8<-- "docs/examples/loading/sources/fallback.yaml"
+```
 
-    ```python
-    --8<-- "docs/examples/loading/loading_skip_broken.py"
-    ```
-
-=== "fallback.yaml"
-
-    ```yaml
-    --8<-- "docs/examples/loading/sources/fallback.yaml"
-    ```
+```python title="Code"
+--8<-- "docs/examples/loading/loading_skip_broken.py:included"
+```
 
 If **every** source fails, dature still raises — there is no value to load. The
 flag also has variants for skipping individual invalid fields rather than

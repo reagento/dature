@@ -15,7 +15,9 @@ class Config:
     debug: bool = False
 
 
+# --8<-- [start:included]
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "broken.yaml"),
     schema=Config,
 )
+# --8<-- [end:included]
