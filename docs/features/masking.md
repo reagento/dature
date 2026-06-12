@@ -45,7 +45,7 @@ dature uses three methods to identify secrets:
     `SecretStr` and `PaymentCardNumber` mask values in `str()`, `repr()`, and debug logs:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_secret_str.py"
+    --8<-- "docs/examples/features/masking/masking_secret_str.py:example"
     ```
 
     ```yaml title="masking_secret_str.yaml"
@@ -61,7 +61,7 @@ dature uses three methods to identify secrets:
     Fields whose names contain known patterns are automatically masked in error messages:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_by_name.py"
+    --8<-- "docs/examples/features/masking/masking_by_name.py:example"
     ```
 
     ```yaml title="masking_by_name.yaml"
@@ -77,7 +77,7 @@ dature uses three methods to identify secrets:
     With `dature[secure]`, values that look like random tokens are masked in error messages even if the field name is not a known secret pattern:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_heuristic.py"
+    --8<-- "docs/examples/features/masking/masking_heuristic.py:example"
     ```
 
     ```yaml title="masking_heuristic.yaml"
@@ -102,8 +102,10 @@ If `visible_prefix + visible_suffix >= len(value)`, the value is shown as-is.
 Classic `ab*****cd` style:
 
 ```python
---8<-- "docs/examples/features/masking/masking_classic_style.py:classic-style"
+--8<-- "docs/examples/features/masking/masking_classic_style.py:example"
 ```
+* `"my_secret_password"` → `"my*****rd"`
+* `"ab"` → `"ab"` (too short — shown as-is)
 
 ## Configuration
 
@@ -114,7 +116,7 @@ Classic `ab*****cd` style:
 === "mask_secrets=False"
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_no_mask.py"
+    --8<-- "docs/examples/features/masking/masking_no_mask.py:example"
     ```
 
     ```title="Error"
@@ -124,7 +126,7 @@ Classic `ab*****cd` style:
 ### In merge mode
 
 ```python
---8<-- "docs/examples/features/masking/masking_merge_mode.py"
+--8<-- "docs/examples/features/masking/masking_merge_mode.py:example"
 ```
 
 ```title="Error"

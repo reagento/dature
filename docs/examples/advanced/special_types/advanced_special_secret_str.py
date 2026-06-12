@@ -1,5 +1,3 @@
-"""SecretStr — masks secret values in str/repr."""
-
 from dataclasses import dataclass
 
 from dature.fields.secret_str import SecretStr
@@ -13,6 +11,7 @@ class Config:
 
 
 config = Config(db_password=secret)
+
 
 assert str(config.db_password) == "**********"
 assert repr(config.db_password) == "SecretStr('**********')"

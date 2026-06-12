@@ -1,5 +1,3 @@
-"""ByteSize — parses human-readable sizes."""
-
 from dataclasses import dataclass
 
 from dature.fields.byte_size import ByteSize
@@ -11,6 +9,7 @@ class Config:
 
 
 config = Config(max_upload=ByteSize("1.5 GB"))
+
 
 assert int(config.max_upload) == 1500000000
 assert str(config.max_upload) == "1.4GiB"

@@ -1,5 +1,3 @@
-"""Custom source — subclass Source to load from a plain dict."""
-
 from dataclasses import dataclass
 from typing import Any, cast
 

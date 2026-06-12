@@ -1,8 +1,7 @@
-"""Defaults semantics — non-bool args are dropped unless explicitly passed."""
-
 import argparse
 
 import dature
+
 
 parser = argparse.ArgumentParser()
 

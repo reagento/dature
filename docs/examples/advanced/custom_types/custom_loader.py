@@ -1,15 +1,16 @@
-"""Custom source — subclass Source to read XML files."""
+from pathlib import Path
+
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
 
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 from dature.loaders import Provider, bool_loader, float_from_string, loader
 from dature.sources.file_source import FileSource
 from dature.type_aliases import FileOrStream, JSONValue
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass(kw_only=True, repr=False)
@@ -50,3 +51,4 @@ config = dature.load(
 )
 
 assert config == Config(host="localhost", port=9090, debug=True)
+# --8<-- [end:example]

@@ -1,14 +1,11 @@
-"""Global type_loaders via dature.configure().
-
-Register custom type parsers once for all load() calls.
-"""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,3 +35,4 @@ config = dature.load(
     schema=AppConfig,
 )
 assert config == AppConfig(name="my-app", color=Rgb(r=255, g=128, b=0))
+# --8<-- [end:example]

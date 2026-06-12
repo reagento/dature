@@ -1,14 +1,14 @@
-"""Conditional sources — NOT (~): enable when a condition does NOT match."""
+from pathlib import Path
 
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ["APP_ENV"] = "dev"
-
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -25,5 +25,5 @@ cfg = dature.load(
     schema=SecretsConfig,
 )
 
-# APP_ENV=dev is not "prod" → condition is True → source is active
 assert cfg.vault_token == "dev-token-from-file"
+# --8<-- [end:example]

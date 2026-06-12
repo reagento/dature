@@ -1,5 +1,3 @@
-"""Per-field nested_resolve — different strategies for different fields."""
-
 import os
 from dataclasses import dataclass
 
@@ -31,7 +29,6 @@ class Config:
     cache: Cache
 
 
-# database uses JSON, cache uses flat keys
 config = dature.load(
     dature.EnvSource(
         prefix="APP__",

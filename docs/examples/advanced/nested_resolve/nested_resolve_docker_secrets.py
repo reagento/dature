@@ -1,5 +1,3 @@
-"""nested_resolve_strategy with Docker secrets source."""
-
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory

@@ -1,17 +1,15 @@
-"""Conditional sources — prod environment."""
+from pathlib import Path
 
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ["APP_ENV"] = "prod"
-os.environ["VAULT_TOKEN"] = (
-    "prod-token-from-env"  # injected by the platform in real deployments
-)
-
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+os.environ["VAULT_TOKEN"] = "prod-token-from-env"
 
 
 @dataclass
@@ -30,3 +28,4 @@ cfg = dature.load(
 )
 
 assert cfg.vault_token == "prod-token-from-env"
+# --8<-- [end:example]

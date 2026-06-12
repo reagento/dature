@@ -1,5 +1,3 @@
-"""prefix — filter ENV keys by prefix."""
-
 import os
 from dataclasses import dataclass
 

@@ -9,7 +9,7 @@ Declare validators using `typing.Annotated`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_annotated.py"
+    --8<-- "docs/examples/features/validation/validation_annotated.py:example"
     ```
 
 === "validation_annotated_invalid.json5"
@@ -53,9 +53,9 @@ Declare validators using `typing.Annotated`:
 
 Multiple validators can be combined:
 
-```python
---8<-- "docs/examples/features/validation/validation_annotated_combined.py:combined"
-```
+    ```python
+    --8<-- "docs/examples/features/validation/validation_annotated_combined.py"
+    ```
 
 ## Root Validators
 
@@ -64,7 +64,7 @@ Validate the entire object after loading:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_root.py"
+    --8<-- "docs/examples/features/validation/validation_root.py:example"
     ```
 
 === "validation_root_invalid.yaml"
@@ -88,7 +88,7 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_metadata.py"
+    --8<-- "docs/examples/features/validation/validation_metadata.py:example"
     ```
 
 === "validation_metadata_invalid.yaml"
@@ -105,15 +105,15 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 
 A single validator can be passed directly. Multiple validators require a tuple:
 
-```python
---8<-- "docs/examples/features/validation/validation_metadata_syntax.py:syntax"
-```
+    ```python
+    --8<-- "docs/examples/features/validation/validation_metadata_syntax.py"
+    ```
 
 Nested fields are supported:
 
-```python
---8<-- "docs/examples/features/validation/validation_metadata_nested.py:nested"
-```
+    ```python
+    --8<-- "docs/examples/features/validation/validation_metadata_nested.py"
+    ```
 
 ## Custom Validators
 
@@ -122,7 +122,7 @@ Create your own validators by implementing `get_validator_func()` and `get_error
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_custom.py"
+    --8<-- "docs/examples/features/validation/validation_custom.py:example"
     ```
 
 === "validation_custom_invalid.json5"
@@ -146,7 +146,7 @@ Standard dataclass `__post_init__` and `@property` work as expected — dature p
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_post_init.py"
+    --8<-- "docs/examples/features/validation/validation_post_init.py:example"
     ```
 
 === "validation_post_init_invalid.yaml"
@@ -170,7 +170,7 @@ Validation errors include field path, source location, and the offending value. 
 === "YAML"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_yaml.py"
+    --8<-- "docs/examples/features/validation/error_format_yaml.py:example"
     ```
 
     ```
@@ -180,7 +180,7 @@ Validation errors include field path, source location, and the offending value. 
 === "JSON"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_json.py"
+    --8<-- "docs/examples/features/validation/error_format_json.py:example"
     ```
 
     ```
@@ -190,7 +190,7 @@ Validation errors include field path, source location, and the offending value. 
 === "JSON5"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_json5.py"
+    --8<-- "docs/examples/features/validation/error_format_json5.py:example"
     ```
 
     ```
@@ -200,7 +200,7 @@ Validation errors include field path, source location, and the offending value. 
 === "TOML"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_toml.py"
+    --8<-- "docs/examples/features/validation/error_format_toml.py:example"
     ```
 
     ```
@@ -210,7 +210,7 @@ Validation errors include field path, source location, and the offending value. 
 === "INI"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_ini.py"
+    --8<-- "docs/examples/features/validation/error_format_ini.py:example"
     ```
 
     ```
@@ -230,7 +230,7 @@ Validation errors include field path, source location, and the offending value. 
 === "ENV file"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_env_file.py"
+    --8<-- "docs/examples/features/validation/error_format_env_file.py:example"
     ```
 
     ```
@@ -240,7 +240,7 @@ Validation errors include field path, source location, and the offending value. 
 === "Docker Secrets"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_docker.py"
+    --8<-- "docs/examples/features/validation/error_format_docker.py:example"
     ```
 
     ```
@@ -254,7 +254,7 @@ When a value spans multiple source lines, each visible line is shown under the `
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_multiline.py"
+    --8<-- "docs/examples/features/validation/error_format_multiline.py:example"
     ```
 
 === "multiline.yaml"
@@ -276,7 +276,7 @@ A custom validator can be attached to a dataclass-typed field via `Annotated`. T
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_dataclass.py"
+    --8<-- "docs/examples/features/validation/error_format_dataclass.py:example"
     ```
 
 === "dataclass.yaml"

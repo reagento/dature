@@ -1,23 +1,17 @@
-"""Cross-source references — t-string syntax (Python 3.14+).
-
-Equivalent to the ${@tag.key} string syntax but uses native template literals.
-Requires Python 3.14+ (PEP 750).
-"""
-
 import os
-import sys
-from dataclasses import dataclass
 from pathlib import Path
+import sys
+SOURCES_DIR = Path(__file__).parent / "sources"
+os.environ["APP_CONFIG_PATH"] = str(SOURCES_DIR / "app.json")
 
 if sys.version_info < (3, 14):
     raise SystemExit("t-string syntax requires Python 3.14+")
 
+# --8<-- [start:example]
+from dataclasses import dataclass
+
 import dature
 from dature import ref
-
-SOURCES_DIR = Path(__file__).parent / "sources"
-
-os.environ["APP_CONFIG_PATH"] = str(SOURCES_DIR / "app.json")
 
 
 @dataclass
@@ -28,6 +22,7 @@ class AppConfig:
 
 # t"{ref.env.config_path}"  ≡  "${@env.config_path}"
 # t"{ref.env.log_level:INFO}"  ≡  "${@env.log_level:-INFO}"
+
 cfg = dature.load(
     dature.JsonSource(file=t"{ref.env.config_path}"),
     dature.EnvSource(prefix="APP_"),
@@ -36,3 +31,4 @@ cfg = dature.load(
 
 assert cfg.host == "db.internal"
 assert cfg.port == 5432
+# --8<-- [end:example]

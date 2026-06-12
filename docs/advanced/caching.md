@@ -4,17 +4,23 @@ In decorator mode, caching is enabled by default:
 
 === "cache=True"
 
+    Caching stays active, so repeated loads reuse the first result until the inputs change. Cache can be invalidated.
+
     ```python
     --8<-- "docs/examples/advanced/caching/advanced_caching_enabled.py"
     ```
 
 === "cache=False"
 
+    With caching disabled, each load reads the source again each time and picks up the new env value immediately.
+
     ```python
     --8<-- "docs/examples/advanced/caching/advanced_caching_disabled.py"
     ```
 
 === "cache=timedelta(...)"
+
+    A `timedelta` enables TTL-based caching. This example patches `time.monotonic()` to simulate the cache expiring.
 
     ```python
     --8<-- "docs/examples/advanced/caching/advanced_caching_ttl.py"
@@ -68,3 +74,5 @@ The `Loader` carries all the load-time parameters and the cache state. Identity 
 | `Loader.invalidate()` | Drop the cached result so the next `.load()` reloads from sources. |
 
 `Loader` supports the same constructor parameters as `dature.load(...)` for function mode.
+
+

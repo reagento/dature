@@ -1,12 +1,12 @@
-"""Combining ArgparseSource with file and env sources via load()."""
-
-import argparse
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+import argparse
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -23,9 +23,9 @@ parser.add_argument("--port", type=int)
 
 def main() -> None:
     config = dature.load(
-        dature.JsonSource(file=SOURCES_DIR / "config.json"),  # baseline
-        dature.EnvSource(prefix="MYAPP_"),  # per-deployment overrides
-        dature.ArgparseSource(parser=parser),  # operator overrides (wins last)
+        dature.JsonSource(file=SOURCES_DIR / "config.json"),
+        dature.EnvSource(prefix="MYAPP_"),
+        dature.ArgparseSource(parser=parser),
         schema=Config,
     )
     print(config)
@@ -33,3 +33,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# --8<-- [end:example]

@@ -1,11 +1,11 @@
-"""LAST_WINS — last source overrides earlier ones."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -25,3 +25,4 @@ config = dature.load(
 assert config.host == "production.example.com"
 assert config.port == 8080
 assert config.tags == ["web", "api"]
+# --8<-- [end:example]

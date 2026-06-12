@@ -1,14 +1,14 @@
-"""Conditional sources — APP_ENV not set, using ${VAR:-default}."""
+from pathlib import Path
 
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ.pop("APP_ENV", None)
-
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -29,5 +29,5 @@ cfg = dature.load(
     schema=SecretsConfig,
 )
 
-# APP_ENV unset → default "dev" matches → token from file
 assert cfg.vault_token == "dev-token-from-file"
+# --8<-- [end:example]

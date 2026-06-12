@@ -1,13 +1,13 @@
-"""Annotated validators — error example."""
-
-from dataclasses import dataclass
 from pathlib import Path
+
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 from typing import Annotated
 
 import dature
 from dature import V
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
@@ -22,3 +22,4 @@ dature.load(
     dature.Json5Source(file=SOURCES_DIR / "validation_annotated_invalid.json5"),
     schema=ServiceConfig,
 )
+# --8<-- [end:example]

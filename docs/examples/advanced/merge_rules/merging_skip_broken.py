@@ -1,12 +1,12 @@
-"""skip_broken_sources — continue loading when a source is missing."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -28,3 +28,4 @@ config = dature.load(
 assert config.host == "localhost"
 assert config.port == 3000
 assert config.debug is False
+# --8<-- [end:example]

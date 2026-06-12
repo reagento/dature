@@ -1,11 +1,11 @@
-"""Load from Docker secrets directory."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -20,6 +20,8 @@ config = dature.load(
     schema=Config,
 )
 
+
 assert config.host == "localhost"
 assert config.port == 8080
 assert config.debug is False
+# --8<-- [end:example]

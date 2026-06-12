@@ -1,5 +1,3 @@
-"""Quickstart: load CLI args into a dataclass."""
-
 import argparse
 from dataclasses import dataclass
 

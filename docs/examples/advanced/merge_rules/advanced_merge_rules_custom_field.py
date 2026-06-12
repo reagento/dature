@@ -1,14 +1,14 @@
-"""Custom field strategy — a class implementing FieldMergeStrategy."""
-
-from dataclasses import dataclass
 from pathlib import Path
+
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 from typing import cast
 
 import dature
 from dature.strategies.field import FieldMergeStrategy
 from dature.type_aliases import JSONValue
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -19,8 +19,6 @@ class Config:
 
 
 class SortedUnion:
-    """Concatenate lists across all sources, deduplicate, sort."""
-
     def __call__(self, values: list[JSONValue]) -> JSONValue:
         merged: set[str] = set()
         for chunk in values:
@@ -29,7 +27,6 @@ class SortedUnion:
         return cast("JSONValue", sorted(merged))
 
 
-# Type-check that the class satisfies the public Protocol.
 strategy: FieldMergeStrategy = SortedUnion()
 
 config = dature.load(
@@ -40,3 +37,4 @@ config = dature.load(
 )
 
 assert config.tags == ["api", "default", "web"]
+# --8<-- [end:example]

@@ -1,5 +1,3 @@
-"""Function mode — load config from environment variables."""
-
 import os
 from dataclasses import dataclass
 

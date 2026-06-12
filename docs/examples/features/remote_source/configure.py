@@ -1,5 +1,3 @@
-"""Set Vault connection settings globally via configure()."""
-
 import os
 from dataclasses import dataclass
 

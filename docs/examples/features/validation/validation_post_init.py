@@ -1,11 +1,11 @@
-"""__post_init__ validation — error example."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -28,3 +28,4 @@ dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "validation_post_init_invalid.yaml"),
     schema=Config,
 )
+# --8<-- [end:example]

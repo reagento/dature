@@ -1,12 +1,12 @@
-"""Multiple sources as a decorator — implicit LAST_WINS merge."""
-
-import os
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+import os
+from dataclasses import dataclass
+
+import dature
 
 os.environ["APP_HOST"] = "env_localhost"
 
@@ -26,3 +26,4 @@ config = Config()
 assert config.host == "env_localhost"
 assert config.port == 3000
 assert config.debug is False
+# --8<-- [end:example]

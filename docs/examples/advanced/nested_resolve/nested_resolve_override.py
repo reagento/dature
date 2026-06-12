@@ -1,5 +1,3 @@
-"""Per-field nested_resolve overrides global nested_resolve_strategy."""
-
 import os
 from dataclasses import dataclass
 
@@ -31,17 +29,18 @@ class Config:
     cache: Cache
 
 
-# Global: "flat" for everything, but database overridden to "json"
 config = dature.load(
     dature.EnvSource(
         prefix="APP__",
+        # global strategy
         nested_resolve_strategy="flat",
+        # exclusion for db
         nested_resolve={"json": (dature.F[Config].database,)},
     ),
     schema=Config,
 )
 
-assert config.database.host == "json-host"  # per-field override wins
+assert config.database.host == "json-host"
 assert config.database.port == 5432
-assert config.cache.host == "flat-cache"  # global strategy
+assert config.cache.host == "flat-cache"
 assert config.cache.ttl == 120

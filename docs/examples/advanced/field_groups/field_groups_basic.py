@@ -1,11 +1,11 @@
-"""Field groups — ensure related fields change together."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -28,3 +28,4 @@ assert config.host == "production.example.com"
 assert config.port == 8080
 assert config.user == "admin"
 assert config.password == "secret"
+# --8<-- [end:example]

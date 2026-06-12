@@ -1,14 +1,14 @@
-"""Custom source strategy — files merge `last_wins`, env overrides on top."""
+from pathlib import Path
 
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 from dature.strategies import LoadCtx, SourceMergeStrategy
 from dature.type_aliases import JSONValue
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -19,13 +19,10 @@ class Config:
 
 
 def _dict_overlay(a: JSONValue, b: JSONValue) -> JSONValue:
-    """Shallow overlay: top-level keys of b replace those of a."""
     return {**a, **b} if isinstance(a, dict) and isinstance(b, dict) else b
 
 
 class EnvOverrides:
-    """Files merge `last_wins`; env sources overlay shallowly on top."""
-
     def __call__(
         self,
         sources: Sequence[dature.Source],
@@ -40,7 +37,6 @@ class EnvOverrides:
         return base
 
 
-# Type-check that the class satisfies the public Protocol.
 strategy: SourceMergeStrategy = EnvOverrides()
 
 config = dature.load(
@@ -50,6 +46,6 @@ config = dature.load(
     strategy=strategy,
 )
 
-# `last_wins` between two file sources — the override file wins.
 assert config.host == "production.example.com"
 assert config.port == 8080
+# --8<-- [end:example]

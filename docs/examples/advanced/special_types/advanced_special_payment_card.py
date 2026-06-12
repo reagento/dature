@@ -1,5 +1,3 @@
-"""PaymentCardNumber — validates via Luhn and detects brand."""
-
 from dataclasses import dataclass
 
 from dature.fields.payment_card import PaymentCardNumber
@@ -11,6 +9,7 @@ class Config:
 
 
 config = Config(card=PaymentCardNumber("42424242424242"))
+
 
 assert str(config.card) == "**********4242"
 assert repr(config.card) == "PaymentCardNumber('**********4242')"

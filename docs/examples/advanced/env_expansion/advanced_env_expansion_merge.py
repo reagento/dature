@@ -1,12 +1,12 @@
-"""ENV expansion — merge mode with per-source override."""
-
-import os
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+import os
+from dataclasses import dataclass
+
+import dature
 
 os.environ["KNOWN_HOST"] = "https://api.example.com"
 
@@ -24,7 +24,7 @@ class Config:
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "advanced_env_expansion_merge_default.yaml",
-    ),  # uses global "default"
+    ),
     dature.Yaml12Source(
         file=SOURCES_DIR / "advanced_env_expansion_merge_empty.yaml",
         expand_env_vars="empty",
@@ -43,3 +43,4 @@ assert config.empty_set_url == "https://api.example.com/api"
 assert config.empty_unset_url == "/api"
 assert config.disabled_set_url == "$KNOWN_HOST/api"
 assert config.disabled_unset_url == "$UNSET_VAR/api"
+# --8<-- [end:example]

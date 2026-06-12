@@ -1,5 +1,3 @@
-"""Cross-source references — error: tag collision."""
-
 from dataclasses import dataclass
 
 import dature
@@ -10,11 +8,9 @@ class Config:
     host: str = ""
 
 
-# Both EnvSources resolve to tag='env' (their default format_name).
-# As long as 'env' is referenced by another source, dature raises.
 dature.load(
-    dature.EnvSource(prefix="APP_"),
-    dature.EnvSource(prefix="DB_"),
+    dature.EnvSource(prefix="APP_"),  # resolve to tag = 'env'
+    dature.EnvSource(prefix="DB_"),  # resolve to tag = 'env' => collision
     dature.JsonSource(file="${@env.config_path}"),
     schema=Config,
 )

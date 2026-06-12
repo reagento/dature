@@ -1,5 +1,3 @@
-"""Subparsers — discriminator + per-subcommand args via Optional fields."""
-
 import argparse
 from dataclasses import dataclass
 

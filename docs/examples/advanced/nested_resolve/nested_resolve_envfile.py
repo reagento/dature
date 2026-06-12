@@ -1,11 +1,11 @@
-"""nested_resolve_strategy with .env file source."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -30,3 +30,4 @@ config = dature.load(
 
 assert config.database.host == "json-host"
 assert config.database.port == 5432
+# --8<-- [end:example]

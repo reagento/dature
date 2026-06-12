@@ -1,5 +1,3 @@
-"""Token authentication, KV v2."""
-
 import os
 from dataclasses import dataclass
 

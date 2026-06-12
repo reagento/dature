@@ -1,12 +1,12 @@
-"""ENV expansion — variables in both directory path and file name."""
-
-import os
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+import os
+from dataclasses import dataclass
+
+import dature
 
 os.environ["DATURE_SOURCES_DIR"] = str(SOURCES_DIR)
 os.environ["DATURE_APP_ENV"] = "production"
@@ -25,3 +25,4 @@ config = dature.load(
 
 assert config.host == "prod.example.com"
 assert config.port == 443
+# --8<-- [end:example]

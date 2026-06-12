@@ -1,12 +1,12 @@
-"""ENV variable expansion — all supported syntax variants."""
-
-import os
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+import os
+from dataclasses import dataclass
+
+import dature
 
 os.environ["APP_HOST"] = "https://api.example.com"
 os.environ["FALLBACK_DB_URL"] = "postgres://fallback:5432/db"
@@ -38,3 +38,4 @@ assert config.fallback_var == "postgres://fallback:5432/db"
 assert config.windows == "https://api.example.com"
 assert config.escape_dollar == "$100"
 assert config.escape_percent == "100%"
+# --8<-- [end:example]

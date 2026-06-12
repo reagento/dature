@@ -13,13 +13,13 @@ Main entry point. Two calling patterns:
 **Function mode** — pass `schema`, get an instance back:
 
 ```python
---8<-- "docs/examples/api_reference/api_reference_function_mode.py"
+--8<-- "docs/examples/api_reference/api_reference_function_mode.py:example"
 ```
 
 **Decorator mode** — omit `schema`, get a decorator:
 
 ```python
---8<-- "docs/examples/api_reference/api_reference_decorator_mode.py"
+--8<-- "docs/examples/api_reference/api_reference_decorator_mode.py:example"
 ```
 
 **Parameters:**
@@ -365,7 +365,7 @@ All validators accept an optional `error_message` parameter to override the defa
 ### Root Validator (`dature.validators.root`)
 
 ```python
---8<-- "src/dature/validators/root.py:root-validator"
+--8<-- "src/dature/validators/root.py"
 ```
 
 | Field | Type | Default | Description |

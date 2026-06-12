@@ -15,7 +15,7 @@ raises a plain `FileNotFoundError` before any parsing happens.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_missing_file.py"
+    --8<-- "docs/examples/loading/loading_missing_file.py:example"
     ```
 
 === "Error"
@@ -33,7 +33,7 @@ propagates with the original file and line.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_broken_file.py"
+    --8<-- "docs/examples/loading/loading_broken_file.py:example"
     ```
 
 === "broken.yaml"
@@ -57,7 +57,7 @@ caret pointing at it, and the source location.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_type_mismatch.py"
+    --8<-- "docs/examples/loading/loading_type_mismatch.py:example"
     ```
 
 === "type_mismatch.yaml"
@@ -80,7 +80,7 @@ the file but has no line — there is nothing in the source to highlight.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_missing_field.py"
+    --8<-- "docs/examples/loading/loading_missing_field.py:example"
     ```
 
 === "missing_field.yaml"
@@ -104,7 +104,7 @@ instead of "fix, rerun, fix, rerun".
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_multiple_errors.py"
+    --8<-- "docs/examples/loading/loading_multiple_errors.py:example"
     ```
 
 === "multiple_errors.yaml"
@@ -127,7 +127,7 @@ When merging multiple sources, a missing or malformed one can be skipped with
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_skip_broken.py"
+    --8<-- "docs/examples/loading/loading_skip_broken.py:example"
     ```
 
 === "fallback.yaml"

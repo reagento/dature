@@ -1,11 +1,11 @@
-"""RAISE_ON_CONFLICT — raises if the same key has different values."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -22,7 +22,7 @@ config = dature.load(
     strategy="raise_on_conflict",
 )
 
-# Disjoint keys — no conflict
 assert config.host == "localhost"
 assert config.port == 3000
 assert config.debug is True
+# --8<-- [end:example]

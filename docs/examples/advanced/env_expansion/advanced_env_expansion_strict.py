@@ -1,12 +1,12 @@
-"""ENV expansion — strict mode on Source."""
-
-import os
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+import os
+from dataclasses import dataclass
+
+import dature
 
 os.environ["APP_HOST"] = "https://api.example.com"
 
@@ -27,3 +27,4 @@ config = dature.load(
 
 assert config.resolved_url == "https://api.example.com/api/v1"
 assert config.fallback_url == "postgres://localhost:5432/dev"
+# --8<-- [end:example]

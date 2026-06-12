@@ -1,17 +1,12 @@
-"""Bootstrap pattern — peek argv before load() to choose other sources.
-
-argparse parsers are stateless across parse_args() calls, so the user can
-parse argv themselves to read a flag (here: --env), then hand the same parser
-to ArgparseSource, which parses argv again inside load().
-"""
-
-import argparse
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+import argparse
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -26,12 +21,12 @@ def main() -> None:
     parser.add_argument("--env", default="dev")
     parser.add_argument("--port", type=int)
 
-    ns = parser.parse_args()
+    ns = parser.parse_args()  # 1. parsing argv manually
     env = ns.env
 
     config = dature.load(
         dature.JsonSource(file=SOURCES_DIR / f"config.{env}.json"),
-        dature.ArgparseSource(parser=parser),
+        dature.ArgparseSource(parser=parser),  # 2. parsing argv again
         schema=AppConfig,
     )
     print(config)
@@ -39,3 +34,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# --8<-- [end:example]

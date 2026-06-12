@@ -1,5 +1,3 @@
-"""URL — parsed into urllib.parse.ParseResult."""
-
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -14,6 +12,7 @@ class Config:
 config = Config(
     api_url=urlparse("https://api.example.com:8080/v1?key=abc#section"),
 )
+
 
 assert config.api_url.scheme == "https"
 assert config.api_url.netloc == "api.example.com:8080"

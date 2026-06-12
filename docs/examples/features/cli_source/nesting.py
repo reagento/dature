@@ -1,5 +1,3 @@
-"""Nesting via double underscore in dest names."""
-
 import argparse
 from dataclasses import dataclass, field
 

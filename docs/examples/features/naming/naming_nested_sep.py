@@ -1,5 +1,3 @@
-"""nested_sep — build nested structures from flat ENV variables."""
-
 import os
 from dataclasses import dataclass
 

@@ -1,14 +1,14 @@
-"""Conditional sources — not_in() excludes specific values."""
+from pathlib import Path
 
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ["APP_ENV"] = "staging"
-
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -25,5 +25,5 @@ cfg = dature.load(
     schema=SecretsConfig,
 )
 
-# APP_ENV=staging is not "prod" → source is active
 assert cfg.vault_token == "dev-token-from-file"
+# --8<-- [end:example]

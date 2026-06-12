@@ -10,7 +10,7 @@ without imperative glue code.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/quickstart.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/quickstart.py:example"
     ```
 
 === "app.json"
@@ -46,7 +46,7 @@ should contain `${@...}` literally rather than be treated as a cross-ref:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/escaping.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/escaping.py:example"
     ```
 
 === "${@env.something}"
@@ -67,7 +67,7 @@ t-string is exactly equivalent to `"${@tag.key}"` as a plain string:
 === "Python 3.14+"
 
     ```python
-    --8<-- "docs/examples/advanced/cross_source_refs/t_string.py"
+    --8<-- "docs/examples/advanced/cross_source_refs/t_string.py:example"
     ```
 
 === "app.json"
@@ -111,6 +111,11 @@ the same as `"${@env.log_level:-INFO}"`.
 
 ### Tag collision
 
+Each source resolves to a tag that uniquely identifies it within a dature.load() call.
+If two sources resolve to the same tag, dature raises an error.
+EnvSource defaults to tag='env'. Loading two EnvSource instances without
+explicitly setting a tag on at least one of them will cause a collision:
+
 === "Python"
 
     ```python
@@ -122,3 +127,5 @@ the same as `"${@env.log_level:-INFO}"`.
     ```
     --8<-- "docs/examples/advanced/cross_source_refs/errors_tag_collision.stderr"
     ```
+
+

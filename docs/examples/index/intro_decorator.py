@@ -1,5 +1,3 @@
-"""Decorator mode — auto-load config on instantiation."""
-
 import os
 from dataclasses import dataclass
 

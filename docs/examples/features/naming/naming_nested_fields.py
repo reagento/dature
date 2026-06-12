@@ -1,11 +1,11 @@
-"""field_mapping — nested dataclass renaming with F objects."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -36,3 +36,4 @@ config = dature.load(
 assert config.name == "Alice"
 assert config.address.city == "Paris"
 assert config.address.street == "Rue de Rivoli"
+# --8<-- [end:example]

@@ -9,7 +9,7 @@ Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion func
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_type.py"
+    --8<-- "docs/examples/advanced/custom_types/custom_type.py:example"
     ```
 
 === "custom_type_common.yaml"
@@ -25,19 +25,19 @@ Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion func
 === "Per-source (Source)"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_type.py"
+    --8<-- "docs/examples/advanced/custom_types/custom_type.py:example"
     ```
 
 === "Per-merge (load)"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/custom_type_merge.py"
+    --8<-- "docs/examples/advanced/custom_types/custom_type_merge.py:example"
     ```
 
 === "Global (configure)"
 
     ```python
-    --8<-- "docs/examples/advanced/custom_types/advanced_configure_type_loaders.py"
+    --8<-- "docs/examples/advanced/custom_types/advanced_configure_type_loaders.py:example"
     ```
 
 When both per-source and global `type_loaders` are set, they merge — per-source loaders take priority.
@@ -56,8 +56,8 @@ For formats that dature doesn't support out of the box, you can create your own 
 
 All base classes are in `dature.sources.base`:
 
-```python
---8<-- "docs/examples/advanced/custom_types/custom_source_import.py"
+    ```python
+    --8<-- "docs/examples/advanced/custom_types/custom_source_import.py"
 ```
 
 ### Minimal interface
@@ -82,12 +82,12 @@ Every custom source needs:
 
 The most common case — reading a file format:
 
-```python
---8<-- "docs/examples/advanced/custom_types/custom_loader.py"
+    ```python
+    --8<-- "docs/examples/advanced/custom_types/custom_loader.py:example"
 ```
 
-```xml title="custom_loader.xml"
---8<-- "docs/examples/advanced/custom_types/sources/custom_loader.xml"
+    ```xml title="custom_loader.xml"
+    --8<-- "docs/examples/advanced/custom_types/sources/custom_loader.xml"
 ```
 
 `FileSource` handles the `file` parameter, path expansion, and stream detection. Your `_load_file()` receives a `Path` or file-like object and returns a dict.
@@ -96,8 +96,8 @@ The most common case — reading a file format:
 
 For sources that don't read files — e.g. an API, a database, or an in-memory dict:
 
-```python
---8<-- "docs/examples/advanced/custom_types/custom_dict_source.py"
+    ```python
+    --8<-- "docs/examples/advanced/custom_types/custom_dict_source.py"
 ```
 
 ### Tips

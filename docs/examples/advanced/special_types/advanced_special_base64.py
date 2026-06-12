@@ -1,5 +1,3 @@
-"""Base64UrlBytes / Base64UrlStr — decoded from Base64."""
-
 from base64 import urlsafe_b64decode
 from dataclasses import dataclass
 
@@ -18,6 +16,7 @@ config = Config(
     token=urlsafe_b64decode(encoded).decode(),
     data=urlsafe_b64decode(encoded),
 )
+
 
 assert config.token == "hello world"
 assert type(config.token) is str

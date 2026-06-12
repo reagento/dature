@@ -53,37 +53,37 @@ Each strategy produces a different result:
 === "first_wins"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_first_wins.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_first_wins.py:example"
     ```
 
 === "last_wins"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_last_wins.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_last_wins.py:example"
     ```
 
 === "append"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_append.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_append.py:example"
     ```
 
 === "append_unique"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_append_unique.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_append_unique.py:example"
     ```
 
 === "prepend"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend.py:example"
     ```
 
 === "prepend_unique"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend_unique.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_field_prepend_unique.py:example"
     ```
 
 Nested fields are supported: `dature.F[Config].database.host`.
@@ -95,7 +95,7 @@ Fields with an explicit strategy are excluded from conflict detection:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_conflict.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_conflict.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -129,13 +129,13 @@ Pick a plain function for one-off logic, or a class for a named, reusable reduce
 === "Function"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_callable.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_callable.py:example"
     ```
 
 === "Class"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_field.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_field.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -175,7 +175,7 @@ Override `op` to plug in your own merge function — e.g. shallow overlay for en
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_source.py"
+    --8<-- "docs/examples/advanced/merge_rules/advanced_merge_rules_custom_source.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -201,7 +201,7 @@ Skip sources that fail to load (missing file, invalid syntax):
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -215,7 +215,7 @@ Override per source with `skip_if_broken` on `Source` (takes priority over the g
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken_per_source.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_broken_per_source.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -233,7 +233,7 @@ Drop fields with invalid values and let other sources or defaults fill them in:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid.py:example"
     ```
 
 === "merging_skip_invalid_defaults.yaml"
@@ -247,7 +247,7 @@ Restrict skipping to specific fields:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid_per_field.py"
+    --8<-- "docs/examples/advanced/merge_rules/merging_skip_invalid_per_field.py:example"
     ```
 
 === "merging_skip_invalid_per_field_defaults.yaml"
@@ -275,3 +275,5 @@ Config loading errors (1)
    └── FILE 'overrides.yaml', line 2
        port: "not_a_number_too"
 ```
+
+

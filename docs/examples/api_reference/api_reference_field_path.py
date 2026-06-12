@@ -1,5 +1,3 @@
-"""F[] factory for building field paths with validation."""
-
 from dataclasses import dataclass
 
 import dature

@@ -1,11 +1,11 @@
-"""Custom type loader — parse 'r,g,b' strings into an Rgb dataclass."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,9 +29,10 @@ class AppConfig:
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "custom_type_common.yaml",
-        type_loaders={Rgb: rgb_from_string},
+        type_loaders={Rgb: rgb_from_string},  # applies only to this file source
     ),
     schema=AppConfig,
 )
 
 assert config == AppConfig(name="my-app", color=Rgb(r=255, g=128, b=0))
+# --8<-- [end:example]

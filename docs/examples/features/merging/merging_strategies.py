@@ -1,11 +1,11 @@
-"""Merge strategies — LAST_WINS vs FIRST_WINS."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -31,3 +31,4 @@ first_wins = dature.load(
 
 assert last_wins.host == "production.example.com"
 assert first_wins.host == "localhost"
+# --8<-- [end:example]

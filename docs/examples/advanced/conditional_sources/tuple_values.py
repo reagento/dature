@@ -1,14 +1,14 @@
-"""Conditional sources — multiple allowed values (tuple)."""
+from pathlib import Path
 
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ["APP_ENV"] = "local"
-
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -26,3 +26,4 @@ cfg = dature.load(
 )
 
 assert cfg.vault_token == "dev-token-from-file"
+# --8<-- [end:example]

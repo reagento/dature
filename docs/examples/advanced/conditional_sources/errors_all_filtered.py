@@ -1,17 +1,14 @@
-"""Conditional sources — error: all sources filtered out.
+from pathlib import Path
 
-APP_ENV is not set, so ${APP_ENV} expands to "" which matches neither "prod"
-nor ("dev", "local"). dature raises DatureError at construction time.
-"""
+dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
 
 os.environ.pop("APP_ENV", None)
-dev_env_path = Path(__file__).parent / "sources" / "vault_dev.env"
 
 
 @dataclass
@@ -28,3 +25,4 @@ dature.load(
     ),
     schema=SecretsConfig,
 )
+# --8<-- [end:example]

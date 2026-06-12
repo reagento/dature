@@ -1,11 +1,11 @@
-"""FIRST_FOUND — use the first source that loads successfully."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -23,7 +23,7 @@ config = dature.load(
     strategy="first_found",
 )
 
-# nonexistent.yaml is skipped, common_defaults.yaml is used entirely
 assert config.host == "localhost"
 assert config.port == 3000
 assert config.tags == ["default"]
+# --8<-- [end:example]

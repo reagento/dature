@@ -1,12 +1,12 @@
-"""Callable merge — custom merge function for a field."""
-
-from dataclasses import dataclass
 from pathlib import Path
+
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 from typing import Any
 
 import dature
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -31,3 +31,4 @@ config = dature.load(
 assert config.host == "production.example.com"
 assert config.port == 8080
 assert config.tags == ["api", "default", "web"]
+# --8<-- [end:example]

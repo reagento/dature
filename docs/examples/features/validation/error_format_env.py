@@ -1,5 +1,3 @@
-"""Error format — ENV source."""
-
 import os
 from dataclasses import dataclass
 from typing import Annotated

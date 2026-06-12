@@ -1,11 +1,11 @@
-"""dature vs Hydra — multi-format merge."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -14,7 +14,6 @@ class Config:
     port: int
 
 
-# --8<-- [start:merge]
 config = dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "hydra_defaults.yaml"),
     dature.Toml11Source(
@@ -24,7 +23,7 @@ config = dature.load(
     dature.EnvSource(prefix="APP_"),
     schema=Config,
 )
-# --8<-- [end:merge]
 
 assert config.host == "localhost"
 assert config.port == 9090
+# --8<-- [end:example]

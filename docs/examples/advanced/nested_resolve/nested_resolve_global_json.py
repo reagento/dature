@@ -1,5 +1,3 @@
-"""Global nested_resolve_strategy="json" — use JSON value, ignore flat keys."""
-
 import os
 from dataclasses import dataclass
 
@@ -22,6 +20,7 @@ class Config:
 
 
 config = dature.load(
+    # priority - json values
     dature.EnvSource(prefix="APP__", nested_resolve_strategy="json"),
     schema=Config,
 )

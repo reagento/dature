@@ -1,11 +1,11 @@
-"""Loading error — value cannot be coerced to the field type."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -19,3 +19,4 @@ dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "type_mismatch.yaml"),
     schema=Config,
 )
+# --8<-- [end:example]

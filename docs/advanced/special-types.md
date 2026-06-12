@@ -43,3 +43,5 @@ Type aliases decoded from Base64 string in the config. `Base64UrlStr` decodes to
 ```python
 --8<-- "docs/examples/advanced/special_types/advanced_special_base64.py"
 ```
+
+

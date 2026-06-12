@@ -1,11 +1,11 @@
-"""name_style — auto-convert camelCase keys to snake_case fields."""
-
-from dataclasses import dataclass
 from pathlib import Path
 
-import dature
-
 SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
+
+import dature
 
 
 @dataclass
@@ -28,3 +28,4 @@ assert config.user_name == "admin"
 assert config.max_retries == 3
 assert config.is_active is True
 assert config.base_url == "https://api.example.com"
+# --8<-- [end:example]

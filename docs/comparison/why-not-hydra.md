@@ -39,7 +39,7 @@ Hydra reads YAML exclusively. You can reference env vars via OmegaConf's `${oc.e
 dature handles all of these out of the box:
 
 ```python
---8<-- "docs/examples/comparison/why-not-hydra/hydra_merge.py:merge"
+--8<-- "docs/examples/comparison/why-not-hydra/hydra_merge.py:example"
 ```
 
 ## OmegaConf Is Not a Dataclass
@@ -60,7 +60,7 @@ def app(cfg: DictConfig) -> None:
 dature returns **your actual dataclass**:
 
 ```python
---8<-- "docs/examples/comparison/why-not-hydra/hydra_dataclass.py:dataclass"
+--8<-- "docs/examples/comparison/why-not-hydra/hydra_dataclass.py:example"
 ```
 
 ## The `@hydra.main` Problem
@@ -89,7 +89,7 @@ class Config:
 dature uses `Annotated` validators:
 
 ```python
---8<-- "docs/examples/comparison/why-not-hydra/hydra_validators.py"
+--8<-- "docs/examples/comparison/why-not-hydra/hydra_validators.py:example"
 ```
 
 ```title="Error"

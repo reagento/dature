@@ -1,14 +1,14 @@
-"""Example 1: Default behavior - system path search enabled by default."""
+from pathlib import Path
 
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
 import os
 import sys
 import tempfile
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 
 @dataclass
@@ -23,8 +23,6 @@ with tempfile.TemporaryDirectory() as tmp:
         (SHARED_DIR / "common_app.yaml").read_text(),
     )
 
-    # Redirect the platform-appropriate env var so search lands in our temp dir
-    # instead of the real user config location.
     os.environ["APPDATA" if sys.platform == "win32" else "XDG_CONFIG_HOME"] = (
         str(config_dir)
     )
@@ -36,3 +34,4 @@ with tempfile.TemporaryDirectory() as tmp:
 
     assert config.host == "localhost"
     assert config.port == 8080
+# --8<-- [end:example]
