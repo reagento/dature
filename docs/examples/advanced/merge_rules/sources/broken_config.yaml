@@ -1,0 +1,2 @@
+host: "from-broken"
+port: [invalid yaml: {

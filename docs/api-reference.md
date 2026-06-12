@@ -33,7 +33,8 @@ Main entry point. Two calling patterns:
 | `strategy` | `MergeStrategyName \| SourceMergeStrategy` | `"last_wins"` | Merge strategy: a built-in name or a custom object implementing `SourceMergeStrategy`. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
 | `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy name, callable, or any object implementing `FieldMergeStrategy`. See [Field Merge Strategies](#field-merge-strategies). |
 | `field_groups` | `tuple[FieldGroupTuple, ...]` | `()` | Groups of fields that must change together. Each group is a tuple of `F[Config].field` references. |
-| `skip_broken_sources` | `bool` | `False` | Skip sources that fail to load instead of raising. |
+| `skip_if_broken` | `bool` | `False` | Skip sources that fail to parse (invalid syntax, config error) instead of raising. |
+| `skip_if_missing` | `bool` | `False` | Skip sources whose file does not exist instead of raising. |
 | `skip_invalid_fields` | `bool` | `False` | Skip fields that fail validation instead of raising. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | Env var expansion mode applied to all sources. Source-level setting takes priority. |
 | `secret_field_names` | `tuple[str, ...] \| None` | `None` | Extra secret field name patterns for masking. |

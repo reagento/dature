@@ -206,7 +206,8 @@ class TestAddLoadArgs:
             [
                 "--strategy",
                 "first_wins",
-                "--skip-broken-sources",
+                "--skip-if-broken",
+                "--skip-if-missing",
                 "--mask-secrets",
                 "--secret-field-names",
                 "password",
@@ -215,7 +216,8 @@ class TestAddLoadArgs:
             ],
         )
         assert ns.strategy == "first_wins"
-        assert ns.skip_broken_sources is True
+        assert ns.skip_if_broken is True
+        assert ns.skip_if_missing is True
         assert ns.mask_secrets is True
         assert ns.secret_field_names == ["password", "api_key"]
 

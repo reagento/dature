@@ -1,5 +1,6 @@
 from pathlib import Path
 
+SHARED_DIR = Path(__file__).parents[2] / "shared"
 SOURCES_DIR = Path(__file__).parent / "sources"
 
 # --8<-- [start:example]
@@ -16,15 +17,16 @@ class Config:
 
 
 config = dature.load(
+    dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(
-        file=SOURCES_DIR / "does_not_exist.yaml",
-        skip_if_missing=True,
+        file=SOURCES_DIR
+        / "local_overrides.yaml",  # optional local file, may not exist
     ),
-    dature.Yaml12Source(file=SOURCES_DIR / "fallback.yaml"),
     schema=Config,
+    skip_if_missing=True,
 )
 
 assert config.host == "localhost"
-assert config.port == 8080
+assert config.port == 3000
 assert config.debug is False
 # --8<-- [end:example]

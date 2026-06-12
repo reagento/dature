@@ -29,7 +29,7 @@ class TestSkipBrokenSources:
             JsonSource(file=valid),
             JsonSource(file=missing),
             schema=Config,
-            skip_broken_sources=True,
+            skip_if_missing=True,
         )
 
         assert result.host == "localhost"
@@ -51,11 +51,46 @@ class TestSkipBrokenSources:
             JsonSource(file=valid),
             JsonSource(file=broken),
             schema=Config,
-            skip_broken_sources=True,
+            skip_if_broken=True,
         )
 
         assert result.host == "localhost"
         assert result.port == 3000
+
+    def test_skip_if_broken_does_not_cover_missing_file(self, tmp_path: Path):
+        valid = tmp_path / "valid.json"
+        valid.write_text('{"host": "localhost"}')
+
+        @dataclass
+        class Config:
+            host: str
+
+        with pytest.raises(DatureConfigError):
+            load(
+                JsonSource(file=valid),
+                JsonSource(file=str(tmp_path / "does_not_exist.json")),
+                schema=Config,
+                skip_if_broken=True,
+            )
+
+    def test_skip_if_missing_does_not_cover_broken_json(self, tmp_path: Path):
+        valid = tmp_path / "valid.json"
+        valid.write_text('{"host": "localhost"}')
+
+        broken = tmp_path / "broken.json"
+        broken.write_text("{bad")
+
+        @dataclass
+        class Config:
+            host: str
+
+        with pytest.raises(DatureConfigError):
+            load(
+                JsonSource(file=valid),
+                JsonSource(file=broken),
+                schema=Config,
+                skip_if_missing=True,
+            )
 
     def test_all_sources_broken_raises(self, tmp_path: Path):
         broken_a = tmp_path / "a.json"
@@ -73,7 +108,7 @@ class TestSkipBrokenSources:
                 JsonSource(file=broken_a),
                 JsonSource(file=broken_b),
                 schema=Config,
-                skip_broken_sources=True,
+                skip_if_broken=True,
             )
 
         assert str(exc_info.value) == "Config loading errors (1)"
@@ -117,7 +152,7 @@ class TestSkipBrokenSources:
             JsonSource(file=broken),
             JsonSource(file=c),
             schema=Config,
-            skip_broken_sources=True,
+            skip_if_broken=True,
         )
 
         assert result.host == "a-host"
@@ -139,7 +174,7 @@ class TestSkipBrokenSources:
             JsonSource(file=valid),
             JsonSource(file=broken, skip_if_broken=True),
             schema=Config,
-            skip_broken_sources=False,
+            skip_if_broken=False,
         )
 
         assert result.host == "localhost"
@@ -162,7 +197,7 @@ class TestSkipBrokenSources:
                 JsonSource(file=valid),
                 JsonSource(file=broken, skip_if_broken=False),
                 schema=Config,
-                skip_broken_sources=True,
+                skip_if_broken=True,
             )
 
     def test_per_source_none_uses_global(self, tmp_path: Path):
@@ -181,7 +216,7 @@ class TestSkipBrokenSources:
             JsonSource(file=valid),
             JsonSource(file=broken, skip_if_broken=None),
             schema=Config,
-            skip_broken_sources=True,
+            skip_if_broken=True,
         )
 
         assert result.host == "localhost"
@@ -206,7 +241,8 @@ class TestSkipBrokenSources:
                 JsonSource(file=missing),
                 JsonSource(file=broken),
                 schema=Config,
-                skip_broken_sources=True,
+                skip_if_broken=True,
+                skip_if_missing=True,
             )
 
         assert str(exc_info.value) == "Config loading errors (1)"

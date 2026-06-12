@@ -37,7 +37,8 @@ class CliArgs(DataclassInstance, Protocol):
 
 CLI_LOAD_PARAMS: tuple[str, ...] = (
     "strategy",
-    "skip_broken_sources",
+    "skip_if_broken",
+    "skip_if_missing",
     "skip_invalid_fields",
     "expand_env_vars",
     "secret_field_names",

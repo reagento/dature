@@ -116,7 +116,8 @@ class Loader[T: DataclassInstance]:
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
         field_groups: tuple[FieldGroupTuple, ...] = (),
-        skip_broken_sources: bool = False,
+        skip_if_broken: bool = False,
+        skip_if_missing: bool = False,
         skip_invalid_fields: bool = False,
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: tuple[str, ...] | None = None,
@@ -153,7 +154,8 @@ class Loader[T: DataclassInstance]:
         self._strategy = strategy
         self._field_merges = field_merges
         self._field_groups = field_groups
-        self._skip_broken_sources = skip_broken_sources
+        self._skip_if_broken = skip_if_broken
+        self._skip_if_missing = skip_if_missing
         self._skip_invalid_fields = skip_invalid_fields
         self._secret_field_names = secret_field_names
         self._mask_secrets_arg = mask_secrets
@@ -268,7 +270,8 @@ class Loader[T: DataclassInstance]:
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
         field_groups: tuple[FieldGroupTuple, ...] = (),
-        skip_broken_sources: bool = False,
+        skip_if_broken: bool = False,
+        skip_if_missing: bool = False,
         skip_invalid_fields: bool = False,
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: tuple[str, ...] | None = None,
@@ -291,7 +294,8 @@ class Loader[T: DataclassInstance]:
                 strategy=strategy,
                 field_merges=field_merges,
                 field_groups=field_groups,
-                skip_broken_sources=skip_broken_sources,
+                skip_if_broken=skip_if_broken,
+                skip_if_missing=skip_if_missing,
                 skip_invalid_fields=skip_invalid_fields,
                 expand_env_vars=expand_env_vars,
                 secret_field_names=secret_field_names,
@@ -359,7 +363,8 @@ class Loader[T: DataclassInstance]:
             strategy=self._strategy,
             field_merges=self._field_merges,
             field_groups=self._field_groups,
-            skip_broken_sources=self._skip_broken_sources,
+            skip_if_broken=self._skip_if_broken,
+            skip_if_missing=self._skip_if_missing,
             skip_invalid_fields=self._skip_invalid_fields,
             secret_field_names=self._secret_field_names,
             mask_secrets=self._mask_secrets_arg,

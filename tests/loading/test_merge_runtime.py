@@ -16,6 +16,7 @@ from dature.loading.merge_runtime import (
     apply_source_init_params,
     resolve_skip_invalid,
     should_skip_broken,
+    should_skip_missing,
 )
 from dature.sources.base import Source
 from dature.sources.env_ import EnvSource
@@ -138,7 +139,7 @@ class TestApplySourceConfigGroup:
 
 class TestShouldSkipBroken:
     @pytest.mark.parametrize(
-        ("skip_if_broken", "skip_broken_sources", "expected"),
+        ("skip_if_broken", "merge_skip_if_broken", "expected"),
         [
             (True, False, True),
             (False, True, False),
@@ -150,14 +151,14 @@ class TestShouldSkipBroken:
         self,
         tmp_path: Path,
         skip_if_broken: bool | None,
-        skip_broken_sources: bool,
+        merge_skip_if_broken: bool,
         expected: bool,
     ):
         json_file = tmp_path / "c.json"
         json_file.write_text("{}")
         kwargs = {} if skip_if_broken is None else {"skip_if_broken": skip_if_broken}
         source = JsonSource(file=json_file, **kwargs)
-        merge = MergeConfig(sources=(source,), skip_broken_sources=skip_broken_sources)
+        merge = MergeConfig(sources=(source,), skip_if_broken=merge_skip_if_broken)
 
         assert should_skip_broken(source, merge) is expected
 
@@ -168,6 +169,40 @@ class TestShouldSkipBroken:
         should_skip_broken(source, merge)
 
         assert "skip_if_broken has no effect on non-file sources" in caplog.text
+
+
+class TestShouldSkipMissing:
+    @pytest.mark.parametrize(
+        ("skip_if_missing", "merge_skip_if_missing", "expected"),
+        [
+            (True, False, True),
+            (False, True, False),
+            (None, True, True),
+        ],
+        ids=["source-true", "source-false", "source-none-uses-merge"],
+    )
+    def test_resolve(
+        self,
+        tmp_path: Path,
+        skip_if_missing: bool | None,
+        merge_skip_if_missing: bool,
+        expected: bool,
+    ):
+        json_file = tmp_path / "c.json"
+        json_file.write_text("{}")
+        kwargs = {} if skip_if_missing is None else {"skip_if_missing": skip_if_missing}
+        source = JsonSource(file=json_file, **kwargs)
+        merge = MergeConfig(sources=(source,), skip_if_missing=merge_skip_if_missing)
+
+        assert should_skip_missing(source, merge) is expected
+
+    def test_env_source_warns(self, caplog: pytest.LogCaptureFixture):
+        source = EnvSource(skip_if_missing=True)
+        merge = MergeConfig(sources=(source,))
+
+        should_skip_missing(source, merge)
+
+        assert "skip_if_missing has no effect on non-file sources" in caplog.text
 
 
 class TestResolveSkipInvalid:

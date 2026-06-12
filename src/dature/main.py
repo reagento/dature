@@ -32,7 +32,8 @@ def load[T](
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
-    skip_broken_sources: bool = False,
+    skip_if_broken: bool = False,
+    skip_if_missing: bool = False,
     skip_invalid_fields: bool = False,
     expand_env_vars: ExpandEnvVarsMode | None = None,
     secret_field_names: tuple[str, ...] | None = None,
@@ -52,7 +53,8 @@ def load(
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
-    skip_broken_sources: bool = False,
+    skip_if_broken: bool = False,
+    skip_if_missing: bool = False,
     skip_invalid_fields: bool = False,
     expand_env_vars: ExpandEnvVarsMode | None = None,
     secret_field_names: tuple[str, ...] | None = None,
@@ -72,7 +74,8 @@ def load(  # noqa: PLR0913
     strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
-    skip_broken_sources: bool = False,
+    skip_if_broken: bool = False,
+    skip_if_missing: bool = False,
     skip_invalid_fields: bool = False,
     expand_env_vars: ExpandEnvVarsMode | None = None,
     secret_field_names: tuple[str, ...] | None = None,
@@ -100,7 +103,8 @@ def load(  # noqa: PLR0913
         user_set_strategy
         or field_merges is not None
         or field_groups != ()
-        or skip_broken_sources
+        or skip_if_broken
+        or skip_if_missing
         or skip_invalid_fields
     ):
         logger.warning("Merge-related parameters have no effect with a single source")
@@ -111,7 +115,8 @@ def load(  # noqa: PLR0913
         "strategy": strategy,
         "field_merges": field_merges,
         "field_groups": field_groups,
-        "skip_broken_sources": skip_broken_sources,
+        "skip_if_broken": skip_if_broken,
+        "skip_if_missing": skip_if_missing,
         "skip_invalid_fields": skip_invalid_fields,
         "expand_env_vars": expand_env_vars,
         "secret_field_names": secret_field_names,

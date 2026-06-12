@@ -19,7 +19,7 @@ Value types touched by ``LoadCtx`` (``SourceEntry`` / ``FieldOrigin`` from
 imported on the module top-level — those modules no longer pull in
 ``merge_runtime`` (``LoadReport`` itself lives in ``dature.report``).
 Per-source helpers that need ``MergeConfig`` (``resolve_type_loaders``,
-``should_skip_broken``, ``resolve_skip_invalid``) live here rather than in
+``should_skip_broken``, ``should_skip_missing``, ``resolve_skip_invalid``) live here rather than in
 ``loading.source_loading`` so that ``source_loading`` can import ``MergeConfig``
 at module level without forming a cycle. The shared deterministic load-tail
 (nested_conflicts rebuild, file_content read, skip_field_if_invalid filter)
@@ -166,7 +166,8 @@ class MergeConfig:
     strategy: "MergeStrategyName | SourceMergeStrategy" = "last_wins"
     field_merges: FieldMergeMap | None = None
     field_groups: tuple[FieldGroupTuple, ...] = ()
-    skip_broken_sources: bool = False
+    skip_if_broken: bool = False
+    skip_if_missing: bool = False
     skip_invalid_fields: bool = False
     secret_field_names: tuple[str, ...] | None = None
     mask_secrets: bool | None = None
@@ -202,12 +203,13 @@ def resolve_type_loaders(
 
 
 def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
-    """Return True if a load failure for *source* should be silently skipped.
+    """Return True if a parse/load failure for *source* should be silently skipped.
 
     ``when=`` filtering happens *before* this check — a source disabled by
     ``when=`` never reaches ``load_raw()`` and therefore never has a chance to
-    fail.  ``skip_if_broken`` / ``skip_broken_sources`` only apply to sources
-    that pass the ``when=`` gate and then raise during loading.
+    fail.  ``skip_if_broken`` only applies to sources that pass the ``when=``
+    gate and then raise a parse or config error during loading.  For missing
+    files (``FileNotFoundError``) use :func:`should_skip_missing` instead.
     """
     if source.skip_if_broken is not None:
         if source.file_display() is None:
@@ -215,7 +217,25 @@ def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
                 "skip_if_broken has no effect on non-file sources — they cannot be broken",
             )
         return source.skip_if_broken
-    return merge_meta.skip_broken_sources
+    return merge_meta.skip_if_broken
+
+
+def should_skip_missing(source: Source, merge_meta: MergeConfig) -> bool:
+    """Return True if a missing-file error for *source* should be silently skipped.
+
+    ``when=`` filtering happens *before* this check — a source disabled by
+    ``when=`` never reaches ``load_raw()`` and therefore never has a chance to
+    be absent.  ``skip_if_missing`` only applies to sources that pass the
+    ``when=`` gate and then raise ``FileNotFoundError`` during loading.  For
+    parse/config errors use :func:`should_skip_broken` instead.
+    """
+    if source.skip_if_missing is not None:
+        if source.file_display() is None:
+            logger.warning(
+                "skip_if_missing has no effect on non-file sources — they cannot be missing",
+            )
+        return source.skip_if_missing
+    return merge_meta.skip_if_missing
 
 
 def resolve_skip_invalid(
@@ -462,7 +482,7 @@ class LoadCtx:
                     source_loader_type=entry.loader_type,
                 )
 
-    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:
+    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:  # noqa: C901
         """Load a source with full pre-processing.
 
         *source_idx* is the position of the source in ``merge_meta.sources``.
@@ -473,8 +493,8 @@ class LoadCtx:
 
         ``skip_on_error=True`` tells the load to swallow the error and return
         ``None`` regardless of the user's ``skip_if_broken`` /
-        ``skip_broken_sources`` settings — useful for strategies that treat
-        broken sources as a normal case (e.g. :class:`SourceFirstFound`,
+        ``skip_if_missing`` settings — useful for strategies that treat
+        broken or missing sources as a normal case (e.g. :class:`SourceFirstFound`,
         which tries sources in order and is meant to tolerate misses).
 
         Repeated calls with the same index return the cached result without
@@ -504,7 +524,18 @@ class LoadCtx:
 
         try:
             load_result = handle_load_errors(func=source.load_raw, ctx=error_ctx)
-        except (DatureConfigError, FileNotFoundError):
+        except FileNotFoundError:
+            if not (skip_on_error or should_skip_missing(source, self._merge_meta)):
+                raise
+            logger.warning(
+                "[%s] Source %d skipped (missing): file=%s",
+                self.dataclass_name,
+                i,
+                source.display_name(),
+            )
+            self._cache[source_idx] = None
+            return None
+        except DatureConfigError:
             if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 raise
             logger.warning(

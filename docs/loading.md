@@ -119,10 +119,11 @@ instead of "fix, rerun, fix, rerun".
     --8<-- "docs/examples/loading/loading_multiple_errors.stderr"
     ```
 
-## Recovering: skip a broken source
+## Recovering: skip an unavailable source
 
-When merging multiple sources, a missing or malformed one can be skipped with
-`skip_if_broken=True` so the next source supplies the values:
+When merging multiple sources, an absent or malformed one can be skipped so the
+next source supplies the values. Use `skip_if_missing=True` for files that may
+not exist, or `skip_if_broken=True` for files that exist but may be malformed:
 
 === "Python"
 
@@ -136,10 +137,10 @@ When merging multiple sources, a missing or malformed one can be skipped with
     --8<-- "docs/examples/loading/sources/fallback.yaml"
     ```
 
-If **every** source fails, dature still raises — there is no value to load. The
-flag also has variants for skipping individual invalid fields rather than
-entire sources. See [Merge Rules — Skipping Broken Sources](advanced/merge-rules.md#skipping-broken-sources)
-for the full picture.
+If **every** source fails, dature still raises — there is no value to load.
+See [Skipping Sources with Parse Errors](advanced/merge-rules.md#skipping-sources-with-parse-errors)
+and [Skipping Missing Sources](advanced/merge-rules.md#skipping-missing-sources) for the full picture,
+including per-source overrides and `skip_invalid_fields`.
 
 ## What's next
 

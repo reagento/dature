@@ -6,7 +6,7 @@ information about fields that were skipped due to ``skip_field_if_invalid``.
 pre-processing: error_ctx rebuild on nested_conflicts, file_content read,
 and ``apply_skip_invalid`` — called by both ``_do_load_single`` and
 ``LoadCtx.load``. Per-source helpers that need ``MergeConfig``
-(``resolve_type_loaders``, ``should_skip_broken``, ``resolve_skip_invalid``)
+(``resolve_type_loaders``, ``should_skip_broken``, ``should_skip_missing``, ``resolve_skip_invalid``)
 live in ``dature.loading.merge_runtime`` to avoid import cycles.
 """
 

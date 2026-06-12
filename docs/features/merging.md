@@ -158,7 +158,8 @@ All merge-related parameters are passed directly to `dature.load()` as keyword a
 | `strategy` | Global merge strategy. Default: `"last_wins"`. See [Merge Strategies](#merge-strategies) |
 | `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies) |
 | `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/field-groups.md) |
-| `skip_broken_sources` | Skip sources that fail to load. See [Skipping Broken Sources](../advanced/merge-rules.md#skipping-broken-sources) |
+| `skip_if_broken` | Skip sources that fail to parse (invalid syntax, config error). See [Skipping Sources with Parse Errors](../advanced/merge-rules.md#skipping-sources-with-parse-errors) |
+| `skip_if_missing` | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/merge-rules.md#skipping-missing-sources) |
 | `skip_invalid_fields` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/merge-rules.md#skipping-invalid-fields) |
 | `expand_env_vars` | ENV variable expansion mode. See [ENV Expansion](../advanced/env-expansion.md) |
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](masking.md) |

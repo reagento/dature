@@ -13,25 +13,27 @@ import dature
 class Config:
     host: str
     port: int
-    tags: list[str]
+    debug: bool = False
 
 
 config = dature.load(
     dature.Yaml12Source(
-        file=SHARED_DIR / "common_defaults.yaml",  # uses global
+        file=SHARED_DIR / "common_defaults.yaml",
     ),
     dature.Yaml12Source(
-        file=SOURCES_DIR / "optional.yaml",  # always skip, ignores global
+        file=SOURCES_DIR
+        / "broken_config.yaml",  # per-source: skip parse errors
         skip_if_broken=True,
     ),
     dature.Yaml12Source(
-        file=SHARED_DIR / "common_overrides.yaml",  # never skip, ignores global
-        skip_if_broken=False,
+        file=SOURCES_DIR
+        / "local_overrides.yaml",  # per-source: skip if file absent
+        skip_if_missing=True,
     ),
     schema=Config,
-    skip_broken_sources=True,  # global default
 )
 
-assert config.host == "production.example.com"
-assert config.port == 8080
+assert config.host == "localhost"
+assert config.port == 3000
+assert config.debug is False
 # --8<-- [end:example]
