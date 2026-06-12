@@ -110,29 +110,6 @@ Fields with an explicit strategy are excluded from conflict detection:
     --8<-- "docs/examples/shared/common_overrides.yaml"
     ```
 
-## First-Found Source Strategy
- 
-With the `first-found strategy`, each field is taken from the first source that provides it —
-remaining sources are not consulted for that field once a value is found.
- 
-=== "Python"
- 
-    ```python
-    --8<-- "docs/examples/advanced/merge_rules/merging_first_found.py:example"
-    ```
- 
-=== "merging_first_found_primary.yaml"
- 
-    ```yaml
-    --8<-- "docs/examples/advanced/merge_rules/sources/merging_first_found_primary.yaml"
-    ```
- 
-=== "merging_first_found_fallback.yaml"
- 
-    ```yaml
-    --8<-- "docs/examples/advanced/merge_rules/sources/merging_first_found_fallback.yaml"
-    ```
-
 ## Custom Field Strategy
 
 ### The `FieldMergeStrategy` Protocol
