@@ -2,7 +2,7 @@ import re
 from typing import Final
 
 from dature.errors.exceptions import CrossRefError, CrossRefExpandError
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 # ${@tag.key}, ${@tag.key.nested}, ${@tag.key:-default}
 # First alternative is $$ so it is consumed before the brace pattern runs.

@@ -6,7 +6,7 @@ from typing import cast
 
 import dature
 from dature.strategies.field import FieldMergeStrategy
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 SHARED_DIR = Path(__file__).parents[2] / "shared"
 

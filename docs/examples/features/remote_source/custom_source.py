@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 import dature
-from dature.sources.base import RemoteSource
-from dature.types import JSONValue
+from dature.sources.remote import RemoteSource
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True, repr=False)

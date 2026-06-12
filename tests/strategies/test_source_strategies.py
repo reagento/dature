@@ -9,7 +9,7 @@ from dature import EnvSource, JsonSource, load
 from dature.field_path import F
 from dature.loading.merge_runtime import LoadCtx, SourceMergeStrategy
 from dature.strategies.source import SourceFirstFound, SourceFirstWins, SourceLastWins
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass

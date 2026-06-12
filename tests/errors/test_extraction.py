@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from adaptix import Retort
 from adaptix.load_error import AggregateLoadError, LoadError
 
-from dature.errors.formatter import extract_field_errors
+from dature.errors.extraction import extract_field_errors
 
 
 class TestExtractFieldErrors:

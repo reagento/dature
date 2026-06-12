@@ -1,1 +1,0 @@
-Restructured `conditional_sources` doc: merged "Allowing multiple values", "Combining conditions (AND)", and "OR conditions" into a single tabbed `## Combining conditions` section, one tab per operator (`in_()`, `not_in()`, `&`, `|`, `~`). Fixed stale dict-era wording and broken syntax-reference table links.

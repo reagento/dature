@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from typing import Self
 
 from dature.errors.loc_types import SourceLocation
-from dature.errors.message import format_location, format_path
-from dature.types import JSONValue
+from dature.errors.rendering import format_location, format_path
+from dature.type_aliases import JSONValue
 
 
 class DatureError(Exception):

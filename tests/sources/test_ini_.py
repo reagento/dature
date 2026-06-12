@@ -188,7 +188,7 @@ class TestIniSourceStream:
 
 
 def _ini(content: str) -> dict[tuple[str, ...], LineRange]:
-    result = IniSource()._build_line_index(content)
+    result = IniSource().build_line_index(content)
     assert result is not None
     return result
 

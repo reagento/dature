@@ -1,7 +1,7 @@
 from typing import Protocol, runtime_checkable
 
 from dature.errors import DatureConfigError, SourceLoadError
-from dature.types import FieldMergeStrategyName, JSONValue
+from dature.type_aliases import FieldMergeStrategyName, JSONValue
 
 
 # --8<-- [start:field-merge-strategy]

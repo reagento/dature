@@ -16,8 +16,8 @@ from dature.loaders import (
     optional_from_empty_string,
 )
 from dature.loaders.toml_ import time_passthrough
-from dature.sources.base import FileSource
-from dature.types import FILE_LIKE_TYPES, FileOrStream, JSONValue
+from dature.sources.file_source import FileSource
+from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 type _TomlVersionStr = Literal["1.0.0", "1.1.0"]
 
@@ -49,7 +49,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
         with path.open(encoding=self.encoding) as file:
             return cast("JSONValue", toml_rs.loads(file.read(), toml_version=self._toml_version()))
 
-    def _build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
+    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         return _build_toml_line_map(content, self._toml_version())
 
     def additional_loaders(self) -> list[Provider]:

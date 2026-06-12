@@ -1,6 +1,6 @@
 from dature.config import config
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 try:
     from random_string_detector import RandomStringDetector  # type: ignore[import-untyped]

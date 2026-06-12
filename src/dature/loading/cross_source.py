@@ -22,7 +22,7 @@ from dature.errors.exceptions import DatureError
 from dature.expansion.cross_source import expand_cross_refs, find_refs, needs_cross_ref_expansion
 from dature.expansion.env_expand import expand_string_default
 from dature.sources.base import Source, clone_source
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 def _init_string_fields(source: Source) -> dict[str, str]:

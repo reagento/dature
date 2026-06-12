@@ -1,14 +1,94 @@
-"""Post-load error enrichment for ``LoadCtx`` and the loader.
+"""Post-load error enrichment and per-source preparation helpers.
 
 ``enrich_skipped_errors`` enriches ``Missing required field`` errors with
 information about fields that were skipped due to ``skip_field_if_invalid``.
-Per-source loading helpers (``resolve_type_loaders``, ``should_skip_broken``,
-``resolve_skip_invalid``, ``apply_merge_skip_invalid``) live in
-``dature.loading.merge_runtime`` together with ``MergeConfig``.
+``prepare_loaded_source`` is the shared deterministic tail of per-source
+pre-processing: error_ctx rebuild on nested_conflicts, file_content read,
+and ``apply_skip_invalid`` — called by both ``_do_load_single`` and
+``LoadCtx.load``. Per-source helpers that need ``MergeConfig``
+(``resolve_type_loaders``, ``should_skip_broken``, ``resolve_skip_invalid``)
+live in ``dature.loading.merge_runtime`` to avoid import cycles.
 """
 
+from dataclasses import dataclass
+
+from adaptix import Retort
+
 from dature.errors.exceptions import DatureConfigError, DatureError, FieldLoadError
-from dature.errors.location import SkippedFieldSource, resolve_source_location
+from dature.errors.location import (
+    ErrorContext,
+    SkippedFieldSource,
+    read_file_content,
+    resolve_source_location,
+)
+from dature.field_path import FieldPath
+from dature.loading.context import apply_skip_invalid, build_error_ctx
+from dature.protocols import DataclassInstance
+from dature.sources.base import Source
+from dature.type_aliases import JSONValue, LoadRawResult
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedSource:
+    """Result of the shared per-source pre-processing tail."""
+
+    raw_data: JSONValue
+    error_ctx: ErrorContext
+    file_content: str | None
+    skipped: "list[tuple[str, SkippedFieldSource]]"
+
+
+def prepare_loaded_source(  # noqa: PLR0913
+    *,
+    load_result: LoadRawResult,
+    source: Source,
+    schema: "type[DataclassInstance]",
+    dataclass_name: str,
+    base_error_ctx: ErrorContext,
+    skip_value: "bool | tuple[FieldPath, ...] | None",
+    secret_paths: frozenset[str],
+    mask_secrets: bool,
+    log_prefix: str,
+    probe_retort: Retort | None,
+) -> PreparedSource:
+    """Shared deterministic pre-processing tail for single and multi-source loads.
+
+    Handles: nested_conflicts error_ctx rebuild, file_content read,
+    skip_field_if_invalid filtering, and SkippedFieldSource accumulation.
+    Broken-source handling, caching, and LoadReport building stay at call sites.
+    """
+    raw = load_result.data
+    error_ctx = base_error_ctx
+    if load_result.nested_conflicts:
+        error_ctx = build_error_ctx(
+            source,
+            dataclass_name,
+            secret_paths=secret_paths,
+            mask_secrets=mask_secrets,
+            nested_conflicts=load_result.nested_conflicts,
+        )
+    file_content = read_file_content(
+        error_ctx.source.file_path_for_errors(),
+        error_ctx.source.encoding_for_errors(),
+    )
+    filter_result = apply_skip_invalid(
+        raw=raw,
+        skip_field_if_invalid=skip_value,
+        source=source,
+        schema=schema,
+        log_prefix=log_prefix,
+        probe_retort=probe_retort,
+    )
+    skipped = [
+        (path, SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content))
+        for path in filter_result.skipped_paths
+    ]
+    return PreparedSource(
+        raw_data=filter_result.cleaned_dict,
+        error_ctx=error_ctx,
+        file_content=file_content,
+        skipped=skipped,
+    )
 
 
 def enrich_skipped_errors(

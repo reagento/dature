@@ -1,7 +1,7 @@
 from dataclasses import is_dataclass
 from typing import Annotated, get_args, get_origin
 
-from dature.types import TypeAnnotation
+from dature.type_aliases import TypeAnnotation
 
 
 def find_nested_dataclasses(field_type: TypeAnnotation) -> list[type]:

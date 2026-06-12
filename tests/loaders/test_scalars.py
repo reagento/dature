@@ -6,7 +6,7 @@ from datetime import date, datetime, time
 import pytest
 from adaptix.load_error import TypeLoadError
 
-from dature.loaders.common import (
+from dature.loaders.scalars import (
     bool_loader,
     bytearray_from_json_string,
     bytearray_from_string,

@@ -17,9 +17,9 @@ from dature.loading.context import (
     make_validating_post_init,
     merge_fields,
 )
+from dature.loading.retort import build_base_recipe, ensure_retort, make_retort_key
 from dature.sources.env_ import EnvSource
 from dature.sources.json_ import JsonSource
-from dature.sources.retort import build_base_recipe, ensure_retort, make_retort_key
 
 
 class TestMergeFields:

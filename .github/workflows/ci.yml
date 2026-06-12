@@ -253,6 +253,35 @@ jobs:
       - name: Run integration tests
         run: uv run pytest -v -m integration
 
+  typing-extensions-test:
+    name: typing-extensions-test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies with latest typing_extensions
+        run: uv sync --all-extras --dev --upgrade-package typing-extensions
+
+      - name: Show resolved typing_extensions version
+        run: uv run python -c "from importlib.metadata import version; print('typing_extensions', version('typing-extensions'))"
+
+      - name: Run tests
+        run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples
+
   coverage:
     permissions:
       pull-requests: write
@@ -334,7 +363,7 @@ jobs:
 
   test-result:
     if: always()
-    needs: [test, coverage, integration-tests, examples-tests]
+    needs: [test, coverage, integration-tests, examples-tests, typing-extensions-test]
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
@@ -353,6 +382,10 @@ jobs:
           fi
           if [[ "${{ needs.examples-tests.result }}" != "success" ]]; then
             echo "::error::Examples tests failed or were cancelled: ${{ needs.examples-tests.result }}"
+            exit 1
+          fi
+          if [[ "${{ needs.typing-extensions-test.result }}" != "success" ]]; then
+            echo "::error::typing_extensions tests failed or were cancelled: ${{ needs.typing-extensions-test.result }}"
             exit 1
           fi
 

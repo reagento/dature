@@ -19,7 +19,7 @@ from dature.loading.cross_source import (
 )
 from dature.sources.base import Source
 from dature.sources.cli_base import CliSource
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True, repr=False)

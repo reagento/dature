@@ -7,7 +7,7 @@ import pytest
 
 from dature import CliSource
 from dature.errors import CaretSpan
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 @dataclass(kw_only=True, repr=False)

@@ -1,1 +1,0 @@
-Remove unused topo_order field from CrossRefPlan; keep cycle detection via _topological_sort.

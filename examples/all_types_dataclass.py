@@ -24,7 +24,7 @@ from zoneinfo import ZoneInfo
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
-from dature.types import URL, Base64UrlBytes, Base64UrlStr
+from dature.type_aliases import URL, Base64UrlBytes, Base64UrlStr
 
 
 class Color(Enum):

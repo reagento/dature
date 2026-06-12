@@ -24,7 +24,7 @@ from dature import (
     load,
 )
 from dature.errors import DatureConfigError
-from dature.types import JSONValue
+from dature.type_aliases import JSONValue
 
 
 def _all_file_sources() -> list[type[Source]]:
