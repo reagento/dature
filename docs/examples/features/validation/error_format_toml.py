@@ -1,11 +1,12 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 from typing import Annotated
 
 import dature
 from dature import V
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
@@ -16,3 +17,4 @@ dature.load(
     dature.Toml11Source(file=SOURCES_DIR / "error_format_config.toml"),
     schema=Config,
 )
+# --8<-- [end:example]

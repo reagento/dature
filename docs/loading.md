@@ -15,7 +15,6 @@ raises a plain `FileNotFoundError` before any parsing happens.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_missing_file.py:setup"
     --8<-- "docs/examples/loading/loading_missing_file.py:example"
     ```
 
@@ -34,7 +33,6 @@ propagates with the original file and line.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_broken_file.py:setup"
     --8<-- "docs/examples/loading/loading_broken_file.py:example"
     ```
 
@@ -59,7 +57,6 @@ caret pointing at it, and the source location.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_type_mismatch.py:setup"
     --8<-- "docs/examples/loading/loading_type_mismatch.py:example"
     ```
 
@@ -83,7 +80,6 @@ the file but has no line — there is nothing in the source to highlight.
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_missing_field.py:setup"
     --8<-- "docs/examples/loading/loading_missing_field.py:example"
     ```
 
@@ -108,7 +104,6 @@ instead of "fix, rerun, fix, rerun".
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_multiple_errors.py:setup"
     --8<-- "docs/examples/loading/loading_multiple_errors.py:example"
     ```
 
@@ -132,7 +127,6 @@ When merging multiple sources, a missing or malformed one can be skipped with
 === "Python"
 
     ```python
-    --8<-- "docs/examples/loading/loading_skip_broken.py:setup"
     --8<-- "docs/examples/loading/loading_skip_broken.py:example"
     ```
 

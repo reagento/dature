@@ -1,10 +1,11 @@
+from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
 import argparse
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
@@ -30,3 +31,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# --8<-- [end:example]

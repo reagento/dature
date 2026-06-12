@@ -27,8 +27,7 @@ tests? Use `monkeypatch.setattr(sys, "argv", [...])`.
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/quickstart.py:setup"
-    --8<-- "docs/examples/features/cli_source/quickstart.py:example"
+    --8<-- "docs/examples/features/cli_source/quickstart.py"
     ```
 
 === "Command"
@@ -63,8 +62,7 @@ genuinely means "use the declared default".
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/defaults.py:setup"
-    --8<-- "docs/examples/features/cli_source/defaults.py:example"
+    --8<-- "docs/examples/features/cli_source/defaults.py"
     ```
 
 === "Command"
@@ -98,8 +96,7 @@ For non-default separators that argparse can't preserve in `dest`, set
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/nesting.py:setup"
-    --8<-- "docs/examples/features/cli_source/nesting.py:example"
+    --8<-- "docs/examples/features/cli_source/nesting.py"
     ```
 
 === "Command"
@@ -127,8 +124,7 @@ Args of subparsers that were **not** chosen are simply absent — adaptix uses
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/subparsers.py:setup"
-    --8<-- "docs/examples/features/cli_source/subparsers.py:example"
+    --8<-- "docs/examples/features/cli_source/subparsers.py"
     ```
 
 === "Command"
@@ -154,7 +150,6 @@ during load(), which is cheap.
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/bootstrap.py:setup"
     --8<-- "docs/examples/features/cli_source/bootstrap.py:example"
     ```
 
@@ -189,7 +184,6 @@ so you can safely mix CLI with env vars and config files.
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/combining.py:setup"
     --8<-- "docs/examples/features/cli_source/combining.py:example"
     ```
 
@@ -232,8 +226,7 @@ Below is a complete `ClickSource` you can copy into your project. It supports
 === "Script"
 
     ```python
-    --8<-- "docs/examples/features/cli_source/click_source.py:setup"
-    --8<-- "docs/examples/features/cli_source/click_source.py:example"
+    --8<-- "docs/examples/features/cli_source/click_source.py"
     ```
 
 === "Command"

@@ -1,11 +1,11 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 from typing import Literal
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
-
 
 
 @dataclass
@@ -17,3 +17,4 @@ dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_heuristic.yaml"),
     schema=Config,
 )
+# --8<-- [end:example]

@@ -9,7 +9,6 @@ Declare validators using `typing.Annotated`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_annotated.py:setup"
     --8<-- "docs/examples/features/validation/validation_annotated.py:example"
     ```
 
@@ -54,9 +53,9 @@ Declare validators using `typing.Annotated`:
 
 Multiple validators can be combined:
 
-```python
---8<-- "docs/examples/features/validation/validation_annotated_combined.py:example"
-```
+    ```python
+    --8<-- "docs/examples/features/validation/validation_annotated_combined.py"
+    ```
 
 ## Root Validators
 
@@ -65,7 +64,6 @@ Validate the entire object after loading:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_root.py:setup"
     --8<-- "docs/examples/features/validation/validation_root.py:example"
     ```
 
@@ -90,7 +88,6 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_metadata.py:setup"
     --8<-- "docs/examples/features/validation/validation_metadata.py:example"
     ```
 
@@ -108,15 +105,15 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 
 A single validator can be passed directly. Multiple validators require a tuple:
 
-```python
---8<-- "docs/examples/features/validation/validation_metadata_syntax.py:example"
-```
+    ```python
+    --8<-- "docs/examples/features/validation/validation_metadata_syntax.py"
+    ```
 
 Nested fields are supported:
 
-```python
---8<-- "docs/examples/features/validation/validation_metadata_nested.py:example"
-```
+    ```python
+    --8<-- "docs/examples/features/validation/validation_metadata_nested.py"
+    ```
 
 ## Custom Validators
 
@@ -125,7 +122,6 @@ Create your own validators by implementing `get_validator_func()` and `get_error
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_custom.py:setup"
     --8<-- "docs/examples/features/validation/validation_custom.py:example"
     ```
 
@@ -150,7 +146,6 @@ Standard dataclass `__post_init__` and `@property` work as expected — dature p
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_post_init.py:setup"
     --8<-- "docs/examples/features/validation/validation_post_init.py:example"
     ```
 
@@ -225,7 +220,7 @@ Validation errors include field path, source location, and the offending value. 
 === "ENV"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_env.py:example"
+    --8<-- "docs/examples/features/validation/error_format_env.py"
     ```
 
     ```
@@ -259,7 +254,6 @@ When a value spans multiple source lines, each visible line is shown under the `
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_multiline.py:setup"
     --8<-- "docs/examples/features/validation/error_format_multiline.py:example"
     ```
 
@@ -282,7 +276,6 @@ A custom validator can be attached to a dataclass-typed field via `Annotated`. T
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_dataclass.py:setup"
     --8<-- "docs/examples/features/validation/error_format_dataclass.py:example"
     ```
 

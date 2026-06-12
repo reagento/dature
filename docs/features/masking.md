@@ -45,7 +45,6 @@ dature uses three methods to identify secrets:
     `SecretStr` and `PaymentCardNumber` mask values in `str()`, `repr()`, and debug logs:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_secret_str.py:setup"
     --8<-- "docs/examples/features/masking/masking_secret_str.py:example"
     ```
 
@@ -62,7 +61,6 @@ dature uses three methods to identify secrets:
     Fields whose names contain known patterns are automatically masked in error messages:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_by_name.py:setup"
     --8<-- "docs/examples/features/masking/masking_by_name.py:example"
     ```
 
@@ -79,7 +77,6 @@ dature uses three methods to identify secrets:
     With `dature[secure]`, values that look like random tokens are masked in error messages even if the field name is not a known secret pattern:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_heuristic.py:setup"
     --8<-- "docs/examples/features/masking/masking_heuristic.py:example"
     ```
 
@@ -119,7 +116,6 @@ Classic `ab*****cd` style:
 === "mask_secrets=False"
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_no_mask.py:setup"
     --8<-- "docs/examples/features/masking/masking_no_mask.py:example"
     ```
 
@@ -130,7 +126,6 @@ Classic `ab*****cd` style:
 ### In merge mode
 
 ```python
---8<-- "docs/examples/features/masking/masking_merge_mode.py:setup"
 --8<-- "docs/examples/features/masking/masking_merge_mode.py:example"
 ```
 

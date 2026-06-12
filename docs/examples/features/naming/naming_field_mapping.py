@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
@@ -27,3 +28,4 @@ config = dature.load(
 assert config.database_url == "postgresql://localhost:5432/mydb"
 assert config.secret_key == "my-secret-key"
 assert config.pool_size == 10
+# --8<-- [end:example]

@@ -1,10 +1,11 @@
+from pathlib import Path
+SHARED_DIR = Path(__file__).parents[2] / "shared"
+
+# --8<-- [start:example]
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 import dature
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
 
 # Env var affects initial behavior
 os.environ["DATURE_LOADING__DEBUG"] = "true"
@@ -44,3 +45,4 @@ config = dature.load(
 )
 report = dature.get_load_report(config)
 assert report is not None
+# --8<-- [end:example]

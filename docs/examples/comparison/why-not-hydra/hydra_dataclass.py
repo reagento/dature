@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 @dataclass
 class Config:
@@ -18,3 +19,4 @@ assert isinstance(config, Config)
 
 assert config.host == "localhost"
 assert config.port == 8080
+# --8<-- [end:example]

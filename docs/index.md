@@ -88,15 +88,13 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 === "Function mode"
 
     ```python
-    --8<-- "docs/examples/index/intro_function.py:setup"
-    --8<-- "docs/examples/index/intro_function.py:example"
+    --8<-- "docs/examples/index/intro_function.py"
     ```
 
 === "Decorator mode"
 
     ```python
-    --8<-- "docs/examples/index/intro_decorator.py:setup"
-    --8<-- "docs/examples/index/intro_decorator.py:example"
+    --8<-- "docs/examples/index/intro_decorator.py"
     ```
 
 ## Supported Formats

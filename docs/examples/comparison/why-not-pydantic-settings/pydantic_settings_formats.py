@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SOURCES_DIR = Path(__file__).parent / "sources"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SOURCES_DIR = Path(__file__).parent / "sources"
 
 
 @dataclass
@@ -27,3 +28,4 @@ json5_config = dature.load(
 assert yaml_config.host == "localhost"
 assert toml_config.host == "localhost"
 assert json5_config.host == "localhost"
+# --8<-- [end:example]

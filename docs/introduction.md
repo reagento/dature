@@ -9,9 +9,7 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/format_yaml.py:setup"
     --8<-- "docs/examples/introduction/format_yaml.py:example"
-    --8<-- "docs/examples/introduction/format_yaml.py:example-assertations"
     ```
 
 === "Decorator mode"
@@ -21,7 +19,6 @@ dature offers two ways to load configuration: **function mode** and **decorator 
     ```
 
     ```python
-    --8<-- "docs/examples/introduction/intro_decorator_file.py:setup"
     --8<-- "docs/examples/introduction/intro_decorator_file.py:example"
     ```
 
@@ -147,8 +144,7 @@ See the full list of Source classes and their extra dependencies on the [main pa
 `file` accepts file-like objects (`StringIO`, `BytesIO`, and any `TextIOBase`/`BufferedIOBase`/`RawIOBase` subclass):
 
 ```python
---8<-- "docs/examples/introduction/intro_file_like.py:setup"
---8<-- "docs/examples/introduction/intro_file_like.py:example"
+--8<-- "docs/examples/introduction/intro_file_like.py"
 ```
 
 !!! note

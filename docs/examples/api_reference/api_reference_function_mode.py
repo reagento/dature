@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
+SHARED_DIR = Path(__file__).parents[1] / "shared"
+
+# --8<-- [start:example]
+from dataclasses import dataclass
 
 import dature
-
-SHARED_DIR = Path(__file__).parents[1] / "shared"
 
 
 @dataclass
@@ -20,3 +21,4 @@ config = dature.load(
 assert config.host == "localhost"
 assert config.port == 8080
 assert config.debug is False
+# --8<-- [end:example]
