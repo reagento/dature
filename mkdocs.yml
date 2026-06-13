@@ -65,7 +65,9 @@ nav:
     - CLI Source: features/cli_source.md
     - Remote Source: features/remote_source.md
   - Advanced:
-    - Merge Rules: advanced/merge-rules.md
+    - Field Strategies: advanced/field-strategies.md
+    - Source Strategy: advanced/source-strategy.md
+    - Skip Behaviors: advanced/skip-behaviors.md
     - Field Groups: advanced/field-groups.md
     - Nested Resolve: advanced/nested-resolve.md
     - ENV Expansion: advanced/env-expansion.md
@@ -121,7 +123,9 @@ plugins:
           - features/cli_source.md
           - features/remote_source.md
         Advanced:
-          - advanced/merge-rules.md
+          - advanced/field-strategies.md
+          - advanced/source-strategy.md
+          - advanced/skip-behaviors.md
           - advanced/field-groups.md
           - advanced/nested-resolve.md
           - advanced/env-expansion.md

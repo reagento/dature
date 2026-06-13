@@ -121,7 +121,7 @@ def compute_line_carets(
     """Compute caret spans pointing at *input_value* within *content_lines*."""
     if len(content_lines) == 1:
         if input_value is None:
-            return [caret_after_equals(content_lines[0])]
+            return [caret_for_key_line(content_lines[0])]
         found = find_value_in_line(
             content_lines[0],
             input_value=input_value,

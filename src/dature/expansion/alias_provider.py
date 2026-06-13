@@ -1,11 +1,11 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, is_dataclass
-from typing import cast, get_type_hints
+from typing import cast
 
 from adaptix import Loader, Mediator, Provider
 
 from dature._adaptix_compat import AlwaysTrueRequestChecker, LoaderRequest, RequestHandlerRegisterRecord
-from dature.field_path import FieldPath
+from dature.field_path import FieldPath, resolve_nested_owner
 from dature.protocols import DataclassInstance
 from dature.type_aliases import FieldMapping, JSONValue
 
@@ -24,24 +24,6 @@ class CrossLevelEntry:
 
 
 type AliasMapEntry = AliasEntry | CrossLevelEntry
-
-
-def resolve_nested_owner(
-    owner: type[DataclassInstance],
-    parts: tuple[str, ...],
-) -> type[DataclassInstance]:
-    """Walk type hints from owner through intermediate parts to find the leaf owner type."""
-    current: type = owner
-    for part in parts:
-        hints = get_type_hints(current)
-        if part not in hints:
-            msg = f"Type '{current.__name__}' has no field '{part}'"
-            raise TypeError(msg)
-        current = hints[part]
-        if not is_dataclass(current):
-            msg = f"Intermediate field '{part}' of type '{current}' is not a dataclass"
-            raise TypeError(msg)
-    return current
 
 
 def _classify_alias(

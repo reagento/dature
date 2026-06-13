@@ -203,10 +203,10 @@ These flags are **generated from the signature of [`dature.load()`](../api-refer
 
 | CLI flag | `load()` parameter | Notes |
 |----------|--------------------|-------|
-| `--strategy` | [`strategy`](../api-reference.md#datureload) | Choices: `last_wins`, `first_wins`, `first_found`, `raise_on_conflict`. See [Merge Rules](../advanced/merge-rules.md). |
-| `--skip-if-broken` | [`skip_if_broken`](../api-reference.md#datureload) | Skip sources that fail to parse. See [Skipping Sources with Parse Errors](../advanced/merge-rules.md#skipping-sources-with-parse-errors). |
-| `--skip-if-missing` | [`skip_if_missing`](../api-reference.md#datureload) | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/merge-rules.md#skipping-missing-sources). |
-| `--skip-invalid-fields` | [`skip_invalid_fields`](../api-reference.md#datureload) | See [Skipping Invalid Fields](../advanced/merge-rules.md#skipping-invalid-fields). |
+| `--strategy` | [`strategy`](../api-reference.md#datureload) | Choices: `last_wins`, `first_wins`, `first_found`, `raise_on_conflict`. See [Merge Strategies](merging.md#merge-strategies). |
+| `--skip-if-broken` | [`skip_if_broken`](../api-reference.md#datureload) | Skip sources that fail to parse. See [Skipping Sources with Parse Errors](../advanced/skip-behaviors.md#skipping-sources-with-parse-errors). |
+| `--skip-if-missing` | [`skip_if_missing`](../api-reference.md#datureload) | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/skip-behaviors.md#skipping-missing-sources). |
+| `--skip-invalid-fields` | [`skip_invalid_fields`](../api-reference.md#datureload) | See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields). |
 | `--expand-env-vars` | [`expand_env_vars`](../api-reference.md#datureload) | Choices: `disabled`, `default`, `empty`, `strict`. See [ENV Expansion](../advanced/env-expansion.md). |
 | `--secret-field-names` | [`secret_field_names`](../api-reference.md#datureload) | Repeatable. See [Masking](masking.md). |
 | `--mask-secrets` | [`mask_secrets`](../api-reference.md#datureload) | See [Masking](masking.md). Also affects `inspect` output. |

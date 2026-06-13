@@ -664,6 +664,10 @@ class LoadCtx:
         )
 
 
+# --8<-- [start:source-merge-strategy]
 @runtime_checkable
 class SourceMergeStrategy(Protocol):
     def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue: ...
+
+
+# --8<-- [end:source-merge-strategy]

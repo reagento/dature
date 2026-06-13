@@ -138,8 +138,8 @@ not exist, or `skip_if_broken=True` for files that exist but may be malformed:
     ```
 
 If **every** source fails, dature still raises — there is no value to load.
-See [Skipping Sources with Parse Errors](advanced/merge-rules.md#skipping-sources-with-parse-errors)
-and [Skipping Missing Sources](advanced/merge-rules.md#skipping-missing-sources) for the full picture,
+See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors)
+and [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) for the full picture,
 including per-source overrides and `skip_invalid_fields`.
 
 ## What's next
@@ -147,7 +147,7 @@ including per-source overrides and `skip_invalid_fields`.
 - [Validation](features/validation.md) — add custom rules so loading also
   fails when values are *the wrong shape* (out of range, bad regex, …), not
   just the wrong type.
-- [Merge Rules](advanced/merge-rules.md) — control what happens when several
-  sources disagree, and how to skip broken or invalid pieces.
+- [Skip Behaviors](advanced/skip-behaviors.md) — control how to skip broken or invalid sources and fields.
+- [Field Strategies](advanced/field-strategies.md) — per-field merge strategies.
 - [Debug & Reports](advanced/debug.md) — inspect what each source contributed
   before the merge happened.

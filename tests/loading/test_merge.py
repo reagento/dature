@@ -468,10 +468,10 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "host-a",
-               │   ^^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^^
                └── FILE '{a}', line 2
                ├── "host": "host-b"
-               │   ^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^
                └── FILE '{b}', line 2
             """)
 
@@ -548,10 +548,10 @@ class TestRaiseOnConflict:
 
               [database.host]  Conflicting values in multiple sources
                ├── "host": "a-host",
-               │   ^^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^^
                └── FILE '{a}', line 3
                ├── "host": "b-host"
-               │   ^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^
                └── FILE '{b}', line 3
             """)
 
@@ -579,10 +579,10 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "a-host"
-               │   ^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^
                └── FILE '{a}', line 2
                ├── "host": "b-host"
-               │   ^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^
                └── FILE '{b}', line 2
             """)
 
@@ -610,7 +610,7 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "json-host",
-               │   ^^^^^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^^^^^
                └── FILE '{a}', line 2
                ├── APP_HOST=env-host
                │            ^^^^^^^^
@@ -643,18 +643,18 @@ class TestRaiseOnConflict:
 
               [host]  Conflicting values in multiple sources
                ├── "host": "a-host",
-               │   ^^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^^
                └── FILE '{a}', line 2
                ├── "host": "b-host",
-               │   ^^^^^^^^^^^^^^^^^
+               │           ^^^^^^^^^
                └── FILE '{b}', line 2
 
               [port]  Conflicting values in multiple sources
                ├── "port": 1000
-               │   ^^^^^^^^^^^^
+               │           ^^^^
                └── FILE '{a}', line 3
                ├── "port": 2000
-               │   ^^^^^^^^^^^^
+               │           ^^^^
                └── FILE '{b}', line 3
             """)
 

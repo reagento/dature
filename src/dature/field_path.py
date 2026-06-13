@@ -1,3 +1,4 @@
+from contextlib import suppress
 from dataclasses import dataclass, fields, is_dataclass
 from typing import Any, TypeVar, get_type_hints, overload
 
@@ -6,22 +7,35 @@ from dature.protocols import DataclassInstance
 T = TypeVar("T")
 
 
-def resolve_field_type(owner: type, parts: tuple[str, ...]) -> type | None:
-    """Walk the field chain and return the type of the last field, or None if not a dataclass."""
-    current = owner
+def resolve_nested_owner(
+    owner: type[DataclassInstance],
+    parts: tuple[str, ...],
+) -> type[DataclassInstance]:
+    """Walk type hints from owner through intermediate parts to find the leaf owner type."""
+    current: type = owner
     for part in parts:
-        if not is_dataclass(current):
-            return None
         hints = get_type_hints(current)
         if part not in hints:
-            return None
+            msg = f"Type '{current.__name__}' has no field '{part}'"
+            raise TypeError(msg)
         current = hints[part]
-    if not is_dataclass(current):
-        return None
+        if not is_dataclass(current):
+            msg = f"Intermediate field '{part}' of type '{current}' is not a dataclass"
+            raise TypeError(msg)
     return current
 
 
-def _validate_field(owner: type, parts: tuple[str, ...], name: str) -> None:
+def resolve_field_type(
+    owner: type[DataclassInstance],
+    parts: tuple[str, ...],
+) -> type[DataclassInstance] | None:
+    """Walk the field chain and return the type of the last field, or None if not a dataclass."""
+    with suppress(TypeError):
+        return resolve_nested_owner(owner, parts)
+    return None
+
+
+def _validate_field(owner: type[DataclassInstance], parts: tuple[str, ...], name: str) -> None:
     if not parts:
         target = owner
     else:
@@ -39,7 +53,7 @@ def _validate_field(owner: type, parts: tuple[str, ...], name: str) -> None:
 # --8<-- [start:field-path]
 @dataclass(frozen=True, slots=True)
 class FieldPath:
-    owner: type | str
+    owner: type[DataclassInstance] | str
     parts: tuple[str, ...] = ()
 
     def __getattr__(self, name: str) -> "FieldPath":
@@ -57,7 +71,7 @@ class FieldPath:
 # --8<-- [end:field-path]
 
 
-def _validate_field_path_parts(field_path: FieldPath, schema: type) -> None:
+def _validate_field_path_parts(field_path: FieldPath, schema: type[DataclassInstance]) -> None:
     for i, part in enumerate(field_path.parts):
         _validate_field(schema, field_path.parts[:i], part)
 

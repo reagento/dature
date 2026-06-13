@@ -9,12 +9,16 @@ from dature.sources.base import Source
 from dature.type_aliases import JSONValue, MergeStrategyName
 
 
+# --8<-- [start:source-last-wins-strategy]
 class SourceLastWins:
     def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
         for idx in range(len(sources)):
             base = ctx.merge(source_idx=idx, base=base)
         return base
+
+
+# --8<-- [end:source-last-wins-strategy]
 
 
 class SourceFirstWins:

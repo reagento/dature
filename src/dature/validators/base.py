@@ -6,8 +6,7 @@ from adaptix.load_error import AggregateLoadError, ValidationLoadError
 from adaptix.provider import Provider
 from adaptix.struct_trail import append_trail
 
-from dature.expansion.alias_provider import resolve_nested_owner
-from dature.field_path import FieldPath
+from dature.field_path import FieldPath, resolve_nested_owner
 from dature.protocols import DataclassInstance
 from dature.validators.aliases import FieldValidators
 from dature.validators.collection import EachPredicate

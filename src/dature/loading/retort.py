@@ -6,8 +6,8 @@ from adaptix import NameStyle as AdaptixNameStyle
 from adaptix import Retort, loader, name_mapping
 from adaptix.provider import Provider
 
-from dature.expansion.alias_provider import AliasProvider, resolve_nested_owner
-from dature.field_path import FieldPath
+from dature.expansion.alias_provider import AliasProvider
+from dature.field_path import FieldPath, resolve_nested_owner
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
