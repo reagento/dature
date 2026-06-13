@@ -123,11 +123,3 @@ When using `@dature.load()` as a decorator, mypy will report `call-arg` errors b
 plugins = ["dature.mypy_plugin"]
 ```
 
-## What's Next
-
-- [Introduction](introduction.md) — function vs decorator mode, all formats, Source reference
-- [Naming](basic/naming.md) — name_style, field_mapping, prefix, nested_sep
-- [Validation](basic/validation.md) — Annotated validators, root validators, custom validators
-- [Merging](basic/merging.md) — multiple sources, strategies, field groups
-- [Masking](basic/masking.md) — SecretStr, auto-detection, configuration
-- [API Reference](api-reference.md) — full API documentation

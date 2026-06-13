@@ -1,4 +1,4 @@
-# CLI Source
+# ArgparseSource
 
 `ArgparseSource` loads command-line arguments into a dataclass, just like
 `JsonSource`/`EnvSource` load files or env vars. It can be combined with other
@@ -8,13 +8,12 @@ sources via `load()` so a typical app reads:
 JSON file (defaults) → env vars (per-deployment) → CLI args (operator overrides)
 ```
 
-The base class is `CliSource` — abstract, designed so future implementations
-(click, typer, your own parser) plug in by overriding a single method.
-See [Implementing a custom CLI parser](#implementing-a-custom-cli-parser).
+To plug in a different CLI library (click, typer, your own parser), see
+[Custom CLI Source](custom.md).
 
 !!! note "Two different CLIs in dature"
 
-    The [`dature` console script](cli.md) (`dature inspect`/`dature validate`)
+    The [`dature` console script](../../basic/cli.md) (`dature inspect`/`dature validate`)
     is a tool **for** dature. `ArgparseSource` is a Source you compose into
     **your own** application. They are unrelated.
 
@@ -27,19 +26,19 @@ tests? Use `monkeypatch.setattr(sys, "argv", [...])`.
 === "Script"
 
     ```python
-    --8<-- "docs/examples/basic/cli_source/quickstart.py"
+    --8<-- "docs/examples/advanced/cli/argparse/quickstart.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/basic/cli_source/quickstart.sh"
+    --8<-- "docs/examples/advanced/cli/argparse/quickstart.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/basic/cli_source/quickstart.stdout"
+    --8<-- "docs/examples/advanced/cli/argparse/quickstart.stdout"
     ```
 
 ## Defaults semantics — bool vs everything else
@@ -62,19 +61,19 @@ genuinely means "use the declared default".
 === "Script"
 
     ```python
-    --8<-- "docs/examples/basic/cli_source/defaults.py"
+    --8<-- "docs/examples/advanced/cli/argparse/defaults.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/basic/cli_source/defaults.sh"
+    --8<-- "docs/examples/advanced/cli/argparse/defaults.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/basic/cli_source/defaults.stdout"
+    --8<-- "docs/examples/advanced/cli/argparse/defaults.stdout"
     ```
 
 `--debug` is a bool action → always present. `--env` and `--port` are non-bool
@@ -96,19 +95,19 @@ For non-default separators that argparse can't preserve in `dest`, set
 === "Script"
 
     ```python
-    --8<-- "docs/examples/basic/cli_source/nesting.py"
+    --8<-- "docs/examples/advanced/cli/argparse/nesting.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/basic/cli_source/nesting.sh"
+    --8<-- "docs/examples/advanced/cli/argparse/nesting.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/basic/cli_source/nesting.stdout"
+    --8<-- "docs/examples/advanced/cli/argparse/nesting.stdout"
     ```
 
 ## Subparsers (and arbitrary nesting)
@@ -124,19 +123,19 @@ Args of subparsers that were **not** chosen are simply absent — adaptix uses
 === "Script"
 
     ```python
-    --8<-- "docs/examples/basic/cli_source/subparsers.py"
+    --8<-- "docs/examples/advanced/cli/argparse/subparsers.py"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/basic/cli_source/subparsers.sh"
+    --8<-- "docs/examples/advanced/cli/argparse/subparsers.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/basic/cli_source/subparsers.stdout"
+    --8<-- "docs/examples/advanced/cli/argparse/subparsers.stdout"
     ```
 
 ## Bootstrap pattern — peek `argv` before `load()`
@@ -150,25 +149,25 @@ during load(), which is cheap.
 === "Script"
 
     ```python
-    --8<-- "docs/examples/basic/cli_source/bootstrap.py:example"
+    --8<-- "docs/examples/advanced/cli/argparse/bootstrap.py:example"
     ```
 
 === "sources/config.dev.json"
 
     ```json
-    --8<-- "docs/examples/basic/cli_source/sources/config.dev.json"
+    --8<-- "docs/examples/advanced/cli/argparse/sources/config.dev.json"
     ```
 
 === "sources/config.production.json"
 
     ```json
-    --8<-- "docs/examples/basic/cli_source/sources/config.production.json"
+    --8<-- "docs/examples/advanced/cli/argparse/sources/config.production.json"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/basic/cli_source/bootstrap.sh"
+    --8<-- "docs/examples/advanced/cli/argparse/bootstrap.sh"
     ```
 
 The order in `load()` controls precedence: with the default `last_wins`,
@@ -184,93 +183,31 @@ so you can safely mix CLI with env vars and config files.
 === "Script"
 
     ```python
-    --8<-- "docs/examples/basic/cli_source/combining.py:example"
+    --8<-- "docs/examples/advanced/cli/argparse/combining.py:example"
     ```
 
 === "sources/config.json"
 
     ```json
-    --8<-- "docs/examples/basic/cli_source/sources/config.json"
+    --8<-- "docs/examples/advanced/cli/argparse/sources/config.json"
     ```
 
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/basic/cli_source/combining.sh"
+    --8<-- "docs/examples/advanced/cli/argparse/combining.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/basic/cli_source/combining.stdout"
+    --8<-- "docs/examples/advanced/cli/argparse/combining.stdout"
     ```
-
-## Implementing a custom CLI parser
-
-`CliSource` is an abstract class. To plug in a different CLI library
-(click, typer, anything else), subclass it and implement one method:
-`_parse_argv() -> dict[str, JSONValue]`.
-
-The contract:
-
-- Top-level args → key = field name.
-- Groups / subcommands → emit a discriminator key + prefix the group's args
-  with the chosen group name, joined with `self.nested_sep`.
-- Bool-style flags — **always** in the result.
-- Non-bool args — **only if the user explicitly passed them**.
-- The parser/library reads `sys.argv` itself; do not add an `argv=` parameter.
-
-Below is a complete `ClickSource` you can copy into your project. It supports
-[click](https://click.palletsprojects.com/) groups of arbitrary depth.
-
-=== "Script"
-
-    ```python
-    --8<-- "docs/examples/basic/cli_source/click_source.py"
-    ```
-
-=== "Command"
-
-    ```bash
-    --8<-- "docs/examples/basic/cli_source/click_source.sh"
-    ```
-
-=== "Output"
-
-    ```
-    --8<-- "docs/examples/basic/cli_source/click_source.stdout"
-    ```
-
-A `TyperSource` is a thin wrapper — typer commands are click commands under
-the hood, so subclassing `ClickSource` and pointing at the underlying click
-group works directly.
-
-!!! warning "Not part of dature's API surface"
-
-    `ClickSource` above is a teaching example. It's not shipped, not tested
-    by dature's CI, and not bound by dature's backward-compatibility
-    guarantees. Treat it as a starting point for your own implementation.
-
-## Roadmap
-
-A future PR will add **declarative cross-source interpolation** so that the
-bootstrap pattern can be expressed without parsing argv twice:
-
-```python
-load(
-    JsonSource(file="config.${@cli.env:-dev}.yaml"),
-    ArgparseSource(parser=parser, tag="cli"),
-    schema=Config,
-)
-```
-
-The `${@<tag>.<key>}` form is namespaced (the `@` prefix avoids any clash
-with the existing `${VAR}` env-var expansion).
 
 ## Known limitations
 
 - **Discriminated unions** for subcommands (e.g. `args: CreateArgs | DeleteArgs`)
-  are not supported in this iteration. Use one optional field per subparser
+  are not supported. Use one optional field per subparser
   plus a discriminator field, as shown above.
 - A subparser whose name equals the subparsers action's `dest` (e.g.
   `add_subparsers(dest="create")` plus `add_parser("create")`) produces a key

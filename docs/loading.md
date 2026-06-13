@@ -142,12 +142,3 @@ See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sou
 and [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) for the full picture,
 including per-source overrides and `skip_invalid_fields`.
 
-## What's next
-
-- [Validation](basic/validation.md) — add custom rules so loading also
-  fails when values are *the wrong shape* (out of range, bad regex, …), not
-  just the wrong type.
-- [Skip Behaviors](advanced/skip-behaviors.md) — control how to skip broken or invalid sources and fields.
-- [Field Strategies](advanced/field-strategies.md) — per-field merge strategies.
-- [Debug & Reports](advanced/debug.md) — inspect what each source contributed
-  before the merge happened.

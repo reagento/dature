@@ -24,38 +24,22 @@ Declare validators using `typing.Annotated`:
     --8<-- "docs/examples/basic/validation/validation_annotated.stderr"
     ```
 
-### Available Validators
+### Available predicates
 
-**Numbers** (`dature.validators.number`):
+| Expression | Passes when | Type constraint |
+|------------|-------------|-----------------|
+| `V >= N` / `V > N` / `V <= N` / `V < N` / `V == N` / `V != N` | comparison holds | any comparable |
+| `V.len() >= N` (and `>`, `<=`, `<`, `==`, `!=`) | length comparison holds | `Sized` |
+| `V.matches(pattern)` | `re.match(pattern, value)` succeeds | `str` |
+| `V.in_([...])` | value is in the collection | any |
+| `V.unique_items()` | all items are unique | `Collection` |
+| `V.each(inner)` | `inner` passes for every item | `Iterable` |
+| `V.check(func, error_message=...)` | `func(value)` returns `True` | any |
 
-| Validator | Description |
-|-----------|-------------|
-| `Gt(N)` | Greater than N |
-| `Ge(N)` | Greater than or equal to N |
-| `Lt(N)` | Less than N |
-| `Le(N)` | Less than or equal to N |
+Compose predicates with `&` (AND), `|` (OR), `~` (NOT). Override the default error message with `.with_error_message("...")` on leaf predicates.
 
-**Strings** (`dature.validators.string`):
-
-| Validator | Description |
-|-----------|-------------|
-| `MinLength(N)` | Minimum string length |
-| `MaxLength(N)` | Maximum string length |
-| `RegexPattern(r"...")` | Match regex pattern |
-
-**Sequences** (`dature.validators.sequence`):
-
-| Validator | Description |
-|-----------|-------------|
-| `MinItems(N)` | Minimum number of items |
-| `MaxItems(N)` | Maximum number of items |
-| `UniqueItems()` | All items must be unique |
-
-Multiple validators can be combined:
-
-    ```python
-    --8<-- "docs/examples/basic/validation/validation_annotated_combined.py"
-    ```
+!!! warning
+    Chained comparisons like `3 <= V.len() <= 10` are not supported — Python collapses them to a bool before dature sees them. Use `(V.len() >= 3) & (V.len() <= 10)`.
 
 ## Root Validators
 
@@ -109,7 +93,7 @@ A single validator can be passed directly. Multiple validators require a tuple:
     --8<-- "docs/examples/basic/validation/validation_metadata_syntax.py"
     ```
 
-Nested fields are supported:
+Nested fields are supported via `F[Config].field` — see [Field Paths](field-paths.md):
 
     ```python
     --8<-- "docs/examples/basic/validation/validation_metadata_nested.py"

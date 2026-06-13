@@ -117,7 +117,7 @@ See the full list of Source classes and their extra dependencies on the [main pa
 |-----------|-------------|
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
 | `name_style` | Naming convention mapping. See [Naming](basic/naming.md) |
-| `field_mapping` | Explicit field renaming with `F` objects. See [Naming](basic/naming.md) |
+| `field_mapping` | Explicit field renaming with `F` objects. See [Naming](basic/naming.md), [Field Paths](basic/field-paths.md) |
 | `root_validators` | Post-load validation of the entire object. See [Validation](basic/validation.md) |
 | `validators` | Per-field validators in metadata. See [Validation](basic/validation.md) |
 | `expand_env_vars` | ENV variable expansion mode. See [Advanced — ENV Expansion](advanced/env-expansion.md) |
@@ -138,7 +138,7 @@ See the full list of Source classes and their extra dependencies on the [main pa
 |-----------|-------------|
 | `nested_sep` | Delimiter for flat→nested conversion. Default: `"__"` |
 | `nested_resolve_strategy` | Priority when both JSON and flat keys exist for a nested field: `"flat"` (default) or `"json"`. See [Nested Resolve](advanced/nested-resolve.md) |
-| `nested_resolve` | Per-field strategy overrides using `F` objects. Takes priority over `nested_resolve_strategy`. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
+| `nested_resolve` | Per-field strategy overrides using `F` objects — see [Field Paths](basic/field-paths.md). Takes priority over `nested_resolve_strategy`. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy) |
 
 ### File-Like Objects
 

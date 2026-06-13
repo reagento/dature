@@ -29,7 +29,7 @@ Automatically convert between naming conventions. Maps dataclass field names (sn
 
 ## field_mapping
 
-Explicit field renaming using `F` objects. Takes priority over `name_style`:
+Explicit field renaming using `F` objects — see [Field Paths](field-paths.md). Takes priority over `name_style`:
 
 === "Python"
 
@@ -53,7 +53,7 @@ A field can have multiple aliases — the first matching key in the source wins:
 
 ### Nested Fields
 
-Nested fields are supported via `F[Owner].field` syntax on inner dataclasses:
+Nested fields are supported via `F[Owner].field` syntax on inner dataclasses — see [Field Paths](field-paths.md) for all syntax forms:
 
 === "Python"
 

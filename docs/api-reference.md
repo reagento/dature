@@ -155,7 +155,7 @@ Strategies for resolving field values across multiple sources. Set via `strategy
 | `"first_found"` | Uses the first source that loads successfully. |
 | `"raise_on_conflict"` | Raises `MergeConflictError` on conflicting values. |
 
-The built-ins are also exposed as classes from `dature.strategies.source` (`SourceLastWins`, `SourceFirstWins`, `SourceFirstFound`, `SourceRaiseOnConflict`) implementing the public `SourceMergeStrategy` `Protocol`. Pass any object satisfying that protocol as `strategy` for custom merge logic — see [Custom Source Strategy](advanced/source-strategy.md#custom-source-strategy).
+The built-ins are also exposed as classes from `dature.strategies.source` (`SourceLastWins`, `SourceFirstWins`, `SourceFirstFound`, `SourceRaiseOnConflict`) implementing the public `SourceMergeStrategy` `Protocol`. Pass any object satisfying that protocol as `strategy` for custom merge logic — see [Custom Source Strategy](advanced/merge-strategies.md#custom-source-strategy).
 
 ### Field Merge Strategies
 
@@ -170,7 +170,7 @@ Per-field overrides via `field_merges` parameter. Maps `F[Config].field` to a st
 | `"prepend"` | Concatenate lists: `override + base`. |
 | `"prepend_unique"` | Concatenate lists in reverse order, removing duplicates. |
 
-The built-ins are also exposed as classes from `dature.strategies.field` (`FieldFirstWins`, `FieldLastWins`, `FieldAppend`, `FieldAppendUnique`, `FieldPrepend`, `FieldPrependUnique`). See [Custom Field Strategy](advanced/field-strategies.md#custom-field-strategy) for examples.
+The built-ins are also exposed as classes from `dature.strategies.field` (`FieldFirstWins`, `FieldLastWins`, `FieldAppend`, `FieldAppendUnique`, `FieldPrepend`, `FieldPrependUnique`). See [Custom Field Strategy](advanced/merge-strategies.md#custom-field-strategy) for examples.
 
 ---
 

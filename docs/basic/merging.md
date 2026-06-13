@@ -164,9 +164,9 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
         --8<-- "docs/examples/shared/common_raise_on_conflict_b.yaml"
         ```
 
-`strategy` is not limited to the names above — any object implementing the `SourceMergeStrategy` `Protocol` is accepted, so you can plug in your own merge logic (e.g. let env sources override files unconditionally) while still composing the built-in strategies. See [Custom Source Strategy](../advanced/source-strategy.md#custom-source-strategy).
+`strategy` is not limited to the names above — any object implementing the `SourceMergeStrategy` `Protocol` is accepted, so you can plug in your own merge logic (e.g. let env sources override files unconditionally) while still composing the built-in strategies. See [Custom Source Strategy](../advanced/merge-strategies.md#custom-source-strategy).
 
-For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/field-strategies.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/field-groups.md).
+For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-strategies.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/field-groups.md).
 
 ## Merge Parameters
 
@@ -175,7 +175,7 @@ All merge-related parameters are passed directly to `dature.load()` as keyword a
 | Parameter | Description |
 |-----------|-------------|
 | `strategy` | Global merge strategy. Default: `"last_wins"`. See [Merge Strategies](#merge-strategies) |
-| `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/field-strategies.md#per-field-merge-strategies) |
+| `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/merge-strategies.md#per-field-merge-strategies) |
 | `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/field-groups.md) |
 | `skip_if_broken` | Skip sources that fail to parse (invalid syntax, config error). See [Skipping Sources with Parse Errors](../advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
 | `skip_if_missing` | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/skip-behaviors.md#skipping-missing-sources) |
