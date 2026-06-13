@@ -55,27 +55,39 @@ nav:
     - Introduction: introduction.md
     - Loading: loading.md
     - Supported Types: supported_types.md
-  - Features:
-    - Naming: features/naming.md
-    - Validation: features/validation.md
-    - Merging: features/merging.md
-    - Masking: features/masking.md
-    - Configure: features/configure.md
-    - CLI: features/cli.md
-    - CLI Source: features/cli_source.md
-    - Remote Source: features/remote_source.md
+  - Basic:
+    - basic/index.md
+    - Naming: basic/naming.md
+    - Field Paths: basic/field-paths.md
+    - Validation: basic/validation.md
+    - Merging: basic/merging.md
+    - Masking: basic/masking.md
+    - Configure: basic/configure.md
+    - CLI: basic/cli.md
   - Advanced:
-    - Merge Rules: advanced/merge-rules.md
-    - Field Groups: advanced/field-groups.md
-    - Nested Resolve: advanced/nested-resolve.md
-    - ENV Expansion: advanced/env-expansion.md
-    - Config Search: advanced/config-search.md
-    - Special Types: advanced/special-types.md
-    - Debug & Reports: advanced/debug.md
-    - Caching: advanced/caching.md
-    - Custom Types & Loaders: advanced/custom_types.md
-    - Cross-Source Refs: advanced/cross_source_refs.md
-    - Conditional Sources: advanced/conditional_sources.md
+    - advanced/index.md
+    - Merging & Strategies:
+      - Merge Strategies: advanced/merge-strategies.md
+      - Field Groups: advanced/field-groups.md
+      - Nested Resolve: advanced/nested-resolve.md
+      - Skip Behaviors: advanced/skip-behaviors.md
+    - Sources:
+      - Config Search: advanced/config-search.md
+      - CLI:
+        - ArgparseSource: advanced/cli/argparse.md
+        - Custom CLI Source: advanced/cli/custom.md
+      - Remote:
+        - VaultSource: advanced/remote/vault.md
+        - Custom Remote Source: advanced/remote/custom.md
+      - Custom Types & Loaders: advanced/custom_types.md
+      - Cross-Source Refs: advanced/cross_source_refs.md
+      - Conditional Sources: advanced/conditional_sources.md
+    - Values:
+      - ENV Expansion: advanced/env-expansion.md
+      - Special Types: advanced/special-types.md
+    - Observability:
+      - Debug & Reports: advanced/debug.md
+      - Caching: advanced/caching.md
   - Comparison:
     - vs pydantic-settings: comparison/why-not-pydantic-settings.md
     - vs Hydra: comparison/why-not-hydra.md
@@ -111,27 +123,33 @@ plugins:
           - introduction.md
           - loading.md
           - supported_types.md
-        Features:
-          - features/naming.md
-          - features/validation.md
-          - features/merging.md
-          - features/masking.md
-          - features/configure.md
-          - features/cli.md
-          - features/cli_source.md
-          - features/remote_source.md
+        Basic:
+          - basic/index.md
+          - basic/naming.md
+          - basic/field-paths.md
+          - basic/validation.md
+          - basic/merging.md
+          - basic/masking.md
+          - basic/configure.md
+          - basic/cli.md
         Advanced:
-          - advanced/merge-rules.md
+          - advanced/index.md
+          - advanced/merge-strategies.md
           - advanced/field-groups.md
           - advanced/nested-resolve.md
-          - advanced/env-expansion.md
+          - advanced/skip-behaviors.md
           - advanced/config-search.md
-          - advanced/special-types.md
-          - advanced/debug.md
-          - advanced/caching.md
+          - advanced/cli/argparse.md
+          - advanced/cli/custom.md
+          - advanced/remote/vault.md
+          - advanced/remote/custom.md
           - advanced/custom_types.md
           - advanced/cross_source_refs.md
           - advanced/conditional_sources.md
+          - advanced/env-expansion.md
+          - advanced/special-types.md
+          - advanced/debug.md
+          - advanced/caching.md
         Comparison:
           - comparison/why-not-pydantic-settings.md
           - comparison/why-not-hydra.md

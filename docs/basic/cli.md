@@ -24,13 +24,13 @@ A schema module and a JSON config file:
 === "myschema.py"
 
     ```python
-    --8<-- "docs/examples/features/cli/myschema.py"
+    --8<-- "docs/examples/basic/cli/myschema.py"
     ```
 
 === "sources/config.json"
 
     ```json
-    --8<-- "docs/examples/features/cli/sources/config.json"
+    --8<-- "docs/examples/basic/cli/sources/config.json"
     ```
 
 Validate the config — exit `0`, prints `OK`:
@@ -38,13 +38,13 @@ Validate the config — exit `0`, prints `OK`:
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/features/cli/cli_quickstart_validate.sh"
+    --8<-- "docs/examples/basic/cli/cli_quickstart_validate.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/features/cli/cli_quickstart_validate.stdout"
+    --8<-- "docs/examples/basic/cli/cli_quickstart_validate.stdout"
     ```
 
 Inspect the load report in human-readable form:
@@ -52,13 +52,13 @@ Inspect the load report in human-readable form:
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/features/cli/cli_quickstart_inspect_text.sh"
+    --8<-- "docs/examples/basic/cli/cli_quickstart_inspect_text.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/features/cli/cli_quickstart_inspect_text.stdout"
+    --8<-- "docs/examples/basic/cli/cli_quickstart_inspect_text.stdout"
     ```
 
 ## `inspect`
@@ -66,7 +66,7 @@ Inspect the load report in human-readable form:
 Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/debug.md), and prints it.
 
 ```
---8<-- "docs/examples/features/cli/cli_inspect_help.stdout"
+--8<-- "docs/examples/basic/cli/cli_inspect_help.stdout"
 ```
 
 | Flag | Maps to | Description |
@@ -79,13 +79,13 @@ Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/deb
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/features/cli/cli_inspect_json.sh"
+    --8<-- "docs/examples/basic/cli/cli_inspect_json.sh"
     ```
 
 === "Output"
 
     ```json
-    --8<-- "docs/examples/features/cli/cli_inspect_json.stdout"
+    --8<-- "docs/examples/basic/cli/cli_inspect_json.stdout"
     ```
 
 ### Field filter
@@ -95,13 +95,13 @@ Narrow the report to a single dotted path — `db.port` here resolves to a scala
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/features/cli/cli_inspect_field.sh"
+    --8<-- "docs/examples/basic/cli/cli_inspect_field.sh"
     ```
 
 === "Output"
 
     ```json
-    --8<-- "docs/examples/features/cli/cli_inspect_field.stdout"
+    --8<-- "docs/examples/basic/cli/cli_inspect_field.stdout"
     ```
 
 ## `validate`
@@ -109,7 +109,7 @@ Narrow the report to a single dotted path — `db.port` here resolves to a scala
 Runs `load(*sources, schema=Schema, ...)` and reports the result via exit code. Use it as the final gate in CI/CD.
 
 ```
---8<-- "docs/examples/features/cli/cli_validate_help.stdout"
+--8<-- "docs/examples/basic/cli/cli_validate_help.stdout"
 ```
 
 | Exit code | Meaning |
@@ -123,13 +123,13 @@ Two sources merged with `last_wins`:
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/features/cli/cli_validate_two_sources.sh"
+    --8<-- "docs/examples/basic/cli/cli_validate_two_sources.sh"
     ```
 
 === "Output"
 
     ```
-    --8<-- "docs/examples/features/cli/cli_validate_two_sources.stdout"
+    --8<-- "docs/examples/basic/cli/cli_validate_two_sources.stdout"
     ```
 
 When validation fails, the error includes the field path, the offending value, and the source location:
@@ -137,19 +137,19 @@ When validation fails, the error includes the field path, the offending value, a
 === "Command"
 
     ```bash
-    --8<-- "docs/examples/features/cli/cli_validate_fail.sh"
+    --8<-- "docs/examples/basic/cli/cli_validate_fail.sh"
     ```
 
 === "sources/bad.json"
 
     ```json
-    --8<-- "docs/examples/features/cli/sources/bad.json"
+    --8<-- "docs/examples/basic/cli/sources/bad.json"
     ```
 
 === "stderr (exit 1)"
 
     ```
-    --8<-- "docs/examples/features/cli/cli_validate_fail.stderr"
+    --8<-- "docs/examples/basic/cli/cli_validate_fail.stderr"
     ```
 
 ## `--source` spec
@@ -185,7 +185,7 @@ User-defined `Source` subclasses work too — pass the full import path.
 Use `\,` and `\=` to keep literal `,` / `=` inside a value:
 
 ```python
---8<-- "docs/examples/features/cli/cli_source_escape.py"
+--8<-- "docs/examples/basic/cli/cli_source_escape.py"
 ```
 
 ## `--schema MODULE:ATTR`
@@ -203,10 +203,10 @@ These flags are **generated from the signature of [`dature.load()`](../api-refer
 
 | CLI flag | `load()` parameter | Notes |
 |----------|--------------------|-------|
-| `--strategy` | [`strategy`](../api-reference.md#datureload) | Choices: `last_wins`, `first_wins`, `first_found`, `raise_on_conflict`. See [Merge Rules](../advanced/merge-rules.md). |
-| `--skip-if-broken` | [`skip_if_broken`](../api-reference.md#datureload) | Skip sources that fail to parse. See [Skipping Sources with Parse Errors](../advanced/merge-rules.md#skipping-sources-with-parse-errors). |
-| `--skip-if-missing` | [`skip_if_missing`](../api-reference.md#datureload) | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/merge-rules.md#skipping-missing-sources). |
-| `--skip-invalid-fields` | [`skip_invalid_fields`](../api-reference.md#datureload) | See [Skipping Invalid Fields](../advanced/merge-rules.md#skipping-invalid-fields). |
+| `--strategy` | [`strategy`](../api-reference.md#datureload) | Choices: `last_wins`, `first_wins`, `first_found`, `raise_on_conflict`. See [Merge Strategies](merging.md#merge-strategies). |
+| `--skip-if-broken` | [`skip_if_broken`](../api-reference.md#datureload) | Skip sources that fail to parse. See [Skipping Sources with Parse Errors](../advanced/skip-behaviors.md#skipping-sources-with-parse-errors). |
+| `--skip-if-missing` | [`skip_if_missing`](../api-reference.md#datureload) | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/skip-behaviors.md#skipping-missing-sources). |
+| `--skip-invalid-fields` | [`skip_invalid_fields`](../api-reference.md#datureload) | See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields). |
 | `--expand-env-vars` | [`expand_env_vars`](../api-reference.md#datureload) | Choices: `disabled`, `default`, `empty`, `strict`. See [ENV Expansion](../advanced/env-expansion.md). |
 | `--secret-field-names` | [`secret_field_names`](../api-reference.md#datureload) | Repeatable. See [Masking](masking.md). |
 | `--mask-secrets` | [`mask_secrets`](../api-reference.md#datureload) | See [Masking](masking.md). Also affects `inspect` output. |
@@ -215,8 +215,8 @@ Per-source overrides for parameters that exist on both `load()` and the [`Source
 
 ## Limitations
 
-The CLI exposes the common case. [`load()`](../api-reference.md#datureload) parameters that require Python objects — [`field_merges`](../api-reference.md#field-merge-strategies), [`field_groups`](../advanced/field-groups.md), [`type_loaders`](../advanced/custom_types.md), callable [`root_validators`](../api-reference.md#root-validator-daturevalidatorsroot), explicit [`field_mapping`](../features/naming.md) — must be expressed in code. For those, use [`dature.load(...)`](../api-reference.md#datureload) directly. The CLI is intentionally not a substitute for the library.
+The CLI exposes the common case. [`load()`](../api-reference.md#datureload) parameters that require Python objects — [`field_merges`](../api-reference.md#field-merge-strategies), [`field_groups`](../advanced/field-groups.md), [`type_loaders`](../advanced/custom_types.md), callable [`root_validators`](../api-reference.md#root-validator-daturevalidatorsroot), explicit [`field_mapping`](../basic/naming.md) — must be expressed in code. For those, use [`dature.load(...)`](../api-reference.md#datureload) directly. The CLI is intentionally not a substitute for the library.
 
 ## Implementation note: dogfooding
 
-The `dature` console script parses its own arguments through [`ArgparseSource`](cli_source.md) — the very class users instantiate to feed CLI arguments into their own configurations. The dataclass schema that the CLI loads into is built at runtime from the signature of [`load()`](../api-reference.md#datureload) (via `dataclasses.make_dataclass` over `typing.get_type_hints(load)`), so adding or changing a parameter on `load()` is automatically reflected in the CLI without any hand-written wiring. The CLI is not special code: it is dature using itself.
+The `dature` console script parses its own arguments through [`ArgparseSource`](../advanced/cli/argparse.md) — the very class users instantiate to feed CLI arguments into their own configurations. The dataclass schema that the CLI loads into is built at runtime from the signature of [`load()`](../api-reference.md#datureload) (via `dataclasses.make_dataclass` over `typing.get_type_hints(load)`), so adding or changing a parameter on `load()` is automatically reflected in the CLI without any hand-written wiring. The CLI is not special code: it is dature using itself.

@@ -368,29 +368,52 @@ class StrictConfig:
 
 class TestEnvVarExpandErrorFormat:
     @pytest.mark.parametrize(
-        ("source_cls", "source_kwargs", "source_label", "line", "line_content"),
+        ("source_cls", "source_kwargs", "source_label", "line", "line_content", "carets"),
         [
-            (Yaml12Source, {"file": FIXTURES_DIR / "env_expand_strict.yaml"}, "FILE", 1, 'host: "$MISSING_HOST"'),
+            (
+                Yaml12Source,
+                {"file": FIXTURES_DIR / "env_expand_strict.yaml"},
+                "FILE",
+                1,
+                'host: "$MISSING_HOST"',
+                "      ^^^^^^^^^^^^^^^",
+            ),
             (
                 JsonSource,
                 {"file": FIXTURES_DIR / "env_expand_strict.json"},
                 "FILE",
                 1,
                 '{"host": "$MISSING_HOST", "port": 8080}',
+                "                                  ^^^^^",
             ),
-            (Toml11Source, {"file": FIXTURES_DIR / "env_expand_strict.toml"}, "FILE", 1, 'host = "$MISSING_HOST"'),
+            (
+                Toml11Source,
+                {"file": FIXTURES_DIR / "env_expand_strict.toml"},
+                "FILE",
+                1,
+                'host = "$MISSING_HOST"',
+                "       ^^^^^^^^^^^^^^^",
+            ),
             (
                 IniSource,
                 {"file": FIXTURES_DIR / "env_expand_strict.ini", "prefix": "section"},
                 "FILE",
                 2,
                 "host = $MISSING_HOST",
+                "       ^^^^^^^^^^^^^",
             ),
-            (EnvFileSource, {"file": FIXTURES_DIR / "env_expand_strict.env"}, "ENV FILE", 1, "HOST=$MISSING_HOST"),
+            (
+                EnvFileSource,
+                {"file": FIXTURES_DIR / "env_expand_strict.env"},
+                "ENV FILE",
+                1,
+                "HOST=$MISSING_HOST",
+                "     ^^^^^^^^^^^^^",
+            ),
         ],
         ids=["yaml", "json", "toml", "ini", "env"],
     )
-    def test_error_format(
+    def test_error_format(  # noqa: PLR0913
         self,
         monkeypatch: pytest.MonkeyPatch,
         source_cls: type,
@@ -398,6 +421,7 @@ class TestEnvVarExpandErrorFormat:
         source_label: str,
         line: int,
         line_content: str,
+        carets: str,
     ) -> None:
         monkeypatch.delenv("MISSING_HOST", raising=False)
         file = source_kwargs["file"]
@@ -408,15 +432,12 @@ class TestEnvVarExpandErrorFormat:
                 schema=StrictConfig,
             )
 
-        eq_pos = line_content.find("=")
-        caret_pos = eq_pos + 1 if eq_pos != -1 else 0
-        caret_len = len(line_content) - caret_pos
         assert str(exc_info.value) == dedent(f"""\
             StrictConfig env expand errors (1)
 
               [host]  Missing environment variable 'MISSING_HOST'
                ├── {line_content}
-               │   {" " * caret_pos}{"^" * caret_len}
+               │   {carets}
                └── {source_label} '{file}', line {line}
         """)
 

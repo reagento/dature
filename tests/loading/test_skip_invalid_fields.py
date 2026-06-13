@@ -81,10 +81,10 @@ class TestMergeSkipInvalidFields:
         assert str(err.exceptions[0]) == (
             f"  [port]  Missing required field (invalid in: json '{source1}', json '{source2}')\n"
             f'   ├── {{"host": "localhost", "port": "abc"}}\n'
-            f"   │   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            f"   │                                 ^^^^^^\n"
             f"   ├── FILE '{source1}', line 1\n"
             f'   ├── {{"port": "def"}}\n'
-            f"   │   ^^^^^^^^^^^^^^^\n"
+            f"   │            ^^^^^^\n"
             f"   └── FILE '{source2}', line 1"
         )
 
@@ -261,7 +261,7 @@ class TestMergeSkipInvalidFields:
         assert str(err.exceptions[1]) == (
             f"  [port]  Missing required field (invalid in: json '{source1}')\n"
             f'   ├── {{"host": 123, "port": "abc"}}\n'
-            f"   │   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            f"   │                         ^^^^^^\n"
             f"   └── FILE '{source1}', line 1"
         )
 
@@ -331,7 +331,7 @@ class TestSingleSourceSkipInvalidFields:
         assert str(err.exceptions[0]) == (
             f"  [port]  Missing required field (invalid in: json '{json_file}')\n"
             f'   ├── {{"host": "localhost", "port": "abc"}}\n'
-            f"   │   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            f"   │                                 ^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 

@@ -17,7 +17,7 @@ _sh_stems = {p.with_suffix("") for root in EXAMPLE_ROOTS for p in root.rglob("*.
 
 # Examples needing live infrastructure (e.g. Vault) are exercised by the integration
 # suite under tests/integration/sources/ — keep them out of the generic runner.
-_INFRA_DIRS = {"remote_source"}
+_INFRA_DIRS = {"remote"}
 
 example_scripts = sorted(
     p

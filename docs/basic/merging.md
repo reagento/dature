@@ -1,5 +1,24 @@
 # Merging
 
+## How Merging Works
+
+```mermaid
+graph TD
+    A[Source 1: defaults.yaml] --> D[Load & Parse]
+    B[Source 2: overrides.yaml] --> E[Load & Parse]
+    C[Source 3: ENV vars] --> F[Load & Parse]
+    D --> G[Raw Dict 1]
+    E --> H[Raw Dict 2]
+    F --> I[Raw Dict 3]
+    G --> J{Merge Strategy}
+    H --> J
+    I --> J
+    J --> K[Merged Dict]
+    K --> L[Type Conversion]
+    L --> M[Validation]
+    M --> N[Dataclass Instance]
+```
+
 Load configuration from multiple sources and merge them into one dataclass.
 
 ## Basic Merging
@@ -9,7 +28,7 @@ Pass multiple `Source` objects to `dature.load()`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_basic.py:example"
+    --8<-- "docs/examples/basic/merging/merging_basic.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -31,7 +50,7 @@ Multiple sources use `"last_wins"` by default:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_tuple_shorthand.py:example"
+    --8<-- "docs/examples/basic/merging/merging_tuple_shorthand.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -51,7 +70,7 @@ The decorator also uses `"last_wins"``:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_tuple_shorthand_decorator.py:example"
+    --8<-- "docs/examples/basic/merging/merging_tuple_shorthand_decorator.py:example"
     ```
 
 === "common_defaults.yaml"
@@ -76,7 +95,7 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Last source overrides earlier ones. This is the default strategy.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_last_wins.py:example"
+    --8<-- "docs/examples/basic/merging/merging_strategy_last_wins.py:example"
     ```
 
     === "common_defaults.yaml"
@@ -96,7 +115,7 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     First source wins on conflict. Later sources only fill in missing keys.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_first_wins.py:example"
+    --8<-- "docs/examples/basic/merging/merging_strategy_first_wins.py:example"
     ```
 
     === "common_defaults.yaml"
@@ -116,7 +135,7 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Uses the first source that loads successfully and ignores the rest. Broken sources (missing file, parse error) are skipped automatically — no `skip_if_broken` needed. Type errors (wrong type, missing field) are **not** skipped.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_first_found.py:example"
+    --8<-- "docs/examples/basic/merging/merging_strategy_first_found.py:example"
     ```
 
     === "common_defaults.yaml"
@@ -130,7 +149,7 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
     Raises `MergeConflictError` if the same key appears in multiple sources with different values. Works best when sources have disjoint keys.
 
     ```python
-    --8<-- "docs/examples/features/merging/merging_strategy_raise_on_conflict.py:example"
+    --8<-- "docs/examples/basic/merging/merging_strategy_raise_on_conflict.py:example"
     ```
 
     === "common_raise_on_conflict_a.yaml"
@@ -145,9 +164,9 @@ Nested dicts are merged recursively. Lists and scalars are replaced entirely acc
         --8<-- "docs/examples/shared/common_raise_on_conflict_b.yaml"
         ```
 
-`strategy` is not limited to the names above — any object implementing the `SourceMergeStrategy` `Protocol` is accepted, so you can plug in your own merge logic (e.g. let env sources override files unconditionally) while still composing the built-in strategies. See [Custom Source Strategy](../advanced/merge-rules.md#custom-source-strategy).
+`strategy` is not limited to the names above — any object implementing the `SourceMergeStrategy` `Protocol` is accepted, so you can plug in your own merge logic (e.g. let env sources override files unconditionally) while still composing the built-in strategies. See [Custom Source Strategy](../advanced/merge-strategies.md#custom-source-strategy).
 
-For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/field-groups.md).
+For per-field strategy overrides, see [Per-Field Merge Strategies](../advanced/merge-strategies.md#per-field-merge-strategies). To enforce that related fields are always overridden together, see [Field Groups](../advanced/field-groups.md).
 
 ## Merge Parameters
 
@@ -156,11 +175,11 @@ All merge-related parameters are passed directly to `dature.load()` as keyword a
 | Parameter | Description |
 |-----------|-------------|
 | `strategy` | Global merge strategy. Default: `"last_wins"`. See [Merge Strategies](#merge-strategies) |
-| `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/merge-rules.md#per-field-merge-strategies) |
+| `field_merges` | Per-field merge strategy overrides. See [Per-Field Merge Strategies](../advanced/merge-strategies.md#per-field-merge-strategies) |
 | `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/field-groups.md) |
-| `skip_if_broken` | Skip sources that fail to parse (invalid syntax, config error). See [Skipping Sources with Parse Errors](../advanced/merge-rules.md#skipping-sources-with-parse-errors) |
-| `skip_if_missing` | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/merge-rules.md#skipping-missing-sources) |
-| `skip_invalid_fields` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/merge-rules.md#skipping-invalid-fields) |
+| `skip_if_broken` | Skip sources that fail to parse (invalid syntax, config error). See [Skipping Sources with Parse Errors](../advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
+| `skip_if_missing` | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/skip-behaviors.md#skipping-missing-sources) |
+| `skip_invalid_fields` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields) |
 | `expand_env_vars` | ENV variable expansion mode. See [ENV Expansion](../advanced/env-expansion.md) |
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](masking.md) |
 | `mask_secrets` | Enable/disable secret masking for all sources. See [Masking](masking.md) |

@@ -1,5 +1,7 @@
 # Special Types
 
+These types are part of dature's type system and can be loaded from any source format. This page covers their runtime behavior. For syntax (how to write their values in config files), see [Supported Types](../supported_types.md#custom-fields).
+
 ## SecretStr
 
 Wraps a string value so it is never exposed in `str()`, `repr()`, or logs:

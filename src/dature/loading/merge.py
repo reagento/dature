@@ -311,7 +311,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         if report_obj is not None:
             attach_load_report(schema, report_obj)
         if report.skipped_fields:
-            raise enrich_skipped_errors(exc, report.skipped_fields) from exc
+            raise enrich_skipped_errors(exc, report.skipped_fields) from None
         raise
 
     if report_obj is not None:
