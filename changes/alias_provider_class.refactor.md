@@ -1,0 +1,1 @@
+Restored `AliasProvider` as a `Provider` subclass; `build_alias_loaders` and the `schema` parameter to `build_base_recipe`/`get_name_mapping_providers` removed. Internal adaptix dependencies are imported from `dature._adaptix_compat`.
