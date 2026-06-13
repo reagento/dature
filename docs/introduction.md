@@ -116,10 +116,10 @@ See the full list of Source classes and their extra dependencies on the [main pa
 | Parameter | Description |
 |-----------|-------------|
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
-| `name_style` | Naming convention mapping. See [Naming](features/naming.md) |
-| `field_mapping` | Explicit field renaming with `F` objects. See [Naming](features/naming.md) |
-| `root_validators` | Post-load validation of the entire object. See [Validation](features/validation.md) |
-| `validators` | Per-field validators in metadata. See [Validation](features/validation.md) |
+| `name_style` | Naming convention mapping. See [Naming](basic/naming.md) |
+| `field_mapping` | Explicit field renaming with `F` objects. See [Naming](basic/naming.md) |
+| `root_validators` | Post-load validation of the entire object. See [Validation](basic/validation.md) |
+| `validators` | Per-field validators in metadata. See [Validation](basic/validation.md) |
 | `expand_env_vars` | ENV variable expansion mode. See [Advanced — ENV Expansion](advanced/env-expansion.md) |
 | `skip_if_broken` | Skip this source if it fails to parse. See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
 | `skip_if_missing` | Skip this source if its file does not exist. See [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) |
@@ -153,4 +153,4 @@ See the full list of Source classes and their extra dependencies on the [main pa
 
 ## Type Coercion
 
-String values from ENV and file formats are automatically converted. See [Supported Types](supported_types.md) for the full list and [Custom Types & Loaders](advanced/custom_types.md) for custom type parsers and format loaders. Error output with source location is covered in [Validation — Error Format](features/validation.md#error-format).
+String values from ENV and file formats are automatically converted. See [Supported Types](supported_types.md) for the full list and [Custom Types & Loaders](advanced/custom_types.md) for custom type parsers and format loaders. Error output with source location is covered in [Validation — Error Format](basic/validation.md#error-format).

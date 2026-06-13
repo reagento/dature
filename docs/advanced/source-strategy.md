@@ -1,6 +1,6 @@
 # Custom Source Strategy
 
-The global `strategy` parameter accepts not only the names from [Merge Strategies](../features/merging.md#merge-strategies) but also any object implementing the public `SourceMergeStrategy` `Protocol`:
+The global `strategy` parameter accepts not only the names from [Merge Strategies](../basic/merging.md#merge-strategies) but also any object implementing the public `SourceMergeStrategy` `Protocol`:
 
 ```python
 --8<-- "src/dature/loading/merge_runtime.py:source-merge-strategy"

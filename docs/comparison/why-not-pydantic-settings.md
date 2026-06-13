@@ -14,7 +14,7 @@ The trade-off is coupling: your config must be a Pydantic model, custom types ne
 | **Skip broken sources** | No | Yes — `skip_if_broken`, `skip_field_if_invalid` |
 | **Field groups** | No | Yes — enforce related fields are overridden together |
 | **Naming conventions** | `alias` / `alias_generator` (`to_camel`, `to_pascal`, `to_snake`) | Built-in `name_style` (6 conventions) + explicit `field_mapping` with multiple aliases |
-| **CLI** | Built-in `CliSettingsSource` with subcommands, async support | `dature inspect`, `dature validate` ([CLI](../features/cli.md)) — config inspection / validation, not argv parsing |
+| **CLI** | Built-in `CliSettingsSource` with subcommands, async support | `dature inspect`, `dature validate` ([CLI](../basic/cli.md)) — config inspection / validation, not argv parsing |
 | **Secrets** | `SecretStr`, `secrets_dir`, nested secrets directories | `SecretStr`, auto-masking in errors/logs (by type, name pattern, or heuristic) |
 | **ENV expansion** | No | `${VAR:-default}` syntax in all file formats + file paths (`Toml11Source(file="$DIR/config.toml")`) |
 | **Error messages** | Pydantic `ValidationError` | Human-readable: source file, line number, context snippet |
@@ -121,7 +121,7 @@ These features are possible because dature's loader system is modular by design 
 
 To be fair — pydantic-settings has mature features that dature doesn't:
 
-- **CLI support** — pydantic-settings turns your settings model into an argparse-style CLI for your *application* (`CliSettingsSource` with subcommands and async). dature's [CLI](../features/cli.md) is for *config inspection and validation* (`dature inspect`, `dature validate`), not for parsing your application's argv.
+- **CLI support** — pydantic-settings turns your settings model into an argparse-style CLI for your *application* (`CliSettingsSource` with subcommands and async). dature's [CLI](../basic/cli.md) is for *config inspection and validation* (`dature inspect`, `dature validate`), not for parsing your application's argv.
 - **Pydantic ecosystem** — seamless integration with FastAPI, SQLModel, LangChain. If you're already in this ecosystem, pydantic-settings is the natural fit.
 - **Validation power** — Pydantic's `field_validator` and `model_validator` with `mode="before"` / `mode="after"`, computed fields, and the full Pydantic constraint system are more feature-rich than dature's validators.
 - **`pyproject.toml` source** — built-in `PyprojectTomlConfigSettingsSource` reads settings directly from `pyproject.toml`.

@@ -7,13 +7,13 @@ Customize defaults for the entire application — programmatically or via enviro
 === "configure()"
 
     ```python
-    --8<-- "docs/examples/features/configure/advanced_configure.py:example"
+    --8<-- "docs/examples/basic/configure/advanced_configure.py:example"
     ```
 
 === "Environment Variables"
 
     ```python
-    --8<-- "docs/examples/features/configure/advanced_configure_env_runtime_override.py:example"
+    --8<-- "docs/examples/basic/configure/advanced_configure_env_runtime_override.py:example"
     ```
 
 === "common_app.yaml"

@@ -17,7 +17,7 @@ The trade-off is **how** it covers it: Dynaconf is powerful and battle-tested, b
 | **Remote sources** | Vault, Redis + community plugins | Not yet (planned) |
 | **Merging** | Layered override + `dynaconf_merge` | 4 strategies + per-field rules (`"append"`, `"prepend"`, field groups, etc.) |
 | **Dynamic variables** | `@format`, `@jinja` templates with lazy evaluation | `${VAR:-default}` env expansion in all formats + file paths |
-| **CLI** | `dynaconf list`, `inspect`, `write`, `validate`, etc. | `dature inspect`, `dature validate` ([CLI](../features/cli.md)) |
+| **CLI** | `dynaconf list`, `inspect`, `write`, `validate`, etc. | `dature inspect`, `dature validate` ([CLI](../basic/cli.md)) |
 | **Per-environment files** | Built-in (`[development]`, `[production]` sections) | Manual via multiple `Source` objects |
 | **Framework extensions** | Django, Flask built-in | No — framework-agnostic by design |
 | **Feature flags** | Built-in simple system | No |
@@ -152,7 +152,7 @@ Source file, line number, the actual config line, and caret underline on the pro
 To be fair — Dynaconf has mature features that dature doesn't (yet):
 
 - **Remote sources** — Vault, Redis integration out of the box. dature plans remote sources (Vault, AWS SSM) but doesn't have them yet.
-- **CLI tooling** — Dynaconf has `list` and `write` subcommands for runtime mutation; dature ships [`inspect` and `validate`](../features/cli.md) but does not have `list`/`write`.
+- **CLI tooling** — Dynaconf has `list` and `write` subcommands for runtime mutation; dature ships [`inspect` and `validate`](../basic/cli.md) but does not have `list`/`write`.
 - **Dynamic variables** — `@format` and `@jinja` templates with lazy evaluation and Python expressions. dature supports `${VAR:-default}` env expansion in config values and file paths, but not Jinja templates.
 - **Per-environment sections** — `[development]`, `[production]` sections in a single file with automatic switching via `ENV_FOR_DYNACONF`.
 - **Framework extensions** — built-in Django and Flask integration.

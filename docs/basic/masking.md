@@ -45,15 +45,15 @@ dature uses three methods to identify secrets:
     `SecretStr` and `PaymentCardNumber` mask values in `str()`, `repr()`, and debug logs:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_secret_str.py:example"
+    --8<-- "docs/examples/basic/masking/masking_secret_str.py:example"
     ```
 
     ```yaml title="masking_secret_str.yaml"
-    --8<-- "docs/examples/features/masking/sources/masking_secret_str.yaml"
+    --8<-- "docs/examples/basic/masking/sources/masking_secret_str.yaml"
     ```
 
     ```title="Error"
-    --8<-- "docs/examples/features/masking/masking_secret_str.stderr"
+    --8<-- "docs/examples/basic/masking/masking_secret_str.stderr"
     ```
 
 === "By name"
@@ -61,15 +61,15 @@ dature uses three methods to identify secrets:
     Fields whose names contain known patterns are automatically masked in error messages:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_by_name.py:example"
+    --8<-- "docs/examples/basic/masking/masking_by_name.py:example"
     ```
 
     ```yaml title="masking_by_name.yaml"
-    --8<-- "docs/examples/features/masking/sources/masking_by_name.yaml"
+    --8<-- "docs/examples/basic/masking/sources/masking_by_name.yaml"
     ```
 
     ```title="Error"
-    --8<-- "docs/examples/features/masking/masking_by_name.stderr"
+    --8<-- "docs/examples/basic/masking/masking_by_name.stderr"
     ```
 
 === "Heuristic"
@@ -77,15 +77,15 @@ dature uses three methods to identify secrets:
     With `dature[secure]`, values that look like random tokens are masked in error messages even if the field name is not a known secret pattern:
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_heuristic.py:example"
+    --8<-- "docs/examples/basic/masking/masking_heuristic.py:example"
     ```
 
     ```yaml title="masking_heuristic.yaml"
-    --8<-- "docs/examples/features/masking/sources/masking_heuristic.yaml"
+    --8<-- "docs/examples/basic/masking/sources/masking_heuristic.yaml"
     ```
 
     ```title="Error"
-    --8<-- "docs/examples/features/masking/masking_heuristic.stderr"
+    --8<-- "docs/examples/basic/masking/masking_heuristic.stderr"
     ```
 
 ## Mask Format
@@ -102,7 +102,7 @@ If `visible_prefix + visible_suffix >= len(value)`, the value is shown as-is.
 Classic `ab*****cd` style:
 
 ```python
---8<-- "docs/examples/features/masking/masking_classic_style.py:example"
+--8<-- "docs/examples/basic/masking/masking_classic_style.py:example"
 ```
 * `"my_secret_password"` → `"my*****rd"`
 * `"ab"` → `"ab"` (too short — shown as-is)
@@ -116,21 +116,21 @@ Classic `ab*****cd` style:
 === "mask_secrets=False"
 
     ```python
-    --8<-- "docs/examples/features/masking/masking_no_mask.py:example"
+    --8<-- "docs/examples/basic/masking/masking_no_mask.py:example"
     ```
 
     ```title="Error"
-    --8<-- "docs/examples/features/masking/masking_no_mask.stderr"
+    --8<-- "docs/examples/basic/masking/masking_no_mask.stderr"
     ```
 
 ### In merge mode
 
 ```python
---8<-- "docs/examples/features/masking/masking_merge_mode.py:example"
+--8<-- "docs/examples/basic/masking/masking_merge_mode.py:example"
 ```
 
 ```title="Error"
---8<-- "docs/examples/features/masking/masking_merge_mode.stderr"
+--8<-- "docs/examples/basic/masking/masking_merge_mode.stderr"
 ```
 
 ### Global

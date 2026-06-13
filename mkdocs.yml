@@ -55,15 +55,15 @@ nav:
     - Introduction: introduction.md
     - Loading: loading.md
     - Supported Types: supported_types.md
-  - Features:
-    - Naming: features/naming.md
-    - Validation: features/validation.md
-    - Merging: features/merging.md
-    - Masking: features/masking.md
-    - Configure: features/configure.md
-    - CLI: features/cli.md
-    - CLI Source: features/cli_source.md
-    - Remote Source: features/remote_source.md
+  - Basic:
+    - Naming: basic/naming.md
+    - Validation: basic/validation.md
+    - Merging: basic/merging.md
+    - Masking: basic/masking.md
+    - Configure: basic/configure.md
+    - CLI: basic/cli.md
+    - CLI Source: basic/cli_source.md
+    - Remote Source: basic/remote_source.md
   - Advanced:
     - Field Strategies: advanced/field-strategies.md
     - Source Strategy: advanced/source-strategy.md
@@ -113,15 +113,15 @@ plugins:
           - introduction.md
           - loading.md
           - supported_types.md
-        Features:
-          - features/naming.md
-          - features/validation.md
-          - features/merging.md
-          - features/masking.md
-          - features/configure.md
-          - features/cli.md
-          - features/cli_source.md
-          - features/remote_source.md
+        Basic:
+          - basic/naming.md
+          - basic/validation.md
+          - basic/merging.md
+          - basic/masking.md
+          - basic/configure.md
+          - basic/cli.md
+          - basic/cli_source.md
+          - basic/remote_source.md
         Advanced:
           - advanced/field-strategies.md
           - advanced/source-strategy.md

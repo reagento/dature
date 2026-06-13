@@ -11,7 +11,7 @@ import pytest
 
 from tests.example_helpers import DOCS_EXAMPLES_DIR, run_script
 
-REMOTE_SOURCE_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "features" / "remote_source"
+REMOTE_SOURCE_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "basic" / "remote_source"
 
 
 @pytest.fixture(scope="module")

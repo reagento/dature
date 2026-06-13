@@ -9,19 +9,19 @@ Declare validators using `typing.Annotated`:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_annotated.py:example"
+    --8<-- "docs/examples/basic/validation/validation_annotated.py:example"
     ```
 
 === "validation_annotated_invalid.json5"
 
     ```json5
-    --8<-- "docs/examples/features/validation/sources/validation_annotated_invalid.json5"
+    --8<-- "docs/examples/basic/validation/sources/validation_annotated_invalid.json5"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/validation_annotated.stderr"
+    --8<-- "docs/examples/basic/validation/validation_annotated.stderr"
     ```
 
 ### Available Validators
@@ -54,7 +54,7 @@ Declare validators using `typing.Annotated`:
 Multiple validators can be combined:
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_annotated_combined.py"
+    --8<-- "docs/examples/basic/validation/validation_annotated_combined.py"
     ```
 
 ## Root Validators
@@ -64,19 +64,19 @@ Validate the entire object after loading:
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_root.py:example"
+    --8<-- "docs/examples/basic/validation/validation_root.py:example"
     ```
 
 === "validation_root_invalid.yaml"
 
     ```yaml
-    --8<-- "docs/examples/features/validation/sources/validation_root_invalid.yaml"
+    --8<-- "docs/examples/basic/validation/sources/validation_root_invalid.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/validation_root.stderr"
+    --8<-- "docs/examples/basic/validation/validation_root.stderr"
     ```
 
 Root validators receive the fully constructed dataclass instance and return `True` if valid.
@@ -88,31 +88,31 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_metadata.py:example"
+    --8<-- "docs/examples/basic/validation/validation_metadata.py:example"
     ```
 
 === "validation_metadata_invalid.yaml"
 
     ```yaml
-    --8<-- "docs/examples/features/validation/sources/validation_metadata_invalid.yaml"
+    --8<-- "docs/examples/basic/validation/sources/validation_metadata_invalid.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/validation_metadata.stderr"
+    --8<-- "docs/examples/basic/validation/validation_metadata.stderr"
     ```
 
 A single validator can be passed directly. Multiple validators require a tuple:
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_metadata_syntax.py"
+    --8<-- "docs/examples/basic/validation/validation_metadata_syntax.py"
     ```
 
 Nested fields are supported:
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_metadata_nested.py"
+    --8<-- "docs/examples/basic/validation/validation_metadata_nested.py"
     ```
 
 ## Custom Validators
@@ -122,19 +122,19 @@ Create your own validators by implementing `get_validator_func()` and `get_error
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_custom.py:example"
+    --8<-- "docs/examples/basic/validation/validation_custom.py:example"
     ```
 
 === "validation_custom_invalid.json5"
 
     ```json5
-    --8<-- "docs/examples/features/validation/sources/validation_custom_invalid.json5"
+    --8<-- "docs/examples/basic/validation/sources/validation_custom_invalid.json5"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/validation_custom.stderr"
+    --8<-- "docs/examples/basic/validation/validation_custom.stderr"
     ```
 
 Custom validators can be combined with built-in ones in `Annotated`.
@@ -146,19 +146,19 @@ Standard dataclass `__post_init__` and `@property` work as expected — dature p
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/validation_post_init.py:example"
+    --8<-- "docs/examples/basic/validation/validation_post_init.py:example"
     ```
 
 === "validation_post_init_invalid.yaml"
 
     ```yaml
-    --8<-- "docs/examples/features/validation/sources/validation_post_init_invalid.yaml"
+    --8<-- "docs/examples/basic/validation/sources/validation_post_init_invalid.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/validation_post_init.stderr"
+    --8<-- "docs/examples/basic/validation/validation_post_init.stderr"
     ```
 
 Both approaches work in function mode and decorator mode.
@@ -170,81 +170,81 @@ Validation errors include field path, source location, and the offending value. 
 === "YAML"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_yaml.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_yaml.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_yaml.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_yaml.stderr"
     ```
 
 === "JSON"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_json.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_json.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_json.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_json.stderr"
     ```
 
 === "JSON5"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_json5.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_json5.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_json5.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_json5.stderr"
     ```
 
 === "TOML"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_toml.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_toml.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_toml.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_toml.stderr"
     ```
 
 === "INI"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_ini.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_ini.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_ini.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_ini.stderr"
     ```
 
 === "ENV"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_env.py"
+    --8<-- "docs/examples/basic/validation/error_format_env.py"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_env.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_env.stderr"
     ```
 
 === "ENV file"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_env_file.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_env_file.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_env_file.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_env_file.stderr"
     ```
 
 === "Docker Secrets"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_docker.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_docker.py:example"
     ```
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_docker.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_docker.stderr"
     ```
 
 ### Multi-line value
@@ -254,19 +254,19 @@ When a value spans multiple source lines, each visible line is shown under the `
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_multiline.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_multiline.py:example"
     ```
 
 === "multiline.yaml"
 
     ```yaml
-    --8<-- "docs/examples/features/validation/sources/error_format_multiline.yaml"
+    --8<-- "docs/examples/basic/validation/sources/error_format_multiline.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_multiline.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_multiline.stderr"
     ```
 
 ### Dataclass value
@@ -276,19 +276,19 @@ A custom validator can be attached to a dataclass-typed field via `Annotated`. T
 === "Python"
 
     ```python
-    --8<-- "docs/examples/features/validation/error_format_dataclass.py:example"
+    --8<-- "docs/examples/basic/validation/error_format_dataclass.py:example"
     ```
 
 === "dataclass.yaml"
 
     ```yaml
-    --8<-- "docs/examples/features/validation/sources/error_format_dataclass.yaml"
+    --8<-- "docs/examples/basic/validation/sources/error_format_dataclass.yaml"
     ```
 
 === "Error"
 
     ```
-    --8<-- "docs/examples/features/validation/error_format_dataclass.stderr"
+    --8<-- "docs/examples/basic/validation/error_format_dataclass.stderr"
     ```
 
 All field errors are collected and reported together — dature doesn't stop at the first error.
