@@ -2,7 +2,7 @@ from dature._version import __version__
 from dature.conditions import When
 from dature.config import configure
 from dature.errors import excepthook as _excepthook  # noqa: F401
-from dature.field_path import F
+from dature.field_path import Absolute, F
 from dature.loading.loader import Loader
 from dature.main import load
 from dature.refs import ref
@@ -19,6 +19,7 @@ from dature.sources.yaml_ import Yaml11Source, Yaml12Source
 from dature.validators.v import V
 
 __all__ = [
+    "Absolute",
     "ArgparseSource",
     "DockerSecretsSource",
     "EnvFileSource",

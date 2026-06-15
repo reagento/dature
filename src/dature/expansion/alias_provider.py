@@ -5,7 +5,7 @@ from typing import cast
 from adaptix import Loader, Mediator, Provider
 
 from dature._adaptix_compat import AlwaysTrueRequestChecker, LoaderRequest, RequestHandlerRegisterRecord
-from dature.field_path import FieldPath, resolve_nested_owner
+from dature.field_path import Absolute, FieldPath, resolve_nested_owner
 from dature.protocols import DataclassInstance
 from dature.type_aliases import FieldMapping, JSONValue
 
@@ -71,6 +71,9 @@ def _process_nested_field_path(
     cross_level_aliases: list[str] = []
 
     for alias in alias_tuple:
+        if isinstance(alias, Absolute):
+            # Absolute aliases are resolved at the source level; skip them here.
+            continue
         stripped = _classify_alias(alias, intermediate_parts)
         if stripped is not None:
             same_level_aliases.append(stripped)
@@ -117,14 +120,20 @@ def _build_alias_map(
             msg = "FieldPath must contain at least one field name"
             raise ValueError(msg)
 
+        # Drop Absolute aliases — they are resolved at the source level (before prefix
+        # navigation / prefix filter), so the AliasProvider must not apply them again.
+        relative_aliases = tuple(a for a in alias_tuple if not isinstance(a, Absolute))
+        if not relative_aliases:
+            continue
+
         if len(field_path_key.parts) > 1:
-            _process_nested_field_path(alias_map, field_path_key, alias_tuple)
+            _process_nested_field_path(alias_map, field_path_key, relative_aliases)
             continue
 
         _add_entry(
             alias_map,
             field_path_key.owner,
-            AliasEntry(field_name=field_path_key.parts[-1], aliases=alias_tuple),
+            AliasEntry(field_name=field_path_key.parts[-1], aliases=relative_aliases),
         )
 
     return alias_map

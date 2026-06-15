@@ -114,3 +114,9 @@ class _FieldPathFactory:
 
 F = _FieldPathFactory()
 # --8<-- [end:field-path-factory]
+
+
+class Absolute(str):
+    """Alias matched against the raw source key as-is — the source ``prefix`` is ignored."""
+
+    __slots__ = ()

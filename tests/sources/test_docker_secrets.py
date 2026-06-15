@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import DockerSecretsSource, load
+from dature import Absolute, DockerSecretsSource, load
 from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -94,6 +94,59 @@ class TestDockerSecretsSource:
         )
 
         assert result.password == "secret123"
+
+    @pytest.mark.parametrize(
+        ("prefix", "expected_password"),
+        [
+            pytest.param("APP_", "abs_secret", id="with_prefix"),
+            pytest.param(None, "abs_secret", id="without_prefix"),
+        ],
+    )
+    def test_absolute_alias_bypasses_prefix(self, tmp_path: Path, prefix, expected_password):
+        """Absolute aliases are matched against the full secret file name, ignoring prefix."""
+
+        @dataclass
+        class Config:
+            password: str = "default"
+
+        (tmp_path / "DB_PASSWORD").write_text(expected_password)
+
+        result = load(
+            DockerSecretsSource(
+                dir_=tmp_path,
+                prefix=prefix,
+                field_mapping={F[Config].password: Absolute("DB_PASSWORD")},
+            ),
+            schema=Config,
+        )
+
+        assert result.password == expected_password
+
+    def test_absolute_alias_relative_still_requires_prefix(self, tmp_path: Path):
+        """A plain relative alias requires the prefix; only Absolute skips it."""
+
+        @dataclass
+        class Config:
+            host: str = "default"
+            password: str = "default"
+
+        (tmp_path / "APP_host").write_text("app_host")
+        (tmp_path / "DB_PASSWORD").write_text("abs_secret")
+
+        result = load(
+            DockerSecretsSource(
+                dir_=tmp_path,
+                prefix="APP_",
+                field_mapping={
+                    F[Config].host: "host",  # relative: needs APP_host
+                    F[Config].password: Absolute("DB_PASSWORD"),  # absolute: reads DB_PASSWORD
+                },
+            ),
+            schema=Config,
+        )
+
+        assert result.host == "app_host"
+        assert result.password == "abs_secret"
 
 
 class TestDockerSecretsDisplayProperties:
