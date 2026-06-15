@@ -72,6 +72,19 @@ class EnvSource(FlatKeySource):
         resolved_nested_strategy: NestedResolveStrategy = "flat",
         resolved_nested_resolve: NestedResolve | None = None,
     ) -> None:
+        # Absolute aliases bypass the prefix filter and are matched against the full key.
+        absolute_mapped = self._alias_to_field_name(key, absolute=True)
+        if absolute_mapped is not None:
+            self._process_key_value(
+                parts=[absolute_mapped],
+                value=value,
+                result=result,
+                conflicts=conflicts,
+                resolved_nested_strategy=resolved_nested_strategy,
+                resolved_nested_resolve=resolved_nested_resolve,
+            )
+            return
+
         if self.prefix and not key.startswith(self.prefix):
             return
 

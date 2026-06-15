@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 import dature
-from dature import EnvFileSource, EnvSource, load
+from dature import Absolute, EnvFileSource, EnvSource, load
 from dature.errors import DatureConfigError
 from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
@@ -331,6 +331,74 @@ class TestEnvSource:
         )
 
         assert result.password == "secret123"
+
+    @pytest.mark.parametrize(
+        ("prefix", "expected_password"),
+        [
+            pytest.param("APP_", "abs_secret", id="with_prefix"),
+            pytest.param(None, "abs_secret", id="without_prefix"),
+        ],
+    )
+    def test_absolute_alias_bypasses_prefix(self, monkeypatch, prefix, expected_password):
+        """Absolute aliases are matched against the raw env-var name, bypassing prefix."""
+
+        @dataclass
+        class Config:
+            password: str = ""
+
+        monkeypatch.setenv("DB_PASSWORD", expected_password)
+
+        result = load(
+            EnvSource(prefix=prefix, field_mapping={F[Config].password: Absolute("DB_PASSWORD")}),
+            schema=Config,
+        )
+
+        assert result.password == expected_password
+
+    def test_absolute_alias_relative_still_requires_prefix(self, monkeypatch):
+        """A plain relative alias requires the prefix; only Absolute skips it."""
+
+        @dataclass
+        class Config:
+            host: str = "default"
+            password: str = "default"
+
+        monkeypatch.setenv("APP_HOST", "app_host")
+        monkeypatch.setenv("DB_PASSWORD", "abs_secret")
+
+        result = load(
+            EnvSource(
+                prefix="APP_",
+                field_mapping={
+                    F[Config].host: "HOST",  # relative: needs APP_HOST
+                    F[Config].password: Absolute("DB_PASSWORD"),  # absolute: reads DB_PASSWORD
+                },
+            ),
+            schema=Config,
+        )
+
+        assert result.host == "app_host"
+        assert result.password == "abs_secret"
+
+    def test_absolute_alias_tuple_mixed_with_relative(self, monkeypatch):
+        """Absolute and relative aliases can coexist in the same tuple."""
+
+        @dataclass
+        class Config:
+            password: str = "default"
+
+        monkeypatch.setenv("DB_PASSWORD", "from_absolute")
+
+        result = load(
+            EnvSource(
+                prefix="APP_",
+                field_mapping={F[Config].password: ("APP_PASSWORD", Absolute("DB_PASSWORD"))},
+            ),
+            schema=Config,
+        )
+
+        # DB_PASSWORD is Absolute and present → wins even though APP_PASSWORD would match prefix
+        assert result.password == "from_absolute"
 
 
 class TestEnvSourceDisplayProperties:

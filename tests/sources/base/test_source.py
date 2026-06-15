@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import JsonSource, load
+from dature import Absolute, JsonSource, load
 from dature.errors import EnvVarExpandError
 from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
@@ -158,6 +158,50 @@ class TestBaseSource:
         result = loader._apply_prefix(data)
 
         assert result == [1, 2, 3]
+
+    @pytest.mark.parametrize(
+        ("prefix", "expected_token"),
+        [
+            pytest.param("app", "root-token", id="with_prefix"),
+            pytest.param(None, "root-token", id="without_prefix"),
+        ],
+    )
+    def test_absolute_alias_bypasses_prefix(self, prefix, expected_token):
+        """Absolute alias reads from the document root regardless of prefix."""
+
+        @dataclass
+        class Config:
+            name: str = "default"
+            token: str = "default"
+
+        data = {"app": {"name": "app-name"}, "secret_token": "root-token"}
+        loader = MockSource(
+            prefix=prefix,
+            test_data=data,
+            field_mapping={F[Config].token: Absolute("secret_token")},
+        )
+
+        result = load(loader, schema=Config)
+
+        assert result.token == expected_token
+
+    def test_absolute_alias_does_not_override_subtree_key(self):
+        """Absolute alias is skipped when the field is already set from the subtree."""
+
+        @dataclass
+        class Config:
+            token: str = "default"
+
+        data = {"app": {"token": "from-subtree"}, "token": "from-root"}
+        loader = MockSource(
+            prefix="app",
+            test_data=data,
+            field_mapping={F[Config].token: Absolute("token")},
+        )
+
+        result = load(loader, schema=Config)
+
+        assert result.token == "from-subtree"
 
 
 class TestNameStyleMapping:

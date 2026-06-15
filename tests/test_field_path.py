@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from dature.field_path import F, FieldPath, extract_field_path, validate_field_path_owner
+from dature.field_path import Absolute, F, FieldPath, extract_field_path, validate_field_path_owner
 
 
 @dataclass
@@ -113,3 +113,23 @@ class TestExtractFieldPath:
 
     def test_passes_with_correct_string_owner(self):
         assert extract_field_path(F["_Cfg"].host, schema=_Cfg) == "host"
+
+
+class TestAbsolute:
+    def test_distinguishable_from_plain_str(self):
+        """The isinstance check is the only mechanism that separates absolute from relative aliases."""
+        assert isinstance(Absolute("X"), Absolute)
+        assert not isinstance("X", Absolute)
+
+    def test_is_str_so_alias_comparisons_work(self):
+        """Absolute must pass str membership checks used throughout alias matching."""
+        assert isinstance(Absolute("X"), str)
+        assert Absolute("X") in ("X", "Y")
+
+    def test_mixed_tuple_splits_correctly_by_isinstance(self):
+        """next() over a mixed tuple must find only Absolute entries."""
+        aliases = ("APP_X", Absolute("X"))
+        absolute = next((a for a in aliases if isinstance(a, Absolute)), None)
+        relative = next((a for a in aliases if not isinstance(a, Absolute)), None)
+        assert absolute == "X"
+        assert relative == "APP_X"

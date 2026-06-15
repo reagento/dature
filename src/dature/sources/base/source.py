@@ -23,7 +23,7 @@ from adaptix.provider import Provider
 from dature.conditions import Condition
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars
-from dature.field_path import FieldPath
+from dature.field_path import Absolute, FieldPath
 from dature.loaders import (
     bool_loader,
     bytearray_from_json_string,
@@ -72,6 +72,21 @@ def string_value_loaders() -> list[Provider]:
         loader(str | None, optional_from_empty_string),
         loader(bool, bool_loader),
     ]
+
+
+def _set_value_at_path(
+    target: "dict[str, JSONValue]",
+    parts: "tuple[str, ...]",
+    value: "JSONValue",
+) -> None:
+    """Set *value* at the nested path *parts* inside *target*, only if the leaf is absent."""
+    for part in parts[:-1]:
+        inner = target.setdefault(part, {})
+        if not isinstance(inner, dict):
+            return
+        target = inner
+    if parts[-1] not in target:
+        target[parts[-1]] = value
 
 
 # --8<-- [start:load-metadata]
@@ -147,16 +162,28 @@ class Source(abc.ABC):
     def display_name(self) -> str:
         return self.file_display() or self.format_name
 
-    def _alias_to_field_name(self, raw_key: str) -> str | None:
-        """Return the dataclass field name if *raw_key* is a field_mapping alias, else None."""
+    def _alias_to_field_name(self, raw_key: str, *, absolute: bool = False) -> str | None:
+        """Return the dataclass field name if *raw_key* is a field_mapping alias, else None.
+
+        Args:
+            raw_key: The source key to look up (already stripped of prefix for relative
+                aliases; the full original key for absolute ones).
+            absolute: When *True*, only :class:`~dature.field_path.Absolute` aliases are
+                considered (prefix-independent lookup).  When *False* (default), only plain
+                string aliases are considered.
+        """
         if not self.field_mapping:
             return None
         for field_path, aliases in self.field_mapping.items():
             if not isinstance(field_path, FieldPath):
                 continue
-            alias_list = (aliases,) if isinstance(aliases, str) else aliases
-            if raw_key in alias_list and field_path.parts:
-                return field_path.parts[-1]
+            alias_list: tuple[str, ...] = (aliases,) if isinstance(aliases, str) else tuple(aliases)
+            for alias in alias_list:
+                is_absolute = isinstance(alias, Absolute)
+                if is_absolute != absolute:
+                    continue
+                if alias == raw_key and field_path.parts:
+                    return field_path.parts[-1]
         return None
 
     def additional_loaders(self) -> "list[Provider]":
@@ -204,17 +231,35 @@ class Source(abc.ABC):
     def _load(self) -> JSONValue: ...
 
     def _apply_prefix(self, data: JSONValue) -> JSONValue:
-        if not self.prefix:
+        root = data
+        if self.prefix:
+            for key in self.prefix.split("."):
+                if not isinstance(data, dict) or key not in data:
+                    return {}
+                data = data[key]
+
+        if not self.field_mapping or not isinstance(root, dict) or not isinstance(data, dict):
             return data
 
-        for key in self.prefix.split("."):
-            if not isinstance(data, dict):
-                return {}
-            if key not in data:
-                return {}
-            data = data[key]
+        # Inject Absolute alias values from the document root so root-level keys remain
+        # accessible even when prefix navigation moved into a subtree.
+        absolute_entries = [
+            (field_path, aliases)
+            for field_path, aliases in self.field_mapping.items()
+            if isinstance(field_path, FieldPath)
+            and field_path.parts
+            and any(isinstance(a, Absolute) for a in ((aliases,) if isinstance(aliases, str) else aliases))
+        ]
+        if not absolute_entries:
+            return data
 
-        return data
+        result = dict(data)
+        for field_path, aliases in absolute_entries:
+            alias_list = (aliases,) if isinstance(aliases, str) else aliases
+            absolute = next((a for a in alias_list if isinstance(a, Absolute) and a in root), None)
+            if absolute is not None:
+                _set_value_at_path(result, field_path.parts, root[absolute])
+        return result
 
     def _pre_processing(
         self,

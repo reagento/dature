@@ -86,6 +86,12 @@ class DockerSecretsSource(FlatKeySource):
             raw_name = entry.name
             value = entry.read_text().strip()
 
+            # Absolute aliases bypass the prefix filter and are matched against the full name.
+            absolute_mapped = self._alias_to_field_name(raw_name, absolute=True)
+            if absolute_mapped is not None:
+                result[absolute_mapped] = value
+                continue
+
             if self.prefix and not raw_name.startswith(self.prefix):
                 continue
 

@@ -51,6 +51,24 @@ A field can have multiple aliases — the first matching key in the source wins:
 --8<-- "docs/examples/basic/naming/naming_field_mapping_aliases.py:example"
 ```
 
+### Absolute Aliases
+
+By default, aliases are relative to the source prefix — `"HOST"` with `prefix="APP_"` matches `APP_HOST`. Use `Absolute` to match the raw key regardless of prefix, which is useful when a field comes from a key that doesn't share the source prefix:
+
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/basic/naming/naming_absolute_alias.py:example"
+    ```
+
+=== "naming_absolute_alias.env"
+
+    ```ini
+    --8<-- "docs/examples/basic/naming/sources/naming_absolute_alias.env"
+    ```
+
+`Absolute` works across all source types. For file-based sources it reads from the document root even when `prefix` navigates into a subtree.
+
 ### Nested Fields
 
 Nested fields are supported via `F[Owner].field` syntax on inner dataclasses — see [Field Paths](field-paths.md) for all syntax forms:

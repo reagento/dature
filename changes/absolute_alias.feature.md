@@ -1,0 +1,1 @@
+Added `Absolute` — a `str` subclass for `field_mapping` aliases that bypasses the source `prefix`. Wrap any alias with `Absolute("RAW_KEY")` to match it against the original key regardless of prefix, across all source types (ENV, Docker secrets, file-based).
