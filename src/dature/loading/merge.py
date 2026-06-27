@@ -13,7 +13,7 @@ from dature.errors.extraction import handle_load_errors
 from dature.loading.context import coerce_flag_fields
 from dature.loading.mask_config import resolve_mask_secrets
 from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent
-from dature.loading.retort import transform_to_dataclass
+from dature.loading.retort import RetortCache
 from dature.loading.source_loading import enrich_skipped_errors
 from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value, mask_value
@@ -23,7 +23,7 @@ from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths
 from dature.protocols import DataclassInstance
 from dature.report import LoadReport, _build_merge_report, attach_load_report
 from dature.report_types import FieldOrigin
-from dature.sources.base import Source
+from dature.sources.base import IndexedSource
 from dature.strategies.source import resolve_source_strategy
 from dature.type_aliases import JSONValue, TypeLoaderMap
 
@@ -168,7 +168,7 @@ def _set_nested_value(
 class _MergedData[T: DataclassInstance]:
     result: T
     merged_raw: JSONValue
-    last_source: Source
+    last_loaded: IndexedSource
     last_type_loaders: TypeLoaderMap | None
 
 
@@ -176,6 +176,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     *,
     merge_meta: MergeConfig,
     schema: type[T],
+    retort_cache: RetortCache,
     debug: bool = False,
     secret_paths: frozenset[str] | None = None,
 ) -> _MergedData[T]:
@@ -215,6 +216,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         merge_meta=merge_meta,
         schema=schema,
         dataclass_name=schema.__name__,
+        retort_cache=retort_cache,
         field_merge_paths=field_merge_paths,
         secret_paths=secret_paths,
         mask_secrets=mask_secrets,
@@ -253,14 +255,14 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
 
     report = ctx.build_report()
 
-    if report.last_source is None:
+    if report.last_loaded is None:
         if merge_meta.sources:
             msg = f"All {len(merge_meta.sources)} source(s) failed to load"
         else:
             msg = "load() requires at least one Source for merge"
         source_error = SourceLoadError(message=msg)
         raise DatureConfigError(schema.__name__, [source_error])
-    last_source = report.last_source
+    last_loaded = report.last_loaded
 
     if secret_paths:
         masked_merged = mask_json_value(merged, secret_paths=secret_paths)
@@ -299,8 +301,8 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     merged = coerce_flag_fields(merged, schema)
     try:
         result = handle_load_errors(
-            func=lambda: transform_to_dataclass(
-                last_source,
+            func=lambda: retort_cache.load(
+                last_loaded,
                 merged,
                 schema,
                 resolved_type_loaders=last_type_loaders,
@@ -320,6 +322,6 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     return _MergedData(
         result=result,
         merged_raw=merged,
-        last_source=last_source,
+        last_loaded=last_loaded,
         last_type_loaders=report.last_type_loaders,
     )

@@ -8,16 +8,15 @@ rendering helpers live in ``presentation``.
 
 import abc
 import contextlib
-import copy
 import json
 import logging
 from collections.abc import Iterable
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
 from pathlib import Path
-from typing import Any, ClassVar, cast
+from typing import ClassVar, cast
 
-from adaptix import Retort, loader
+from adaptix import loader
 from adaptix.provider import Provider
 
 from dature.conditions import Condition
@@ -108,12 +107,6 @@ class Source(abc.ABC):
     format_name: ClassVar[str]
     location_label: ClassVar[str]
     config_group: ClassVar[str | None] = None
-
-    retorts: "dict[Any, Retort]" = field(
-        default_factory=dict,
-        init=False,
-        repr=False,
-    )
 
     # --8<-- [end:load-metadata]
     def __post_init__(self) -> None:
@@ -355,13 +348,24 @@ class Source(abc.ABC):
         ]
 
 
-def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
-    """Return a shallow copy of *source* with *overrides* applied.
+@dataclass(frozen=True, slots=True)
+class IndexedSource:
+    """A source paired with its stable positional index in the Loader's sources tuple.
 
-    Drops the cached ``_resolved_file_path`` so it re-resolves against
-    the overridden fields instead of returning a stale result.
+    The index is the retort-cache identity: clones of the same logical source
+    share an index and thus the pre-warmed retort.
     """
-    new = copy.copy(source)
-    vars(new).update(overrides)
-    vars(new).pop("_resolved_file_path", None)
-    return new
+
+    source: Source
+    index: int
+
+
+def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
+    """Return a copy of *source* with *overrides* applied.
+
+    Uses ``dataclasses.replace()`` so ``__post_init__`` runs and ``init=False``
+    fields reset to their defaults (e.g. ``_resolved_file_path`` → ``None``).
+    Dynamic attributes like ``_loaded_cache`` are not dataclass fields, so they
+    are never copied.
+    """
+    return replace(source, **overrides)  # type: ignore[arg-type]

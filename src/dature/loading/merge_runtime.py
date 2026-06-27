@@ -44,13 +44,13 @@ from dature.loading.cross_source import (
     evaluate_when_lazy,
     when_has_cross_refs,
 )
-from dature.loading.retort import probe_retort_key
+from dature.loading.retort import RetortCache
 from dature.loading.source_loading import prepare_loaded_source
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.sources.base import Source, clone_source
+from dature.sources.base import IndexedSource, Source, clone_source
 from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -260,7 +260,7 @@ class _LoadCtxSnapshot:
     source_entries: list[SourceEntry]
     source_ctxs: list[SourceContext]
     skipped_fields: dict[str, list[SkippedFieldSource]]
-    last_source: Source | None
+    last_loaded: IndexedSource | None
     last_type_loaders: TypeLoaderMap | None
 
 
@@ -299,6 +299,7 @@ class LoadCtx:
         merge_meta: MergeConfig,
         schema: type[DataclassInstance],
         dataclass_name: str,
+        retort_cache: RetortCache,
         field_merge_paths: frozenset[str] | None = None,
         secret_paths: frozenset[str] = frozenset(),
         mask_secrets: bool = False,
@@ -309,6 +310,7 @@ class LoadCtx:
 
         self._merge_meta = merge_meta
         self._schema = schema
+        self._retort_cache = retort_cache
         self._secret_paths = secret_paths
         self._mask_secrets = mask_secrets
         self._on_merge_step = on_merge_step
@@ -318,7 +320,7 @@ class LoadCtx:
         self._source_entries: list[SourceEntry] = []
         self._source_ctxs: list[SourceContext] = []
         self._skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-        self._last_source: Source | None = None
+        self._last_loaded: IndexedSource | None = None
         self._last_type_loaders: TypeLoaderMap | None = None
         self._cache: dict[int, JSONValue | None] = {}
         self._next_index = 0
@@ -482,7 +484,7 @@ class LoadCtx:
                     source_loader_type=entry.loader_type,
                 )
 
-    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:  # noqa: C901
+    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:  # noqa: C901, PLR0915
         """Load a source with full pre-processing.
 
         *source_idx* is the position of the source in ``merge_meta.sources``.
@@ -570,14 +572,19 @@ class LoadCtx:
             self._cache[source_idx] = None
             return None
 
-        probe_retort = source.retorts.get(probe_retort_key(type_loaders))
+        skip_value = resolve_skip_invalid(source, self._merge_meta)
+        probe_retort = (
+            self._retort_cache.probe(IndexedSource(source, source_idx), resolved_type_loaders=type_loaders)
+            if skip_value
+            else None
+        )
         prepared = prepare_loaded_source(
             load_result=load_result,
             source=source,
             schema=self._schema,
             dataclass_name=self.dataclass_name,
             base_error_ctx=error_ctx,
-            skip_value=resolve_skip_invalid(source, self._merge_meta),
+            skip_value=skip_value,
             secret_paths=self._secret_paths,
             mask_secrets=self._mask_secrets,
             log_prefix=f"[{self.dataclass_name}] Source {i}:",
@@ -623,7 +630,7 @@ class LoadCtx:
         )
         self._source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
         self._raw_dicts.append(raw)
-        self._last_source = source
+        self._last_loaded = IndexedSource(source, source_idx)
         self._last_type_loaders = type_loaders
 
         self._cache[source_idx] = raw
@@ -659,7 +666,7 @@ class LoadCtx:
             source_entries=list(self._source_entries),
             source_ctxs=list(self._source_ctxs),
             skipped_fields=dict(self._skipped_fields),
-            last_source=self._last_source,
+            last_loaded=self._last_loaded,
             last_type_loaders=self._last_type_loaders,
         )
 

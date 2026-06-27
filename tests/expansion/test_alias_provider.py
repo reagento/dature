@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
+from dature import EnvSource, load
 from dature.expansion.alias_provider import AliasEntry, _build_alias_map, _transform_dict
 from dature.field_path import F, FieldPath
 
@@ -145,6 +146,20 @@ class TestTransformDict:
 
 
 class TestAliasProviderIntegration:
+    def test_alias_applied_via_load(self, monkeypatch):
+        @dataclass
+        class Config:
+            name: str
+
+        monkeypatch.setenv("APP_FULL_NAME", "Alice")
+
+        result = load(
+            EnvSource(prefix="APP_", field_mapping={F[Config].name: "full_name"}),
+            schema=Config,
+        )
+
+        assert result == Config(name="Alice")
+
     def test_nested_field_path_with_intermediate_non_dataclass_raises(self):
         @dataclass
         class Config:

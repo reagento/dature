@@ -25,7 +25,7 @@ from dature.loaders.base import (
 from dature.loaders.scalars import float_passthrough, int_from_string
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import ModelToDictProvider, SkipFieldProvider
-from dature.sources.base import Source
+from dature.sources.base import IndexedSource, Source
 from dature.type_aliases import (
     URL,
     Base64UrlBytes,
@@ -187,44 +187,84 @@ def _loaders_frozenset(resolved_type_loaders: TypeLoaderMap | None) -> frozenset
     return frozenset(resolved_type_loaders.items()) if resolved_type_loaders is not None else frozenset()
 
 
-def make_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[object, frozenset[Any]]:
-    """Cache key for the basic (non-validating, non-probe) retort in ``source.retorts``."""
-    return (_PLAIN_SENTINEL, _loaders_frozenset(resolved_type_loaders))
+class RetortCache:
+    """Owns a single base ``Retort`` and builds/caches per-source variants via ``extend()``.
 
+    The cache is keyed by ``(source_idx, variant, type_loaders)`` where *source_idx*
+    is the stable positional index of the source in the ``Loader``'s sources tuple.
+    Using an index (rather than ``id(source)`` or a UUID embedded in the source)
+    lets clones of the same source share the pre-warmed retort without any
+    source-level bookkeeping.
+    """
 
-def validating_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[object, frozenset[Any]]:
-    """Cache key for the validating retort in ``source.retorts``."""
-    return (_VALIDATING_SENTINEL, _loaders_frozenset(resolved_type_loaders))
+    def __init__(self) -> None:
+        self._base: Retort = Retort(strict_coercion=True)
+        self._cache: dict[tuple[Any, ...], Retort] = {}
 
+    def _plain_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
+        return (source_idx, _PLAIN_SENTINEL, _loaders_frozenset(type_loaders))
 
-def probe_retort_key(resolved_type_loaders: TypeLoaderMap | None) -> tuple[object, frozenset[Any]]:
-    """Cache key for the probe retort in ``source.retorts``."""
-    return (_PROBE_SENTINEL, _loaders_frozenset(resolved_type_loaders))
+    def _validating_key(
+        self,
+        source_idx: int,
+        schema: type,
+        type_loaders: TypeLoaderMap | None,
+    ) -> tuple[int, object, int, frozenset[Any]]:
+        return (source_idx, _VALIDATING_SENTINEL, id(schema), _loaders_frozenset(type_loaders))
 
+    def _probe_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
+        return (source_idx, _PROBE_SENTINEL, _loaders_frozenset(type_loaders))
 
-def transform_to_dataclass[T: DataclassInstance](
-    source: Source,
-    data: JSONValue,
-    schema: type[T],
-    *,
-    resolved_type_loaders: TypeLoaderMap | None = None,
-) -> T:
-    key = make_retort_key(resolved_type_loaders)
-    if key not in source.retorts:
-        source.retorts[key] = create_retort(
-            build_base_recipe(source, resolved_type_loaders=resolved_type_loaders),
-        )
-    return source.retorts[key].load(data, schema)
+    def plain(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> Retort:
+        """Return the plain loading retort for *indexed.source*, building and caching it on first call."""
+        key = self._plain_key(indexed.index, resolved_type_loaders)
+        if key not in self._cache:
+            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
+            self._cache[key] = self._base.extend(recipe=recipe)
+        return self._cache[key]
 
+    def validating[T](
+        self,
+        indexed: IndexedSource,
+        schema: type[T],
+        *,
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> Retort:
+        """Return the validating retort for (*indexed.source*, *schema*), building and caching it on first call."""
+        key = self._validating_key(indexed.index, schema, resolved_type_loaders)
+        if key not in self._cache:
+            root_validator_providers = create_root_validator_providers(
+                schema,
+                indexed.source.root_validators or (),
+            )
+            metadata_validator_providers = create_metadata_validator_providers(
+                indexed.source.validators or {},
+            )
+            self._cache[key] = self.plain(indexed, resolved_type_loaders=resolved_type_loaders).extend(
+                recipe=[
+                    *get_validator_providers(schema),
+                    *metadata_validator_providers,
+                    *root_validator_providers,
+                ],
+            )
+        return self._cache[key]
 
-def ensure_retort(
-    source: Source,
-    cls: type[DataclassInstance],
-    base_recipe: list[Provider],
-    *,
-    resolved_type_loaders: TypeLoaderMap | None = None,
-) -> None:
-    key = make_retort_key(resolved_type_loaders)
-    if key not in source.retorts:
-        source.retorts[key] = create_retort(base_recipe)
-    source.retorts[key].get_loader(cls)
+    def probe(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> Retort:
+        """Return the probe (skip-field) retort for *indexed.source*, building and caching it on first call."""
+        key = self._probe_key(indexed.index, resolved_type_loaders)
+        if key not in self._cache:
+            self._cache[key] = self.plain(indexed, resolved_type_loaders=resolved_type_loaders).extend(
+                recipe=[SkipFieldProvider(), ModelToDictProvider()],
+            )
+        return self._cache[key]
+
+    def load[T: DataclassInstance](
+        self,
+        indexed: IndexedSource,
+        data: JSONValue,
+        schema: type[T],
+        *,
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> T:
+        """Load *data* into *schema* using the plain retort for *indexed.source*."""
+        return self.plain(indexed, resolved_type_loaders=resolved_type_loaders).load(data, schema)

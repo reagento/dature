@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from dature.sources.base import RemoteSource
+from dature.sources.base import RemoteSource, clone_source
 from dature.type_aliases import JSONValue
 
 
@@ -19,6 +19,31 @@ class _FakeRemote(RemoteSource):
 
     def _fetch(self) -> JSONValue:
         return self.data
+
+
+class TestRemoteSourceClone:
+    def test_clone_drops_loaded_cache(self):
+        # Regression: clone_source used to inherit _loaded_cache via shallow copy, so a
+        # clone produced after _load() would return stale data from resolve_location without
+        # ever calling _fetch() again.
+        src = _FakeRemote(data={"key": "value"})
+        src.load_raw()  # populates _loaded_cache
+
+        assert src._loaded_cache is not None
+
+        clone = clone_source(src, {})
+
+        assert clone._loaded_cache is None
+
+    def test_clone_reloads_on_load_raw(self):
+        src = _FakeRemote(data={"key": "original"})
+        src.load_raw()
+
+        clone = clone_source(src, {"data": {"key": "updated"}})
+        result = clone.load_raw()
+
+        assert result.data == {"key": "updated"}
+        assert clone._loaded_cache == {"key": "updated"}
 
 
 class TestRemoteSourceResolveLocation:

@@ -170,7 +170,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
             wrapper = io.TextIOWrapper(cast("io.BufferedReader", self.file), encoding=self.encoding)
             self._collect_pairs(wrapper, raw_pairs)
         else:
-            path = self._resolved_file_path
+            path = self.resolved_file_path
             if path is None:
                 msg = f"Config file not found: {self.file}"
                 raise FileNotFoundError(msg)

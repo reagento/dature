@@ -74,7 +74,6 @@ def prepare_loaded_source(  # noqa: PLR0913
     filter_result = apply_skip_invalid(
         raw=raw,
         skip_field_if_invalid=skip_value,
-        source=source,
         schema=schema,
         log_prefix=log_prefix,
         probe_retort=probe_retort,
