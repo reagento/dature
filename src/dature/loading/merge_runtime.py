@@ -628,7 +628,9 @@ class LoadCtx:
                 raw_data=raw,
             ),
         )
-        self._source_ctxs.append(SourceContext(error_ctx=error_ctx, file_content=file_content))
+        self._source_ctxs.append(
+            SourceContext(error_ctx=error_ctx, file_content=file_content, loaded_data=prepared.loaded_data)
+        )
         self._raw_dicts.append(raw)
         self._last_loaded = IndexedSource(source, source_idx)
         self._last_type_loaders = type_loaders

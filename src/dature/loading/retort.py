@@ -144,40 +144,6 @@ def build_base_recipe(
     ]
 
 
-def create_retort(base_recipe: list[Provider]) -> Retort:
-    return Retort(strict_coercion=True, recipe=base_recipe)
-
-
-def create_probe_retort(base_recipe: list[Provider]) -> Retort:
-    return Retort(
-        strict_coercion=True,
-        recipe=[SkipFieldProvider(), ModelToDictProvider(), *base_recipe],
-    )
-
-
-def create_validating_retort[T](
-    source: "Source",
-    schema: type[T],
-    base_recipe: list[Provider],
-) -> Retort:
-    root_validator_providers = create_root_validator_providers(
-        schema,
-        source.root_validators or (),
-    )
-    metadata_validator_providers = create_metadata_validator_providers(
-        source.validators or {},
-    )
-    return Retort(
-        strict_coercion=True,
-        recipe=[
-            *get_validator_providers(schema),
-            *metadata_validator_providers,
-            *root_validator_providers,
-            *base_recipe,
-        ],
-    )
-
-
 _PLAIN_SENTINEL: Final[object] = object()
 _VALIDATING_SENTINEL: Final[object] = object()
 _PROBE_SENTINEL: Final[object] = object()

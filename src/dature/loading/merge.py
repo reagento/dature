@@ -297,7 +297,8 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         )
 
     last_type_loaders = report.last_type_loaders
-    last_error_ctx = report.source_ctxs[-1].error_ctx
+    last_source_ctx = report.source_ctxs[-1]
+    last_error_ctx = last_source_ctx.error_ctx
     merged = coerce_flag_fields(merged, schema)
     try:
         result = handle_load_errors(
@@ -308,6 +309,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
                 resolved_type_loaders=last_type_loaders,
             ),
             ctx=last_error_ctx,
+            loaded_data=last_source_ctx.loaded_data,
         )
     except DatureConfigError as exc:
         if report_obj is not None:

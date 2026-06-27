@@ -2,16 +2,11 @@ from dataclasses import dataclass
 
 import pytest
 from adaptix import NameStyle as AdaptixNameStyle
-from adaptix import Retort
 
-from dature import V
 from dature.field_path import F
 from dature.loading.retort import (
     RetortCache,
     build_base_recipe,
-    create_probe_retort,
-    create_retort,
-    create_validating_retort,
     get_adaptix_name_style,
     get_name_mapping_providers,
     get_validator_providers,
@@ -162,50 +157,6 @@ class TestBuildBaseRecipe:
 
         assert len(result) == len(result_with_resolved)
         assert len(result) != len(result_with_source_loaders) or len(resolved) == len(source.type_loaders or {})
-
-
-class TestCreateRetort:
-    def test_returns_retort(self):
-        source = MockSource()
-
-        result = create_retort(build_base_recipe(source))
-
-        assert isinstance(result, Retort)
-
-
-class TestCreateProbeRetort:
-    def test_returns_retort(self):
-        source = MockSource()
-
-        result = create_probe_retort(build_base_recipe(source))
-
-        assert isinstance(result, Retort)
-
-
-class TestCreateValidatingRetort:
-    def test_returns_retort(self):
-        @dataclass
-        class Config:
-            name: str
-
-        source = MockSource()
-
-        result = create_validating_retort(source, Config, build_base_recipe(source))
-
-        assert isinstance(result, Retort)
-
-    def test_with_root_validators(self):
-        @dataclass
-        class Config:
-            name: str
-
-        source = MockSource(
-            root_validators=(V.root(lambda _: True, error_message="always true"),),
-        )
-
-        result = create_validating_retort(source, Config, build_base_recipe(source))
-
-        assert isinstance(result, Retort)
 
 
 class TestTransformToDataclass:

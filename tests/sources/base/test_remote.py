@@ -8,7 +8,7 @@ from dature.type_aliases import JSONValue
 
 @dataclass(kw_only=True, repr=False)
 class _FakeRemote(RemoteSource):
-    """Fixed-data remote source — no external service, sets ``_loaded_cache`` from ``data``."""
+    """Fixed-data remote source — no external service."""
 
     data: JSONValue = None
     format_name = "_fake_remote"
@@ -22,19 +22,6 @@ class _FakeRemote(RemoteSource):
 
 
 class TestRemoteSourceClone:
-    def test_clone_drops_loaded_cache(self):
-        # Regression: clone_source used to inherit _loaded_cache via shallow copy, so a
-        # clone produced after _load() would return stale data from resolve_location without
-        # ever calling _fetch() again.
-        src = _FakeRemote(data={"key": "value"})
-        src.load_raw()  # populates _loaded_cache
-
-        assert src._loaded_cache is not None
-
-        clone = clone_source(src, {})
-
-        assert clone._loaded_cache is None
-
     def test_clone_reloads_on_load_raw(self):
         src = _FakeRemote(data={"key": "original"})
         src.load_raw()
@@ -43,7 +30,7 @@ class TestRemoteSourceClone:
         result = clone.load_raw()
 
         assert result.data == {"key": "updated"}
-        assert clone._loaded_cache == {"key": "updated"}
+        assert result.loaded_data == {"key": "updated"}
 
 
 class TestRemoteSourceResolveLocation:
@@ -77,6 +64,16 @@ class TestRemoteSourceResolveLocation:
     )
     def test_resolve_location(self, prefix, data, field_path, expected):
         src = _FakeRemote(prefix=prefix, data=data)
-        src.load_raw()
-        locations = src.resolve_location(field_path=field_path, file_content=None, nested_conflict=None)
+        loaded_data = src.load_raw().loaded_data
+        locations = src.resolve_location(
+            field_path=field_path, file_content=None, nested_conflict=None, loaded_data=loaded_data
+        )
         assert locations[0].line_content == [expected]
+
+    def test_resolve_location_without_loaded_data(self):
+        # When loaded_data is None (data never loaded or not available), renders key only.
+        src = _FakeRemote(data={"db_password": "s3cret"})
+        locations = src.resolve_location(
+            field_path=["db_password"], file_content=None, nested_conflict=None, loaded_data=None
+        )
+        assert locations[0].line_content == ["fake://test: db_password"]

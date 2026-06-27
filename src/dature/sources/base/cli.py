@@ -107,6 +107,7 @@ class CliSource(FlatKeySource, abc.ABC):
         file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,
+        loaded_data: JSONValue | None = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         flag_name = self._resolve_flag_name(field_path, nested_conflict)
         flag_display = f"--{flag_name}"

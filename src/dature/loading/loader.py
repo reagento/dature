@@ -455,6 +455,7 @@ class Loader[T: DataclassInstance]:
             handle_load_errors(
                 func=lambda: validation_loader(raw_data),
                 ctx=error_ctx,
+                loaded_data=prepared.loaded_data,
             )
         except DatureConfigError as exc:
             if report is not None:
@@ -472,6 +473,7 @@ class Loader[T: DataclassInstance]:
                     resolved_type_loaders=self._type_loaders,
                 ),
                 ctx=error_ctx,
+                loaded_data=prepared.loaded_data,
             )
         except DatureConfigError as exc:
             if report is not None:

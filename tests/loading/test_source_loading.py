@@ -462,7 +462,7 @@ class TestPrepareLoadedSource:
 
         source = JsonSource(file=json_file)
         error_ctx = build_error_ctx(source, "Cfg")
-        load_result = LoadRawResult(data=raw_data)
+        load_result = LoadRawResult(data=raw_data, loaded_data=raw_data)
 
         result = prepare_loaded_source(
             load_result=load_result,

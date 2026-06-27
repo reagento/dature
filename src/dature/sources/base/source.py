@@ -273,7 +273,7 @@ class Source(abc.ABC):
             sorted(data.keys()) if isinstance(data, dict) else "<non-dict>",
             sorted(processed.keys()) if isinstance(processed, dict) else "<non-dict>",
         )
-        return LoadRawResult(data=processed)
+        return LoadRawResult(data=processed, loaded_data=data)
 
     def build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None":  # noqa: ARG002
         """Return a mapping from field-path tuples to line ranges within *content*.
@@ -306,6 +306,7 @@ class Source(abc.ABC):
         file_content: str | None,
         nested_conflict: NestedConflict | None,  # noqa: ARG002
         input_value: JSONValue = None,
+        loaded_data: "JSONValue | None" = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         file_path = self.file_path_for_errors()
         if file_content is None or not field_path:
@@ -365,7 +366,5 @@ def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
 
     Uses ``dataclasses.replace()`` so ``__post_init__`` runs and ``init=False``
     fields reset to their defaults (e.g. ``_resolved_file_path`` → ``None``).
-    Dynamic attributes like ``_loaded_cache`` are not dataclass fields, so they
-    are never copied.
     """
     return replace(source, **overrides)  # type: ignore[arg-type]

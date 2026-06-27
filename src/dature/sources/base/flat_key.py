@@ -142,7 +142,7 @@ class FlatKeySource(Source, abc.ABC):
 
         expanded = expand_env_vars(result, mode=self.expand_env_vars)  # type: ignore[arg-type]
         processed = self._parse_string_values(expanded)
-        return LoadRawResult(data=processed, nested_conflicts=conflicts)
+        return LoadRawResult(data=processed, nested_conflicts=conflicts, loaded_data=data)
 
     def _process_key_value(
         self,

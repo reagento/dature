@@ -21,6 +21,7 @@ class ErrorContext:
 class SourceContext:
     error_ctx: ErrorContext
     file_content: str | None
+    loaded_data: "JSONValue"
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +29,7 @@ class SkippedFieldSource:
     source: Source
     error_ctx: ErrorContext
     file_content: str | None
+    loaded_data: "JSONValue"
 
 
 def read_file_content(file_path: Path | None, encoding: str | None = None) -> str | None:
@@ -130,6 +132,7 @@ def resolve_source_location(
     file_content: str | None,
     *,
     input_value: JSONValue = None,
+    loaded_data: "JSONValue | None" = None,
 ) -> list[SourceLocation]:
     is_secret = ".".join(field_path) in ctx.secret_paths
     conflict = _resolve_conflict(field_path, ctx)
@@ -139,6 +142,7 @@ def resolve_source_location(
         file_content=file_content,
         nested_conflict=conflict,
         input_value=input_value,
+        loaded_data=loaded_data,
     )
 
     return _apply_masking(
