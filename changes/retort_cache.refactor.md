@@ -1,1 +1,0 @@
-Move retort cache off `Source` into `Loader` via a new `RetortCache` class; `source.retorts` removed. Fix `clone_source` leaking `_loaded_cache` from remote sources. Now keys retorts by stable positional source index instead, so no source-level bookkeeping is needed to survive cloning.
