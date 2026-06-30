@@ -1,3 +1,112 @@
+## 0.22.0
+
+### Features
+
+- Added `Absolute` — a `str` subclass for `field_mapping` aliases that bypasses the source `prefix`. Wrap any alias with `Absolute("RAW_KEY")` to match it against the original key regardless of prefix, across all source types (ENV, Docker secrets, file-based). ([#absolute_alias](https://github.com/reagento/dature/issues/absolute_alias))
+- Field validators (`Annotated` predicates and `source.validators`) now fire per-source, only for fields that the source actually provided, on the coerced value. Fields that a source did not provide are not validated by that source's pass. Fields that come solely from defaults are validated once at the end on the final object.
+
+  This means an invalid intermediate value raises even if a later source would have overwritten it, and a default value is never falsely validated against a source that did not supply it. ([#per_source_field_validation](https://github.com/reagento/dature/issues/per_source_field_validation))
+- Field validators (`Annotated` predicates and `source.validators`) now fire per-source, only for fields that the source actually provided, on the coerced value. Fields that a source did not provide are not validated by that source's pass. Fields that come solely from defaults are validated once at the end on the final object.
+
+  Root validators have been promoted to a schema-level concern: pass them via `root_validators=` on `load()` / `Loader` / `configure()` — see the `schema_root_validators` and `source_root_validators` changelog entries.
+
+  Internal: validating retort is no longer built when a source has no validators (`Annotated` predicates or `source.validators` absent); single-source and multi-source loading each run one field-validation pass per source followed by a single root-retort pass at the end. ([#per_source_validators](https://github.com/reagento/dature/issues/per_source_validators))
+- Root validators are now schema-level: pass them via `root_validators=` on `load()`, `Loader`, and `configure()` instead of on the source. They run once on the final merged dataclass instance.
+
+  ```python
+  # before
+  load(JsonSource(file=..., root_validators=(V.root(check),)), schema=Config)
+
+  # after
+  load(JsonSource(file=...), schema=Config, root_validators=(V.root(check),))
+  ``` ([#schema_root_validators](https://github.com/reagento/dature/issues/schema_root_validators))
+- New `skip_if_missing` parameter on `load()`, `Loader`, and `Source` — silently skips a source whose file does not exist, independently of `skip_if_broken` (parse errors).
+
+  ```python
+  # global flag
+  load(JsonSource(file="local.json"), EnvSource(), schema=Config, skip_if_missing=True)
+
+  # per-source override
+  load(
+      JsonSource(file="required.json"),
+      JsonSource(file="optional.json", skip_if_missing=True),  # only this source is optional
+      schema=Config,
+  )
+  ``` ([#skip_if_missing](https://github.com/reagento/dature/issues/skip_if_missing))
+
+### Bugfixes
+
+- Fixed exception chaining when `skip_field_if_invalid` exhausts all sources for a required field: the intermediate error was incorrectly set as `__cause__`, causing Python to print a noisy double-group traceback instead of the clean `Config loading errors` format. ([#skip_invalid_error_chain](https://github.com/reagento/dature/issues/skip_invalid_error_chain))
+
+### Docs
+
+- Restructured the documentation:
+
+  - Added `basic/field-paths.md` — single reference page for `F` field path syntax (three forms, usage table, `F` vs `ref` distinction).
+  - Added section index pages (`basic/index.md`, `advanced/index.md`) with reading-order tables.
+  - Moved `cli_source` and `remote_source` from Basic to Advanced; split each into a concrete-source page and a custom-base-class page (`advanced/cli/argparse.md`, `advanced/cli/custom.md`, `advanced/remote/vault.md`, `advanced/remote/custom.md`). Added CLI / Remote subgroups to the Advanced nav.
+  - Merged `source-strategy.md` into `field-strategies.md` and renamed it `merge-strategies.md` (covers both per-field and per-source strategies in one place).
+  - Removed the stale `validators.md`; moved the V-DSL predicate table into `basic/validation.md`.
+  - Reorganised Advanced nav into four subgroups: Merging & Strategies, Sources, Values, Observability.
+
+  ([#docs_restructure](https://github.com/reagento/dature/issues/docs_restructure))
+- • Deleted / moved long text out of example scripts into the docs pages.
+  • Kept the docs code samples focused on the real example, with less noise.
+  • Updated the docs pages to include the right code blocks from each file.
+  • Cleaned up comments, docstrings, and extra setup that was not needed in the rendered examples.
+  • Kept the examples runnable and changed the behavior as little as possible. ([#127](https://github.com/reagento/dature/issues/127))
+
+### Refactoring
+
+- Restored `AliasProvider` as a `Provider` subclass; `build_alias_loaders` and the `schema` parameter to `build_base_recipe`/`get_name_mapping_providers` removed. Internal adaptix dependencies are imported from `dature._adaptix_compat`. ([#alias_provider_class](https://github.com/reagento/dature/issues/alias_provider_class))
+- Internal: `RetortCache` now computes root-validator providers once at construction time (instead of per-source on every `root_retort()` call), which also validates the `root_validators` argument shape early. The now-redundant standalone `create_root_validator_providers` call and `self._root_validators` attribute on `Loader` have been removed. Dead `root_validators` field on `MergeConfig` removed. ([#loader_init_import](https://github.com/reagento/dature/issues/loader_init_import))
+- Removed mutable `_loaded_cache` state from `RemoteSource`. Raw fetch results are now
+  forwarded explicitly via `LoadRawResult.loaded_data` and carried in the per-source
+  rendering context (alongside `file_content`) rather than stored on the source DTO itself.
+  This makes `Source` a pure config DTO with no runtime state.
+
+  Deleted the unused `create_retort`, `create_probe_retort`, and `create_validating_retort`
+  factory functions — all retort construction now goes through `RetortCache` which builds
+  variants via `Retort.extend()`. ([#remote_loaded_cache](https://github.com/reagento/dature/issues/remote_loaded_cache))
+- Moved `resolve_nested_owner` from `expansion.alias_provider` to `field_path`, where it lives alongside `resolve_field_type` (now its thin wrapper). Updated all internal imports accordingly. ([#resolve_nested_owner](https://github.com/reagento/dature/issues/resolve_nested_owner))
+- Move retort cache off `Source` into `Loader` via a new `RetortCache` class; `source.retorts` removed. Fix `clone_source` leaking `_loaded_cache` from remote sources. Now keys retorts by stable positional source index instead, so no source-level bookkeeping is needed to survive cloning. ([#retort_cache](https://github.com/reagento/dature/issues/retort_cache))
+- Move single-source loading (`load_single`) and the decorator re-validation builder (`build_revalidation`) into `dature.loading.merge` alongside `load_and_merge`, so `Loader` delegates to public helpers only; deduplicate the root/field error-merge into a shared helper; rename internal variables to be clear and unprefixed. ([#separate_load_context_concerns](https://github.com/reagento/dature/issues/separate_load_context_concerns))
+- Split `dature.loading.merge` into focused modules; consolidate seven scattered nested-dict path helpers into `dature.nested_dict`; move `validate_all_field_groups` to `dature.merging.field_group` and `get_validator_providers` to `dature.validators.base`; rename internal package `loaders` → `coercion` to resolve the naming clash with the public `Loader` class; fold `field_validation` + `revalidation` into `loading.field_pass` to make the two validation layers distinct by name (`validators/` = define checks, `loading/field_pass.py` = run checks at load time); remove adaptix `Provider`/`loader` re-exports from `dature.coercion`; de-abbreviate all local variable names throughout the loading pipeline. ([#split_loading_modules](https://github.com/reagento/dature/issues/split_loading_modules))
+
+### Removals
+
+- `dature.get_load_report` is renamed to `dature.load_report`.
+  The underlying module is also renamed from `dature.load_report` to `dature.report`:
+
+  ```python
+  # before
+  from dature import get_load_report
+  from dature.load_report import LoadReport
+
+  # after
+  from dature import load_report
+  from dature.report import LoadReport
+  ``` ([#report_rename](https://github.com/reagento/dature/issues/report_rename))
+- `skip_broken_sources` parameter of `load()` and `Loader` is renamed to `skip_if_broken` and now covers **only parse/config errors** (invalid syntax, malformed files). It no longer silently skips missing files.
+
+  ```python
+  # before
+  load(..., skip_broken_sources=True)
+
+  # after
+  load(..., skip_if_broken=True)  # parse errors only
+  load(..., skip_if_missing=True)  # missing files only
+  load(..., skip_if_broken=True, skip_if_missing=True)  # both
+  ``` ([#skip_broken_rename](https://github.com/reagento/dature/issues/skip_broken_rename))
+- `Source.root_validators` has been removed. Use the new `root_validators=` parameter on `load()` / `Loader` / `configure()` instead. See `schema_root_validators` change for migration details. ([#source_root_validators](https://github.com/reagento/dature/issues/source_root_validators))
+- `Source`, `CliSource`, `FileSource`, and `RemoteSource` are no longer exported from the top-level `dature` namespace.
+  Import them from `dature.sources.base` instead:
+
+  ```python
+  from dature.sources.base import Source, CliSource, FileSource, RemoteSource
+  ``` ([#sources_base](https://github.com/reagento/dature/issues/sources_base))
+
+
 ## 0.21.0
 
 ### Features
