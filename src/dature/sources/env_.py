@@ -34,6 +34,7 @@ class EnvSource(FlatKeySource):
         file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,  # noqa: ARG002
+        loaded_data: JSONValue | None = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         var_name = self._resolve_var_name(field_path, self.prefix, self.nested_sep, nested_conflict)
         env_var_value: str | None = None
@@ -123,6 +124,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
         file_content: str | None,
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,
+        loaded_data: JSONValue | None = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         var_name = self._resolve_var_name(field_path, self.prefix, self.nested_sep, nested_conflict)
         file_path = self.file_path_for_errors()
@@ -170,7 +172,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
             wrapper = io.TextIOWrapper(cast("io.BufferedReader", self.file), encoding=self.encoding)
             self._collect_pairs(wrapper, raw_pairs)
         else:
-            path = self._resolved_file_path
+            path = self.resolved_file_path
             if path is None:
                 msg = f"Config file not found: {self.file}"
                 raise FileNotFoundError(msg)

@@ -8,23 +8,17 @@ rendering helpers live in ``presentation``.
 
 import abc
 import contextlib
-import copy
 import json
 import logging
-from collections.abc import Iterable
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
 from pathlib import Path
-from typing import Any, ClassVar, cast
+from typing import ClassVar, cast
 
-from adaptix import Retort, loader
+from adaptix import loader
 from adaptix.provider import Provider
 
-from dature.conditions import Condition
-from dature.errors import CaretSpan, LineRange, SourceLocation
-from dature.expansion.env_expand import expand_env_vars
-from dature.field_path import Absolute, FieldPath
-from dature.loaders import (
+from dature.coercion import (
     bool_loader,
     bytearray_from_json_string,
     date_from_string,
@@ -35,6 +29,10 @@ from dature.loaders import (
     str_from_scalar,
     time_from_string,
 )
+from dature.conditions import Condition
+from dature.errors import CaretSpan, LineRange, SourceLocation
+from dature.expansion.env_expand import expand_env_vars
+from dature.field_path import Absolute, FieldPath
 from dature.sources.presentation import (
     build_search_path,
     empty_location,
@@ -55,7 +53,6 @@ from dature.type_aliases import (
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
-from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
 
@@ -95,7 +92,6 @@ class Source(abc.ABC):
     prefix: "DotSeparatedPath | None" = None
     name_style: "NameStyle | None" = None
     field_mapping: "FieldMapping | None" = None
-    root_validators: "Iterable[RootPredicate] | None" = None
     validators: "FieldValidators | None" = None
     expand_env_vars: "ExpandEnvVarsMode | None" = None
     skip_if_broken: bool | None = None
@@ -108,12 +104,6 @@ class Source(abc.ABC):
     format_name: ClassVar[str]
     location_label: ClassVar[str]
     config_group: ClassVar[str | None] = None
-
-    retorts: "dict[Any, Retort]" = field(
-        default_factory=dict,
-        init=False,
-        repr=False,
-    )
 
     # --8<-- [end:load-metadata]
     def __post_init__(self) -> None:
@@ -280,7 +270,7 @@ class Source(abc.ABC):
             sorted(data.keys()) if isinstance(data, dict) else "<non-dict>",
             sorted(processed.keys()) if isinstance(processed, dict) else "<non-dict>",
         )
-        return LoadRawResult(data=processed)
+        return LoadRawResult(data=processed, loaded_data=data)
 
     def build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None":  # noqa: ARG002
         """Return a mapping from field-path tuples to line ranges within *content*.
@@ -313,6 +303,7 @@ class Source(abc.ABC):
         file_content: str | None,
         nested_conflict: NestedConflict | None,  # noqa: ARG002
         input_value: JSONValue = None,
+        loaded_data: "JSONValue | None" = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         file_path = self.file_path_for_errors()
         if file_content is None or not field_path:
@@ -355,13 +346,22 @@ class Source(abc.ABC):
         ]
 
 
-def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
-    """Return a shallow copy of *source* with *overrides* applied.
+@dataclass(frozen=True, slots=True)
+class IndexedSource:
+    """A source paired with its stable positional index in the Loader's sources tuple.
 
-    Drops the cached ``_resolved_file_path`` so it re-resolves against
-    the overridden fields instead of returning a stale result.
+    The index is the retort-cache identity: clones of the same logical source
+    share an index and thus the pre-warmed retort.
     """
-    new = copy.copy(source)
-    vars(new).update(overrides)
-    vars(new).pop("_resolved_file_path", None)
-    return new
+
+    source: Source
+    index: int
+
+
+def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
+    """Return a copy of *source* with *overrides* applied.
+
+    Uses ``dataclasses.replace()`` so ``__post_init__`` runs and ``init=False``
+    fields reset to their defaults (e.g. ``_resolved_file_path`` → ``None``).
+    """
+    return replace(source, **overrides)  # type: ignore[arg-type]

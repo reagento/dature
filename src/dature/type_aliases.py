@@ -101,4 +101,5 @@ type NestedConflicts = dict[str, NestedConflict]
 @dataclass(frozen=True, slots=True)
 class LoadRawResult:
     data: JSONValue
+    loaded_data: JSONValue  # pre-prefix payload from _load(), forwarded for error rendering
     nested_conflicts: NestedConflicts = field(default_factory=dict)

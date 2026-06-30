@@ -25,15 +25,13 @@ def check_debug_not_on_production(obj: Config) -> bool:
 dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "validation_root_invalid.yaml",
-        root_validators=(
-            V.root(
-                check_debug_not_on_production,
-                error_message=(
-                    "debug=True is not allowed on non-localhost hosts"
-                ),
-            ),
-        ),
     ),
     schema=Config,
+    root_validators=(
+        V.root(
+            check_debug_not_on_production,
+            error_message=("debug=True is not allowed on non-localhost hosts"),
+        ),
+    ),
 )
 # --8<-- [end:example]

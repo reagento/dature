@@ -425,12 +425,11 @@ class TestMetadataValidatorsWithRootValidators:
 
         metadata = JsonSource(
             file=json_file,
-            root_validators=(V.root(validate_config),),
             validators={
                 F[Config].port: V >= 0,
             },
         )
-        result = load(metadata, schema=Config)
+        result = load(metadata, schema=Config, root_validators=(V.root(validate_config),))
 
         assert result.port == 8080
         assert result.user == "admin"
@@ -463,3 +462,38 @@ class TestMetadataValidatorsDecorator:
         s = Settings()
         assert s.name == "Alice"
         assert s.age == 25
+
+
+class TestPerSourceFieldValidationBehavior:
+    """Regression tests for per-source, per-field validation semantics."""
+
+    def test_default_field_not_validated_per_source_only_at_end(self, tmp_path: Path):
+        """Source provides only {a:1}; b has default 5 + validator V>0. Loading succeeds."""
+
+        @dataclass
+        class Cfg:
+            a: Annotated[int, V > 0]
+            b: Annotated[int, V > 0] = 5
+
+        json_file = tmp_path / "cfg.json"
+        json_file.write_text('{"a": 1}')
+
+        result = load(JsonSource(file=json_file), schema=Cfg)
+
+        assert result.a == 1
+        assert result.b == 5
+
+    def test_invalid_intermediate_value_fails_even_if_overwritten(self, tmp_path: Path):
+        """Field x from source1 (valid) then source2 (invalid): raises because source2's value fails validator."""
+
+        @dataclass
+        class Cfg:
+            x: Annotated[int, V > 0]
+
+        file1 = tmp_path / "s1.json"
+        file1.write_text('{"x": 1}')
+        file2 = tmp_path / "s2.json"
+        file2.write_text('{"x": -1}')
+
+        with pytest.raises(DatureConfigError):
+            load(JsonSource(file=file1), JsonSource(file=file2), schema=Cfg)

@@ -35,6 +35,7 @@ class DockerSecretsSource(FlatKeySource):
         file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,
+        loaded_data: JSONValue | None = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         if nested_conflict is not None:
             json_var = self._resolve_var_name(field_path[:1], self.prefix, self.nested_sep, None)

@@ -5,10 +5,7 @@ from urllib.parse import urlparse
 
 import pytest
 
-from dature.fields.byte_size import ByteSize
-from dature.fields.payment_card import PaymentCardNumber
-from dature.fields.secret_str import SecretStr
-from dature.loaders.base import (
+from dature.coercion.base import (
     base64url_bytes_from_string,
     base64url_str_from_string,
     byte_size_from_string,
@@ -19,6 +16,9 @@ from dature.loaders.base import (
     timedelta_from_string,
     url_from_string,
 )
+from dature.fields.byte_size import ByteSize
+from dature.fields.payment_card import PaymentCardNumber
+from dature.fields.secret_str import SecretStr
 
 
 @pytest.mark.parametrize(

@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Any
 
 from dature.errors import FieldGroupError, FieldGroupViolationError
+from dature.merging.deep_merge import deep_merge_last_wins
 from dature.merging.predicate import ResolvedFieldGroup
+from dature.nested_dict import _ABSENT, collect_leaf_paths, get_nested_value
 from dature.type_aliases import JSONValue
-
-_SENTINEL = object()
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,18 +12,6 @@ class FieldGroupContext:
     source_reprs: tuple[str, ...]
     field_origins: dict[str, int]
     dataclass_name: str
-
-
-def _get_nested_value(data: JSONValue, dot_path: str) -> Any:  # noqa: ANN401
-    if not isinstance(data, dict):
-        return _SENTINEL
-    parts = dot_path.split(".")
-    current: JSONValue = data
-    for part in parts:
-        if not isinstance(current, dict) or part not in current:
-            return _SENTINEL
-        current = current[part]
-    return current
 
 
 def validate_field_groups(
@@ -45,8 +32,8 @@ def validate_field_groups(
         unchanged_sources: list[str] = []
 
         for path in group.paths:
-            source_val = _get_nested_value(source, path)
-            if source_val is _SENTINEL:
+            source_val = get_nested_value(source, path)
+            if source_val is _ABSENT:
                 unchanged.append(path)
                 origin_idx = ctx.field_origins.get(path)
                 if origin_idx is not None:
@@ -54,7 +41,7 @@ def validate_field_groups(
                 else:
                     unchanged_sources.append("none")
                 continue
-            base_val = _get_nested_value(base, path)
+            base_val = get_nested_value(base, path)
             if source_val == base_val:
                 unchanged.append(path)
                 origin_idx = ctx.field_origins.get(path)
@@ -80,3 +67,36 @@ def validate_field_groups(
 
     if violations:
         raise FieldGroupError(ctx.dataclass_name, violations)
+
+
+def validate_all_field_groups(
+    *,
+    raw_dicts: list[JSONValue],
+    field_group_paths: tuple[ResolvedFieldGroup, ...],
+    dataclass_name: str,
+    source_reprs: tuple[str, ...],
+) -> None:
+    """Run field-group consistency validation across all sources in *raw_dicts*.
+
+    Simulates the merge step-by-step so each source is validated against the
+    cumulative state that precedes it — the same order the merge strategy would apply.
+    Raises ``FieldGroupError`` on the first violation found.
+    """
+    merged: JSONValue = {}
+    field_origins: dict[str, int] = {}
+    ctx = FieldGroupContext(
+        source_reprs=source_reprs,
+        field_origins=field_origins,
+        dataclass_name=dataclass_name,
+    )
+    for step_index, raw in enumerate(raw_dicts):
+        validate_field_groups(
+            base=merged,
+            source=raw,
+            field_group_paths=field_group_paths,
+            source_index=step_index,
+            ctx=ctx,
+        )
+        for leaf_path in collect_leaf_paths(raw):
+            field_origins[leaf_path] = step_index
+        merged = deep_merge_last_wins(merged, raw)

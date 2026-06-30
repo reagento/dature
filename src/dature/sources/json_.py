@@ -9,14 +9,14 @@ from typing import cast
 from adaptix import loader
 from adaptix.provider import Provider
 
-from dature.errors import LineRange
-from dature.loaders import (
+from dature.coercion import (
     bytearray_from_string,
     date_from_string,
     datetime_from_string,
     float_from_string,
     time_from_string,
 )
+from dature.errors import LineRange
 from dature.sources.base import FileSource
 from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 

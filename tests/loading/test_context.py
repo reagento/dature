@@ -17,7 +17,8 @@ from dature.loading.context import (
     make_validating_post_init,
     merge_fields,
 )
-from dature.loading.retort import build_base_recipe, ensure_retort, make_retort_key
+from dature.loading.retort import RetortCache
+from dature.sources.base import IndexedSource
 from dature.sources.env_ import EnvSource
 from dature.sources.json_ import JsonSource
 
@@ -205,13 +206,11 @@ class TestApplySkipInvalid:
         class Cfg:
             name: str
 
-        source = JsonSource(file=json_file)
         raw = {"name": "hello"}
 
         result = apply_skip_invalid(
             raw=raw,
             skip_field_if_invalid=skip_field_if_invalid,
-            source=source,
             schema=Cfg,
             log_prefix="[test]",
         )
@@ -220,8 +219,8 @@ class TestApplySkipInvalid:
         assert result.skipped_paths == []
 
 
-class TestEnsureRetort:
-    def test_creates_and_caches_retort(self, tmp_path: Path):
+class TestRetortCache:
+    def test_plain_creates_and_caches_retort(self, tmp_path: Path):
         json_file = tmp_path / "config.json"
         json_file.write_text("{}")
 
@@ -230,16 +229,12 @@ class TestEnsureRetort:
             name: str
 
         source = JsonSource(file=json_file)
-        key = make_retort_key(None)
+        cache = RetortCache(Cfg)
 
-        ensure_retort(source, Cfg, build_base_recipe(source))
+        first = cache.plain(IndexedSource(source, 0))
+        second = cache.plain(IndexedSource(source, 0))
 
-        assert key in source.retorts
-
-        first = source.retorts[key]
-        ensure_retort(source, Cfg, build_base_recipe(source))
-
-        assert source.retorts[key] is first
+        assert first is second
 
 
 class TestMakeValidatingPostInit:

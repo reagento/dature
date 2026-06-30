@@ -4,20 +4,26 @@
 
 ```mermaid
 graph TD
-    A[Source 1: defaults.yaml] --> D[Load & Parse]
-    B[Source 2: overrides.yaml] --> E[Load & Parse]
-    C[Source 3: ENV vars] --> F[Load & Parse]
-    D --> G[Raw Dict 1]
-    E --> H[Raw Dict 2]
-    F --> I[Raw Dict 3]
-    G --> J{Merge Strategy}
-    H --> J
-    I --> J
-    J --> K[Merged Dict]
-    K --> L[Type Conversion]
-    L --> M[Validation]
-    M --> N[Dataclass Instance]
+    A[Source 1] --> LA[Load & Parse]
+    B[Source 2] --> LB[Load & Parse]
+    C[Source N] --> LC[Load & Parse]
+    LA --> RA[Raw Dict 1]
+    LB --> RB[Raw Dict 2]
+    LC --> RC[Raw Dict N]
+    RA --> MS[Merge Strategy]
+    RB --> MS
+    RC --> MS
+    RA -->|field validators on own dict| FP[Per-source field-pass]
+    RB -->|field validators on own dict| FP
+    RC -->|field validators on own dict| FP
+    MS --> MD[Merged Dict]
+    MD --> FR["root_retort: final construction + root_validators → Dataclass"]
 ```
+
+Each source's field validators run only against **that source's own raw dict** — not the
+cumulative merged state. Fields absent from a source are not validated by that source's pass.
+Fields that no source provided (took a dataclass default) are validated once at the end on the
+final object.
 
 Load configuration from multiple sources and merge them into one dataclass.
 

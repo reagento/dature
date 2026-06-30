@@ -63,7 +63,7 @@ Validate the entire object after loading:
     --8<-- "docs/examples/basic/validation/validation_root.stderr"
     ```
 
-Root validators receive the fully constructed dataclass instance and return `True` if valid.
+Root validators receive the fully constructed dataclass instance and return `True` if valid. Pass them via `root_validators=` on `load()`, `Loader`, or `configure()` — they run once on the final merged object, after all sources have been applied.
 
 ## Metadata Validators
 
@@ -122,6 +122,25 @@ Create your own validators by implementing `get_validator_func()` and `get_error
     ```
 
 Custom validators can be combined with built-in ones in `Annotated`.
+
+## Validators During Merging
+
+### Skip-invalid probe
+
+When `skip_invalid_fields=True`, dature silently drops any field whose value fails
+**coercion or a field validator** (`Annotated` predicates and `source.validators`). Business-rule
+violations cause the field to be omitted rather than an error being raised.
+
+### Per-source validator semantics
+
+Field validators (`Annotated` predicates and `source.validators`) fire **per-source**, only on fields that the source actually provided, on the coerced value:
+
+- A field provided by multiple sources is validated once per source that provides it.
+- A field that a source did not provide is **not** validated by that source's pass — no missing-field error is raised for absent fields.
+- A field that comes solely from a dataclass default is validated once at the end on the final object.
+
+Root validators (`root_validators=`) run **once** on the final merged object after all field validation passes have completed.
+
 
 ## `__post_init__` and `@property`
 

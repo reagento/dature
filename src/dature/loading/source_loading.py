@@ -35,6 +35,7 @@ class PreparedSource:
     raw_data: JSONValue
     error_ctx: ErrorContext
     file_content: str | None
+    loaded_data: JSONValue
     skipped: "list[tuple[str, SkippedFieldSource]]"
 
 
@@ -58,6 +59,7 @@ def prepare_loaded_source(  # noqa: PLR0913
     Broken-source handling, caching, and LoadReport building stay at call sites.
     """
     raw = load_result.data
+    loaded_data = load_result.loaded_data
     error_ctx = base_error_ctx
     if load_result.nested_conflicts:
         error_ctx = build_error_ctx(
@@ -74,19 +76,22 @@ def prepare_loaded_source(  # noqa: PLR0913
     filter_result = apply_skip_invalid(
         raw=raw,
         skip_field_if_invalid=skip_value,
-        source=source,
         schema=schema,
         log_prefix=log_prefix,
         probe_retort=probe_retort,
     )
     skipped = [
-        (path, SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content))
+        (
+            path,
+            SkippedFieldSource(source=source, error_ctx=error_ctx, file_content=file_content, loaded_data=loaded_data),
+        )
         for path in filter_result.skipped_paths
     ]
     return PreparedSource(
         raw_data=filter_result.cleaned_dict,
         error_ctx=error_ctx,
         file_content=file_content,
+        loaded_data=loaded_data,
         skipped=skipped,
     )
 
@@ -116,7 +121,9 @@ def enrich_skipped_errors(
         locations = [
             loc
             for s in sources
-            for loc in resolve_source_location(exc.field_path, s.error_ctx, s.file_content, input_value=exc.input_value)
+            for loc in resolve_source_location(
+                exc.field_path, s.error_ctx, s.file_content, input_value=exc.input_value, loaded_data=s.loaded_data
+            )
         ]
         updated.append(
             FieldLoadError(

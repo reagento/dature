@@ -2,12 +2,15 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 from dature import JsonSource, load
-from dature.errors import FieldGroupError, MergeConflictError
+from dature.errors import FieldGroupError, FieldGroupViolationError, MergeConflictError
 from dature.field_path import F
+from dature.merging.field_group import validate_all_field_groups
+from dature.merging.predicate import ResolvedFieldGroup
 
 
 class TestFieldGroupAllChanged:
@@ -767,3 +770,104 @@ class TestFieldGroupSameFieldNameNested:
             f"    changed:   user_name (from source {overrides_meta!r})\n"
             f"    unchanged: inner.user_name (from source {defaults_meta!r})"
         )
+
+
+class TestValidateAllFieldGroupsDirect:
+    """Direct unit tests for ``validate_all_field_groups`` without going through ``load()``."""
+
+    _GROUP = (ResolvedFieldGroup(paths=("host", "port")),)
+    _REPRS = ("source-0", "source-1", "source-2")
+
+    def test_all_changed_does_not_raise(self):
+        # Both group fields change together — no violation.
+        assert (
+            validate_all_field_groups(
+                raw_dicts=[{"host": "a", "port": 1}, {"host": "b", "port": 2}],
+                field_group_paths=self._GROUP,
+                dataclass_name="Config",
+                source_reprs=("source-0", "source-1"),
+            )
+            is None
+        )
+
+    def test_none_changed_does_not_raise(self):
+        # Second source repeats the same values — not considered a change, no violation.
+        assert (
+            validate_all_field_groups(
+                raw_dicts=[{"host": "same", "port": 9}, {"host": "same", "port": 9}],
+                field_group_paths=self._GROUP,
+                dataclass_name="Config",
+                source_reprs=("source-0", "source-1"),
+            )
+            is None
+        )
+
+    def test_source_missing_all_group_fields_does_not_raise(self):
+        # Second source provides no group fields — "all or nothing" is satisfied (nothing).
+        assert (
+            validate_all_field_groups(
+                raw_dicts=[{"host": "a", "port": 1}, {"debug": True}],
+                field_group_paths=self._GROUP,
+                dataclass_name="Config",
+                source_reprs=("source-0", "source-1"),
+            )
+            is None
+        )
+
+    def test_empty_raw_dicts_does_not_raise(self):
+        assert (
+            validate_all_field_groups(
+                raw_dicts=[],
+                field_group_paths=self._GROUP,
+                dataclass_name="Config",
+                source_reprs=(),
+            )
+            is None
+        )
+
+    def test_partial_change_raises_with_full_violation_detail(self):
+        # source-1 changes 'host' but not 'port' — violates atomicity.
+        with pytest.raises(FieldGroupError) as exc_info:
+            validate_all_field_groups(
+                raw_dicts=[{"host": "a", "port": 1}, {"host": "b"}],
+                field_group_paths=self._GROUP,
+                dataclass_name="Config",
+                source_reprs=("source-0", "source-1"),
+            )
+
+        assert exc_info.value.dataclass_name == "Config"
+        assert len(exc_info.value.exceptions) == 1
+
+        violation = cast("FieldGroupViolationError", exc_info.value.exceptions[0])
+        assert violation.source_index == 1
+        assert violation.group_fields == ("host", "port")
+        assert violation.changed_fields == ("host",)
+        assert violation.unchanged_fields == ("port",)
+        assert violation.changed_sources == ("source-1",)
+        assert violation.unchanged_sources == ("source-0",)
+
+    @pytest.mark.parametrize(
+        ("raw_dicts", "violating_source_index", "unchanged_source_repr"),
+        [
+            # source-1 partially overrides; 'port' was last set by source-0.
+            ([{"host": "a", "port": 1}, {"host": "b"}, {"host": "c", "port": 3}], 1, "source-0"),
+            # source-2 partially overrides; 'port' was last set by source-1.
+            ([{"host": "a", "port": 1}, {"host": "b", "port": 2}, {"host": "c"}], 2, "source-1"),
+        ],
+    )
+    def test_three_source_step_wise_attribution(self, raw_dicts, violating_source_index, unchanged_source_repr):
+        with pytest.raises(FieldGroupError) as exc_info:
+            validate_all_field_groups(
+                raw_dicts=raw_dicts,
+                field_group_paths=self._GROUP,
+                dataclass_name="Config",
+                source_reprs=self._REPRS,
+            )
+
+        assert len(exc_info.value.exceptions) == 1
+        violation = cast("FieldGroupViolationError", exc_info.value.exceptions[0])
+        assert violation.source_index == violating_source_index
+        assert violation.group_fields == ("host", "port")
+        assert violation.changed_fields == ("host",)
+        assert violation.unchanged_fields == ("port",)
+        assert violation.unchanged_sources == (unchanged_source_repr,)

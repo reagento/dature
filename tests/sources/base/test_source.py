@@ -7,8 +7,8 @@ from dature import Absolute, JsonSource, load
 from dature.errors import EnvVarExpandError
 from dature.field_path import F
 from dature.loading.merge_runtime import SourceParams, apply_source_init_params
-from dature.loading.retort import transform_to_dataclass
-from dature.sources.base import Source, string_value_loaders
+from dature.loading.retort import RetortCache
+from dature.sources.base import IndexedSource, Source, string_value_loaders
 from dature.type_aliases import JSONValue
 
 
@@ -95,7 +95,7 @@ class TestBaseSource:
 
         assert result == {}
 
-    def test_transform_to_dataclass(self):
+    def test_load_to_dataclass(self):
         """Test transformation of data to dataclass."""
 
         @dataclass
@@ -107,7 +107,7 @@ class TestBaseSource:
         data = {"name": "TestApp", "port": 8080}
         loader = MockSource(test_data=data)
 
-        result = transform_to_dataclass(loader, data, schema=Config)
+        result = RetortCache(Config).plain(IndexedSource(loader, 0)).load(data, Config)
 
         assert result == expected_data
 
@@ -127,7 +127,7 @@ class TestBaseSource:
         data = {"database": {"host": "localhost", "port": 5432}}
         loader = MockSource(test_data=data)
 
-        result = transform_to_dataclass(loader, data, schema=Config)
+        result = RetortCache(Config).plain(IndexedSource(loader, 0)).load(data, Config)
 
         assert result == expected_data
 
@@ -146,7 +146,7 @@ class TestBaseSource:
         loader = MockSource(prefix="app", test_data=data)
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, schema=Config)
+        result = RetortCache(Config).plain(IndexedSource(loader, 0)).load(load_result.data, Config)
 
         assert result == expected_data
 
@@ -567,9 +567,8 @@ class TestExpandEnvVars:
         loader = apply_source_init_params(MockSource(test_data=data), SourceParams())
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
-        assert result == {"host": "localhost", "port": 8080}
+        assert load_result.data == {"host": "localhost", "port": 8080}
 
     def test_default_keeps_missing(self, monkeypatch):
         monkeypatch.delenv("DATURE_MISSING", raising=False)
@@ -577,9 +576,8 @@ class TestExpandEnvVars:
         loader = apply_source_init_params(MockSource(test_data=data), SourceParams())
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
-        assert result == {"host": "$DATURE_MISSING", "port": 8080}
+        assert load_result.data == {"host": "$DATURE_MISSING", "port": 8080}
 
     def test_disabled(self, monkeypatch):
         monkeypatch.setenv("DATURE_TEST_HOST", "localhost")
@@ -587,9 +585,8 @@ class TestExpandEnvVars:
         loader = MockSource(test_data=data, expand_env_vars="disabled")
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
-        assert result == {"host": "$DATURE_TEST_HOST", "port": 8080}
+        assert load_result.data == {"host": "$DATURE_TEST_HOST", "port": 8080}
 
     def test_empty_replaces_missing_with_empty_string(self, monkeypatch):
         monkeypatch.delenv("DATURE_MISSING", raising=False)
@@ -597,9 +594,8 @@ class TestExpandEnvVars:
         loader = MockSource(test_data=data, expand_env_vars="empty")
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
-        assert result == {"host": "", "port": 8080}
+        assert load_result.data == {"host": "", "port": 8080}
 
     def test_strict_raises_on_missing(self, monkeypatch):
         monkeypatch.delenv("DATURE_MISSING", raising=False)
@@ -615,9 +611,8 @@ class TestExpandEnvVars:
         loader = MockSource(test_data=data, expand_env_vars="strict")
 
         load_result = loader.load_raw()
-        result = transform_to_dataclass(loader, load_result.data, dict)  # type: ignore[type-var]
 
-        assert result == {"host": "localhost", "port": 8080}
+        assert load_result.data == {"host": "localhost", "port": 8080}
 
 
 class TestStringValueLoaders:

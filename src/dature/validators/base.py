@@ -1,4 +1,5 @@
 from collections.abc import Iterable, Mapping
+from dataclasses import fields
 from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from adaptix import P, validator
@@ -8,6 +9,7 @@ from adaptix.struct_trail import append_trail
 
 from dature.field_path import FieldPath, resolve_nested_owner
 from dature.protocols import DataclassInstance
+from dature.type_utils import find_nested_dataclasses
 from dature.validators.aliases import FieldValidators
 from dature.validators.collection import EachPredicate
 from dature.validators.predicate import AndPredicate, Predicate
@@ -37,7 +39,10 @@ def extract_and_check_validators(
     predicates: list[Predicate] = []
     for arg in get_args(field_type)[1:]:
         if isinstance(arg, RootPredicate):
-            msg = "V.root(...) must be passed via source.root_validators, not placed in Annotated[...] metadata"
+            msg = (
+                "V.root(...) must be passed via root_validators= in load() or Loader,"
+                " not placed in Annotated[...] metadata"
+            )
             raise TypeError(msg)
         if not isinstance(arg, Predicate):
             continue
@@ -94,7 +99,10 @@ def _normalize_metadata_value(
         raw = [value]
     for p in raw:
         if isinstance(p, RootPredicate):
-            msg = "V.root(...) cannot be used in source.validators — pass it via source.root_validators instead"
+            msg = (
+                "V.root(...) cannot be used in source.validators"
+                " — pass it via root_validators= in load() or Loader instead"
+            )
             raise TypeError(msg)
         if not isinstance(p, Predicate):
             msg = f"source.validators value must be a V-predicate, got {type(p).__name__}"
@@ -159,13 +167,13 @@ def create_root_validator_providers(
     root_validators: Iterable[RootPredicate],
 ) -> list[Provider]:
     if isinstance(root_validators, (str, bytes, Mapping)):
-        msg = f"source.root_validators must be a sequence of V.root(...) objects, got {type(root_validators).__name__}."
+        msg = f"root_validators must be a sequence of V.root(...) objects, got {type(root_validators).__name__}."
         raise TypeError(msg)
     try:
         items = tuple(root_validators)
     except TypeError as exc:
         msg = (
-            f"source.root_validators must be iterable (tuple, list, ...), "
+            f"root_validators must be iterable (tuple, list, ...), "
             f"got {type(root_validators).__name__}. "
             "A common mistake is forgetting the trailing comma — "
             "use `root_validators=(V.root(check),)` for a single validator."
@@ -176,13 +184,13 @@ def create_root_validator_providers(
     for root_predicate in items:
         if isinstance(root_predicate, Predicate):
             msg = (
-                f"source.root_validators received a field-level predicate "
+                f"root_validators received a field-level predicate "
                 f"({type(root_predicate).__name__}). Use V.root(func) for cross-field "
                 "validation, or move field-level predicates into source.validators."
             )
             raise TypeError(msg)
         if not isinstance(root_predicate, RootPredicate):
-            msg = f"source.root_validators must contain V.root(...) objects, got {type(root_predicate).__name__}"
+            msg = f"root_validators must contain V.root(...) objects, got {type(root_predicate).__name__}"
             raise TypeError(msg)
         provider = validator(
             P[schema],
@@ -190,5 +198,31 @@ def create_root_validator_providers(
             root_predicate.get_error_message(),
         )
         providers.append(provider)
+
+    return providers
+
+
+def get_validator_providers[T](schema: type[T]) -> list[Provider]:
+    """Return adaptix ``Provider`` instances for every ``Annotated`` field validator in *schema*.
+
+    Recurses into nested dataclasses so validators on nested fields are also registered.
+    """
+    providers: list[Provider] = []
+    type_hints = get_type_hints(schema, include_extras=True)
+
+    for field in fields(cast("type[DataclassInstance]", schema)):
+        if field.name not in type_hints:
+            continue
+
+        field_type = type_hints[field.name]
+        validators_list = extract_and_check_validators(field_type, field_path=[field.name])
+
+        if validators_list:
+            field_providers = create_validator_providers(schema, field.name, validators_list)
+            providers.extend(field_providers)
+
+        for nested_dataclass in find_nested_dataclasses(field_type):
+            nested_providers = get_validator_providers(nested_dataclass)
+            providers.extend(nested_providers)
 
     return providers

@@ -4,7 +4,7 @@ from datetime import time
 
 import pytest
 
-from dature.loaders.yaml_ import time_from_int
+from dature.coercion.yaml_ import time_from_int
 
 
 @pytest.mark.parametrize(

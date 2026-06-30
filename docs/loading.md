@@ -1,5 +1,34 @@
 # Loading
 
+## How Single-Source Loading Works
+
+```mermaid
+graph TD
+    S[Source] --> L[Load raw data]
+    L --> R[Raw Dict]
+    R --> PB{skip_invalid_fields?}
+    PB -- yes --> PR["field_pass(skip=True): drop fields\nthat fail coercion or validation"]
+    PB -- no --> CF[Coerce flag fields]
+    PR --> CF
+    CF --> V{Source has field validators?}
+    V -- yes --> FP["field_pass: run Annotated + source.validators\non provided fields only"]
+    V -- no --> FR
+    FP --> FR["root_retort: final construction + root_validators"]
+    FR --> FB["Fallback: validate Annotated fields\nthat no source provided"]
+    FB --> D[Dataclass]
+```
+
+**`field_pass`** runs validators only on fields the source actually provided — absent fields stay
+`NOT_LOADED` and are skipped. When `skip_invalid_fields=True`, `field_pass(skip=True)` silently
+drops fields that fail coercion **or** a field validator instead of raising.
+
+**`root_retort`** performs final type coercion and fires any `root_validators=` passed to `load()`
+/ `Loader` once the dataclass is fully constructed.
+
+For multi-source loading, see [Merging](basic/merging.md).
+
+---
+
 When a `dature.load(...)` call fails, the error message tells you which field
 broke, where in the source it came from, and why. This page walks through the
 failures you are most likely to hit while wiring up your first config — and one

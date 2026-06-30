@@ -3,7 +3,7 @@
 import pytest
 from json5 import JsonIdentifier
 
-from dature.loaders.json5_ import str_from_json_identifier
+from dature.coercion.json5_ import str_from_json_identifier
 
 
 @pytest.mark.parametrize(

@@ -25,6 +25,7 @@ from dature.errors.exceptions import (
 )
 from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
 from dature.masking.masking import is_random_string, mask_value
+from dature.type_aliases import JSONValue
 
 
 def _describe_error(exc: BaseException, *, is_secret: bool = False) -> str:
@@ -121,6 +122,7 @@ def handle_load_errors[T](
     *,
     func: Callable[[], T],
     ctx: ErrorContext,
+    loaded_data: "JSONValue | None" = None,
 ) -> T:
     try:
         return func()
@@ -130,7 +132,7 @@ def handle_load_errors[T](
         for e in exc.exceptions:
             if not isinstance(e, MissingEnvVarError):
                 continue
-            locations = resolve_source_location(e.field_path, ctx, file_content)
+            locations = resolve_source_location(e.field_path, ctx, file_content, loaded_data=loaded_data)
             e.location = locations[0] if locations else None
             enriched_env.append(e)
         raise ConfigEnvVarExpandError(ctx.dataclass_name, enriched_env) from exc
@@ -151,7 +153,9 @@ def handle_load_errors[T](
             location_ctx = replace(ctx, secret_paths=ctx.secret_paths | heuristic_paths)
         enriched: list[FieldLoadError] = []
         for fe in field_errors:
-            locations = resolve_source_location(fe.field_path, location_ctx, file_content, input_value=fe.input_value)
+            locations = resolve_source_location(
+                fe.field_path, location_ctx, file_content, input_value=fe.input_value, loaded_data=loaded_data
+            )
             enriched.append(
                 FieldLoadError(
                     field_path=fe.field_path,

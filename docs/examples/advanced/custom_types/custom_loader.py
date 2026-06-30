@@ -8,7 +8,9 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
 import dature
-from dature.loaders import Provider, bool_loader, float_from_string, loader
+from adaptix import Provider, loader
+
+from dature.coercion import bool_loader, float_from_string
 from dature.sources.base import FileSource
 from dature.type_aliases import FileOrStream, JSONValue
 
