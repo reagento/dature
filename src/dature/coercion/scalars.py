@@ -62,7 +62,7 @@ def _bool_from_string(value: str) -> bool:
     raise TypeLoadError(bool, value)
 
 
-def bool_loader(value: str | bool) -> bool:
+def bool_loader(value: str | bool) -> bool:  # noqa: FBT001
     if isinstance(value, bool):
         return value
     return _bool_from_string(value)
@@ -81,7 +81,7 @@ def bytearray_from_json_string(value: str) -> bytearray:
     return bytearray(value.encode("utf-8"))
 
 
-def str_from_scalar(value: str | float | bool) -> str:
+def str_from_scalar(value: str | float | bool) -> str:  # noqa: FBT001
     if isinstance(value, str):
         return value
     return str(value)

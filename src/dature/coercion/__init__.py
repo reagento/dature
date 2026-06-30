@@ -1,7 +1,4 @@
-from adaptix import Provider as Provider
-from adaptix import loader as loader
-
-from dature.loaders.base import (
+from dature.coercion.base import (
     base64url_bytes_from_string,
     base64url_str_from_string,
     byte_size_from_string,
@@ -12,7 +9,7 @@ from dature.loaders.base import (
     timedelta_from_string,
     url_from_string,
 )
-from dature.loaders.scalars import (
+from dature.coercion.scalars import (
     bool_loader,
     bytearray_from_json_string,
     bytearray_from_string,
@@ -30,7 +27,6 @@ from dature.loaders.scalars import (
 )
 
 __all__ = [
-    "Provider",
     "base64url_bytes_from_string",
     "base64url_str_from_string",
     "bool_loader",
@@ -46,7 +42,6 @@ __all__ = [
     "float_from_string",
     "float_passthrough",
     "int_from_string",
-    "loader",
     "none_from_empty_string",
     "optional_from_empty_string",
     "payment_card_number_from_string",

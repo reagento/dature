@@ -229,7 +229,7 @@ class TestRetortCache:
             name: str
 
         source = JsonSource(file=json_file)
-        cache = RetortCache()
+        cache = RetortCache(Cfg)
 
         first = cache.plain(IndexedSource(source, 0))
         second = cache.plain(IndexedSource(source, 0))

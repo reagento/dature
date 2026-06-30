@@ -4,7 +4,7 @@ from datetime import time
 
 import pytest
 
-from dature.loaders.toml_ import time_passthrough
+from dature.coercion.toml_ import time_passthrough
 
 
 @pytest.mark.parametrize(

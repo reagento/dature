@@ -18,7 +18,7 @@ through ``loader.load()`` via a patched ``__init__``.
 """
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import fields, is_dataclass
 from datetime import timedelta
 from typing import Any
@@ -27,18 +27,13 @@ from adaptix import Retort
 
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
-from dature.errors.extraction import handle_load_errors
-from dature.errors.location import ErrorContext, SkippedFieldSource
+from dature.errors.location import ErrorContext
 from dature.loading.cache import _aligned_now, cache_is_fresh
-from dature.loading.context import (
-    build_error_ctx,
-    coerce_flag_fields,
-    make_validating_post_init,
-    merge_fields,
-)
+from dature.loading.context import make_validating_post_init, merge_fields
 from dature.loading.cross_source import clone_with_interpolation, evaluate_when_eager, when_has_cross_refs
+from dature.loading.field_pass import build_revalidation
 from dature.loading.mask_config import resolve_mask_secrets
-from dature.loading.merge import _MergedData, load_and_merge
+from dature.loading.merge import load_and_merge, load_single
 from dature.loading.merge_runtime import (
     MergeConfig,
     SourceMergeStrategy,
@@ -46,16 +41,9 @@ from dature.loading.merge_runtime import (
     resolve_type_loaders,
 )
 from dature.loading.retort import RetortCache
-from dature.loading.source_loading import enrich_skipped_errors, prepare_loaded_source
 from dature.masking.detection import build_secret_paths
-from dature.masking.masking import mask_json_value
 from dature.protocols import DataclassInstance
-from dature.report import (
-    LoadReport,
-    _build_single_source_report,
-    attach_load_report,
-    load_report,
-)
+from dature.report import attach_load_report, load_report
 from dature.sources.base import IndexedSource, Source
 from dature.type_aliases import (
     ExpandEnvVarsMode,
@@ -67,39 +55,15 @@ from dature.type_aliases import (
     NestedResolveStrategy,
     TypeLoaderMap,
 )
+from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
-
-
-def _log_single_source_load(
-    *,
-    dataclass_name: str,
-    loader_type: str,
-    file_path: str,
-    data: JSONValue,
-    secret_paths: frozenset[str] = frozenset(),
-) -> None:
-    logger.debug(
-        "[%s] Single-source load: loader=%s, file=%s",
-        dataclass_name,
-        loader_type,
-        file_path,
-    )
-    if secret_paths:
-        masked_data = mask_json_value(data, secret_paths=secret_paths)
-    else:
-        masked_data = data
-    logger.debug(
-        "[%s] Loaded data: %s",
-        dataclass_name,
-        masked_data,
-    )
 
 
 class Loader[T: DataclassInstance]:
     """Encapsulates a ``load`` call. ``.load()`` honours the cache."""
 
-    def __init__(  # noqa: PLR0913, PLR0915
+    def __init__(  # noqa: PLR0913, PLR0915, C901
         self,
         *sources: Source,
         schema: type[T],
@@ -108,6 +72,7 @@ class Loader[T: DataclassInstance]:
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
         field_groups: tuple[FieldGroupTuple, ...] = (),
+        root_validators: Iterable[RootPredicate] = (),
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
         skip_invalid_fields: bool = False,
@@ -186,7 +151,7 @@ class Loader[T: DataclassInstance]:
         # on Source — Source is a pure config DTO. Per-source retorts are keyed by the
         # source's positional index so that clones produced during load() share the entry
         # pre-warmed here against the original source object.
-        self._retort_cache = RetortCache()
+        self._retort_cache = RetortCache(schema, root_validators=root_validators)
 
         # Pre-warm retorts for all sources (pure type analysis, no env read).
         # Must happen before the decorator replaces schema.__init__ so that adaptix
@@ -195,9 +160,17 @@ class Loader[T: DataclassInstance]:
             indexed = IndexedSource(source, source_idx)
             source_type_loaders = resolve_type_loaders(source, type_loaders)
             self._retort_cache.plain(indexed, resolved_type_loaders=source_type_loaders).get_loader(schema)
-            self._retort_cache.validating(indexed, schema, resolved_type_loaders=source_type_loaders).get_loader(schema)
+            # root_retort is used as the final-construction retort for each source;
+            # pre-warm here so adaptix sees the original (un-patched) __init__ signature.
+            self._retort_cache.root_retort(indexed, resolved_type_loaders=source_type_loaders).get_loader(schema)
+            if self._retort_cache.has_validators(indexed):
+                self._retort_cache.field_pass(
+                    indexed, skip=False, resolved_type_loaders=source_type_loaders
+                ).get_loader(schema)
             if source.skip_field_if_invalid:
-                self._retort_cache.probe(indexed, resolved_type_loaders=source_type_loaders).get_loader(schema)
+                self._retort_cache.field_pass(indexed, skip=True, resolved_type_loaders=source_type_loaders).get_loader(
+                    schema
+                )
 
         # Runtime state set by _prepare_for_load on each .load() call.
         self._merge_meta: MergeConfig | None = None
@@ -256,6 +229,7 @@ class Loader[T: DataclassInstance]:
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
         field_groups: tuple[FieldGroupTuple, ...] = (),
+        root_validators: Iterable[RootPredicate] = (),
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
         skip_invalid_fields: bool = False,
@@ -280,6 +254,7 @@ class Loader[T: DataclassInstance]:
                 strategy=strategy,
                 field_merges=field_merges,
                 field_groups=field_groups,
+                root_validators=root_validators,
                 skip_if_broken=skip_if_broken,
                 skip_if_missing=skip_if_missing,
                 skip_invalid_fields=skip_invalid_fields,
@@ -368,31 +343,12 @@ class Loader[T: DataclassInstance]:
             self._source = source
             self._type_loaders = resolve_type_loaders(source, self._type_loaders_arg)
             self._probe_retort = (
-                self._retort_cache.probe(IndexedSource(source, 0), resolved_type_loaders=self._type_loaders)
+                self._retort_cache.field_pass(
+                    IndexedSource(source, 0), skip=True, resolved_type_loaders=self._type_loaders
+                )
                 if source.skip_field_if_invalid
                 else None
             )
-
-    def _build_validation_loader(
-        self, indexed: IndexedSource
-    ) -> tuple[Callable[[JSONValue], DataclassInstance], ErrorContext]:
-        """Build (validation_loader_fn, error_ctx) for *indexed.source*, reusing the pre-warmed retort."""
-        source_type_loaders = resolve_type_loaders(indexed.source, self._type_loaders_arg)
-        validating_retort = self._retort_cache.validating(
-            indexed, self._schema, resolved_type_loaders=source_type_loaders
-        )
-        loader_fn = validating_retort.get_loader(self._schema)
-        resolved_mask_secrets = resolve_mask_secrets(load_level=self._mask_secrets_arg)
-        ctx = build_error_ctx(
-            indexed.source,
-            self._schema.__name__,
-            secret_paths=self.secret_paths,
-            mask_secrets=resolved_mask_secrets,
-        )
-        # Keep protocol-exposed attributes in sync for make_validating_post_init consumers.
-        self.validation_loader = loader_fn
-        self.error_ctx = ctx
-        return loader_fn, ctx
 
     def _do_load(self) -> T:
         if self._is_single:
@@ -400,122 +356,45 @@ class Loader[T: DataclassInstance]:
         return self._do_load_multi()
 
     def _do_load_single(self) -> T:
-        source: Source = self._source  # type: ignore[assignment]  # set by _prepare_for_load
-        schema = self._schema
-
-        validation_loader, error_ctx = self._build_validation_loader(IndexedSource(source, 0))
-
-        load_result = handle_load_errors(
-            func=source.load_raw,
-            ctx=error_ctx,
-        )
-
-        prepared = prepare_loaded_source(
-            load_result=load_result,
-            source=source,
-            schema=schema,
-            dataclass_name=schema.__name__,
-            base_error_ctx=error_ctx,
-            skip_value=source.skip_field_if_invalid,
+        indexed = IndexedSource(self._source, 0)  # type: ignore[arg-type]  # set by _prepare_for_load
+        data = load_single(
+            indexed=indexed,
+            schema=self._schema,
+            retort_cache=self._retort_cache,
+            type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
-            mask_secrets=error_ctx.mask_secrets,
-            log_prefix=f"[{schema.__name__}]",
+            mask_secrets=self._mask_secrets_arg,
             probe_retort=self._probe_retort,
+            debug=self.debug,
         )
-        raw_data = prepared.raw_data
-        self.error_ctx = error_ctx = prepared.error_ctx
-        skipped_fields: dict[str, list[SkippedFieldSource]] = {}
-        for path, skipped_source in prepared.skipped:
-            skipped_fields.setdefault(path, []).append(skipped_source)
-
-        format_name = source.format_name
-        report: LoadReport | None = None
-        if self.debug:
-            source_path = source.file_path_for_errors()
-            report_file_path = str(source_path) if source_path is not None else source.display_name()
-            report = _build_single_source_report(
-                dataclass_name=schema.__name__,
-                loader_type=format_name,
-                file_path=report_file_path,
-                raw_data=raw_data,
-                secret_paths=self.secret_paths,
-            )
-
-        _log_single_source_load(
-            dataclass_name=schema.__name__,
-            loader_type=format_name,
-            file_path=source.display_name(),
-            data=raw_data if isinstance(raw_data, dict) else {},
+        self.validation_loader, _ = build_revalidation(
+            indexed=indexed,
+            schema=self._schema,
+            retort_cache=self._retort_cache,
+            type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
+            mask_secrets=self._mask_secrets_arg,
         )
+        self.error_ctx = data.error_ctx
+        return data.result
 
-        raw_data = coerce_flag_fields(raw_data, schema)
-
-        try:
-            handle_load_errors(
-                func=lambda: validation_loader(raw_data),
-                ctx=error_ctx,
-                loaded_data=prepared.loaded_data,
-            )
-        except DatureConfigError as exc:
-            if report is not None:
-                attach_load_report(schema, report)
-            if skipped_fields:
-                raise enrich_skipped_errors(exc, skipped_fields) from exc
-            raise
-
-        try:
-            result = handle_load_errors(
-                func=lambda: self._retort_cache.load(
-                    IndexedSource(source, 0),
-                    raw_data,
-                    schema,
-                    resolved_type_loaders=self._type_loaders,
-                ),
-                ctx=error_ctx,
-                loaded_data=prepared.loaded_data,
-            )
-        except DatureConfigError as exc:
-            if report is not None:
-                attach_load_report(schema, report)
-            if skipped_fields:
-                raise enrich_skipped_errors(exc, skipped_fields) from exc
-            raise
-
-        if report is not None:
-            attach_load_report(result, report)
-
-        return result
-
-    def _run_merge(self) -> "_MergedData[T]":
-        """Execute load_and_merge and return the raw MergeResult."""
-        return load_and_merge(
+    def _do_load_multi(self) -> T:
+        data = load_and_merge(
             merge_meta=self._merge_meta,  # type: ignore[arg-type]  # set by _prepare_for_load
             schema=self._schema,
             retort_cache=self._retort_cache,
             debug=self.debug,
             secret_paths=self.secret_paths,
         )
-
-    def _validate_merged(self, data: "_MergedData[T]") -> T:
-        """Validate the merged result using the runtime last_source's retort."""
-        validation_loader, last_error_ctx = self._build_validation_loader(data.last_loaded)
-        try:
-            handle_load_errors(
-                func=lambda: validation_loader(data.merged_raw),
-                ctx=last_error_ctx,
-            )
-        except DatureConfigError:
-            if self.debug:
-                report = load_report(data.result)
-                if report is not None:
-                    attach_load_report(self._schema, report)
-            raise
+        self.validation_loader, self.error_ctx = build_revalidation(
+            indexed=data.last_loaded,
+            schema=self._schema,
+            retort_cache=self._retort_cache,
+            type_loaders=self._type_loaders_arg,
+            secret_paths=self.secret_paths,
+            mask_secrets=self._mask_secrets_arg,
+        )
         return data.result
-
-    def _do_load_multi(self) -> T:
-        data = self._run_merge()
-        return self._validate_merged(data)
 
 
 def _make_patched_init(loader: Loader[Any]) -> Callable[..., None]:

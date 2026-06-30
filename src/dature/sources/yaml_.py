@@ -8,14 +8,14 @@ from adaptix import loader
 from adaptix.provider import Provider
 
 from dature._deps import require_dep
-from dature.errors import LineRange
-from dature.loaders import (
+from dature.coercion import (
     bytearray_from_string,
     date_passthrough,
     datetime_passthrough,
     time_from_string,
 )
-from dature.loaders.yaml_ import time_from_int
+from dature.coercion.yaml_ import time_from_int
+from dature.errors import LineRange
 from dature.sources.base import FileSource
 from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 

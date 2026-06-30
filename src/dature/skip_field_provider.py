@@ -3,7 +3,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from typing import cast
 
-from adaptix import Loader, Mediator, Provider, Retort
+from adaptix import CannotProvide, Loader, Mediator, Provider, Retort
 from adaptix.load_error import LoadError
 
 from dature._adaptix_compat import (
@@ -19,6 +19,7 @@ from dature._adaptix_compat import (
     RequestHandlerRegisterRecord,
     provide_generic_resolved_shape,
 )
+from dature.nested_dict import collect_not_loaded_paths, remove_path_from_dict
 from dature.protocols import DataclassInstance
 from dature.type_aliases import NOT_LOADED, JSONValue, NotLoaded, ProbeDict
 
@@ -44,6 +45,31 @@ class SkipFieldProvider(Provider):
 
 
 class ModelToDictProvider(ModelLoaderProvider):  # type: ignore[no-untyped-call]
+    """Converts dataclass model(s) to optional-fields dicts (constructor = dict).
+
+    When *schema* is ``None`` (default), applies to ALL model types — used for the
+    skip-field probe where nested models must also be individually pruneable.
+
+    When *schema* is a specific type, applies ONLY to that top-level schema and lets
+    nested dataclasses be loaded normally.  Used for ``field_pass(skip=False)`` so that
+    validators on ``Annotated[NestedDC, V.check(...)]`` receive real instances, not dicts.
+    """
+
+    def __init__(self, schema: type | None = None) -> None:
+        super().__init__()
+        self._schema = schema
+
+    def provide_loader(
+        self,
+        mediator: Mediator[Loader[ProbeDict]],
+        request: LocatedRequest[Loader[ProbeDict]],
+    ) -> Loader[ProbeDict]:
+        if self._schema is not None:
+            loc_type = getattr(request.last_loc, "type", None)
+            if loc_type is not self._schema:
+                raise CannotProvide
+        return super().provide_loader(mediator, request)  # type: ignore[arg-type]
+
     def _fetch_shape(
         self,
         mediator: Mediator[Loader[ProbeDict]],
@@ -71,31 +97,6 @@ class ModelToDictProvider(ModelLoaderProvider):  # type: ignore[no-untyped-call]
         )
 
 
-def _collect_not_loaded_paths(data: ProbeDict, prefix: str) -> list[str]:
-    paths: list[str] = []
-
-    for key, value in data.items():
-        current_path = f"{prefix}.{key}" if prefix else key
-        if value is NOT_LOADED:
-            paths.append(current_path)
-        elif isinstance(value, dict):
-            paths.extend(_collect_not_loaded_paths(value, current_path))
-
-    return paths
-
-
-def _remove_path_from_dict(data: dict[str, JSONValue], path: str) -> None:
-    parts = path.split(".")
-    current: dict[str, JSONValue] = data
-    for part in parts[:-1]:
-        next_val = current.get(part)
-        if not isinstance(next_val, dict):
-            return
-        current = next_val
-
-    current.pop(parts[-1], None)
-
-
 @dataclass(frozen=True, slots=True)
 class FilterResult:
     cleaned_dict: JSONValue
@@ -112,7 +113,7 @@ def filter_invalid_fields(
         return FilterResult(cleaned_dict=raw_dict, skipped_paths=[])
 
     probed: ProbeDict = probe_retort.load(raw_dict, schema)
-    all_not_loaded = _collect_not_loaded_paths(probed, "")
+    all_not_loaded = collect_not_loaded_paths(probed, "")
 
     skipped: list[str] = []
     for path in all_not_loaded:
@@ -125,6 +126,6 @@ def filter_invalid_fields(
 
     cleaned: dict[str, JSONValue] = copy.deepcopy(raw_dict)
     for path in skipped:
-        _remove_path_from_dict(cleaned, path)
+        remove_path_from_dict(cleaned, path)
 
     return FilterResult(cleaned_dict=cleaned, skipped_paths=skipped)

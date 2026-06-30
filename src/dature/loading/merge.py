@@ -1,170 +1,187 @@
-"""Multi-source merge machinery.
+"""Single-source and multi-source load orchestration.
 
-Holds the merge core ``load_and_merge`` and its helpers. Single-source loading
-lives directly on ``Loader._do_load_single`` in ``loader.py``.
+``load_single`` handles one source; ``load_and_merge`` handles multiple sources.
+Their documented single/multi asymmetry is intentional and visible here side-by-side:
+single-source defers field-pass errors and merges them with root-retort errors (one
+ExceptionGroup covers both validator and missing-field failures), while multi-source raises
+per-source immediately so the caller knows exactly which source failed.
 """
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass as stdlib_dataclass
+from dataclasses import dataclass
+from typing import cast
 
-from dature.errors import DatureConfigError, SourceLoadError
+from adaptix import Retort
+
+from dature.errors import DatureConfigError, FieldLoadError, SourceLoadError
 from dature.errors.extraction import handle_load_errors
-from dature.loading.context import coerce_flag_fields
+from dature.errors.location import ErrorContext, SkippedFieldSource
+from dature.loading.context import build_error_ctx, coerce_flag_fields
+from dature.loading.field_pass import (
+    compute_default_fallback_errors,
+    merge_root_and_field_errors,
+    run_source_field_pass,
+)
+from dature.loading.load_logging import log_field_origins, log_merge_step, log_single_source_load
 from dature.loading.mask_config import resolve_mask_secrets
-from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent
+from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent, resolve_type_loaders
 from dature.loading.retort import RetortCache
-from dature.loading.source_loading import enrich_skipped_errors
+from dature.loading.source_loading import enrich_skipped_errors, prepare_loaded_source
 from dature.masking.detection import build_secret_paths
-from dature.masking.masking import mask_json_value, mask_value
-from dature.merging.deep_merge import deep_merge_last_wins
-from dature.merging.field_group import FieldGroupContext, validate_field_groups
+from dature.masking.masking import mask_json_value
+from dature.merging.field_group import validate_all_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
+from dature.nested_dict import collect_field_values, set_nested_value
 from dature.protocols import DataclassInstance
-from dature.report import LoadReport, _build_merge_report, attach_load_report
-from dature.report_types import FieldOrigin
+from dature.report import LoadReport, _build_merge_report, _build_single_source_report, attach_load_report
 from dature.sources.base import IndexedSource
 from dature.strategies.source import resolve_source_strategy
-from dature.type_aliases import JSONValue, TypeLoaderMap
+from dature.type_aliases import NOT_LOADED, JSONValue, TypeLoaderMap
 
 logger = logging.getLogger("dature")
 
 
-def _log_merge_step(
+@dataclass(frozen=True, slots=True)
+class _SingleData[T: DataclassInstance]:
+    result: T
+    error_ctx: ErrorContext
+
+
+def load_single[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0913, PLR0915
     *,
-    event: MergeStepEvent,
-    dataclass_name: str,
-    strategy_label: str,
+    indexed: IndexedSource,
+    schema: type[T],
+    retort_cache: RetortCache,
+    type_loaders: TypeLoaderMap | None,
     secret_paths: frozenset[str],
-) -> None:
-    if isinstance(event.before, dict) and isinstance(event.source_data, dict):
-        added = sorted(set(event.source_data.keys()) - set(event.before.keys()))
-        overwritten = sorted(set(event.source_data.keys()) & set(event.before.keys()))
-        logger.debug(
-            "[%s] Merge step %d (strategy=%s): added=%s, overwritten=%s",
-            dataclass_name,
-            event.step_idx,
-            strategy_label,
-            added,
-            overwritten,
+    mask_secrets: bool | None,
+    probe_retort: Retort | None,
+    debug: bool,
+) -> _SingleData[T]:
+    """Load a single source into *schema* and return the result with its final error context.
+
+    Parallel to ``load_and_merge`` for multi-source loading.  The key asymmetry: single-source
+    defers field-pass errors and merges them with root-retort errors (so coercion failures and
+    validator failures are reported together in one ExceptionGroup); multi-source raises per-source
+    immediately.
+    """
+    source = indexed.source
+    source_type_loaders = resolve_type_loaders(source, type_loaders)
+    loader_fn = retort_cache.root_retort(indexed, resolved_type_loaders=source_type_loaders).get_loader(schema)
+    resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
+    error_ctx = build_error_ctx(source, schema.__name__, secret_paths=secret_paths, mask_secrets=resolved_mask_secrets)
+
+    load_result = handle_load_errors(func=source.load_raw, ctx=error_ctx)
+    prepared = prepare_loaded_source(
+        load_result=load_result,
+        source=source,
+        schema=schema,
+        dataclass_name=schema.__name__,
+        base_error_ctx=error_ctx,
+        skip_value=source.skip_field_if_invalid,
+        secret_paths=secret_paths,
+        mask_secrets=resolved_mask_secrets,
+        log_prefix=f"[{schema.__name__}]",
+        probe_retort=probe_retort,
+    )
+    raw_data = prepared.raw_data
+    error_ctx = prepared.error_ctx  # may differ from pre-load ctx if nested_conflicts
+    skipped_fields: dict[str, list[SkippedFieldSource]] = {}
+    for path, skipped_source in prepared.skipped:
+        skipped_fields.setdefault(path, []).append(skipped_source)
+
+    format_name = source.format_name
+    report: LoadReport | None = None
+    if debug:
+        source_path = source.file_path_for_errors()
+        report_file_path = str(source_path) if source_path is not None else source.display_name()
+        report = _build_single_source_report(
+            dataclass_name=schema.__name__,
+            loader_type=format_name,
+            file_path=report_file_path,
+            raw_data=raw_data,
+            secret_paths=secret_paths,
         )
-    masked = mask_json_value(event.after, secret_paths=secret_paths) if secret_paths else event.after
-    logger.debug(
-        "[%s] State after step %d: %s",
-        dataclass_name,
-        event.step_idx,
-        masked,
+
+    log_single_source_load(
+        dataclass_name=schema.__name__,
+        loader_type=format_name,
+        file_path=source.display_name(),
+        data=raw_data if isinstance(raw_data, dict) else {},
+        secret_paths=secret_paths,
     )
 
+    raw_data = coerce_flag_fields(raw_data, schema)
 
-def _log_field_origins(
-    *,
-    dataclass_name: str,
-    field_origins: tuple[FieldOrigin, ...],
-    secret_paths: frozenset[str] = frozenset(),
-) -> None:
-    for origin in field_origins:
-        if origin.key in secret_paths:
-            masked = mask_value(str(origin.value))
-            logger.debug(
-                "[%s] Field '%s' = %r  <-- source %d (%s)",
-                dataclass_name,
-                origin.key,
-                masked,
-                origin.source_index,
-                origin.source_file,
-            )
-        else:
-            logger.debug(
-                "[%s] Field '%s' = %r  <-- source %d (%s)",
-                dataclass_name,
-                origin.key,
-                origin.value,
-                origin.source_index,
-                origin.source_file,
-            )
-
-
-def _collect_leaf_paths(data: JSONValue, prefix: str = "") -> list[str]:
-    if not isinstance(data, dict):
-        return [prefix] if prefix else []
-    paths: list[str] = []
-    for key, value in data.items():
-        child_path = f"{prefix}.{key}" if prefix else key
-        if isinstance(value, dict):
-            paths.extend(_collect_leaf_paths(value, child_path))
-        else:
-            paths.append(child_path)
-    return paths
-
-
-def _validate_all_field_groups(
-    *,
-    raw_dicts: list[JSONValue],
-    field_group_paths: tuple[ResolvedFieldGroup, ...],
-    dataclass_name: str,
-    source_reprs: tuple[str, ...],
-) -> None:
-    merged: JSONValue = {}
-    field_origins: dict[str, int] = {}
-    ctx = FieldGroupContext(
-        source_reprs=source_reprs,
-        field_origins=field_origins,
-        dataclass_name=dataclass_name,
-    )
-    for step_idx, raw in enumerate(raw_dicts):
-        validate_field_groups(
-            base=merged,
-            source=raw,
-            field_group_paths=field_group_paths,
-            source_index=step_idx,
-            ctx=ctx,
+    # Per-source field-pass validation: run field validators on the fields this source
+    # provided (non-skip sources only — skip sources were already filtered at load time).
+    # Single-source defers errors for merging with root-retort below (so one ExceptionGroup
+    # covers both field + missing-field failures); multi-source raises per-source immediately.
+    validated_field_names: set[str] = set()
+    field_pass_errors: list[FieldLoadError] = []
+    field_pass_result: dict[str, object] | None = None
+    if not source.skip_field_if_invalid and retort_cache.has_validators(indexed):
+        field_pass_result, field_pass_errors = run_source_field_pass(
+            indexed=indexed,
+            raw=raw_data,
+            schema=schema,
+            retort_cache=retort_cache,
+            resolved_type_loaders=source_type_loaders,
+            error_ctx=error_ctx,
+            loaded_data=prepared.loaded_data,
         )
-        for leaf_path in _collect_leaf_paths(raw):
-            field_origins[leaf_path] = step_idx
-        merged = deep_merge_last_wins(merged, raw)
+    elif source.skip_field_if_invalid and isinstance(raw_data, dict):
+        # Skip-pass happened at load time; all remaining keys count as validated.
+        validated_field_names.update(raw_data.keys())
+
+    # Final construction: build the dataclass and fire schema-level root validators.
+    # Root errors are merged with any field-pass errors: root paths have priority.
+    try:
+        constructed = handle_load_errors(
+            func=lambda: loader_fn(raw_data),
+            ctx=error_ctx,
+            loaded_data=prepared.loaded_data,
+        )
+    except DatureConfigError as root_exc:
+        combined_error = merge_root_and_field_errors(
+            schema.__name__, cast("list[FieldLoadError]", list(root_exc.exceptions)), field_pass_errors
+        )
+        if report is not None:
+            attach_load_report(schema, report)
+        if skipped_fields:
+            raise enrich_skipped_errors(combined_error, skipped_fields) from None
+        raise combined_error from None
+
+    if field_pass_result is not None:
+        validated_field_names.update(name for name, value in field_pass_result.items() if value is not NOT_LOADED)
+
+    # Field-pass errors without root errors: root_retort succeeded but validators failed.
+    if field_pass_errors:
+        field_pass_error = DatureConfigError(schema.__name__, field_pass_errors)
+        if report is not None:
+            attach_load_report(schema, report)
+        if skipped_fields:
+            raise enrich_skipped_errors(field_pass_error, skipped_fields) from None
+        raise field_pass_error
+
+    result: T = constructed
+
+    # Default-field fallback: Annotated validators for fields no source provided (dataclass defaults).
+    fallback_errors = compute_default_fallback_errors(schema, validated_field_names, result)
+    if fallback_errors:
+        fallback_error = DatureConfigError(schema.__name__, fallback_errors)
+        if report is not None:
+            attach_load_report(schema, report)
+        raise fallback_error
+
+    if report is not None:
+        attach_load_report(result, report)
+
+    return _SingleData(result=result, error_ctx=error_ctx)
 
 
-def _collect_field_values(
-    raw_dicts: list[JSONValue],
-    field_path: str,
-) -> list[JSONValue]:
-    parts = field_path.split(".")
-    values: list[JSONValue] = []
-    for raw in raw_dicts:
-        current: JSONValue = raw
-        found = True
-        for part in parts:
-            if not isinstance(current, dict) or part not in current:
-                found = False
-                break
-            current = current[part]
-        if found:
-            values.append(current)
-    return values
-
-
-def _set_nested_value(
-    data: JSONValue,
-    field_path: str,
-    value: JSONValue,
-) -> JSONValue:
-    if not isinstance(data, dict):
-        return data
-    parts = field_path.split(".")
-    if len(parts) == 1:
-        result = dict(data)
-        result[parts[0]] = value
-        return result
-    key = parts[0]
-    rest = ".".join(parts[1:])
-    result = dict(data)
-    if key in result:
-        result[key] = _set_nested_value(result[key], rest, value)
-    return result
-
-
-@stdlib_dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True)
 class _MergedData[T: DataclassInstance]:
     result: T
     merged_raw: JSONValue
@@ -198,7 +215,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     if logger.isEnabledFor(logging.DEBUG):
 
         def on_merge_step(event: MergeStepEvent) -> None:
-            _log_merge_step(
+            log_merge_step(
                 event=event,
                 dataclass_name=schema.__name__,
                 strategy_label=strategy_label,
@@ -237,7 +254,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     if field_group_paths:
         loaded_entries = ctx.build_report().source_entries
         source_reprs = tuple(repr(merge_meta.sources[entry.index]) for entry in loaded_entries)
-        _validate_all_field_groups(
+        validate_all_field_groups(
             raw_dicts=ctx.loaded_raw_dicts(),
             field_group_paths=field_group_paths,
             dataclass_name=schema.__name__,
@@ -246,12 +263,12 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
 
     if field_merge_strategies:
         loaded_for_fields = ctx.loaded_raw_dicts()
-        for field_path, fs in field_merge_strategies.items():
-            values = _collect_field_values(loaded_for_fields, field_path)
+        for field_path, field_strategy in field_merge_strategies.items():
+            values = collect_field_values(loaded_for_fields, field_path)
             if not values:
                 continue
-            aggregated = fs(values)
-            merged = _set_nested_value(merged, field_path, aggregated)
+            aggregated = field_strategy(values)
+            merged = set_nested_value(merged, field_path, aggregated)
 
     report = ctx.build_report()
 
@@ -279,7 +296,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     frozen_entries = tuple(report.source_entries)
     field_origins = ctx.field_origins()
 
-    _log_field_origins(
+    log_field_origins(
         dataclass_name=schema.__name__,
         field_origins=field_origins,
         secret_paths=secret_paths,
@@ -300,14 +317,49 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     last_source_ctx = report.source_ctxs[-1]
     last_error_ctx = last_source_ctx.error_ctx
     merged = coerce_flag_fields(merged, schema)
+
+    # Per-source field-pass validation: for each non-skip source that has field validators,
+    # run field_pass(skip=False) on the source's OWN raw dict.  Fields absent from that dict
+    # remain NOT_LOADED and their validators do not fire — no "incomplete state" problem.
+    # Collect the set of field names that were validated by at least one source.
+    validated_field_names: set[str] = set()
+    for source_indexed, raw_dict, source_ctx in ctx.loaded_sources():
+        source = source_indexed.source
+        if source.skip_field_if_invalid:
+            # Drop-pass already happened at load time (apply_skip_invalid).
+            # All non-NOT_LOADED leaf names in the cleaned dict count as validated.
+            if isinstance(raw_dict, dict):
+                validated_field_names.update(raw_dict.keys())
+            continue
+        if not retort_cache.has_validators(source_indexed):
+            continue
+        source_type_loaders = resolve_type_loaders(source, merge_meta.type_loaders)
+        field_pass_result, field_pass_errors = run_source_field_pass(
+            indexed=source_indexed,
+            raw=raw_dict,
+            schema=schema,
+            retort_cache=retort_cache,
+            resolved_type_loaders=source_type_loaders,
+            error_ctx=source_ctx.error_ctx,
+            loaded_data=source_ctx.loaded_data,
+        )
+        if field_pass_errors:
+            # Multi-source: raise per-source immediately (different from single-source,
+            # which defers to merge field errors with root-retort errors).
+            field_pass_error = DatureConfigError(schema.__name__, field_pass_errors)
+            if report_obj is not None:
+                attach_load_report(schema, report_obj)
+            if report.skipped_fields:
+                raise enrich_skipped_errors(field_pass_error, report.skipped_fields) from None
+            raise field_pass_error
+        if field_pass_result is not None:
+            validated_field_names.update(name for name, value in field_pass_result.items() if value is not NOT_LOADED)
+
+    # Final construction: build the dataclass and fire schema-level root validators.
+    final_retort = retort_cache.root_retort(last_loaded, resolved_type_loaders=last_type_loaders)
     try:
         result = handle_load_errors(
-            func=lambda: retort_cache.load(
-                last_loaded,
-                merged,
-                schema,
-                resolved_type_loaders=last_type_loaders,
-            ),
+            func=lambda: final_retort.load(merged, schema),
             ctx=last_error_ctx,
             loaded_data=last_source_ctx.loaded_data,
         )
@@ -317,6 +369,14 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         if report.skipped_fields:
             raise enrich_skipped_errors(exc, report.skipped_fields) from None
         raise
+
+    # Default-field fallback: Annotated validators for fields no source provided (dataclass defaults).
+    fallback_errors = compute_default_fallback_errors(schema, validated_field_names, result)
+    if fallback_errors:
+        fallback_error = DatureConfigError(schema.__name__, fallback_errors)
+        if report_obj is not None:
+            attach_load_report(schema, report_obj)
+        raise fallback_error
 
     if report_obj is not None:
         attach_load_report(result, report_obj)

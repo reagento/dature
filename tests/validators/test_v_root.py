@@ -1,4 +1,4 @@
-"""Unit + integration tests for V.root — cross-field validation via source.root_validators."""
+"""Unit + integration tests for V.root — cross-field validation via root_validators=."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,11 +54,9 @@ class TestVRootHappyPath:
         json_file.write_text('{"port": 8080, "user": "alice"}')
 
         result = load(
-            JsonSource(
-                file=json_file,
-                root_validators=(V.root(_privileged_port_requires_root),),
-            ),
+            JsonSource(file=json_file),
             schema=_PrivConfig,
+            root_validators=(V.root(_privileged_port_requires_root),),
         )
 
         assert result.port == 8080
@@ -69,11 +67,9 @@ class TestVRootHappyPath:
         json_file.write_text('{"port": 80, "user": "root"}')
 
         result = load(
-            JsonSource(
-                file=json_file,
-                root_validators=(V.root(_privileged_port_requires_root),),
-            ),
+            JsonSource(file=json_file),
             schema=_PrivConfig,
+            root_validators=(V.root(_privileged_port_requires_root),),
         )
 
         assert result.port == 80
@@ -87,11 +83,9 @@ class TestVRootFailure:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators=(V.root(_privileged_port_requires_root),),
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators=(V.root(_privileged_port_requires_root),),
             )
 
         err = exc_info.value
@@ -108,16 +102,14 @@ class TestVRootFailure:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators=(
-                        V.root(
-                            _privileged_port_requires_root,
-                            error_message="privileged ports require the root user",
-                        ),
+                JsonSource(file=json_file),
+                schema=_PrivConfig,
+                root_validators=(
+                    V.root(
+                        _privileged_port_requires_root,
+                        error_message="privileged ports require the root user",
                     ),
                 ),
-                schema=_PrivConfig,
             )
 
         err = exc_info.value
@@ -139,14 +131,12 @@ class TestMultipleRootValidators:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators=(
-                        V.root(never_passes, error_message="first check failed"),
-                        V.root(always_passes),
-                    ),
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators=(
+                    V.root(never_passes, error_message="first check failed"),
+                    V.root(always_passes),
+                ),
             )
 
         err = exc_info.value
@@ -166,52 +156,42 @@ class TestRootValidatorsContainerShape:
 
     def test_accepts_list(self, json_file: Path):
         result = load(
-            JsonSource(
-                file=json_file,
-                root_validators=[V.root(_privileged_port_requires_root)],
-            ),
+            JsonSource(file=json_file),
             schema=_PrivConfig,
+            root_validators=[V.root(_privileged_port_requires_root)],
         )
         assert result.port == 8080
 
     def test_accepts_tuple(self, json_file: Path):
         result = load(
-            JsonSource(
-                file=json_file,
-                root_validators=(V.root(_privileged_port_requires_root),),
-            ),
+            JsonSource(file=json_file),
             schema=_PrivConfig,
+            root_validators=(V.root(_privileged_port_requires_root),),
         )
         assert result.port == 8080
 
     def test_rejects_bare_root_predicate_missing_comma(self, json_file: Path):
         with pytest.raises(TypeError, match=r"must be iterable"):
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators=V.root(_privileged_port_requires_root),
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators=V.root(_privileged_port_requires_root),
             )
 
     def test_rejects_dict(self, json_file: Path):
         with pytest.raises(TypeError, match=r"must be a sequence"):
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators={"a": V.root(_privileged_port_requires_root)},  # type: ignore[dict-item]
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators={"a": V.root(_privileged_port_requires_root)},  # type: ignore[dict-item]
             )
 
     def test_rejects_string(self, json_file: Path):
         with pytest.raises(TypeError, match=r"must be a sequence"):
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators="not a container",
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators="not a container",
             )
 
 
@@ -225,21 +205,17 @@ class TestRootValidatorsElementTypeChecks:
     def test_rejects_field_level_predicate(self, json_file: Path):
         with pytest.raises(TypeError, match=r"field-level predicate"):
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators=(V >= 1,),
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators=(V >= 1,),
             )
 
     def test_rejects_unrelated_object(self, json_file: Path):
         with pytest.raises(TypeError, match=r"must contain V\.root"):
             load(
-                JsonSource(
-                    file=json_file,
-                    root_validators=("not a root predicate",),
-                ),
+                JsonSource(file=json_file),
                 schema=_PrivConfig,
+                root_validators=("not a root predicate",),
             )
 
 
@@ -252,7 +228,7 @@ class TestRootPredicateRejectedInAnnotated:
 
         json_file = tmp_path / "config.json"
 
-        with pytest.raises(TypeError, match=r"source\.root_validators"):
+        with pytest.raises(TypeError, match=r"root_validators="):
             load(JsonSource(file=json_file), schema=Bad)
 
     def test_root_in_source_validators_raises(self, tmp_path: Path):
@@ -265,7 +241,7 @@ class TestRootPredicateRejectedInAnnotated:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"port": 8080}')
 
-        with pytest.raises(TypeError, match=r"source\.root_validators"):
+        with pytest.raises(TypeError, match=r"root_validators="):
             load(
                 JsonSource(
                     file=json_file,
@@ -273,3 +249,96 @@ class TestRootPredicateRejectedInAnnotated:
                 ),
                 schema=Cfg,
             )
+
+
+class TestSchemaLevelRootValidatorSemantics:
+    def test_root_validator_fires_on_final_merged_state(self, tmp_path: Path):
+        base_file = tmp_path / "base.json"
+        base_file.write_text('{"min_conns": 1, "max_conns": 10}')
+        env_file = tmp_path / "env.json"
+        env_file.write_text('{"max_conns": 0}')
+
+        @dataclass
+        class Pool:
+            min_conns: int
+            max_conns: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                JsonSource(file=base_file),
+                JsonSource(file=env_file),
+                schema=Pool,
+                root_validators=(V.root(lambda c: c.min_conns <= c.max_conns, error_message="min<=max"),),
+            )
+
+        err = exc_info.value
+        assert len(err.exceptions) == 1
+        exc = err.exceptions[0]
+        assert isinstance(exc, FieldLoadError)
+        assert exc.message == "min<=max"
+
+    def test_root_validator_passes_when_final_state_valid(self, tmp_path: Path):
+        base_file = tmp_path / "base.json"
+        base_file.write_text('{"min_conns": 1, "max_conns": 10}')
+        env_file = tmp_path / "env.json"
+        env_file.write_text('{"max_conns": 5}')
+
+        @dataclass
+        class Pool:
+            min_conns: int
+            max_conns: int
+
+        result = load(
+            JsonSource(file=base_file),
+            JsonSource(file=env_file),
+            schema=Pool,
+            root_validators=(V.root(lambda c: c.min_conns <= c.max_conns, error_message="min<=max"),),
+        )
+
+        assert result == Pool(min_conns=1, max_conns=5)
+
+    def test_root_validator_fires_on_single_source(self, tmp_path: Path):
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"x": 5, "y": 2}')
+
+        @dataclass
+        class Cfg:
+            x: int
+            y: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                JsonSource(file=json_file),
+                schema=Cfg,
+                root_validators=(V.root(lambda c: c.x < c.y, error_message="x<y"),),
+            )
+
+        exc = exc_info.value.exceptions[0]
+        assert isinstance(exc, FieldLoadError)
+        assert exc.message == "x<y"
+
+    def test_multiple_sources_all_root_validators_run(self, tmp_path: Path):
+        a_file = tmp_path / "a.json"
+        a_file.write_text('{"x": 1, "y": 2, "z": 3}')
+        b_file = tmp_path / "b.json"
+        b_file.write_text('{"z": 0}')
+
+        @dataclass
+        class Cfg:
+            x: int
+            y: int
+            z: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                JsonSource(file=a_file),
+                JsonSource(file=b_file),
+                schema=Cfg,
+                root_validators=(
+                    V.root(lambda c: c.x < c.y, error_message="x<y"),
+                    V.root(lambda c: c.z > 0, error_message="z>0"),
+                ),
+            )
+
+        messages = [e.message for e in exc_info.value.exceptions if isinstance(e, FieldLoadError)]
+        assert messages == ["z>0"]

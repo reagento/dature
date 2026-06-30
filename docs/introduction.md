@@ -118,7 +118,6 @@ See the full list of Source classes and their extra dependencies on the [main pa
 | `prefix` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`) |
 | `name_style` | Naming convention mapping. See [Naming](basic/naming.md) |
 | `field_mapping` | Explicit field renaming with `F` objects. See [Naming](basic/naming.md), [Field Paths](basic/field-paths.md) |
-| `root_validators` | Post-load validation of the entire object. See [Validation](basic/validation.md) |
 | `validators` | Per-field validators in metadata. See [Validation](basic/validation.md) |
 | `expand_env_vars` | ENV variable expansion mode. See [Advanced — ENV Expansion](advanced/env-expansion.md) |
 | `skip_if_broken` | Skip this source if it fails to parse. See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |

@@ -42,6 +42,7 @@ Main entry point. Two calling patterns:
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type loaders mapping types to conversion functions. Merged with source-level and global loaders. |
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Default priority for JSON vs flat keys in `FlatKeySource`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
+| `root_validators` | `tuple[ValidatorProtocol, ...] \| None` | `None` | Post-load validation of the fully-constructed dataclass. Runs once after all sources have been merged. See [Validation](basic/validation.md#root-validators). |
 
 **Returns:**
 
@@ -86,7 +87,6 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | `prefix` | `DotSeparatedPath \| None` | `None` | Filter ENV keys (`"APP_"`) or extract nested object (`"app.database"`). |
 | `name_style` | `NameStyle \| None` | `None` | Naming convention mapping: `"lower_snake"`, `"upper_snake"`, `"lower_camel"`, `"upper_camel"`, `"lower_kebab"`, `"upper_kebab"`. |
 | `field_mapping` | `FieldMapping \| None` | `None` | Explicit field renaming with `F` objects. |
-| `root_validators` | `tuple[ValidatorProtocol, ...] \| None` | `None` | Post-load validation of the entire object. |
 | `validators` | `FieldValidators \| None` | `None` | Per-field validators via `Annotated` metadata or explicit mapping. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | ENV variable expansion: `"disabled"`, `"default"`, `"empty"`, `"strict"`. |
 | `skip_if_broken` | `bool \| None` | `None` | Skip this source if it fails to load. |
@@ -98,10 +98,6 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | Method | Return type | Description |
 |--------|-------------|-------------|
 | `load_raw()` | `LoadRawResult` | Load raw data, apply prefix filtering and env var expansion. Returns `LoadRawResult(data, nested_conflicts)`. |
-| `transform_to_dataclass(data, schema)` | `T` | Convert a `JSONValue` dict into a dataclass instance using adaptix. Caches the retort per schema type. |
-| `create_retort()` | `Retort` | Build an adaptix `Retort` with base loaders, name mapping, and type loaders. |
-| `create_validating_retort(schema)` | `Retort` | Like `create_retort()`, plus field and root validators extracted from `schema`. |
-| `create_probe_retort()` | `Retort` | Retort that skips missing fields — used internally for partial loading in merge mode. |
 | `file_display()` | `str \| None` | Human-readable file identifier for logging. Returns `None` by default. |
 | `file_path_for_errors()` | `Path \| None` | File path used in error messages. Returns `None` by default. |
 | `resolve_location(...)` | `list[SourceLocation]` | Locate a field in the source content for error reporting. Returns `SourceLocation` with line range, env var name, etc. |

@@ -7,15 +7,15 @@ from adaptix import loader
 from adaptix.provider import Provider
 
 from dature._deps import require_dep
-from dature.errors import LineRange
-from dature.loaders import (
+from dature.coercion import (
     bytearray_from_string,
     date_passthrough,
     datetime_passthrough,
     none_from_empty_string,
     optional_from_empty_string,
 )
-from dature.loaders.toml_ import time_passthrough
+from dature.coercion.toml_ import time_passthrough
+from dature.errors import LineRange
 from dature.sources.base import FileSource
 from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 

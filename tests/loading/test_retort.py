@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from typing import Annotated
 
 import pytest
 from adaptix import NameStyle as AdaptixNameStyle
 
+from dature import V
 from dature.field_path import F
 from dature.loading.retort import (
     RetortCache,
@@ -169,7 +171,7 @@ class TestTransformToDataclass:
         source = MockSource()
         data = {"name": "TestApp", "port": 8080}
 
-        result = RetortCache().load(IndexedSource(source, 0), data, Config)
+        result = RetortCache(Config).plain(IndexedSource(source, 0)).load(data, Config)
 
         assert result == Config(name="TestApp", port=8080)
 
@@ -181,7 +183,7 @@ class TestRetortCache:
             name: str
 
         source = MockSource()
-        cache = RetortCache()
+        cache = RetortCache(Config)
 
         first = cache.plain(IndexedSource(source, 0))
         second = cache.plain(IndexedSource(source, 0))
@@ -194,7 +196,7 @@ class TestRetortCache:
             name: str
 
         source = MockSource()
-        cache = RetortCache()
+        cache = RetortCache(Config)
         loaders_a = {str: lambda x: str(x).upper()}
         loaders_b = {str: lambda x: str(x).lower()}
 
@@ -209,7 +211,7 @@ class TestRetortCache:
             name: str
 
         source = MockSource()
-        cache = RetortCache()
+        cache = RetortCache(Config)
         custom_loaders = {str: lambda x: str(x).upper()}
 
         retort_none = cache.plain(IndexedSource(source, 0))
@@ -224,22 +226,120 @@ class TestRetortCache:
 
         source_a = MockSource()
         source_b = MockSource()
-        cache = RetortCache()
+        cache = RetortCache(Config)
 
         retort_a = cache.plain(IndexedSource(source_a, 0))
         retort_b = cache.plain(IndexedSource(source_b, 1))
 
         assert retort_a is not retort_b
 
-    def test_load_returns_correct_result(self):
+    def test_plain_load_returns_correct_result(self):
         @dataclass
         class Config:
             name: str
             port: int
 
         source = MockSource()
-        cache = RetortCache()
+        cache = RetortCache(Config)
+        indexed = IndexedSource(source, 0)
 
-        result = cache.load(IndexedSource(source, 0), {"name": "App", "port": 9000}, Config)
+        result = cache.plain(indexed).load({"name": "App", "port": 9000}, Config)
 
         assert result == Config(name="App", port=9000)
+
+
+@dataclass
+class _ConfigAnnotated:
+    port: Annotated[int, V >= 0]
+    name: str
+
+
+@dataclass
+class _ConfigPlain:
+    port: int
+    name: str
+
+
+class TestHasValidators:
+    @pytest.mark.parametrize(
+        ("has_annotated", "has_source_validators", "expected"),
+        [
+            (False, False, False),
+            (True, False, True),
+            (False, True, True),
+            (True, True, True),
+        ],
+    )
+    def test_combinations(self, has_annotated, has_source_validators, expected):
+        schema = _ConfigAnnotated if has_annotated else _ConfigPlain
+
+        validators = {F[schema].port: V >= 0} if has_source_validators else None
+        source = MockSource(validators=validators)
+        cache = RetortCache(schema)
+
+        assert cache.has_validators(IndexedSource(source, 0)) == expected
+
+    def test_schema_flag_computed_at_init(self):
+        """Schema-level annotated-validator flag is computed once in __init__, not per-call."""
+
+        @dataclass
+        class Config:
+            value: Annotated[int, V >= 0]
+
+        source = MockSource()
+        cache = RetortCache(Config)
+        indexed = IndexedSource(source, 0)
+
+        # Both calls return the same value, confirming the flag is stable.
+        assert cache.has_validators(indexed) is True
+        assert cache.has_validators(indexed) is True
+
+
+class TestFieldPassRetort:
+    def test_returns_plain_equivalent_when_no_validators(self):
+        """field_pass(skip=False) with no validators behaves like plain."""
+
+        @dataclass
+        class Config:
+            name: str
+
+        source = MockSource()
+        cache = RetortCache(Config)
+        indexed = IndexedSource(source, 0)
+
+        # Should not raise; field_pass is always constructable.
+        retort = cache.field_pass(indexed, skip=False)
+
+        assert retort is not None
+
+    def test_field_pass_and_root_retort_are_distinct(self):
+        """field_pass and root_retort must return separate cached retorts."""
+
+        @dataclass
+        class Config:
+            port: Annotated[int, V >= 0]
+
+        source = MockSource()
+        cache = RetortCache(Config)
+        indexed = IndexedSource(source, 0)
+
+        fp = cache.field_pass(indexed, skip=False)
+        root = cache.root_retort(indexed)
+
+        assert fp is not root
+
+    def test_field_pass_skip_and_noskip_are_distinct(self):
+        """field_pass(skip=True) and field_pass(skip=False) must produce separate retorts."""
+
+        @dataclass
+        class Config:
+            port: int
+
+        source = MockSource()
+        cache = RetortCache(Config)
+        indexed = IndexedSource(source, 0)
+
+        fp_skip = cache.field_pass(indexed, skip=True)
+        fp_noskip = cache.field_pass(indexed, skip=False)
+
+        assert fp_skip is not fp_noskip

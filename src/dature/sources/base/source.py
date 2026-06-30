@@ -10,7 +10,6 @@ import abc
 import contextlib
 import json
 import logging
-from collections.abc import Iterable
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
 from pathlib import Path
@@ -19,11 +18,7 @@ from typing import ClassVar, cast
 from adaptix import loader
 from adaptix.provider import Provider
 
-from dature.conditions import Condition
-from dature.errors import CaretSpan, LineRange, SourceLocation
-from dature.expansion.env_expand import expand_env_vars
-from dature.field_path import Absolute, FieldPath
-from dature.loaders import (
+from dature.coercion import (
     bool_loader,
     bytearray_from_json_string,
     date_from_string,
@@ -34,6 +29,10 @@ from dature.loaders import (
     str_from_scalar,
     time_from_string,
 )
+from dature.conditions import Condition
+from dature.errors import CaretSpan, LineRange, SourceLocation
+from dature.expansion.env_expand import expand_env_vars
+from dature.field_path import Absolute, FieldPath
 from dature.sources.presentation import (
     build_search_path,
     empty_location,
@@ -54,7 +53,6 @@ from dature.type_aliases import (
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
-from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
 
@@ -94,7 +92,6 @@ class Source(abc.ABC):
     prefix: "DotSeparatedPath | None" = None
     name_style: "NameStyle | None" = None
     field_mapping: "FieldMapping | None" = None
-    root_validators: "Iterable[RootPredicate] | None" = None
     validators: "FieldValidators | None" = None
     expand_env_vars: "ExpandEnvVarsMode | None" = None
     skip_if_broken: bool | None = None

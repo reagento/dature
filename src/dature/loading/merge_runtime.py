@@ -48,6 +48,7 @@ from dature.loading.retort import RetortCache
 from dature.loading.source_loading import prepare_loaded_source
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
+from dature.nested_dict import flatten_dict
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.sources.base import IndexedSource, Source, clone_source
@@ -177,21 +178,6 @@ class MergeConfig:
     def __post_init__(self) -> None:
         self.sources = prepare_sources(self.sources, self.source_params)
         self.cross_ref_plan = build_cross_ref_plan(self.sources)
-
-
-def _flatten_dict(data: JSONValue, *, prefix: str) -> list[tuple[str, JSONValue]]:
-    """Flatten nested dicts into dot-separated key-value pairs (leaf nodes only)."""
-    if not isinstance(data, dict):
-        return []
-
-    result: list[tuple[str, JSONValue]] = []
-    for key, value in data.items():
-        full_key = f"{prefix}.{key}" if prefix else key
-        if isinstance(value, dict):
-            result.extend(_flatten_dict(value, prefix=full_key))
-        else:
-            result.append((full_key, value))
-    return result
 
 
 def resolve_type_loaders(
@@ -473,8 +459,8 @@ class LoadCtx:
         if entry_pos is None or not isinstance(after, dict):
             return
         entry = self._source_entries[entry_pos]
-        before_flat = dict(_flatten_dict(before, prefix="")) if isinstance(before, dict) else {}
-        for key, val in _flatten_dict(after, prefix=""):
+        before_flat = dict(flatten_dict(before, prefix="")) if isinstance(before, dict) else {}
+        for key, val in flatten_dict(after, prefix=""):
             if before_flat.get(key, _MISSING) != val:
                 self._field_origins[key] = FieldOrigin(
                     key=key,
@@ -574,7 +560,9 @@ class LoadCtx:
 
         skip_value = resolve_skip_invalid(source, self._merge_meta)
         probe_retort = (
-            self._retort_cache.probe(IndexedSource(source, source_idx), resolved_type_loaders=type_loaders)
+            self._retort_cache.field_pass(
+                IndexedSource(source, source_idx), skip=True, resolved_type_loaders=type_loaders
+            )
             if skip_value
             else None
         )
@@ -655,6 +643,22 @@ class LoadCtx:
         should not need this.
         """
         return list(self._source_ctxs)
+
+    def loaded_sources(self) -> list[tuple[IndexedSource, JSONValue, SourceContext]]:
+        """Return ``(indexed_source, own_raw_dict, source_ctx)`` for each successfully-loaded source.
+
+        ``own_raw_dict`` is the raw dict **this source contributed** (after skip-invalid filtering),
+        not the cumulative merged state.  Used by ``load_and_merge`` to run per-source field-pass
+        validation on the fields each source actually provided.
+
+        Internal API — consumed by ``merge.py`` after the strategy runs.
+        """
+        result: list[tuple[IndexedSource, JSONValue, SourceContext]] = []
+        for entry, raw, ctx in zip(self._source_entries, self._raw_dicts, self._source_ctxs, strict=False):
+            source = self._sources[entry.index]
+            indexed = IndexedSource(source, entry.index)
+            result.append((indexed, raw, ctx))
+        return result
 
     def build_report(self) -> _LoadCtxSnapshot:
         """Snapshot of accumulated metadata after strategy execution.

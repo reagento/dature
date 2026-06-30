@@ -71,7 +71,10 @@ version-file = "src/dature/_version.py"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = ["docs/examples/advanced/cross_source_refs/t_string.py"]
+extend-exclude = [
+    "docs/examples/advanced/cross_source_refs/t_string.py",
+    "src/dature/_version.py",
+]
 
 [tool.ruff.lint]
 select = ["ALL"]

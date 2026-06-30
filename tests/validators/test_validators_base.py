@@ -58,7 +58,7 @@ class TestExtractAndCheckValidators:
             extract_and_check_validators(Annotated[int, V.len() >= 3], field_path=["port"])
 
     def test_root_predicate_in_annotated_raises(self):
-        with pytest.raises(TypeError, match=r"source\.root_validators"):
+        with pytest.raises(TypeError, match=r"root_validators="):
             extract_and_check_validators(
                 Annotated[int, V.root(lambda _: True)],
                 field_path=["port"],
@@ -154,7 +154,7 @@ class TestCreateMetadataValidatorProviders:
 
         fp = FieldPath(owner=Cfg, parts=("name",))
 
-        with pytest.raises(TypeError, match=r"source\.root_validators"):
+        with pytest.raises(TypeError, match=r"root_validators="):
             create_metadata_validator_providers({fp: V.root(lambda _: True)})  # type: ignore[dict-item]
 
     def test_non_predicate_value_rejected(self):

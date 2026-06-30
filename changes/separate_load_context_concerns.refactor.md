@@ -1,0 +1,1 @@
+Move single-source loading (`load_single`) and the decorator re-validation builder (`build_revalidation`) into `dature.loading.merge` alongside `load_and_merge`, so `Loader` delegates to public helpers only; deduplicate the root/field error-merge into a shared helper; rename internal variables to be clear and unprefixed.

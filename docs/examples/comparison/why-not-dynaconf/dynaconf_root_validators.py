@@ -24,13 +24,13 @@ def check_debug_port(config: Config) -> bool:
 dature.load(
     dature.Toml11Source(
         file=SOURCES_DIR / "dynaconf_root_validators_invalid.toml",
-        root_validators=(
-            V.root(
-                check_debug_port,
-                error_message="debug mode should not use port 80",
-            ),
-        ),
     ),
     schema=Config,
+    root_validators=(
+        V.root(
+            check_debug_port,
+            error_message="debug mode should not use port 80",
+        ),
+    ),
 )
 # --8<-- [end:example]

@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import timedelta
 from typing import Any, overload
 
@@ -17,6 +17,7 @@ from dature.type_aliases import (
     NestedResolveStrategy,
     TypeLoaderMap,
 )
+from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
 
@@ -32,6 +33,7 @@ def load[T](
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
+    root_validators: Iterable[RootPredicate] = (),
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
     skip_invalid_fields: bool = False,
@@ -53,6 +55,7 @@ def load(
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
+    root_validators: Iterable[RootPredicate] = (),
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
     skip_invalid_fields: bool = False,
@@ -74,6 +77,7 @@ def load(  # noqa: PLR0913
     strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
     field_groups: tuple[FieldGroupTuple, ...] = (),
+    root_validators: Iterable[RootPredicate] = (),
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
     skip_invalid_fields: bool = False,
@@ -115,6 +119,7 @@ def load(  # noqa: PLR0913
         "strategy": strategy,
         "field_merges": field_merges,
         "field_groups": field_groups,
+        "root_validators": root_validators,
         "skip_if_broken": skip_if_broken,
         "skip_if_missing": skip_if_missing,
         "skip_invalid_fields": skip_invalid_fields,
