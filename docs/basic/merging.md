@@ -4,28 +4,59 @@
 
 ```mermaid
 graph TD
-    A[Source 1] --> LA[Load & Parse]
-    B[Source 2] --> LB[Load & Parse]
-    C[Source N] --> LC[Load & Parse]
-    LA --> RA[Raw Dict 1]
-    LB --> RB[Raw Dict 2]
-    LC --> RC[Raw Dict N]
-    RA --> MS[Merge Strategy]
-    RB --> MS
-    RC --> MS
-    RA -->|field validators on own dict| FP[Per-source field-pass]
-    RB -->|field validators on own dict| FP
-    RC -->|field validators on own dict| FP
-    MS --> MD[Merged Dict]
-    MD --> FR["root_retort: final construction + root_validators → Dataclass"]
+    S1["Source 1"] --> R1["Read source data"]
+    S2["Source 2"] --> R2["Read source data"]
+    SN["Source N"] --> RN["Read source data"]
+
+    R1 --> SK1{"skip_invalid_fields?"}
+    SK1 -- yes --> D1["Drop fields that fail\ntype or constraint check"] --> M["Apply merge strategy\n(last_wins / first_wins / …)"]
+    SK1 -- no --> FP1["Validate fields\nprovided by this source"] --> M
+
+    R2 --> SK2{"skip_invalid_fields?"}
+    SK2 -- yes --> D2["Drop fields that fail\ntype or constraint check"] --> M
+    SK2 -- no --> FP2["Validate fields\nprovided by this source"] --> M
+
+    RN --> SKN{"skip_invalid_fields?"}
+    SKN -- yes --> DN["Drop fields that fail\ntype or constraint check"] --> M
+    SKN -- no --> FPN["Validate fields\nprovided by this source"] --> M
+
+    M --> FGR["field_groups: enforce that related fields\nare all set by the same source"]
+    FGR --> FMR["field_merges: combine field values\nacross sources (e.g. merge lists)"]
+    FMR --> CONSTR["Construct dataclass\n+ run all validators\n(root_validators + Annotated on defaults)"]
+    CONSTR --> D["Dataclass"]
 ```
 
-Each source's field validators run only against **that source's own raw dict** — not the
-cumulative merged state. Fields absent from a source are not validated by that source's pass.
-Fields that no source provided (took a dataclass default) are validated once at the end on the
-final object.
+When your config is spread across several sources — defaults in a file, overrides from the
+environment, and so on — dature loads each source independently, layers them by priority, and
+produces one validated instance. Crucially, **each source is validated on its own
+contribution**, so an override only needs to be valid for the fields it actually sets.
 
-Load configuration from multiple sources and merge them into one dataclass.
+1. **Load and validate each source independently.** Every source is read (with `expand_env_vars`
+   substitution and `mask_secrets` / `secret_field_names` masking). If `skip_invalid_fields`
+   is on, invalid values are dropped per source before field validation. Then each source's own
+   values are coerced and run through field-level validation — type coercion, `Annotated`
+   constraints, source-level `validators=`. A source is judged only on the fields it provides,
+   never on the merged whole. Missing or broken sources can be tolerated with `skip_if_missing`
+   / `skip_if_broken`; `first_found` tolerates them automatically.
+2. **Layer the sources together** (`strategy`). Sources are merged by the chosen strategy:
+   `last_wins` (default — later sources override earlier), `first_wins` (earlier sources win),
+   `first_found` (take the first that loads, ignore the rest), or `raise_on_conflict` (error
+   if two sources disagree on a value). Nested sections merge key-by-key; lists and scalars are
+   replaced wholesale according to the strategy.
+3. **Apply cross-source rules.** `field_groups=` enforce that related fields are always
+   overridden together — never half from one source, half from another. `field_merges=` apply
+   per-field aggregation (e.g. concatenating lists or picking the max) instead of a plain
+   last/first-wins replacement.
+4. **Construct and validate dataclass.** The merged values are assembled into the instance.
+   `root_validators=` run once on the finished object — checks that span several fields at once
+   (e.g. "start must be before end"). Fields no source supplied take their dataclass defaults;
+   any `Annotated` constraints on those defaults are still enforced.
+5. **Result.** One typed, validated config — or a report of every problem, each tied to the
+   source it came from.
+
+Steps 4–5 are identical to [single-source loading](../loading.md): multi-source is just
+single-source with a per-source load-and-validate step and a merge step in front. One source
+is the N=1 case.
 
 ## Basic Merging
 

@@ -4,26 +4,41 @@
 
 ```mermaid
 graph TD
-    S[Source] --> L[Load raw data]
-    L --> R[Raw Dict]
-    R --> PB{skip_invalid_fields?}
-    PB -- yes --> PR["field_pass(skip=True): drop fields\nthat fail coercion or validation"]
-    PB -- no --> CF[Coerce flag fields]
-    PR --> CF
-    CF --> V{Source has field validators?}
-    V -- yes --> FP["field_pass: run Annotated + source.validators\non provided fields only"]
-    V -- no --> FR
-    FP --> FR["root_retort: final construction + root_validators"]
-    FR --> FB["Fallback: validate Annotated fields\nthat no source provided"]
-    FB --> D[Dataclass]
+    S["Source"] --> RAW["Read source data"]
+    RAW --> SK{"skip_invalid_fields?"}
+    SK -- yes --> DROP["Drop fields that fail\ntype or constraint check"]
+    SK -- no --> FV
+    DROP --> FV{"Source has field validators?\n(bypassed if drop-pass ran)"}
+    FV -- yes --> FP["Validate fields provided\nby this source"]
+    FV -- no --> ROOT
+    FP --> ROOT["Construct dataclass\n+ run all validators\n(root_validators + Annotated on defaults)"]
+    ROOT --> D["Dataclass"]
 ```
 
-**`field_pass`** runs validators only on fields the source actually provided — absent fields stay
-`NOT_LOADED` and are skipped. When `skip_invalid_fields=True`, `field_pass(skip=True)` silently
-drops fields that fail coercion **or** a field validator instead of raising.
+dature reads your config from a single source, converts every raw value into the type its
+dataclass field declares, checks it against the rules you attached, and returns a ready,
+fully-validated instance. Validation happens in distinct tiers; if anything fails, dature
+gathers **every** error into one report naming the field, its location in the source, and why
+it failed.
 
-**`root_retort`** performs final type coercion and fires any `root_validators=` passed to `load()`
-/ `Loader` once the dataclass is fully constructed.
+1. **Read the source.** Raw values are pulled from the source. With `expand_env_vars`,
+   `${VAR}` placeholders are substituted first; secrets are masked in error/debug output per
+   `mask_secrets` / `secret_field_names`.
+2. **Optionally drop invalid values** (`skip_invalid_fields`). When enabled, each provided
+   value is probed against its field's type and rules, and anything that would fail is quietly
+   dropped so the field can fall back to its dataclass default instead of failing the whole
+   load. The field-validator pass (step 3) is then skipped — remaining fields are counted as
+   already checked. Without the flag, nothing is dropped and failures surface as errors.
+3. **Field-level validation.** Every value the source provided is coerced to the field's type
+   and checked against that field's declared rules: declared type, `Annotated` constraints
+   (ranges, patterns, custom predicates), plus any per-source `validators=` attached to the
+   source. Fields the source did not provide are left untouched here.
+4. **Construct and validate dataclass.** Once the values are assembled into the instance,
+   `root_validators=` run — checks that span several fields at once (e.g. "start must be
+   before end"). Fields no source supplied take their dataclass default; any `Annotated`
+   constraints on those defaults are still enforced.
+5. **Result.** A fully typed, fully validated config instance — or a single grouped error
+   report of every field that failed across all tiers at once.
 
 For multi-source loading, see [Merging](basic/merging.md).
 
