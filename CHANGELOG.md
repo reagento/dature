@@ -1,3 +1,10 @@
+## 0.22.1
+
+### Refactoring
+
+- Extract `_finalize_load` from `loading.merge` to deduplicate the identical coerce → per-source field-pass → root construction → default fallback tail shared by `load_single` and `load_and_merge`; the intentional single/multi error-reporting asymmetry (single defers field-pass errors into one ExceptionGroup, multi raises per-source immediately) is preserved via an `error_mode` parameter; move Flag-field coercion to the per-source step so it consistently precedes field-level validation in both paths; rewrite the loading and merging architecture diagrams in the docs to be accurate, complete, and visually consistent. ([#unify_load_tail](https://github.com/reagento/dature/issues/unify_load_tail))
+
+
 ## 0.22.0
 
 ### Features
