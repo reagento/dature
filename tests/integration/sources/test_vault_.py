@@ -119,8 +119,10 @@ class TestVaultSourceTokenKv2:
             mount_point="secret",
             kv_version=2,
         )
-        source.load_raw()
-        locations = source.resolve_location(field_path=["db_password"], file_content=None, nested_conflict=None)
+        result = source.load_raw()
+        locations = source.resolve_location(
+            field_path=["db_password"], file_content=None, nested_conflict=None, loaded_data=result.loaded_data
+        )
         assert locations == [
             SourceLocation(
                 location_label="VAULT",

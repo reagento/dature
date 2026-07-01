@@ -1,1 +1,0 @@
-Fixed exception chaining when `skip_field_if_invalid` exhausts all sources for a required field: the intermediate error was incorrectly set as `__cause__`, causing Python to print a noisy double-group traceback instead of the clean `Config loading errors` format.
