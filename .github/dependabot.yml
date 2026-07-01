@@ -11,6 +11,10 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "deps"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -22,3 +26,7 @@ updates:
       - "ci"
     commit-message:
       prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
