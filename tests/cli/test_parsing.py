@@ -137,7 +137,7 @@ class TestParseSourceSpec:
             ("type=dature.JsonSource,brokenpair", ValueError, "expected 'key=value'"),
             ("type=dature.JsonSource,=value", ValueError, "Empty key"),
             ("type=dature.JsonSource,file=a,file=b", ValueError, "Duplicate"),
-            ("type=os.path", TypeError, "not a subclass"),
+            ("type=os.path", TypeError, "not a class"),
         ],
     )
     def test_errors(self, spec, exc_type, match):

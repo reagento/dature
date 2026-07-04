@@ -12,7 +12,7 @@ from dature.errors.location import ErrorContext
 from dature.field_path import FieldPath, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
-from dature.sources.base import Source
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue, NestedConflicts
 
 logger = logging.getLogger("dature")
@@ -39,7 +39,7 @@ def coerce_flag_fields[T](data: JSONValue, schema: type[T]) -> JSONValue:
 
 
 def build_error_ctx(
-    metadata: Source,
+    metadata: SourceProtocol,
     dataclass_name: str,
     *,
     secret_paths: frozenset[str] = frozenset(),

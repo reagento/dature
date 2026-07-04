@@ -1,6 +1,7 @@
 import io
 import os
 from collections.abc import Iterable
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import ClassVar, cast
 
@@ -31,7 +32,6 @@ class EnvSource(FlatKeySource):
         self,
         *,
         field_path: list[str],
-        file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,  # noqa: ARG002
         loaded_data: JSONValue | None = None,  # noqa: ARG002
@@ -121,13 +121,16 @@ class EnvFileSource(FileFieldMixin, EnvSource):
         self,
         *,
         field_path: list[str],
-        file_content: str | None,
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,
         loaded_data: JSONValue | None = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         var_name = self._resolve_var_name(field_path, self.prefix, self.nested_sep, nested_conflict)
         file_path = self.file_path_for_errors()
+        file_content: str | None = None
+        if file_path is not None:
+            with suppress(OSError, UnicodeDecodeError):
+                file_content = file_path.read_text(encoding=self.encoding_for_errors())
         line_range: LineRange | None = None
         line_content: list[str] | None = None
         line_carets: list[CaretSpan] | None = None

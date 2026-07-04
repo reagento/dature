@@ -44,7 +44,8 @@ from dature.loading.retort import RetortCache
 from dature.masking.detection import build_secret_paths
 from dature.protocols import DataclassInstance
 from dature.report import attach_load_report, load_report
-from dature.sources.base import IndexedSource, Source
+from dature.sources.base import IndexedSource
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -65,7 +66,7 @@ class Loader[T: DataclassInstance]:
 
     def __init__(  # noqa: PLR0913, PLR0915, C901
         self,
-        *sources: Source,
+        *sources: SourceProtocol,
         schema: type[T],
         cache: bool | timedelta | None = None,
         debug: bool | None = None,
@@ -87,8 +88,8 @@ class Loader[T: DataclassInstance]:
             msg = "Loader requires at least one Source"
             raise TypeError(msg)
         for s in sources:
-            if not isinstance(s, Source):
-                msg = f"Loader positional arguments must be Source instances, got {s!r}"
+            if not isinstance(s, SourceProtocol):
+                msg = f"Loader positional arguments must be SourceProtocol instances, got {s!r}"
                 raise TypeError(msg)
 
         if cache is None:
@@ -175,7 +176,7 @@ class Loader[T: DataclassInstance]:
         # Runtime state set by _prepare_for_load on each .load() call.
         self._merge_meta: MergeConfig | None = None
         self._is_single: bool = False
-        self._source: Source | None = None
+        self._source: SourceProtocol | None = None
         self._type_loaders: TypeLoaderMap | None = None
         self._probe_retort: Retort | None = None
 
@@ -223,7 +224,7 @@ class Loader[T: DataclassInstance]:
 
     @staticmethod
     def as_decorator(  # noqa: PLR0913
-        *sources: Source,
+        *sources: SourceProtocol,
         cache: bool | timedelta | None = None,
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
@@ -281,7 +282,7 @@ class Loader[T: DataclassInstance]:
     # ``make_validating_post_init`` helper can reach them directly.
 
     @property
-    def source(self) -> Source:
+    def source(self) -> SourceProtocol:
         """Single-source mode: the prepared source after default resolution."""
         if self._source is None:
             msg = "Loader.source is only available in single-source mode"

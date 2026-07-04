@@ -221,7 +221,7 @@ class TestInspectErrors:
             (
                 "myschema:Settings",
                 "type=os.path,file=/tmp/x.json",
-                "error: 'os.path' is not a subclass of dature.Source\n",
+                "error: 'os.path' is not a class\n",
             ),
             (
                 "myschema:Settings",

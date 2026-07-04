@@ -10,7 +10,7 @@ from typing import Any, Literal, Protocol, get_args, get_origin, get_type_hints
 
 from dature.main import load
 from dature.protocols import DataclassInstance
-from dature.sources.base import Source
+from dature.sources.protocol import SourceProtocol
 
 
 class CliCommonArgs(DataclassInstance, Protocol):
@@ -90,7 +90,7 @@ def parse_value(raw: str) -> Any:  # noqa: ANN401
         return raw
 
 
-def parse_source_spec(spec: str) -> tuple[type[Source], dict[str, Any]]:
+def parse_source_spec(spec: str) -> tuple[type[SourceProtocol], dict[str, Any]]:
     """Parse ``type=...,k=v,...`` into ``(SourceClass, kwargs)``.
 
     Escape commas and equals signs in values with ``\\,`` and ``\\=``.
@@ -118,10 +118,9 @@ def parse_source_spec(spec: str) -> tuple[type[Source], dict[str, Any]]:
         raise ValueError(msg)
 
     obj = import_attr(type_path)
-    if not (isinstance(obj, type) and issubclass(obj, Source)):
-        msg = f"{type_path!r} is not a subclass of dature.Source"
+    if not isinstance(obj, type):
+        msg = f"'{type_path}' is not a class"
         raise TypeError(msg)
-
     return obj, pairs
 
 
@@ -297,10 +296,14 @@ def derive_cli_schema() -> type:
     )
 
 
-def build_sources(specs: list[str]) -> list[Source]:
+def build_sources(specs: list[str]) -> list[SourceProtocol]:
     """Parse each spec and instantiate the corresponding Source."""
-    sources: list[Source] = []
+    sources: list[SourceProtocol] = []
     for spec in specs:
         klass, kwargs = parse_source_spec(spec)
-        sources.append(klass(**kwargs))
+        source = klass(**kwargs)
+        if not isinstance(source, SourceProtocol):
+            msg = f"{klass.__name__!r} is not a SourceProtocol implementation"
+            raise TypeError(msg)
+        sources.append(source)
     return sources

@@ -21,11 +21,12 @@ from dature.conditions import Condition
 from dature.errors.exceptions import DatureError
 from dature.expansion.cross_source import expand_cross_refs, find_refs, needs_cross_ref_expansion
 from dature.expansion.env_expand import expand_string_default
-from dature.sources.base import Source, clone_source
+from dature.sources.base import clone_source
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue
 
 
-def _init_string_fields(source: Source) -> dict[str, str]:
+def _init_string_fields(source: SourceProtocol) -> dict[str, str]:
     """Return {field_name: value} for all init string fields of a source."""
     d = vars(source)
     return {
@@ -35,12 +36,12 @@ def _init_string_fields(source: Source) -> dict[str, str]:
     }
 
 
-def when_has_cross_refs(source: Source) -> bool:
+def when_has_cross_refs(source: SourceProtocol) -> bool:
     """Return True if source.when contains any ${@tag.key} cross-ref."""
     return source.when is not None and source.when.has_cross_refs()
 
 
-def _extract_ref_tags(source: Source) -> set[str]:
+def _extract_ref_tags(source: SourceProtocol) -> set[str]:
     """Return all tag names referenced in this source's init string fields and when keys."""
     tags: set[str] = set()
     for value in _init_string_fields(source).values():
@@ -85,9 +86,9 @@ def evaluate_when_lazy(
 
 
 def clone_with_interpolation(
-    source: Source,
+    source: SourceProtocol,
     context: dict[str, dict[str, JSONValue]],
-) -> Source:
+) -> SourceProtocol:
     """Return a shallow copy of *source* with cross-refs in init fields expanded.
 
     Uses ``copy.copy`` + ``vars().update()`` — the same pattern as
@@ -137,7 +138,7 @@ def _find_cycle(start: int, deps: list[list[int]]) -> list[int]:
 
 def _format_cycle_error(
     cycle: list[int],
-    sources: tuple[Source, ...],
+    sources: tuple[SourceProtocol, ...],
     deps: list[list[int]],
 ) -> str:
     """Format a human-readable cycle error message."""
@@ -166,7 +167,7 @@ def _format_cycle_error(
     return "\n".join(lines)
 
 
-def _format_tag_collision_error(tag: str, sources: list[Source]) -> str:
+def _format_tag_collision_error(tag: str, sources: list[SourceProtocol]) -> str:
     names = "\n".join(f"  {source!r}" for source in sources)
     return (
         f"Tag collision: multiple sources share resolved_tag={tag!r}:\n"
@@ -175,7 +176,7 @@ def _format_tag_collision_error(tag: str, sources: list[Source]) -> str:
     )
 
 
-def _build_dep_graph(sources: tuple[Source, ...]) -> list[list[int]]:
+def _build_dep_graph(sources: tuple[SourceProtocol, ...]) -> list[list[int]]:
     """Return dependency graph: deps[i] = indices of sources that source i depends on.
 
     Raises DatureError on tag collision or reference to unknown tag.
@@ -222,7 +223,7 @@ def _build_dep_graph(sources: tuple[Source, ...]) -> list[list[int]]:
     return deps
 
 
-def _topological_sort(sources: tuple[Source, ...], deps: list[list[int]]) -> list[int]:
+def _topological_sort(sources: tuple[SourceProtocol, ...], deps: list[list[int]]) -> list[int]:
     """Return source indices in topological order (dependencies before dependents).
 
     Raises DatureError if a cycle is detected.
@@ -263,7 +264,7 @@ class CrossRefPlan:
     deps: tuple[tuple[int, ...], ...]
 
 
-def build_cross_ref_plan(sources: tuple[Source, ...]) -> CrossRefPlan | None:
+def build_cross_ref_plan(sources: tuple[SourceProtocol, ...]) -> CrossRefPlan | None:
     """Eagerly validate the cross-ref dependency graph and return a plan.
 
     Raises ``DatureError`` on tag collision, unknown tag reference, or cycle.

@@ -25,7 +25,8 @@ from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import ModelToDictProvider, SkipFieldProvider
-from dature.sources.base import IndexedSource, Source
+from dature.sources.base import IndexedSource
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     URL,
     Base64UrlBytes,
@@ -91,7 +92,7 @@ def get_name_mapping_providers(
 
 
 def build_base_recipe(
-    source: Source,
+    source: SourceProtocol,
     *,
     resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> list[Provider]:

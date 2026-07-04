@@ -26,6 +26,8 @@ class FileFieldMixin:
     search_system_paths: bool | None = None
     system_config_dirs: "SystemConfigDirsArg | None" = None
     encoding: str | None = None
+    skip_if_broken: bool | None = None
+    skip_if_missing: bool | None = None
     resolved_file_path: Path | None = field(init=False, default=None)
     # --8<-- [end:file-source]
 

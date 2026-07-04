@@ -65,15 +65,11 @@ class TestRemoteSourceResolveLocation:
     def test_resolve_location(self, prefix, data, field_path, expected):
         src = _FakeRemote(prefix=prefix, data=data)
         loaded_data = src.load_raw().loaded_data
-        locations = src.resolve_location(
-            field_path=field_path, file_content=None, nested_conflict=None, loaded_data=loaded_data
-        )
+        locations = src.resolve_location(field_path=field_path, nested_conflict=None, loaded_data=loaded_data)
         assert locations[0].line_content == [expected]
 
     def test_resolve_location_without_loaded_data(self):
         # When loaded_data is None (data never loaded or not available), renders key only.
         src = _FakeRemote(data={"db_password": "s3cret"})
-        locations = src.resolve_location(
-            field_path=["db_password"], file_content=None, nested_conflict=None, loaded_data=None
-        )
+        locations = src.resolve_location(field_path=["db_password"], nested_conflict=None, loaded_data=None)
         assert locations[0].line_content == ["fake://test: db_password"]

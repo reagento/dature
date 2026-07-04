@@ -36,6 +36,7 @@ from dature.nested_dict import collect_field_values, set_nested_value
 from dature.protocols import DataclassInstance
 from dature.report import LoadReport, _build_merge_report, _build_single_source_report, attach_load_report
 from dature.sources.base import IndexedSource
+from dature.sources.protocol import FileSourceProtocol
 from dature.strategies.source import resolve_source_strategy
 from dature.type_aliases import NOT_LOADED, JSONValue, TypeLoaderMap
 
@@ -93,7 +94,7 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
     format_name = source.format_name
     report: LoadReport | None = None
     if debug:
-        source_path = source.file_path_for_errors()
+        source_path = source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
         report_file_path = str(source_path) if source_path is not None else source.display_name()
         report = _build_single_source_report(
             dataclass_name=schema.__name__,

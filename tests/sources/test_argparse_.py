@@ -393,7 +393,6 @@ class TestArgparseSourceResolveLocation:
 
         locations = src.resolve_location(
             field_path=["host"],
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -408,7 +407,6 @@ class TestArgparseSourceResolveLocation:
 
         locations = src.resolve_location(
             field_path=["db", "host"],
-            file_content=None,
             nested_conflict=None,
         )
 

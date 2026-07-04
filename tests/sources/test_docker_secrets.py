@@ -167,7 +167,6 @@ class TestDockerSecretsResolveLocation:
     def test_resolve_secret_path(self, tmp_path: Path, field_path: list[str], prefix: str | None, expected_name: str):
         locations = DockerSecretsSource(dir_=tmp_path, prefix=prefix).resolve_location(
             field_path=field_path,
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -194,7 +193,6 @@ class TestDockerSecretsResolveLocation:
 
         locations = DockerSecretsSource(dir_=tmp_path).resolve_location(
             field_path=["port"],
-            file_content=None,
             nested_conflict=None,
         )
 

@@ -62,7 +62,7 @@ class TestLoaderValidation:
             Loader(schema=_Config)
 
     def test_non_source_argument_raises(self) -> None:
-        with pytest.raises(TypeError, match="must be Source instances"):
+        with pytest.raises(TypeError, match="must be SourceProtocol instances"):
             Loader("not a source", schema=_Config)
 
     def test_negative_timedelta_raises(self, tmp_path: Path) -> None:

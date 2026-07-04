@@ -24,7 +24,7 @@ from dature.errors.location import (
 from dature.field_path import FieldPath
 from dature.loading.context import apply_skip_invalid, build_error_ctx
 from dature.protocols import DataclassInstance
-from dature.sources.base import Source
+from dature.sources.protocol import FileSourceProtocol, SourceProtocol
 from dature.type_aliases import JSONValue, LoadRawResult
 
 
@@ -42,7 +42,7 @@ class PreparedSource:
 def prepare_loaded_source(  # noqa: PLR0913
     *,
     load_result: LoadRawResult,
-    source: Source,
+    source: SourceProtocol,
     schema: "type[DataclassInstance]",
     dataclass_name: str,
     base_error_ctx: ErrorContext,
@@ -69,10 +69,10 @@ def prepare_loaded_source(  # noqa: PLR0913
             mask_secrets=mask_secrets,
             nested_conflicts=load_result.nested_conflicts,
         )
-    file_content = read_file_content(
-        error_ctx.source.file_path_for_errors(),
-        error_ctx.source.encoding_for_errors(),
-    )
+    if isinstance(source, FileSourceProtocol):
+        file_content = read_file_content(source.file_path_for_errors(), source.encoding_for_errors())
+    else:
+        file_content = None
     filter_result = apply_skip_invalid(
         raw=raw,
         skip_field_if_invalid=skip_value,
