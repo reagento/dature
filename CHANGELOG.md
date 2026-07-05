@@ -1,3 +1,18 @@
+## 0.22.2
+
+### Refactoring
+
+- Decorator mode now creates a true subclass of the target dataclass instead of
+  patching ``__init__`` and ``__post_init__`` in-place. The original class is
+  completely untouched after decoration; ``isinstance(Config(), OriginalConfig)``
+  continues to work. Root-validator errors now include source-file location info
+  (same as field-level errors). Internal: root validators are folded back into
+  the final adaptix retort (``final_retort``) via ``ConstructorOverrideProvider``,
+  eliminating the separate ``coerce_and_construct`` step; ``RetortCache`` gained a
+  public ``prewarm()`` method; the defunct ``root_retort()`` variant was removed. ([#decorator-subclass](https://github.com/reagento/dature/issues/decorator-subclass))
+- Introduce ``SourceProtocol`` runtime-checkable Protocol. All internal type hints updated to reference ``SourceProtocol``; ``Source`` is now used solely as a base class for inheritance. File-specific fields (``skip_if_broken``, ``skip_if_missing``) removed from ``Source`` and moved to ``FileFieldMixin``. Location-reporting methods (``resolve_location``, ``build_line_index``, ``compute_line_carets``) moved into ``SourceProtocol``; ``file_content`` removed from ``resolve_location`` — each source reads its own file content internally. ``__dataclass_fields__`` added to ``SourceProtocol``, making the dataclass requirement explicit and removing all ``is_dataclass()`` guards from the loading machinery. Add ``FileSourceProtocol`` — a ``@runtime_checkable`` Protocol exposing ``skip_if_broken``, ``skip_if_missing``, ``file_path_for_errors()``, and ``encoding_for_errors()``; all ``isinstance(source, FileFieldMixin)`` checks in the loading/error machinery replaced with ``isinstance(source, FileSourceProtocol)``. Split ``docs/advanced/custom_types.md`` into ``custom_types.md`` (type loaders) and ``custom_sources.md`` (custom source classes + protocol-based sources guide). ([#source](https://github.com/reagento/dature/issues/source))
+
+
 ## 0.22.1
 
 ### Refactoring
