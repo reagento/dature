@@ -312,8 +312,8 @@ class TestFieldPassRetort:
 
         assert retort is not None
 
-    def test_field_pass_and_root_retort_are_distinct(self):
-        """field_pass and root_retort must return separate cached retorts."""
+    def test_field_pass_and_plain_are_distinct(self):
+        """field_pass must return a separate cached retort from plain."""
 
         @dataclass
         class Config:
@@ -324,9 +324,9 @@ class TestFieldPassRetort:
         indexed = IndexedSource(source, 0)
 
         fp = cache.field_pass(indexed, skip=False)
-        root = cache.root_retort(indexed)
+        plain = cache.plain(indexed)
 
-        assert fp is not root
+        assert fp is not plain
 
     def test_field_pass_skip_and_noskip_are_distinct(self):
         """field_pass(skip=True) and field_pass(skip=False) must produce separate retorts."""

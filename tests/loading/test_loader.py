@@ -262,10 +262,10 @@ class TestLoaderAsDecorator:
         with pytest.raises(TypeError, match="must be a dataclass"):
 
             @decorator
-            class NotADataclass:
+            class NotADataclass:  # type: ignore[type-var]
                 pass
 
-    def test_patches_init_and_post_init(self, tmp_path: Path) -> None:
+    def test_does_not_patch_original_class(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
 
@@ -274,10 +274,11 @@ class TestLoaderAsDecorator:
             name: str
 
         original_init = Config.__init__
+        original_post_init = getattr(Config, "__post_init__", None)
         Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
 
-        assert Config.__init__ is not original_init
-        assert hasattr(Config, "__post_init__")
+        assert Config.__init__ is original_init
+        assert getattr(Config, "__post_init__", None) is original_post_init
 
     def test_loads_on_init(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
@@ -288,7 +289,7 @@ class TestLoaderAsDecorator:
             name: str
             port: int
 
-        Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
+        Config = Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)  # type: ignore[misc]  # noqa: N806
 
         config = Config()
         assert config.name == "from_file"
@@ -303,13 +304,13 @@ class TestLoaderAsDecorator:
             name: str
             port: int
 
-        Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
+        Config = Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)  # type: ignore[misc]  # noqa: N806
 
         config = Config(name="overridden")
         assert config.name == "overridden"
         assert config.port == 8080
 
-    def test_returns_same_class(self, tmp_path: Path) -> None:
+    def test_returns_subclass_of_original(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test"}')
 
@@ -317,9 +318,12 @@ class TestLoaderAsDecorator:
         class Config:
             name: str
 
+        original = Config
         result = Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
 
-        assert result is Config
+        assert result is not original
+        assert issubclass(result, original)
+        assert result.__name__ == original.__name__
 
     def test_preserves_original_post_init(self, tmp_path: Path) -> None:
         json_file = tmp_path / "config.json"
@@ -334,7 +338,7 @@ class TestLoaderAsDecorator:
             def __post_init__(self) -> None:
                 post_init_called.append(True)
 
-        Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
+        Config = Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)  # type: ignore[misc]  # noqa: N806
 
         Config()
         assert len(post_init_called) == 1
@@ -364,7 +368,7 @@ class TestLoaderAsDecoratorCache:
             name: str
             port: int
 
-        Loader.as_decorator(JsonSource(file=json_file), cache=cache_arg, debug=False)(Config)
+        Config = Loader.as_decorator(JsonSource(file=json_file), cache=cache_arg, debug=False)(Config)  # type: ignore[misc]  # noqa: N806
 
         first = Config()
         json_file.write_text('{"name": "updated", "port": 9090}')
@@ -382,7 +386,7 @@ class TestLoaderAsDecoratorCache:
             name: str
             port: int
 
-        Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)
+        Config = Loader.as_decorator(JsonSource(file=json_file), cache=True, debug=False)(Config)  # type: ignore[misc]  # noqa: N806
 
         first = Config()
         assert first.name == "original"
@@ -436,7 +440,7 @@ class TestLoaderFlagFields:
         if mode == "function":
             assert Loader(source, schema=Config, debug=False).load().perms == expected
         else:
-            Loader.as_decorator(source, cache=True, debug=False)(Config)
+            Config = Loader.as_decorator(source, cache=True, debug=False)(Config)  # type: ignore[misc]  # noqa: N806
             assert Config().perms == expected
 
 

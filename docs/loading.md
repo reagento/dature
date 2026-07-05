@@ -7,8 +7,8 @@ graph TD
     S["Source"] --> RAW["Read source data"]
     RAW --> SK{"skip_invalid_fields?"}
     SK -- yes --> DROP["Drop fields that fail\ntype or constraint check"]
-    SK -- no --> FV
-    DROP --> FV{"Source has field validators?\n(bypassed if drop-pass ran)"}
+    SK -- no --> FV{"Source has field validators?"}
+    DROP --> ROOT
     FV -- yes --> FP["Validate fields provided\nby this source"]
     FV -- no --> ROOT
     FP --> ROOT["Construct dataclass\n+ run all validators\n(root_validators + Annotated on defaults)"]

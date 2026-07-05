@@ -254,10 +254,12 @@ def _finalize_load[T: DataclassInstance](
     validated_field_names, deferred_field_errors = _run_field_passes(field_pass_entries, schema, retort_cache, ctx)
 
     merged = coerce_flag_fields(ctx.merged, schema)
-    final_retort = retort_cache.root_retort(ctx.last_loaded, resolved_type_loaders=ctx.last_type_loaders)
     try:
         result: T = handle_load_errors(
-            func=lambda: final_retort.load(merged, schema),
+            func=lambda: retort_cache.final_retort(
+                ctx.last_loaded,
+                resolved_type_loaders=ctx.last_type_loaders,
+            ).load(merged, schema),
             ctx=ctx.last_error_ctx,
             loaded_data=ctx.last_loaded_data,
         )

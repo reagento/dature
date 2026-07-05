@@ -10,15 +10,21 @@ graph TD
 
     R1 --> SK1{"skip_invalid_fields?"}
     SK1 -- yes --> D1["Drop fields that fail\ntype or constraint check"] --> M["Apply merge strategy\n(last_wins / first_wins / …)"]
-    SK1 -- no --> FP1["Validate fields\nprovided by this source"] --> M
+    SK1 -- no --> HV1{"Has field\nvalidators?"}
+    HV1 -- yes --> FP1["Validate fields\nprovided by this source"] --> M
+    HV1 -- no --> M
 
     R2 --> SK2{"skip_invalid_fields?"}
     SK2 -- yes --> D2["Drop fields that fail\ntype or constraint check"] --> M
-    SK2 -- no --> FP2["Validate fields\nprovided by this source"] --> M
+    SK2 -- no --> HV2{"Has field\nvalidators?"}
+    HV2 -- yes --> FP2["Validate fields\nprovided by this source"] --> M
+    HV2 -- no --> M
 
     RN --> SKN{"skip_invalid_fields?"}
     SKN -- yes --> DN["Drop fields that fail\ntype or constraint check"] --> M
-    SKN -- no --> FPN["Validate fields\nprovided by this source"] --> M
+    SKN -- no --> HVN{"Has field\nvalidators?"}
+    HVN -- yes --> FPN["Validate fields\nprovided by this source"] --> M
+    HVN -- no --> M
 
     M --> FGR["field_groups: enforce that related fields\nare all set by the same source"]
     FGR --> FMR["field_merges: combine field values\nacross sources (e.g. merge lists)"]

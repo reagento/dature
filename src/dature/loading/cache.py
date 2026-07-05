@@ -1,10 +1,10 @@
 """TTL / freshness predicate for the cache attached to ``Loader`` instances.
 
-The cache itself lives on the ``Loader`` (see ``dature.loading.loader``) and on
-the decorator's patch context (``_PatchContext`` / ``_MergePatchContext``). This
-module holds only the time helpers — ``cache_now`` (monotonic), ``cache_is_fresh``
-(predicate), and ``_aligned_now`` (bucket-aligned timestamp for TTL caches so
-that all entries sharing the same TTL invalidate at the same instant).
+The cache itself lives on the ``Loader`` (see ``dature.loading.loader``).
+This module holds only the time helpers — ``cache_now`` (monotonic),
+``cache_is_fresh`` (predicate), and ``_aligned_now`` (bucket-aligned timestamp
+for TTL caches so that all entries sharing the same TTL invalidate at the same
+instant).
 """
 
 import time
