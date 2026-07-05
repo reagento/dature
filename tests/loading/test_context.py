@@ -4,7 +4,6 @@ from dataclasses import dataclass, fields
 from enum import Flag
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -14,7 +13,6 @@ from dature.loading.context import (
     build_error_ctx,
     coerce_flag_fields,
     get_allowed_fields,
-    make_validating_post_init,
     merge_fields,
 )
 from dature.loading.retort import RetortCache
@@ -235,78 +233,3 @@ class TestRetortCache:
         second = cache.plain(IndexedSource(source, 0))
 
         assert first is second
-
-
-class TestMakeValidatingPostInit:
-    @dataclass
-    class Cfg:
-        name: str
-
-    def test_loading_flag_skips_validation(self):
-        ctx = MagicMock()
-        ctx.loading = True
-        ctx.validating = False
-        ctx.original_post_init = None
-
-        post_init = make_validating_post_init(ctx)
-        instance = MagicMock()
-        post_init(instance)
-
-        ctx.validation_loader.assert_not_called()
-
-    def test_validating_flag_skips_reentrant(self):
-        ctx = MagicMock()
-        ctx.loading = False
-        ctx.validating = True
-        ctx.original_post_init = None
-
-        post_init = make_validating_post_init(ctx)
-        instance = MagicMock()
-        post_init(instance)
-
-        ctx.validation_loader.assert_not_called()
-
-    def test_calls_original_post_init(self):
-        original = MagicMock()
-        ctx = MagicMock()
-        ctx.loading = False
-        ctx.validating = False
-        ctx.original_post_init = original
-        ctx.cls = self.Cfg
-        ctx.validation_loader = MagicMock()
-        ctx.error_ctx = MagicMock()
-
-        post_init = make_validating_post_init(ctx)
-        instance = self.Cfg(name="test")
-        post_init(instance)
-
-        original.assert_called_once_with(instance)
-
-    def test_none_validation_loader_skips_silently(self):
-        """Regression A3: Cls() called before first .load() must not raise TypeError."""
-        ctx = MagicMock()
-        ctx.loading = False
-        ctx.validating = False
-        ctx.original_post_init = None
-        ctx.validation_loader = None
-        ctx.error_ctx = None
-
-        post_init = make_validating_post_init(ctx)
-        instance = MagicMock()
-        post_init(instance)  # must not raise
-
-    def test_none_validation_loader_still_calls_original_post_init(self):
-        """Regression A3: original __post_init__ must still run even if loader not initialised."""
-        original = MagicMock()
-        ctx = MagicMock()
-        ctx.loading = False
-        ctx.validating = False
-        ctx.original_post_init = original
-        ctx.validation_loader = None
-        ctx.error_ctx = None
-
-        post_init = make_validating_post_init(ctx)
-        instance = MagicMock()
-        post_init(instance)
-
-        original.assert_called_once_with(instance)

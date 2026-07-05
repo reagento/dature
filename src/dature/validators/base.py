@@ -162,15 +162,17 @@ def create_metadata_validator_providers(
     return providers
 
 
-def create_root_validator_providers(
-    schema: type,
-    root_validators: Iterable[RootPredicate],
-) -> list[Provider]:
+def _validate_root_validators(root_validators: Iterable[Any]) -> tuple[RootPredicate, ...]:
+    """Validate *root_validators* and return it as a typed tuple.
+
+    Raises ``TypeError`` with a human-readable message for the common mistakes:
+    missing trailing comma, passing a dict, passing a field-level predicate, etc.
+    """
     if isinstance(root_validators, (str, bytes, Mapping)):
         msg = f"root_validators must be a sequence of V.root(...) objects, got {type(root_validators).__name__}."
         raise TypeError(msg)
     try:
-        items = tuple(root_validators)
+        items: tuple[Any, ...] = tuple(root_validators)
     except TypeError as exc:
         msg = (
             f"root_validators must be iterable (tuple, list, ...), "
@@ -179,8 +181,6 @@ def create_root_validator_providers(
             "use `root_validators=(V.root(check),)` for a single validator."
         )
         raise TypeError(msg) from exc
-
-    providers = []
     for root_predicate in items:
         if isinstance(root_predicate, Predicate):
             msg = (
@@ -192,14 +192,17 @@ def create_root_validator_providers(
         if not isinstance(root_predicate, RootPredicate):
             msg = f"root_validators must contain V.root(...) objects, got {type(root_predicate).__name__}"
             raise TypeError(msg)
-        provider = validator(
-            P[schema],
-            root_predicate.get_validator_func(),
-            root_predicate.get_error_message(),
-        )
-        providers.append(provider)
+    return cast("tuple[RootPredicate, ...]", items)
 
-    return providers
+
+def create_root_validator_providers(
+    schema: type,
+    root_validators: Iterable[RootPredicate],
+) -> list[Provider]:
+    return [
+        validator(P[schema], rp.get_validator_func(), rp.get_error_message())
+        for rp in _validate_root_validators(root_validators)
+    ]
 
 
 def get_validator_providers[T](schema: type[T]) -> list[Provider]:

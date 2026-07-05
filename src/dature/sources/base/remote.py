@@ -55,7 +55,6 @@ class RemoteSource(Source, abc.ABC):
         self,
         *,
         field_path: list[str],
-        file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,  # noqa: ARG002
         input_value: JSONValue = None,  # noqa: ARG002
         loaded_data: JSONValue | None = None,

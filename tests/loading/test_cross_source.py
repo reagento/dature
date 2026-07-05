@@ -17,7 +17,7 @@ from dature.loading.cross_source import (
     evaluate_when_lazy,
     when_has_cross_refs,
 )
-from dature.sources.base import CliSource, Source
+from dature.sources.base import CliSource, FileFieldMixin, Source
 from dature.type_aliases import JSONValue
 
 
@@ -46,7 +46,7 @@ class _Stub(Source):
 
 
 @dataclass(kw_only=True, repr=False)
-class _BrokenDepStub(Source):
+class _BrokenDepStub(FileFieldMixin, Source):
     """Source that always raises FileNotFoundError — used to simulate skipped deps."""
 
     format_name: ClassVar[str] = "broken_dep_stub"

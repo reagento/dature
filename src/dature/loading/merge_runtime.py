@@ -29,7 +29,7 @@ lives in ``source_loading.prepare_loaded_source``.
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
-from typing import Protocol, TypeVar, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
@@ -51,7 +51,8 @@ from dature.merging.deep_merge import deep_merge_last_wins
 from dature.nested_dict import flatten_dict
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.sources.base import IndexedSource, Source, clone_source
+from dature.sources.base import IndexedSource, clone_source
+from dature.sources.protocol import FileSourceProtocol, SourceProtocol
 from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -68,8 +69,6 @@ logger = logging.getLogger("dature")
 
 _MISSING: object = object()
 
-TSource = TypeVar("TSource", bound=Source)
-
 
 @dataclass(frozen=True, kw_only=True)
 class SourceParams:
@@ -83,7 +82,7 @@ class SourceParams:
     encoding: str | None = None
 
 
-def apply_source_init_params[T: Source](source: T, params: SourceParams) -> T:
+def apply_source_init_params[T: SourceProtocol](source: T, params: SourceParams) -> T:
     """Inject load-level params into source fields (source > load > config).
 
     Iterates SourceParams fields by name and matches them against the source's
@@ -111,7 +110,7 @@ def apply_source_init_params[T: Source](source: T, params: SourceParams) -> T:
     return clone_source(source, overrides)
 
 
-def apply_source_config_group[T: Source](source: T) -> T:
+def apply_source_config_group[T: SourceProtocol](source: T) -> T:
     """Fill None-valued source fields from ``dature.config.<source.config_group>``.
 
     Sources whose connection/credential params are typically configured globally
@@ -149,9 +148,9 @@ def apply_source_config_group[T: Source](source: T) -> T:
 
 
 def prepare_sources(
-    sources: tuple[Source, ...],
+    sources: tuple[SourceProtocol, ...],
     params: SourceParams,
-) -> tuple[Source, ...]:
+) -> tuple[SourceProtocol, ...]:
     """Run the two-step eager source preparation pipeline.
 
     apply_source_init_params → apply_source_config_group
@@ -162,7 +161,7 @@ def prepare_sources(
 
 @dataclass(slots=True, kw_only=True)
 class MergeConfig:
-    sources: tuple[Source, ...]
+    sources: tuple[SourceProtocol, ...]
     source_params: SourceParams = field(default_factory=SourceParams)
     strategy: "MergeStrategyName | SourceMergeStrategy" = "last_wins"
     field_merges: FieldMergeMap | None = None
@@ -181,14 +180,14 @@ class MergeConfig:
 
 
 def resolve_type_loaders(
-    source: Source,
+    source: SourceProtocol,
     load_type_loaders: TypeLoaderMap | None,
 ) -> TypeLoaderMap | None:
     merged = {**config.type_loaders, **(load_type_loaders or {}), **(source.type_loaders or {})}
     return merged or None
 
 
-def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
+def should_skip_broken(source: SourceProtocol, merge_meta: MergeConfig) -> bool:
     """Return True if a parse/load failure for *source* should be silently skipped.
 
     ``when=`` filtering happens *before* this check — a source disabled by
@@ -197,16 +196,12 @@ def should_skip_broken(source: Source, merge_meta: MergeConfig) -> bool:
     gate and then raise a parse or config error during loading.  For missing
     files (``FileNotFoundError``) use :func:`should_skip_missing` instead.
     """
-    if source.skip_if_broken is not None:
-        if source.file_display() is None:
-            logger.warning(
-                "skip_if_broken has no effect on non-file sources — they cannot be broken",
-            )
+    if isinstance(source, FileSourceProtocol) and source.skip_if_broken is not None:
         return source.skip_if_broken
     return merge_meta.skip_if_broken
 
 
-def should_skip_missing(source: Source, merge_meta: MergeConfig) -> bool:
+def should_skip_missing(source: SourceProtocol, merge_meta: MergeConfig) -> bool:
     """Return True if a missing-file error for *source* should be silently skipped.
 
     ``when=`` filtering happens *before* this check — a source disabled by
@@ -215,17 +210,13 @@ def should_skip_missing(source: Source, merge_meta: MergeConfig) -> bool:
     ``when=`` gate and then raise ``FileNotFoundError`` during loading.  For
     parse/config errors use :func:`should_skip_broken` instead.
     """
-    if source.skip_if_missing is not None:
-        if source.file_display() is None:
-            logger.warning(
-                "skip_if_missing has no effect on non-file sources — they cannot be missing",
-            )
+    if isinstance(source, FileSourceProtocol) and source.skip_if_missing is not None:
         return source.skip_if_missing
     return merge_meta.skip_if_missing
 
 
 def resolve_skip_invalid(
-    source: Source,
+    source: SourceProtocol,
     merge_meta: MergeConfig,
 ) -> bool | tuple[FieldPath, ...]:
     if source.skip_field_if_invalid is not None:
@@ -260,7 +251,7 @@ class MergeStepEvent:
     """
 
     step_idx: int
-    source: Source
+    source: SourceProtocol
     source_data: JSONValue
     before: JSONValue
     after: JSONValue
@@ -300,7 +291,7 @@ class LoadCtx:
         self._secret_paths = secret_paths
         self._mask_secrets = mask_secrets
         self._on_merge_step = on_merge_step
-        self._sources: list[Source] = list(merge_meta.sources)
+        self._sources: list[SourceProtocol] = list(merge_meta.sources)
 
         self._raw_dicts: list[JSONValue] = []
         self._source_entries: list[SourceEntry] = []
@@ -375,13 +366,13 @@ class LoadCtx:
 
     def _eval_lazy_when(
         self,
-        source: "Source",
+        source: "SourceProtocol",
         context: "dict[str, dict[str, JSONValue]]",
     ) -> bool:
         """Return False if source has lazy when= and the condition is not met."""
         return not when_has_cross_refs(source) or evaluate_when_lazy(source.when, context)
 
-    def _check_lazy_tag_collision(self, source: "Source", source_idx: int) -> None:
+    def _check_lazy_tag_collision(self, source: "SourceProtocol", source_idx: int) -> None:
         """Raise DatureError if two lazy-when sources with the same tag are both enabled.
 
         This complements the *static* tag-collision check in ``_build_dep_graph``
@@ -438,7 +429,7 @@ class LoadCtx:
         self,
         *,
         source_idx: int,
-        source: Source,
+        source: SourceProtocol,
         source_data: JSONValue,
         before: JSONValue,
         after: JSONValue,
@@ -538,7 +529,7 @@ class LoadCtx:
             if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 location = SourceLocation(
                     location_label=source.location_label,
-                    file_path=error_ctx.source.file_path_for_errors(),
+                    file_path=source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None,
                     line_range=None,
                     line_content=None,
                     env_var_name=None,
@@ -605,13 +596,12 @@ class LoadCtx:
             masked_raw,
         )
 
+        src_file_path = source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
         self._entry_pos_by_source_idx[source_idx] = len(self._source_entries)
         self._source_entries.append(
             SourceEntry(
                 index=i,
-                file_path=str(src_path)
-                if (src_path := source.file_path_for_errors()) is not None
-                else source.display_name(),
+                file_path=str(src_file_path) if src_file_path is not None else source.display_name(),
                 loader_type=format_name,
                 raw_data=raw,
             ),
@@ -680,7 +670,7 @@ class LoadCtx:
 # --8<-- [start:source-merge-strategy]
 @runtime_checkable
 class SourceMergeStrategy(Protocol):
-    def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue: ...
+    def __call__(self, sources: Sequence[SourceProtocol], ctx: LoadCtx) -> JSONValue: ...
 
 
 # --8<-- [end:source-merge-strategy]

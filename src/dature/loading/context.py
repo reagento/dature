@@ -1,18 +1,16 @@
 import contextlib
 import logging
-from collections.abc import Callable
-from dataclasses import Field, asdict, fields, is_dataclass
+from dataclasses import Field, fields, is_dataclass
 from enum import Flag
-from typing import Any, Protocol, cast, get_type_hints, runtime_checkable
+from typing import Any, cast, get_type_hints
 
 from adaptix import Retort
 
-from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext
 from dature.field_path import FieldPath, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
-from dature.sources.base import Source
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue, NestedConflicts
 
 logger = logging.getLogger("dature")
@@ -39,7 +37,7 @@ def coerce_flag_fields[T](data: JSONValue, schema: type[T]) -> JSONValue:
 
 
 def build_error_ctx(
-    metadata: Source,
+    metadata: SourceProtocol,
     dataclass_name: str,
     *,
     secret_paths: frozenset[str] = frozenset(),
@@ -106,45 +104,3 @@ def merge_fields(
             complete_kwargs[field.name] = getattr(loaded_data, field.name)
 
     return complete_kwargs
-
-
-@runtime_checkable
-class PatchContext(Protocol):
-    loading: bool
-    validating: bool
-    cls: type[DataclassInstance]
-    original_post_init: Callable[..., None] | None
-    validation_loader: Callable[[JSONValue], DataclassInstance] | None
-    error_ctx: ErrorContext | None
-
-
-def make_validating_post_init(ctx: PatchContext) -> Callable[..., None]:
-    def new_post_init(self: DataclassInstance) -> None:
-        if ctx.loading:
-            return
-
-        if ctx.validating:
-            return
-
-        validation_loader = ctx.validation_loader
-        error_ctx = ctx.error_ctx
-        if validation_loader is None or error_ctx is None:
-            # Loader not yet initialised (e.g. Cls() called before first .load()).
-            if ctx.original_post_init is not None:
-                ctx.original_post_init(self)
-            return
-
-        if ctx.original_post_init is not None:
-            ctx.original_post_init(self)
-
-        ctx.validating = True
-        try:
-            obj_dict = coerce_flag_fields(asdict(self), ctx.cls)
-            handle_load_errors(
-                func=lambda: validation_loader(obj_dict),
-                ctx=error_ctx,
-            )
-        finally:
-            ctx.validating = False
-
-    return new_post_init

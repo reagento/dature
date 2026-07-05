@@ -4,14 +4,14 @@ from pathlib import Path
 
 from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
-from dature.sources.base import Source
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue, NestedConflict, NestedConflicts
 
 
 @dataclass(frozen=True)
 class ErrorContext:
     dataclass_name: str
-    source: Source
+    source: SourceProtocol
     secret_paths: frozenset[str] = frozenset()
     mask_secrets: bool = False
     nested_conflicts: NestedConflicts | None = None
@@ -26,7 +26,7 @@ class SourceContext:
 
 @dataclass(frozen=True, slots=True)
 class SkippedFieldSource:
-    source: Source
+    source: SourceProtocol
     error_ctx: ErrorContext
     file_content: str | None
     loaded_data: "JSONValue"
@@ -139,7 +139,6 @@ def resolve_source_location(
 
     locations = ctx.source.resolve_location(
         field_path=field_path,
-        file_content=file_content,
         nested_conflict=conflict,
         input_value=input_value,
         loaded_data=loaded_data,

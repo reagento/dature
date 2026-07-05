@@ -7,7 +7,7 @@ from dature.config import config
 from dature.loading.loader import Loader
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.protocols import DataclassInstance
-from dature.sources.base import Source
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -26,7 +26,7 @@ _DEFAULT_STRATEGY: Any = object()
 
 @overload
 def load[T](
-    *sources: Source,
+    *sources: SourceProtocol,
     schema: type[T],
     cache: bool | timedelta | None = None,
     debug: bool | None = None,
@@ -48,7 +48,7 @@ def load[T](
 
 @overload
 def load(
-    *sources: Source,
+    *sources: SourceProtocol,
     schema: None = None,
     cache: bool | timedelta | None = None,
     debug: bool | None = None,
@@ -70,7 +70,7 @@ def load(
 
 # --8<-- [start:load]
 def load(  # noqa: PLR0913
-    *sources: Source,
+    *sources: SourceProtocol,
     schema: type[Any] | None = None,
     cache: bool | timedelta | None = None,
     debug: bool | None = None,
@@ -144,10 +144,10 @@ def load(  # noqa: PLR0913
     return Loader.as_decorator(*sources, **common_kwargs)
 
 
-def _validate_sources(sources: tuple[Source, ...]) -> None:
+def _validate_sources(sources: tuple[SourceProtocol, ...]) -> None:
     for source in sources:
-        if not isinstance(source, Source):
-            msg = f"load() positional arguments must be Source instances, got {source!r}"
+        if not isinstance(source, SourceProtocol):
+            msg = f"load() positional arguments must be SourceProtocol instances, got {source!r}"
             raise TypeError(msg)
 
     if not sources:

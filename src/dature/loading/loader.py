@@ -13,23 +13,25 @@ useful in function mode, keep the ``Loader`` instance and invoke ``.load()``
 multiple times.
 
 The decorator form (`` @dature.load(...) `` or ``Loader.as_decorator(...)``)
-creates a single ``Loader`` per class and routes every ``Cls()`` invocation
-through ``loader.load()`` via a patched ``__init__``.
+creates a single ``Loader`` per class and returns a subclass whose ``__init__``
+delegates to ``loader.load()``.  The original dataclass is never modified.
 """
 
 import logging
 from collections.abc import Callable, Iterable
-from dataclasses import fields, is_dataclass
+from dataclasses import asdict, fields, is_dataclass
 from datetime import timedelta
-from typing import Any
+from functools import update_wrapper
+from typing import Any, cast
 
 from adaptix import Retort
 
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
+from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext
 from dature.loading.cache import _aligned_now, cache_is_fresh
-from dature.loading.context import make_validating_post_init, merge_fields
+from dature.loading.context import coerce_flag_fields, merge_fields
 from dature.loading.cross_source import clone_with_interpolation, evaluate_when_eager, when_has_cross_refs
 from dature.loading.field_pass import build_revalidation
 from dature.loading.mask_config import resolve_mask_secrets
@@ -44,7 +46,8 @@ from dature.loading.retort import RetortCache
 from dature.masking.detection import build_secret_paths
 from dature.protocols import DataclassInstance
 from dature.report import attach_load_report, load_report
-from dature.sources.base import IndexedSource, Source
+from dature.sources.base import IndexedSource
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     ExpandEnvVarsMode,
     FieldGroupTuple,
@@ -63,9 +66,9 @@ logger = logging.getLogger("dature")
 class Loader[T: DataclassInstance]:
     """Encapsulates a ``load`` call. ``.load()`` honours the cache."""
 
-    def __init__(  # noqa: PLR0913, PLR0915, C901
+    def __init__(  # noqa: PLR0913
         self,
-        *sources: Source,
+        *sources: SourceProtocol,
         schema: type[T],
         cache: bool | timedelta | None = None,
         debug: bool | None = None,
@@ -87,8 +90,8 @@ class Loader[T: DataclassInstance]:
             msg = "Loader requires at least one Source"
             raise TypeError(msg)
         for s in sources:
-            if not isinstance(s, Source):
-                msg = f"Loader positional arguments must be Source instances, got {s!r}"
+            if not isinstance(s, SourceProtocol):
+                msg = f"Loader positional arguments must be SourceProtocol instances, got {s!r}"
                 raise TypeError(msg)
 
         if cache is None:
@@ -123,14 +126,7 @@ class Loader[T: DataclassInstance]:
             nested_resolve=nested_resolve,
         )
 
-        # State exposed to the decorator's patched __init__ / __post_init__
-        # (satisfies the PatchContext protocol from ``loading.context``).
-        self.cls: type[T] = schema
         self.field_list = fields(schema)
-        self.original_init = schema.__init__
-        self.original_post_init = getattr(schema, "__post_init__", None)
-        self.loading = False
-        self.validating = False
 
         # Cache state.
         self._cached_data: T | None = None
@@ -154,32 +150,19 @@ class Loader[T: DataclassInstance]:
         self._retort_cache = RetortCache(schema, root_validators=root_validators)
 
         # Pre-warm retorts for all sources (pure type analysis, no env read).
-        # Must happen before the decorator replaces schema.__init__ so that adaptix
-        # inspects the original dataclass signature, not the patched *args/**kwargs one.
         for source_idx, source in enumerate(sources):
             indexed = IndexedSource(source, source_idx)
             source_type_loaders = resolve_type_loaders(source, type_loaders)
-            self._retort_cache.plain(indexed, resolved_type_loaders=source_type_loaders).get_loader(schema)
-            # root_retort is used as the final-construction retort for each source;
-            # pre-warm here so adaptix sees the original (un-patched) __init__ signature.
-            self._retort_cache.root_retort(indexed, resolved_type_loaders=source_type_loaders).get_loader(schema)
-            if self._retort_cache.has_validators(indexed):
-                self._retort_cache.field_pass(
-                    indexed, skip=False, resolved_type_loaders=source_type_loaders
-                ).get_loader(schema)
-            if source.skip_field_if_invalid:
-                self._retort_cache.field_pass(indexed, skip=True, resolved_type_loaders=source_type_loaders).get_loader(
-                    schema
-                )
+            self._retort_cache.prewarm(indexed, resolved_type_loaders=source_type_loaders)
 
         # Runtime state set by _prepare_for_load on each .load() call.
         self._merge_meta: MergeConfig | None = None
         self._is_single: bool = False
-        self._source: Source | None = None
+        self._source: SourceProtocol | None = None
         self._type_loaders: TypeLoaderMap | None = None
         self._probe_retort: Retort | None = None
 
-        # Set by _build_validation_loader; exposed for decorator-protocol consumers.
+        # Set by build_revalidation after each load; read by the loading subclass __post_init__.
         self.validation_loader: Callable[[JSONValue], DataclassInstance] | None = None
         self.error_ctx: ErrorContext | None = None
 
@@ -204,26 +187,22 @@ class Loader[T: DataclassInstance]:
 
         if self._cached_data is not None and cache_is_fresh(cache=self._cache, cached_at=self._cached_at):
             return self._cached_data
-        self.loading = True
         try:
-            try:
-                self._prepare_for_load()
-                result = self._do_load()
-            except (DatureError, DatureErrorGroup, DatureConfigError):
-                raise
-            except Exception as exc:  # noqa: BLE001
-                exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
-                raise DatureConfigError(self._schema.__name__, [exc]) from None
-        finally:
-            self.loading = False
+            self._prepare_for_load()
+            result = self._do_load()
+        except (DatureError, DatureErrorGroup, DatureConfigError):
+            raise
+        except Exception as exc:  # noqa: BLE001
+            exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
+            raise DatureConfigError(self._schema.__name__, [exc]) from None
         if self._cache is not False:
             self._cached_data = result
             self._cached_at = _aligned_now(self._cache)
         return result
 
     @staticmethod
-    def as_decorator(  # noqa: PLR0913
-        *sources: Source,
+    def as_decorator[DC: DataclassInstance](  # noqa: PLR0913
+        *sources: SourceProtocol,
         cache: bool | timedelta | None = None,
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
@@ -239,13 +218,14 @@ class Loader[T: DataclassInstance]:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
-    ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]:
-        """Return a decorator that wires ``cls.__init__`` through a ``Loader`` instance."""
+    ) -> Callable[[type[DC]], type[DC]]:
+        """Return a decorator that creates a loading subclass for the target dataclass."""
 
-        def decorator(target_cls: type[DataclassInstance]) -> type[DataclassInstance]:
+        def decorator(target_cls: type[DC]) -> type[DC]:
             if not is_dataclass(target_cls):
                 msg = f"{target_cls.__name__} must be a dataclass"
                 raise TypeError(msg)
+
             loader = Loader(
                 *sources,
                 schema=target_cls,
@@ -265,23 +245,20 @@ class Loader[T: DataclassInstance]:
                 nested_resolve_strategy=nested_resolve_strategy,
                 nested_resolve=nested_resolve,
             )
-            target_cls.__init__ = _make_patched_init(loader)  # type: ignore[method-assign]
-            target_cls.__post_init__ = make_validating_post_init(loader)  # type: ignore[attr-defined]
-            return target_cls
+            return loader._make_loader_subclass(target_cls)
 
         return decorator
 
     # ------------------------------------------------------------------ #
-    # Internal — used by the decorator's patched ``__init__``.
+    # Internal — used by the decorator's loading subclass.
     # ------------------------------------------------------------------ #
 
-    # PatchContext protocol fields exposed publicly: ``cls``, ``loading``,
-    # ``validating``, ``original_post_init``, ``validation_loader``,
-    # ``error_ctx``. These are public attributes (no leading underscore) so the
-    # ``make_validating_post_init`` helper can reach them directly.
+    # ``validation_loader`` and ``error_ctx`` are set after each ``load()``
+    # call by ``build_revalidation`` and read by the subclass ``__post_init__``
+    # for re-validation of explicit-kwarg construction.
 
     @property
-    def source(self) -> Source:
+    def source(self) -> SourceProtocol:
         """Single-source mode: the prepared source after default resolution."""
         if self._source is None:
             msg = "Loader.source is only available in single-source mode"
@@ -396,26 +373,56 @@ class Loader[T: DataclassInstance]:
         )
         return data.result
 
+    def _make_loader_subclass(self, target_cls: type[T]) -> type[T]:
+        """Return a subclass of *target_cls* that auto-loads on every ``__init__`` call.
 
-def _make_patched_init(loader: Loader[Any]) -> Callable[..., None]:
-    """Build the ``__init__`` replacement that delegates loading to ``loader``."""
+        The original class is never modified.  ``_dature_skip=True`` is used internally
+        to construct instances without triggering the load path.
+        """
+        original_init: Callable[..., None] = target_cls.__init__
+        original_post_init: Callable[..., None] | None = getattr(target_cls, "__post_init__", None)
+        field_list = fields(target_cls)
+        loader = self
 
-    def new_init(self: DataclassInstance, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        if loader.loading:
-            loader.original_init(self, *args, **kwargs)
-            return
+        def _dature_init(self: Any, *args: Any, _dature_skip: bool = False, **kwargs: Any) -> None:  # noqa: ANN401
+            if _dature_skip:
+                # Internal path: data is already coerced; just initialise fields.
+                # original_init will call self.__post_init__() → class_body's no-op.
+                original_init(self, **kwargs)
+                return
 
-        loaded_data = loader.load()
-        complete_kwargs = merge_fields(loaded_data, loader.field_list, args, kwargs)
-        loader.original_init(self, *args, **complete_kwargs)
+            # User path: load from sources, merge with any explicit kwargs, then init.
+            loaded_data = loader.load()
+            complete_kwargs = merge_fields(loaded_data, field_list, args, kwargs)
+            original_init(self, **complete_kwargs)
+            if loader.debug:
+                _attach_debug_report(self, loaded_data)
+            if original_post_init is not None:
+                original_post_init(self)
 
-        if loader.debug:
-            _attach_debug_report(self, loaded_data)
+            validation_loader = loader.validation_loader
+            error_ctx = loader.error_ctx
+            if validation_loader is not None and error_ctx is not None:
+                obj_dict = coerce_flag_fields(asdict(self), target_cls)
+                handle_load_errors(func=lambda: validation_loader(obj_dict), ctx=error_ctx)
 
-        if loader.original_post_init is None:
-            self.__post_init__()  # type: ignore[attr-defined]
+        # update_wrapper sets __wrapped__ so inspect.signature follows through to the
+        # original signature, and copies __name__/__qualname__/__doc__/__annotations__.
+        update_wrapper(_dature_init, target_cls.__init__)
 
-    return new_init
+        class_body: dict[str, Any] = {"__init__": _dature_init}
+        if original_post_init is not None:
+            # Intercept the __post_init__ call that original_init emits so the user's
+            # method is not called on every internal construction.  We call it explicitly
+            # from _dature_init on the user path only.
+            class_body["__post_init__"] = lambda self: None  # noqa: ARG005
+
+        _subclass: type[T] = cast("type[T]", type(target_cls.__name__, (target_cls,), class_body))
+        _subclass.__qualname__ = target_cls.__qualname__
+        _subclass.__module__ = target_cls.__module__
+
+        self._retort_cache.constructor = lambda **kw: _subclass(_dature_skip=True, **kw)  # type: ignore[call-arg]
+        return _subclass
 
 
 def _attach_debug_report(instance: DataclassInstance, loaded_data: DataclassInstance) -> None:

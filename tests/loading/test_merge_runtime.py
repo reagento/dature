@@ -162,13 +162,9 @@ class TestShouldSkipBroken:
 
         assert should_skip_broken(source, merge) is expected
 
-    def test_env_source_warns(self, caplog: pytest.LogCaptureFixture):
-        source = EnvSource(skip_if_broken=True)
-        merge = MergeConfig(sources=(source,))
-
-        should_skip_broken(source, merge)
-
-        assert "skip_if_broken has no effect on non-file sources" in caplog.text
+    def test_env_source_raises(self):
+        with pytest.raises(TypeError, match="unexpected keyword argument 'skip_if_broken'"):
+            EnvSource(skip_if_broken=True)
 
 
 class TestShouldSkipMissing:
@@ -196,13 +192,9 @@ class TestShouldSkipMissing:
 
         assert should_skip_missing(source, merge) is expected
 
-    def test_env_source_warns(self, caplog: pytest.LogCaptureFixture):
-        source = EnvSource(skip_if_missing=True)
-        merge = MergeConfig(sources=(source,))
-
-        should_skip_missing(source, merge)
-
-        assert "skip_if_missing has no effect on non-file sources" in caplog.text
+    def test_env_source_raises(self):
+        with pytest.raises(TypeError, match="unexpected keyword argument 'skip_if_missing'"):
+            EnvSource(skip_if_missing=True)
 
 
 class TestResolveSkipInvalid:

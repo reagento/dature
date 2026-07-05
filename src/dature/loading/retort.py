@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import timedelta
 from typing import Any, Final
 
@@ -24,8 +24,9 @@ from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.protocols import DataclassInstance
-from dature.skip_field_provider import ModelToDictProvider, SkipFieldProvider
-from dature.sources.base import IndexedSource, Source
+from dature.skip_field_provider import ConstructorOverrideProvider, ModelToDictProvider, SkipFieldProvider
+from dature.sources.base import IndexedSource
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     URL,
     Base64UrlBytes,
@@ -91,7 +92,7 @@ def get_name_mapping_providers(
 
 
 def build_base_recipe(
-    source: Source,
+    source: SourceProtocol,
     *,
     resolved_type_loaders: TypeLoaderMap | None = None,
 ) -> list[Provider]:
@@ -122,7 +123,7 @@ def build_base_recipe(
 _PLAIN_SENTINEL: Final[object] = object()
 _FIELD_PASS_SKIP_SENTINEL: Final[object] = object()
 _FIELD_PASS_NOSKIP_SENTINEL: Final[object] = object()
-_ROOT_SENTINEL: Final[object] = object()
+_FINAL_SENTINEL: Final[object] = object()
 
 
 def _loaders_frozenset(resolved_type_loaders: TypeLoaderMap | None) -> frozenset[Any]:
@@ -149,6 +150,7 @@ class RetortCache:
         self._schema = schema
         self._has_annotated_field_validators: bool = bool(get_validator_providers(schema))
         self._root_providers: list[Any] = create_root_validator_providers(schema, root_validators)
+        self.constructor: Callable[..., Any] | None = None
 
     def _plain_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
         return (source_idx, _PLAIN_SENTINEL, _loaders_frozenset(type_loaders))
@@ -161,9 +163,6 @@ class RetortCache:
     ) -> tuple[int, object, frozenset[Any]]:
         sentinel = _FIELD_PASS_SKIP_SENTINEL if skip else _FIELD_PASS_NOSKIP_SENTINEL
         return (source_idx, sentinel, _loaders_frozenset(type_loaders))
-
-    def _root_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
-        return (source_idx, _ROOT_SENTINEL, _loaders_frozenset(type_loaders))
 
     def plain(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> Retort:
         """Return the plain loading retort for *indexed.source*, building and caching it on first call."""
@@ -212,30 +211,38 @@ class RetortCache:
             )
         return self._cache[key]
 
-    def root_retort(
-        self,
-        indexed: IndexedSource,
-        *,
-        resolved_type_loaders: TypeLoaderMap | None = None,
-    ) -> Retort:
-        """Return the final-construction retort: plain coercion + schema-level root validators.
+    def _final_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
+        return (source_idx, _FINAL_SENTINEL, _loaders_frozenset(type_loaders))
 
-        This is used once at the end of loading (single or multi source) to build the
-        dataclass instance and run any ``root_validators`` passed to ``load()`` / ``Loader``.
-        When no root validators are configured this is identical to ``plain()``.
+    def prewarm(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> None:
+        """Force-compile field-pass retorts so the first real load() is fast.
+
+        ``plain`` and ``final_retort`` are lazy — they compile on first use and
+        are cached, so no explicit pre-warming is needed for them.
         """
-        key = self._root_key(indexed.index, resolved_type_loaders)
+        schema = self._schema
+        if self.has_validators(indexed):
+            self.field_pass(indexed, skip=False, resolved_type_loaders=resolved_type_loaders).get_loader(schema)
+        if indexed.source.skip_field_if_invalid:
+            self.field_pass(indexed, skip=True, resolved_type_loaders=resolved_type_loaders).get_loader(schema)
+
+    def final_retort(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> Retort:
+        """Return the final-construction retort: type coercion + optional constructor override + root validators.
+
+        In decorator mode (``self.constructor`` is set by ``_make_loader_subclass``), a
+        ``ConstructorOverrideProvider`` is prepended so that adaptix calls the internal
+        ``_dature_constructor`` instead of the raw schema constructor.
+        In functional mode (``self.constructor`` is ``None``) adaptix uses the schema directly.
+        Root validator providers always run at the end inside adaptix.
+        """
+        key = self._final_key(indexed.index, resolved_type_loaders)
         if key not in self._cache:
-            self._cache[key] = self.plain(indexed, resolved_type_loaders=resolved_type_loaders).extend(
-                recipe=[*self._root_providers],
-            )
+            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
+            override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
+            self._cache[key] = self._base.extend(recipe=[*recipe, *override, *self._root_providers])
         return self._cache[key]
 
     def has_validators(self, indexed: IndexedSource) -> bool:
-        """Return ``True`` when the source or schema has field validators requiring a ``field_pass``.
-
-        Root validators are schema-level and are not considered here — they always run
-        via ``root_retort()`` at the end regardless of this flag.
-        """
+        """Return ``True`` when the source or schema has field validators requiring a ``field_pass``."""
         source = indexed.source
         return self._has_annotated_field_validators or bool(source.validators)

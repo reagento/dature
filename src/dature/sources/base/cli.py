@@ -104,7 +104,6 @@ class CliSource(FlatKeySource, abc.ABC):
         self,
         *,
         field_path: list[str],
-        file_content: str | None,  # noqa: ARG002
         nested_conflict: NestedConflict | None,
         input_value: JSONValue = None,
         loaded_data: JSONValue | None = None,  # noqa: ARG002

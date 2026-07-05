@@ -137,17 +137,21 @@ def _make_validation_loader(
     indexed: IndexedSource,
     schema: type[DataclassInstance],
     ctx: ErrorContext,
-    loader_fn: Callable[[JSONValue], DataclassInstance],
     resolved_type_loaders: TypeLoaderMap | None,
 ) -> Callable[[JSONValue], DataclassInstance]:
     """Build the decorator-mode re-validation loader for direct instantiation.
 
     When the source/schema has field validators, run the field pass (Annotated/source validators)
-    and root_retort (coercion + schema root validators), merging their errors so field-level
-    and schema-level failures surface together. Otherwise just return the root loader.
+    and final_retort (type coercion + root validators), merging their errors so field-level
+    and schema-level failures surface together. Otherwise return a plain final_retort loader.
     """
+
+    def _load_and_construct(data: JSONValue) -> DataclassInstance:
+        return retort_cache.final_retort(indexed, resolved_type_loaders=resolved_type_loaders).load(data, schema)
+
     if not retort_cache.has_validators(indexed):
-        return loader_fn
+        return _load_and_construct
+
     field_pass_loader = retort_cache.field_pass(
         indexed, skip=False, resolved_type_loaders=resolved_type_loaders
     ).get_loader(schema)
@@ -160,7 +164,7 @@ def _make_validation_loader(
         except DatureConfigError as field_pass_error:
             field_pass_errors = cast("list[FieldLoadError]", list(field_pass_error.exceptions))
         try:
-            constructed = handle_load_errors(func=lambda: loader_fn(data), ctx=ctx)
+            constructed = handle_load_errors(func=lambda: _load_and_construct(data), ctx=ctx)
         except DatureConfigError as root_error:
             raise merge_root_and_field_errors(
                 schema_name,
@@ -186,11 +190,9 @@ def build_revalidation[T: DataclassInstance](
     """Build the decorator-mode replay loader and its error context.
 
     Returns ``(validation_loader, error_ctx)``.  *validation_loader* is stored on ``Loader``
-    so that ``__post_init__`` can re-validate on direct instantiation (``Config(field=bad)``).
-    When the source/schema has no field validators, the plain root loader is returned directly.
+    so that the subclass ``__init__`` can re-validate on direct instantiation (``Config(field=bad)``).
     """
     resolved_type_loaders = resolve_type_loaders(indexed.source, type_loaders)
-    loader_fn = retort_cache.root_retort(indexed, resolved_type_loaders=resolved_type_loaders).get_loader(schema)
     ctx = build_error_ctx(
         indexed.source,
         schema.__name__,
@@ -202,7 +204,6 @@ def build_revalidation[T: DataclassInstance](
         indexed=indexed,
         schema=schema,
         ctx=ctx,
-        loader_fn=loader_fn,
         resolved_type_loaders=resolved_type_loaders,
     )
     return validation_loader, ctx

@@ -626,7 +626,6 @@ class TestResolveLocation:
     def test_file_content_none_returns_empty(self):
         locations = MockSource().resolve_location(
             field_path=["name"],
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -637,7 +636,6 @@ class TestResolveLocation:
     def test_empty_field_path_returns_empty(self):
         locations = MockSource().resolve_location(
             field_path=[],
-            file_content='{"name": "test"}',
             nested_conflict=None,
         )
 
@@ -647,7 +645,6 @@ class TestResolveLocation:
     def test_path_finder_none_returns_empty(self):
         locations = MockSource().resolve_location(
             field_path=["name"],
-            file_content='{"name": "test"}',
             nested_conflict=None,
         )
 
@@ -656,10 +653,10 @@ class TestResolveLocation:
 
     def test_json_source_finds_line_range(self, tmp_path):
         content = '{\n  "name": "test",\n  "port": 8080\n}'
+        (tmp_path / "config.json").write_text(content)
 
         locations = JsonSource(file=tmp_path / "config.json").resolve_location(
             field_path=["name"],
-            file_content=content,
             nested_conflict=None,
         )
 
@@ -669,10 +666,10 @@ class TestResolveLocation:
 
     def test_json_source_with_prefix(self, tmp_path):
         content = '{\n  "app": {\n    "name": "test"\n  }\n}'
+        (tmp_path / "config.json").write_text(content)
 
         locations = JsonSource(file=tmp_path / "config.json", prefix="app").resolve_location(
             field_path=["name"],
-            file_content=content,
             nested_conflict=None,
         )
 
@@ -681,10 +678,10 @@ class TestResolveLocation:
 
     def test_json_source_field_not_found_returns_empty(self, tmp_path):
         content = '{\n  "name": "test"\n}'
+        (tmp_path / "config.json").write_text(content)
 
         locations = JsonSource(file=tmp_path / "config.json").resolve_location(
             field_path=["nonexistent"],
-            file_content=content,
             nested_conflict=None,
         )
 

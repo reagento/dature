@@ -25,6 +25,7 @@ from dature.errors.exceptions import (
 )
 from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
 from dature.masking.masking import is_random_string, mask_value
+from dature.sources.protocol import FileSourceProtocol
 from dature.type_aliases import JSONValue
 
 
@@ -127,7 +128,10 @@ def handle_load_errors[T](
     try:
         return func()
     except EnvVarExpandError as exc:
-        file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
+        if isinstance(ctx.source, FileSourceProtocol):
+            file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
+        else:
+            file_content = None
         enriched_env: list[MissingEnvVarError] = []
         for e in exc.exceptions:
             if not isinstance(e, MissingEnvVarError):
@@ -137,7 +141,10 @@ def handle_load_errors[T](
             enriched_env.append(e)
         raise ConfigEnvVarExpandError(ctx.dataclass_name, enriched_env) from exc
     except (AggregateLoadError, LoadError) as exc:
-        file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
+        if isinstance(ctx.source, FileSourceProtocol):
+            file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
+        else:
+            file_content = None
         heuristic_paths: set[str] = set()
         field_errors: list[FieldLoadError] = []
         _walk_exception(

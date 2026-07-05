@@ -44,6 +44,43 @@ class SkipFieldProvider(Provider):
         return [(LoaderRequest, AlwaysTrueRequestChecker(), self._wrap_handler)]
 
 
+class ConstructorOverrideProvider(ModelLoaderProvider):  # type: ignore[no-untyped-call]
+    """Coerce dataclass fields and construct the instance via *constructor_fn* instead of *schema*.
+
+    Required fields stay required and optional fields use their dataclass defaults.
+    Only applies to the top-level *schema* type (nested dataclasses are loaded normally).
+    Used by ``RetortCache.final_retort`` in decorator mode so that the internal
+    ``_dature_constructor`` is called rather than the raw schema constructor.
+    """
+
+    def __init__(self, constructor_fn: Callable[..., object], schema: type) -> None:
+        super().__init__()
+        self._constructor_fn = constructor_fn
+        self._schema = schema
+
+    def provide_loader(
+        self,
+        mediator: Mediator[Loader[ProbeDict]],
+        request: LocatedRequest[Loader[ProbeDict]],
+    ) -> Loader[ProbeDict]:
+        loc_type = getattr(request.last_loc, "type", None)
+        if loc_type is not self._schema:
+            raise CannotProvide
+        return super().provide_loader(mediator, request)  # type: ignore[arg-type]
+
+    def _fetch_shape(
+        self,
+        mediator: Mediator[Loader[ProbeDict]],
+        request: LocatedRequest[Loader[ProbeDict]],
+    ) -> InputShape[ProbeDict]:
+        shape = provide_generic_resolved_shape(
+            mediator,
+            InputShapeRequest(loc_stack=request.loc_stack),
+        )
+        kw_only_params = tuple(Param(field_id=f.id, name=f.id, kind=ParamKind.KW_ONLY) for f in shape.fields)
+        return replace(shape, params=kw_only_params, constructor=self._constructor_fn, kwargs=None)
+
+
 class ModelToDictProvider(ModelLoaderProvider):  # type: ignore[no-untyped-call]
     """Converts dataclass model(s) to optional-fields dicts (constructor = dict).
 

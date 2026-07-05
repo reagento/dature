@@ -5,13 +5,13 @@ from collections.abc import Sequence
 from dature.errors import DatureConfigError, SourceLoadError
 from dature.loading.merge_runtime import LoadCtx, SourceMergeStrategy
 from dature.merging.deep_merge import deep_merge_first_wins, raise_on_conflict
-from dature.sources.base import Source
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue, MergeStrategyName
 
 
 # --8<-- [start:source-last-wins-strategy]
 class SourceLastWins:
-    def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
+    def __call__(self, sources: Sequence[SourceProtocol], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
         for idx in range(len(sources)):
             base = ctx.merge(source_idx=idx, base=base)
@@ -22,7 +22,7 @@ class SourceLastWins:
 
 
 class SourceFirstWins:
-    def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
+    def __call__(self, sources: Sequence[SourceProtocol], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
         for idx in range(len(sources)):
             base = ctx.merge(source_idx=idx, base=base, op=deep_merge_first_wins)
@@ -38,7 +38,7 @@ class SourceFirstFound:
     ``skip_if_broken``.
     """
 
-    def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
+    def __call__(self, sources: Sequence[SourceProtocol], ctx: LoadCtx) -> JSONValue:
         for idx in range(len(sources)):
             data = ctx.load(idx, skip_on_error=True)
             if data is not None:
@@ -57,7 +57,7 @@ class SourceRaiseOnConflict:
     ``ctx.loaded_raw_dicts()`` and ``ctx.loaded_source_ctxs()``.
     """
 
-    def __call__(self, sources: Sequence[Source], ctx: LoadCtx) -> JSONValue:
+    def __call__(self, sources: Sequence[SourceProtocol], ctx: LoadCtx) -> JSONValue:
         base: JSONValue = {}
         for idx in range(len(sources)):
             base = ctx.merge(source_idx=idx, base=base)

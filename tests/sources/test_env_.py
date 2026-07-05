@@ -417,7 +417,6 @@ class TestEnvSourceResolveLocation:
     def test_resolve_returns_env_var_name(self):
         locations = EnvSource().resolve_location(
             field_path=["host"],
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -429,7 +428,6 @@ class TestEnvSourceResolveLocation:
     def test_resolve_with_prefix(self):
         locations = EnvSource(prefix="APP_").resolve_location(
             field_path=["host"],
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -439,7 +437,6 @@ class TestEnvSourceResolveLocation:
     def test_resolve_nested_path(self):
         locations = EnvSource().resolve_location(
             field_path=["database", "host"],
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -449,7 +446,6 @@ class TestEnvSourceResolveLocation:
     def test_resolve_with_custom_split_symbols(self):
         locations = EnvSource(nested_sep=".").resolve_location(
             field_path=["database", "host"],
-            file_content=None,
             nested_conflict=None,
         )
 
@@ -458,12 +454,12 @@ class TestEnvSourceResolveLocation:
 
 
 class TestEnvFileSourceResolveLocation:
-    def test_resolve_finds_line_in_content(self):
-        content = "HOST=localhost\nPORT=8080"
+    def test_resolve_finds_line_in_content(self, tmp_path):
+        env_file = tmp_path / ".env"
+        env_file.write_text("HOST=localhost\nPORT=8080")
 
-        locations = EnvFileSource(file=".env").resolve_location(
+        locations = EnvFileSource(file=env_file).resolve_location(
             field_path=["port"],
-            file_content=content,
             nested_conflict=None,
         )
 
@@ -475,7 +471,6 @@ class TestEnvFileSourceResolveLocation:
     def test_resolve_no_content(self):
         locations = EnvFileSource(file=".env").resolve_location(
             field_path=["host"],
-            file_content=None,
             nested_conflict=None,
         )
 

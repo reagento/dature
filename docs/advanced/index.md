@@ -24,7 +24,8 @@ Integrate additional config sources or build your own.
 | [Custom CLI Source](cli/custom.md) | Plug in click, typer, or your own CLI parser |
 | [VaultSource](remote/vault.md) | Fetch secrets from HashiCorp Vault |
 | [Custom Remote Source](remote/custom.md) | Implement your own remote backend (AWS, Azure, Consul …) |
-| [Custom Types & Loaders](custom_types.md) | Add support for new Python types or config formats |
+| [Custom Types](custom_types.md) | Add support for new Python types via `type_loaders` |
+| [Custom Sources](custom_sources.md) | Implement your own source class or use the `SourceProtocol` interface directly |
 | [Cross-Source Refs](cross_source_refs.md) | Reference values from one source inside another |
 | [Conditional Sources](conditional_sources.md) | Activate sources based on environment or other config values |
 

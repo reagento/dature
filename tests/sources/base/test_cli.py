@@ -69,7 +69,6 @@ class TestCliSourceCasePreservation:
 
         locations = src.resolve_location(
             field_path=["db", "host"],
-            file_content=None,
             nested_conflict=conflict,
         )
         assert locations[0].env_var_name == "--db"
@@ -78,7 +77,6 @@ class TestCliSourceCasePreservation:
         src = _DictCliSource(data={})
         locations = src.resolve_location(
             field_path=["db", "host"],
-            file_content=None,
             nested_conflict=None,
         )
         assert locations[0].env_var_name == "--db--host"
@@ -115,7 +113,6 @@ class TestCliSourceResolveLocation:
         src = _DictCliSource(data={})
         locations = src.resolve_location(
             field_path=["host"],
-            file_content=None,
             nested_conflict=None,
             input_value=input_value,
         )

@@ -7,9 +7,9 @@ rendering helpers live in ``presentation``.
 """
 
 import abc
-import contextlib
 import json
 import logging
+from contextlib import suppress
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
 from pathlib import Path
@@ -42,6 +42,7 @@ from dature.sources.presentation import (
 from dature.sources.presentation import (
     compute_line_carets as _compute_line_carets,
 )
+from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     DotSeparatedPath,
     ExpandEnvVarsMode,
@@ -94,8 +95,6 @@ class Source(abc.ABC):
     field_mapping: "FieldMapping | None" = None
     validators: "FieldValidators | None" = None
     expand_env_vars: "ExpandEnvVarsMode | None" = None
-    skip_if_broken: bool | None = None
-    skip_if_missing: bool | None = None
     skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
     type_loaders: "TypeLoaderMap | None" = None
     tag: str | None = None
@@ -126,7 +125,7 @@ class Source(abc.ABC):
             if f.default is not MISSING and value == f.default:
                 continue
             if f.default_factory is not MISSING:
-                with contextlib.suppress(Exception):
+                with suppress(Exception):
                     if value == f.default_factory():
                         continue
             parts.append(f"{f.name}={value!r}")
@@ -300,12 +299,15 @@ class Source(abc.ABC):
         self,
         *,
         field_path: list[str],
-        file_content: str | None,
         nested_conflict: NestedConflict | None,  # noqa: ARG002
         input_value: JSONValue = None,
         loaded_data: "JSONValue | None" = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         file_path = self.file_path_for_errors()
+        file_content: str | None = None
+        if file_path is not None:
+            with suppress(OSError, UnicodeDecodeError):
+                file_content = file_path.read_text(encoding=self.encoding_for_errors())
         if file_content is None or not field_path:
             return [empty_location(self.location_label, file_path)]
 
@@ -354,14 +356,14 @@ class IndexedSource:
     share an index and thus the pre-warmed retort.
     """
 
-    source: Source
+    source: SourceProtocol
     index: int
 
 
-def clone_source[T: Source](source: T, overrides: dict[str, object]) -> T:
+def clone_source[T: SourceProtocol](source: T, overrides: dict[str, object]) -> T:
     """Return a copy of *source* with *overrides* applied.
 
     Uses ``dataclasses.replace()`` so ``__post_init__`` runs and ``init=False``
     fields reset to their defaults (e.g. ``_resolved_file_path`` → ``None``).
     """
-    return replace(source, **overrides)  # type: ignore[arg-type]
+    return replace(source, **overrides)

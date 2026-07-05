@@ -58,65 +58,77 @@ class TestResolveSourceLocation:
         locs = resolve_source_location(["database", "port"], ctx, file_content=None)
         assert locs[0].env_var_name == "APP_DATABASE_PORT"
 
-    def test_json_source_with_line(self):
+    def test_json_source_with_line(self, tmp_path):
         content = '{\n  "timeout": "30",\n  "name": "test"\n}'
+        config_file = tmp_path / "config.json"
+        config_file.write_text(content)
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=JsonSource(file="config.json"),
+            source=JsonSource(file=config_file),
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, file_content=None)
         assert locs[0].location_label == "FILE"
         assert locs[0].line_range == LineRange(start=2, end=2)
         assert locs[0].line_content == ['"timeout": "30",']
 
-    def test_toml_source_with_line(self):
+    def test_toml_source_with_line(self, tmp_path):
         content = 'timeout = "30"\nname = "test"'
+        config_file = tmp_path / "config.toml"
+        config_file.write_text(content)
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=Toml11Source(file="config.toml"),
+            source=Toml11Source(file=config_file),
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, file_content=None)
         assert locs[0].location_label == "FILE"
         assert locs[0].line_range == LineRange(start=1, end=1)
         assert locs[0].line_content == ['timeout = "30"']
 
-    def test_envfilesource(self):
+    def test_envfilesource(self, tmp_path):
         content = "# comment\nAPP_TIMEOUT=30\nAPP_NAME=test"
+        env_file = tmp_path / "dummy.env"
+        env_file.write_text(content)
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=EnvFileSource(file="dummy.env", prefix="APP_"),
+            source=EnvFileSource(file=env_file, prefix="APP_"),
         )
-        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        locs = resolve_source_location(["timeout"], ctx, file_content=None)
         assert locs[0].location_label == "ENV FILE"
         assert locs[0].env_var_name == "APP_TIMEOUT"
         assert locs[0].line_range == LineRange(start=2, end=2)
         assert locs[0].line_content == ["APP_TIMEOUT=30"]
 
-    def test_filesource_does_not_mask_non_secret_field(self):
+    def test_filesource_does_not_mask_non_secret_field(self, tmp_path):
         content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
+        config_file = tmp_path / "config.json"
+        config_file.write_text(content)
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=JsonSource(file="config.json"),
+            source=JsonSource(file=config_file),
             secret_paths=frozenset({"password"}),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].line_content == ['"timeout": "30"']
 
-    def test_filesource_masks_secret_field(self):
+    def test_filesource_masks_secret_field(self, tmp_path):
         content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
+        config_file = tmp_path / "config.json"
+        config_file.write_text(content)
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=JsonSource(file="config.json"),
+            source=JsonSource(file=config_file),
             secret_paths=frozenset({"password"}),
         )
         locs = resolve_source_location(["password"], ctx, file_content=content)
         assert locs[0].line_content == ['"password": "<REDACTED>",']
 
-    def test_filesource_masks_line_when_secret_on_same_line(self):
+    def test_filesource_masks_line_when_secret_on_same_line(self, tmp_path):
         content = '{"password": "secret123", "timeout": "30"}'
+        config_file = tmp_path / "config.json"
+        config_file.write_text(content)
         ctx = ErrorContext(
             dataclass_name="Config",
-            source=JsonSource(file="config.json"),
+            source=JsonSource(file=config_file),
             secret_paths=frozenset({"password"}),
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
