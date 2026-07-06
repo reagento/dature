@@ -1,4 +1,5 @@
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -260,6 +261,7 @@ class TestSkipDockerSecretsSource:
                 schema=Config,
             )
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="chmod 000 doesn't restrict access on Windows")
     def test_skip_if_broken_loader_level(self, tmp_path: Path):
         if os.getuid() == 0:
             pytest.skip("chmod 000 doesn't restrict access for root")
