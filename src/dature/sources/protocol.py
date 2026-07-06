@@ -7,7 +7,7 @@ source types (env, file, CLI, remote, and custom).
 ``FileSourceProtocol`` — the additional interface for sources that read from a
 file on disk.  The loading machinery checks ``isinstance(source, FileSourceProtocol)``
 to decide whether to access file-specific attributes (``skip_if_broken``,
-``skip_if_missing``, ``file_path_for_errors``, ``encoding_for_errors``).
+``skip_if_missing``, ``file_display``, ``file_path_for_errors``, ``encoding_for_errors``).
 
 All ``SourceProtocol`` implementations must be dataclasses (signalled by
 ``__dataclass_fields__``), which enables ``dataclasses.fields()`` and
@@ -80,8 +80,6 @@ class SourceProtocol(Protocol):
         loaded_data: JSONValue | None,
     ) -> list[SourceLocation]: ...
 
-    def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None: ...
-
     def compute_line_carets(
         self,
         content_lines: list[str],
@@ -97,13 +95,16 @@ class FileSourceProtocol(Protocol):
 
     The loading machinery checks ``isinstance(source, FileSourceProtocol)`` to
     decide whether to access file-specific attributes.  Any class that exposes
-    these four members satisfies the protocol — subclassing ``FileFieldMixin``
+    these five members satisfies the protocol — subclassing ``FileFieldMixin``
     is sufficient but not required.
     """
 
     skip_if_broken: bool | None
     skip_if_missing: bool | None
+    encoding: str | None
+
+    def file_display(self) -> str | None: ...
 
     def file_path_for_errors(self) -> Path | None: ...
 
-    def encoding_for_errors(self) -> str | None: ...
+    def build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None": ...

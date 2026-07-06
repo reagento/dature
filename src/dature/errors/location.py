@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 from dature.masking.masking import mask_env_line
-from dature.sources.protocol import SourceProtocol
+from dature.sources.protocol import FileSourceProtocol, SourceProtocol
 from dature.type_aliases import JSONValue, NestedConflict, NestedConflicts
 
 
@@ -89,7 +89,11 @@ def _apply_masking(
 ) -> list[SourceLocation]:
     result: list[SourceLocation] = []
     field_key = field_path[-1] if field_path else None
-    line_index = ctx.source.build_line_index(file_content) if ctx.secret_paths and file_content is not None else None
+    line_index = (
+        ctx.source.build_line_index(file_content)
+        if ctx.secret_paths and file_content is not None and isinstance(ctx.source, FileSourceProtocol)
+        else None
+    )
     for location in locations:
         should_mask = is_secret
         if not should_mask and ctx.secret_paths and location.line_range is not None and line_index is not None:

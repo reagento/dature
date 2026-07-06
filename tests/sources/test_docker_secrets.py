@@ -1,9 +1,11 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
 from dature import Absolute, DockerSecretsSource, load
+from dature.errors import DatureConfigError
 from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -197,3 +199,111 @@ class TestDockerSecretsResolveLocation:
         )
 
         assert locations[0].line_content == expected_line_content
+
+
+class TestSkipDockerSecretsSource:
+    def test_skip_if_missing_loader_level(self, tmp_path: Path):
+        valid_dir = tmp_path / "valid"
+        valid_dir.mkdir()
+        (valid_dir / "host").write_text("localhost")
+        (valid_dir / "port").write_text("3000")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            DockerSecretsSource(dir_=valid_dir),
+            DockerSecretsSource(dir_=str(tmp_path / "does_not_exist")),
+            schema=Config,
+            skip_if_missing=True,
+        )
+
+        assert result.host == "localhost"
+        assert result.port == 3000
+
+    def test_skip_if_missing_source_level(self, tmp_path: Path):
+        valid_dir = tmp_path / "valid"
+        valid_dir.mkdir()
+        (valid_dir / "host").write_text("localhost")
+        (valid_dir / "port").write_text("3000")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        result = load(
+            DockerSecretsSource(dir_=valid_dir),
+            DockerSecretsSource(dir_=str(tmp_path / "does_not_exist"), skip_if_missing=True),
+            schema=Config,
+            skip_if_missing=False,
+        )
+
+        assert result.host == "localhost"
+        assert result.port == 3000
+
+    def test_no_skip_if_missing_raises(self, tmp_path: Path):
+        valid_dir = tmp_path / "valid"
+        valid_dir.mkdir()
+        (valid_dir / "host").write_text("localhost")
+
+        @dataclass
+        class Config:
+            host: str
+
+        with pytest.raises(DatureConfigError):
+            load(
+                DockerSecretsSource(dir_=valid_dir),
+                DockerSecretsSource(dir_=str(tmp_path / "does_not_exist")),
+                schema=Config,
+            )
+
+    def test_skip_if_broken_loader_level(self, tmp_path: Path):
+        if os.getuid() == 0:
+            pytest.skip("chmod 000 doesn't restrict access for root")
+
+        valid_dir = tmp_path / "valid"
+        valid_dir.mkdir()
+        (valid_dir / "host").write_text("localhost")
+        (valid_dir / "port").write_text("3000")
+
+        broken_dir = tmp_path / "broken"
+        broken_dir.mkdir()
+        broken_dir.chmod(0o000)
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        try:
+            result = load(
+                DockerSecretsSource(dir_=valid_dir),
+                DockerSecretsSource(dir_=broken_dir),
+                schema=Config,
+                skip_if_broken=True,
+            )
+        finally:
+            broken_dir.chmod(0o755)
+
+        assert result.host == "localhost"
+        assert result.port == 3000
+
+    def test_per_source_false_overrides_loader_true(self, tmp_path: Path):
+        valid_dir = tmp_path / "valid"
+        valid_dir.mkdir()
+        (valid_dir / "host").write_text("localhost")
+
+        @dataclass
+        class Config:
+            host: str
+
+        with pytest.raises(DatureConfigError):
+            load(
+                DockerSecretsSource(dir_=valid_dir),
+                DockerSecretsSource(dir_=str(tmp_path / "does_not_exist"), skip_if_missing=False),
+                schema=Config,
+                skip_if_missing=True,
+            )

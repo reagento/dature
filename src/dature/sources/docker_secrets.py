@@ -12,6 +12,9 @@ from dature.type_aliases import FilePath, JSONValue, NestedConflict
 @dataclass(kw_only=True, repr=False)
 class DockerSecretsSource(FlatKeySource):
     dir_: FilePath
+    encoding: str | None = None
+    skip_if_broken: bool | None = None
+    skip_if_missing: bool | None = None
     format_name = "docker_secrets"
     location_label: ClassVar[str] = "SECRET FILE"
 
@@ -21,6 +24,9 @@ class DockerSecretsSource(FlatKeySource):
 
     def __repr__(self) -> str:
         return f"{self.format_name} '{self.dir_}'"
+
+    def display_name(self) -> str:
+        return self.file_display() or self.format_name
 
     def file_display(self) -> str | None:
         return str(self.dir_)
@@ -50,7 +56,7 @@ class DockerSecretsSource(FlatKeySource):
         line_content: list[str] | None = None
         line_carets: list[CaretSpan] | None = None
         with suppress(OSError):
-            raw = secret_file.read_text().strip()
+            raw = secret_file.read_text(encoding=self.encoding).strip()
             if raw:
                 value_lines = raw.split("\n")
                 value_start = len(secret_name) + 3  # after "name = "
@@ -84,7 +90,7 @@ class DockerSecretsSource(FlatKeySource):
                 continue
 
             raw_name = entry.name
-            value = entry.read_text().strip()
+            value = entry.read_text(encoding=self.encoding).strip()
 
             # Absolute aliases bypass the prefix filter and are matched against the full name.
             absolute_mapped = self._alias_to_field_name(raw_name, absolute=True)
