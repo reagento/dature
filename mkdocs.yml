@@ -93,6 +93,7 @@ nav:
     - vs pydantic-settings: comparison/why-not-pydantic-settings.md
     - vs Hydra: comparison/why-not-hydra.md
     - vs Dynaconf: comparison/why-not-dynaconf.md
+    - Benchmarks: comparison/benchmarks.md
   - Reference:
     - API Reference: api-reference.md
     - Changelog: changelog.md
@@ -156,6 +157,7 @@ plugins:
           - comparison/why-not-pydantic-settings.md
           - comparison/why-not-hydra.md
           - comparison/why-not-dynaconf.md
+          - comparison/benchmarks.md
         Reference:
           - api-reference.md
           - changelog.md
