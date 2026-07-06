@@ -1,3 +1,19 @@
+## 0.22.3
+
+### Features
+
+- ``DockerSecretsSource`` now accepts per-source ``encoding``, ``skip_if_missing``,
+  and ``skip_if_broken`` fields, overriding the loader-level defaults for that
+  specific source. ([#docker-secrets-per-source-opts](https://github.com/reagento/dature/issues/docker-secrets-per-source-opts))
+
+### Removals
+
+- Removed ``encoding_for_errors()`` from ``FileSourceProtocol``; use the
+  ``encoding`` attribute directly instead.  Moved ``build_line_index()`` from
+  ``SourceProtocol`` to ``FileSourceProtocol`` — custom sources that are not
+  file-based no longer need to implement it. ([#protocol-encoding-cleanup](https://github.com/reagento/dature/issues/protocol-encoding-cleanup))
+
+
 ## 0.22.2
 
 ### Refactoring
