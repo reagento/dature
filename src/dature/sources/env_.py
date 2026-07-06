@@ -130,7 +130,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
         file_content: str | None = None
         if file_path is not None:
             with suppress(OSError, UnicodeDecodeError):
-                file_content = file_path.read_text(encoding=self.encoding_for_errors())
+                file_content = file_path.read_text(encoding=self.encoding)
         line_range: LineRange | None = None
         line_content: list[str] | None = None
         line_carets: list[CaretSpan] | None = None

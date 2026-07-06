@@ -1,20 +1,29 @@
 """File-based source base classes: ``FileFieldMixin`` and ``FileSource``."""
 
 import abc
+from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
 
 from dature.config_paths import find_config
+from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_file_path
 from dature.refs import TEMPLATE_SUPPORTED, Template, template_to_str  # type: ignore[attr-defined]
 from dature.sources.base.source import Source
+from dature.sources.presentation import (
+    build_search_path,
+    empty_location,
+    find_parent_line_range,
+    strip_common_indent,
+)
 from dature.type_aliases import (
     FILE_LIKE_TYPES,
     FileLike,
     FileOrStream,
     FilePath,
     JSONValue,
+    NestedConflict,
     SystemConfigDirsArg,
 )
 
@@ -90,8 +99,8 @@ class FileFieldMixin:
             return self.resolved_file_path
         return self.file_field_path_for_errors(self.file)
 
-    def encoding_for_errors(self) -> str | None:
-        return self.encoding
+    def display_name(self) -> str:
+        return self.file_display() or self.format_name  # type: ignore[attr-defined]
 
 
 @dataclass(kw_only=True, repr=False)
@@ -104,6 +113,58 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
         if file_path_display is not None:
             return f"{display} '{file_path_display}'"
         return display
+
+    def resolve_location(
+        self,
+        *,
+        field_path: list[str],
+        nested_conflict: NestedConflict | None,  # noqa: ARG002
+        input_value: JSONValue = None,
+        loaded_data: "JSONValue | None" = None,  # noqa: ARG002
+    ) -> list[SourceLocation]:
+        file_path = self.file_path_for_errors()
+        file_content: str | None = None
+        if file_path is not None:
+            with suppress(OSError, UnicodeDecodeError):
+                file_content = file_path.read_text(encoding=self.encoding)
+        if file_content is None or not field_path:
+            return [empty_location(self.location_label, file_path)]
+
+        search_path = build_search_path(field_path, self.prefix)
+        line_index = self.build_line_index(file_content)
+        if line_index is None:
+            return [empty_location(self.location_label, file_path)]
+
+        line_range: LineRange | None = line_index.get(tuple(search_path))
+        if line_range is None:
+            line_range = find_parent_line_range(line_index, search_path)
+        if line_range is None:
+            return [empty_location(self.location_label, file_path)]
+
+        lines = file_content.splitlines()
+        content_lines: list[str] | None = None
+        line_carets: list[CaretSpan] | None = None
+        if 0 < line_range.start <= len(lines):
+            end = min(line_range.end, len(lines))
+            raw = lines[line_range.start - 1 : end]
+            content_lines = strip_common_indent(raw)
+            field_key = field_path[-1] if field_path else None
+            line_carets = self.compute_line_carets(
+                content_lines,
+                input_value=input_value,
+                field_key=field_key,
+            )
+
+        return [
+            SourceLocation(
+                location_label=self.location_label,
+                file_path=file_path,
+                line_range=line_range,
+                line_content=content_lines,
+                env_var_name=None,
+                line_carets=line_carets,
+            ),
+        ]
 
     def _load(self) -> JSONValue:
         if isinstance(self.file, FILE_LIKE_TYPES):
