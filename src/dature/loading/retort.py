@@ -125,6 +125,10 @@ _FIELD_PASS_SKIP_SENTINEL: Final[object] = object()
 _FIELD_PASS_NOSKIP_SENTINEL: Final[object] = object()
 _FINAL_SENTINEL: Final[object] = object()
 
+# Shared across all RetortCache instances — Retort(strict_coercion=True) holds no schema- or
+# source-specific state; all customisation is added via .extend() which returns a new object.
+_BASE_RETORT: Final[Retort] = Retort(strict_coercion=True)
+
 
 def _loaders_frozenset(resolved_type_loaders: TypeLoaderMap | None) -> frozenset[Any]:
     return frozenset(resolved_type_loaders.items()) if resolved_type_loaders is not None else frozenset()
@@ -145,7 +149,7 @@ class RetortCache:
     """
 
     def __init__[T](self, schema: type[T], *, root_validators: Iterable[Any] = ()) -> None:
-        self._base: Retort = Retort(strict_coercion=True)
+        self._base: Retort = _BASE_RETORT
         self._cache: dict[tuple[Any, ...], Retort] = {}
         self._schema = schema
         self._has_annotated_field_validators: bool = bool(get_validator_providers(schema))

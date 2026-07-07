@@ -134,7 +134,11 @@ class Loader[T: DataclassInstance]:
         # Tracks which source indices were enabled on the last load.
         # When the enabled set changes (env var drove a different when= outcome),
         # the cached result is auto-cleared before the freshness check.
-        self._enabled_sig: tuple[int, ...] | None = None
+        # If no source has when=, the enabled set is fixed at construction time and never recomputed.
+        self._has_conditional_sources: bool = any(s.when is not None for s in sources)
+        self._enabled_sig: tuple[int, ...] | None = (
+            None if self._has_conditional_sources else tuple(range(len(sources)))
+        )
 
         # Secret paths depend only on schema shape — computed once, env-free.
         resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
@@ -177,18 +181,25 @@ class Loader[T: DataclassInstance]:
         take effect immediately.  The cache is cleared automatically when
         the set of enabled sources changes between calls.
         """
-        # Re-evaluate when= routing fresh on every call.
-        # If the enabled-source set changed, stale cached data is discarded.
-        new_sig = tuple(i for i, s in enumerate(self._sources) if when_has_cross_refs(s) or evaluate_when_eager(s.when))
-        if new_sig != self._enabled_sig:
-            self._cached_data = None
-            self._cached_at = None
-            self._enabled_sig = new_sig
+        # Re-evaluate when= routing fresh on every call only when sources may be conditional.
+        # When no source has when=, the enabled set is fixed and _enabled_sig is pre-set at
+        # construction time — skipping this loop is the fast path for the common case.
+        if self._has_conditional_sources:
+            new_sig = tuple(
+                i for i, s in enumerate(self._sources) if when_has_cross_refs(s) or evaluate_when_eager(s.when)
+            )
+            if new_sig != self._enabled_sig:
+                self._cached_data = None
+                self._cached_at = None
+                self._enabled_sig = new_sig
+                self._merge_meta = None
+                self._source = None
 
         if self._cached_data is not None and cache_is_fresh(cache=self._cache, cached_at=self._cached_at):
             return self._cached_data
         try:
-            self._prepare_for_load()
+            if self._merge_meta is None:
+                self._prepare_for_load()
             result = self._do_load()
         except (DatureError, DatureErrorGroup, DatureConfigError):
             raise
@@ -391,15 +402,25 @@ class Loader[T: DataclassInstance]:
                 original_init(self, **kwargs)
                 return
 
-            # User path: load from sources, merge with any explicit kwargs, then init.
             loaded_data = loader.load()
+
+            if not args and not kwargs:
+                # Fast path: no caller overrides — loaded_data already validated by the load
+                # pipeline, so merge and revalidation are both unnecessary.
+                original_init(self, **{f.name: getattr(loaded_data, f.name) for f in field_list})
+                if loader.debug:
+                    _attach_debug_report(self, loaded_data)
+                if original_post_init is not None:
+                    original_post_init(self)
+                return
+
+            # Slow path: explicit overrides — merge caller values, then revalidate the result.
             complete_kwargs = merge_fields(loaded_data, field_list, args, kwargs)
             original_init(self, **complete_kwargs)
             if loader.debug:
                 _attach_debug_report(self, loaded_data)
             if original_post_init is not None:
                 original_post_init(self)
-
             validation_loader = loader.validation_loader
             error_ctx = loader.error_ctx
             if validation_loader is not None and error_ctx is not None:
