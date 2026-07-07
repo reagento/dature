@@ -30,6 +30,7 @@ from pydantic_settings import (
 )
 
 import dature
+from dature import Loader
 
 # ── Temp file setup ──────────────────────────────────────────────────────────
 
@@ -77,6 +78,14 @@ _DatureToml = dature.load(_toml_source, cache=False)(BenchConfig)
 _DatureYaml = dature.load(_yaml_source, cache=False)(BenchConfig)
 _DatureDotenv = dature.load(_dotenv_source, cache=False)(BenchConfig)
 _DatureMulti = dature.load(_json_source, _env_source, cache=False, strategy="last_wins")(BenchConfig)
+
+# Loader reuse — one Loader per source type, .load() called repeatedly
+_LoaderEnv = Loader(_env_source, schema=BenchConfig, cache=False)
+_LoaderJson = Loader(_json_source, schema=BenchConfig, cache=False)
+_LoaderToml = Loader(_toml_source, schema=BenchConfig, cache=False)
+_LoaderYaml = Loader(_yaml_source, schema=BenchConfig, cache=False)
+_LoaderDotenv = Loader(_dotenv_source, schema=BenchConfig, cache=False)
+_LoaderMulti = Loader(_json_source, _env_source, schema=BenchConfig, cache=False, strategy="last_wins")
 
 # caching variants (all on EnvSource)
 _DatureCacheNone = dature.load(_env_source, cache=False)(BenchConfig)
@@ -208,6 +217,10 @@ def dature_env_hot() -> BenchConfig:
     return _DatureEnv()
 
 
+def dature_env_loader() -> BenchConfig:
+    return _LoaderEnv.load()
+
+
 def dature_env_startup():
     dature.load(_env_source, cache=False)(BenchConfig)
 
@@ -252,6 +265,10 @@ def dature_json_hot() -> BenchConfig:
     return _DatureJson()
 
 
+def dature_json_loader() -> BenchConfig:
+    return _LoaderJson.load()
+
+
 def dature_json_startup():
     dature.load(_json_source, cache=False)(BenchConfig)
 
@@ -283,6 +300,10 @@ def dature_toml_hot() -> BenchConfig:
     return _DatureToml()
 
 
+def dature_toml_loader() -> BenchConfig:
+    return _LoaderToml.load()
+
+
 def dature_toml_startup():
     dature.load(_toml_source, cache=False)(BenchConfig)
 
@@ -312,6 +333,10 @@ def dature_yaml_func() -> BenchConfig:
 
 def dature_yaml_hot() -> BenchConfig:
     return _DatureYaml()
+
+
+def dature_yaml_loader() -> BenchConfig:
+    return _LoaderYaml.load()
 
 
 def dature_yaml_startup():
@@ -348,6 +373,10 @@ def dature_dotenv_func() -> BenchConfig:
 
 def dature_dotenv_hot() -> BenchConfig:
     return _DatureDotenv()
+
+
+def dature_dotenv_loader() -> BenchConfig:
+    return _LoaderDotenv.load()
 
 
 def dature_dotenv_startup():
@@ -394,6 +423,10 @@ def dature_multi_func() -> BenchConfig:
 
 def dature_multi_hot() -> BenchConfig:
     return _DatureMulti()
+
+
+def dature_multi_loader() -> BenchConfig:
+    return _LoaderMulti.load()
 
 
 def dature_multi_startup():

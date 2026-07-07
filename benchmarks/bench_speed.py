@@ -20,21 +20,27 @@ from prepare import (
     dature_cache_ttl,
     dature_dotenv_func,
     dature_dotenv_hot,
+    dature_dotenv_loader,
     dature_dotenv_startup,
     dature_env_func,
     dature_env_hot,
+    dature_env_loader,
     dature_env_startup,
     dature_json_func,
     dature_json_hot,
+    dature_json_loader,
     dature_json_startup,
     dature_multi_func,
     dature_multi_hot,
+    dature_multi_loader,
     dature_multi_startup,
     dature_toml_func,
     dature_toml_hot,
+    dature_toml_loader,
     dature_toml_startup,
     dature_yaml_func,
     dature_yaml_hot,
+    dature_yaml_loader,
     dature_yaml_startup,
     decouple_cached,
     decouple_dotenv,
@@ -62,6 +68,7 @@ if __name__ == "__main__":
         # ENV loading
         results = [
             ("dature (func mode)", *run_bench(dature_env_func)),
+            ("dature (Loader reuse)", *run_bench(dature_env_loader)),
             ("dature (decorator, hot)", *run_bench(dature_env_hot)),
             ("pydantic-settings", *run_bench(pydantic_env)),
             ("python-decouple", *run_bench(decouple_env)),
@@ -74,6 +81,7 @@ if __name__ == "__main__":
         # JSON file loading
         results = [
             ("dature (func mode)", *run_bench(dature_json_func)),
+            ("dature (Loader reuse)", *run_bench(dature_json_loader)),
             ("dature (decorator, hot)", *run_bench(dature_json_hot)),
             ("pydantic-settings", *run_bench(pydantic_json)),
             ("dynaconf", *run_bench(dynaconf_json)),
@@ -86,6 +94,7 @@ if __name__ == "__main__":
         # TOML file loading
         results = [
             ("dature (func mode)", *run_bench(dature_toml_func)),
+            ("dature (Loader reuse)", *run_bench(dature_toml_loader)),
             ("dature (decorator, hot)", *run_bench(dature_toml_hot)),
             ("pydantic-settings", *run_bench(pydantic_toml)),
             ("dynaconf", *run_bench(dynaconf_toml)),
@@ -99,6 +108,7 @@ if __name__ == "__main__":
         GlobalHydra.instance().clear()
         results = [
             ("dature (func mode)", *run_bench(dature_yaml_func)),
+            ("dature (Loader reuse)", *run_bench(dature_yaml_loader)),
             ("dature (decorator, hot)", *run_bench(dature_yaml_hot)),
             ("pydantic-settings", *run_bench(pydantic_yaml)),
             ("dynaconf", *run_bench(dynaconf_yaml)),
@@ -113,6 +123,7 @@ if __name__ == "__main__":
         # .env file loading
         results = [
             ("dature (func mode)", *run_bench(dature_dotenv_func)),
+            ("dature (Loader reuse)", *run_bench(dature_dotenv_loader)),
             ("dature (decorator, hot)", *run_bench(dature_dotenv_hot)),
             ("pydantic-settings", *run_bench(pydantic_dotenv)),
             ("python-decouple", *run_bench(decouple_dotenv)),
@@ -126,6 +137,7 @@ if __name__ == "__main__":
         # Multi-source
         results = [
             ("dature (func mode)", *run_bench(dature_multi_func)),
+            ("dature (Loader reuse)", *run_bench(dature_multi_loader)),
             ("dature (decorator, hot)", *run_bench(dature_multi_hot)),
             ("pydantic-settings", *run_bench(pydantic_multi)),
             ("dynaconf", *run_bench(dynaconf_multi)),
