@@ -129,7 +129,7 @@ def handle_load_errors[T](
         return func()
     except EnvVarExpandError as exc:
         if isinstance(ctx.source, FileSourceProtocol):
-            file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
+            file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding)
         else:
             file_content = None
         enriched_env: list[MissingEnvVarError] = []
@@ -142,7 +142,7 @@ def handle_load_errors[T](
         raise ConfigEnvVarExpandError(ctx.dataclass_name, enriched_env) from exc
     except (AggregateLoadError, LoadError) as exc:
         if isinstance(ctx.source, FileSourceProtocol):
-            file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding_for_errors())
+            file_content = read_file_content(ctx.source.file_path_for_errors(), ctx.source.encoding)
         else:
             file_content = None
         heuristic_paths: set[str] = set()

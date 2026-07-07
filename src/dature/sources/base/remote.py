@@ -3,7 +3,6 @@
 import abc
 import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import ClassVar, Final
 
 from dature.errors import SourceLocation
@@ -35,12 +34,6 @@ class RemoteSource(Source, abc.ABC):
 
     def display_name(self) -> str:
         return self.remote_address()
-
-    def file_display(self) -> str | None:
-        return self.remote_address()
-
-    def file_path_for_errors(self) -> Path | None:
-        return None
 
     @staticmethod
     def _lookup_loaded(field_path: list[str], data: JSONValue) -> "JSONValue | object":

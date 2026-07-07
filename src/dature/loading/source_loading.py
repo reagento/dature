@@ -70,7 +70,7 @@ def prepare_loaded_source(  # noqa: PLR0913
             nested_conflicts=load_result.nested_conflicts,
         )
     if isinstance(source, FileSourceProtocol):
-        file_content = read_file_content(source.file_path_for_errors(), source.encoding_for_errors())
+        file_content = read_file_content(source.file_path_for_errors(), source.encoding)
     else:
         file_content = None
     filter_result = apply_skip_invalid(
