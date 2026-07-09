@@ -1,10 +1,13 @@
-"""Memory benchmark: peak allocation per call (KiB) — dature vs pydantic-settings vs python-decouple vs dynaconf.
+"""Memory benchmark — peak KiB allocated per full cycle, dature vs competitors.
 
-Covers all source types: ENV, JSON, TOML, YAML, .env, multi-source, caching.
-Shared fixtures live in prepare.py.
+Each source/experiment table shows one full-cycle build+load per variant (model declaration
++ source + loader + load), measured in-process. The library import is a one-time resident
+cost measured separately in bench_import.py, not here (a warmup call pulls the library into
+sys.modules, so the measured runs capture only build + load). A WARM reuse section
+(dature-only) shows the steady state with a pre-built / cached loader.
 
-tracemalloc tracks Python heap only. pydantic-settings uses a Rust extension (pydantic_core);
-its internal allocations are not visible here, so its numbers will be understated.
+tracemalloc tracks the Python heap only; pydantic-settings' Rust extension (pydantic_core)
+allocates outside it, so its numbers are understated.
 
 Run: uv run --group benchmarks python benchmarks/bench_memory.py
 """
@@ -15,155 +18,38 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 
+import examples_warm
+import prepare  # noqa: F401  (import creates temp files + exports path env vars)
 from _common import clear_env_vars, print_mem_table, run_mem_bench, set_env_vars
-from hydra.core.global_hydra import GlobalHydra
-from prepare import (
-    dature_cache_eternal,
-    dature_cache_none,
-    dature_cache_ttl,
-    dature_dotenv_func,
-    dature_dotenv_hot,
-    dature_dotenv_loader,
-    dature_dotenv_startup,
-    dature_env_func,
-    dature_env_hot,
-    dature_env_loader,
-    dature_env_startup,
-    dature_json_func,
-    dature_json_hot,
-    dature_json_loader,
-    dature_json_startup,
-    dature_multi_func,
-    dature_multi_hot,
-    dature_multi_loader,
-    dature_multi_startup,
-    dature_toml_func,
-    dature_toml_hot,
-    dature_toml_loader,
-    dature_toml_startup,
-    dature_yaml_func,
-    dature_yaml_hot,
-    dature_yaml_loader,
-    dature_yaml_startup,
-    decouple_cached,
-    decouple_dotenv,
-    decouple_env,
-    dynaconf_cached,
-    dynaconf_dotenv,
-    dynaconf_env,
-    dynaconf_json,
-    dynaconf_multi,
-    dynaconf_toml,
-    dynaconf_yaml,
-    hydra_yaml,
-    pydantic_cached,
-    pydantic_dotenv,
-    pydantic_env,
-    pydantic_json,
-    pydantic_multi,
-    pydantic_toml,
-    pydantic_yaml,
-)
+from bench_speed import EXPERIMENTS, SOURCES
 
-if __name__ == "__main__":
+import examples
+
+
+def main() -> None:
     set_env_vars()
     try:
-        # ENV loading
-        results = [
-            ("dature (func mode)", *run_mem_bench(dature_env_func)),
-            ("dature (Loader reuse)", *run_mem_bench(dature_env_loader)),
-            ("dature (decorator, hot)", *run_mem_bench(dature_env_hot)),
-            ("pydantic-settings", *run_mem_bench(pydantic_env)),
-            ("python-decouple", *run_mem_bench(decouple_env)),
-            ("dynaconf", *run_mem_bench(dynaconf_env)),
+        print("\n" + "#" * 72)
+        print("  Full cycle: build + load (library import excluded — see bench_import.py)")
+        print("#" * 72)
+        for title, entries in {**SOURCES, **EXPERIMENTS}.items():
+            results = [(label, *run_mem_bench(getattr(examples, fn))) for label, fn in entries]
+            print_mem_table(title, results)
+
+        print("\n" + "#" * 72)
+        print("  WARM reuse — dature only, hot path over a pre-built loader")
+        print("#" * 72)
+        warm = [
+            ("dature (decorator, hot)", *run_mem_bench(examples_warm.dature_env_hot)),
+            ("dature (Loader reuse)", *run_mem_bench(examples_warm.dature_env_loader)),
+            ("dature (cache=True)", *run_mem_bench(examples_warm.dature_env_cached)),
+            ("dature (cache=timedelta)", *run_mem_bench(examples_warm.dature_env_cached_ttl)),
+            ("pydantic-settings (reuse)", *run_mem_bench(examples_warm.pydantic_env_reuse)),
         ]
-        print_mem_table("ENV loading  (8 fields, os.environ → typed dataclass)", results)
-        startup = [("dature (decorator, startup)", *run_mem_bench(dature_env_startup))]
-        print_mem_table("dature decorator — one-time startup cost (ENV)", startup)
-
-        # JSON file loading
-        results = [
-            ("dature (func mode)", *run_mem_bench(dature_json_func)),
-            ("dature (Loader reuse)", *run_mem_bench(dature_json_loader)),
-            ("dature (decorator, hot)", *run_mem_bench(dature_json_hot)),
-            ("pydantic-settings", *run_mem_bench(pydantic_json)),
-            ("dynaconf", *run_mem_bench(dynaconf_json)),
-        ]
-        print_mem_table("JSON file loading  (8 fields, file → typed dataclass)", results)
-        print("  Note: python-decouple excluded (no JSON file support). hydra: YAML only.")
-        startup = [("dature (decorator, startup)", *run_mem_bench(dature_json_startup))]
-        print_mem_table("dature decorator — one-time startup cost (JSON)", startup)
-
-        # TOML file loading
-        results = [
-            ("dature (func mode)", *run_mem_bench(dature_toml_func)),
-            ("dature (Loader reuse)", *run_mem_bench(dature_toml_loader)),
-            ("dature (decorator, hot)", *run_mem_bench(dature_toml_hot)),
-            ("pydantic-settings", *run_mem_bench(pydantic_toml)),
-            ("dynaconf", *run_mem_bench(dynaconf_toml)),
-        ]
-        print_mem_table("TOML file loading  (8 fields, file → typed dataclass)", results)
-        print("  Note: python-decouple excluded (no TOML file support). hydra: YAML only.")
-        startup = [("dature (decorator, startup)", *run_mem_bench(dature_toml_startup))]
-        print_mem_table("dature decorator — one-time startup cost (TOML)", startup)
-
-        # YAML file loading
-        GlobalHydra.instance().clear()
-        results = [
-            ("dature (func mode)", *run_mem_bench(dature_yaml_func)),
-            ("dature (Loader reuse)", *run_mem_bench(dature_yaml_loader)),
-            ("dature (decorator, hot)", *run_mem_bench(dature_yaml_hot)),
-            ("pydantic-settings", *run_mem_bench(pydantic_yaml)),
-            ("dynaconf", *run_mem_bench(dynaconf_yaml)),
-            ("hydra (DictConfig, not typed)", *run_mem_bench(hydra_yaml)),
-        ]
-        print_mem_table("YAML file loading  (8 fields, file → typed dataclass / DictConfig)", results)
-        print("  Note: python-decouple excluded (no YAML file support)")
-        print("  Note: hydra result is OmegaConf DictConfig, includes singleton reset overhead")
-        startup = [("dature (decorator, startup)", *run_mem_bench(dature_yaml_startup))]
-        print_mem_table("dature decorator — one-time startup cost (YAML)", startup)
-
-        # .env file loading
-        results = [
-            ("dature (func mode)", *run_mem_bench(dature_dotenv_func)),
-            ("dature (Loader reuse)", *run_mem_bench(dature_dotenv_loader)),
-            ("dature (decorator, hot)", *run_mem_bench(dature_dotenv_hot)),
-            ("pydantic-settings", *run_mem_bench(pydantic_dotenv)),
-            ("python-decouple", *run_mem_bench(decouple_dotenv)),
-            ("dynaconf", *run_mem_bench(dynaconf_dotenv)),
-        ]
-        print_mem_table("ENV file (.env) loading  (8 fields, file → typed dataclass)", results)
-        print("  Note: hydra excluded (no .env file support)")
-        startup = [("dature (decorator, startup)", *run_mem_bench(dature_dotenv_startup))]
-        print_mem_table("dature decorator — one-time startup cost (.env)", startup)
-
-        # Multi-source
-        results = [
-            ("dature (func mode)", *run_mem_bench(dature_multi_func)),
-            ("dature (Loader reuse)", *run_mem_bench(dature_multi_loader)),
-            ("dature (decorator, hot)", *run_mem_bench(dature_multi_hot)),
-            ("pydantic-settings", *run_mem_bench(pydantic_multi)),
-            ("dynaconf", *run_mem_bench(dynaconf_multi)),
-        ]
-        print_mem_table("Multi-source merge  (JSON defaults + ENV overrides → typed dataclass)", results)
-        print("  Note: python-decouple excluded (no multi-source merge). hydra: YAML only.")
-        startup = [("dature (decorator, startup)", *run_mem_bench(dature_multi_startup))]
-        print_mem_table("dature decorator — one-time startup cost (multi-source)", startup)
-
-        # Caching — no cache
-        no_cache = [("dature (decorator, no cache)", *run_mem_bench(dature_cache_none))]
-        print_mem_table("Per-call peak allocation — no caching  (8 ENV fields)", no_cache)
-
-        # Caching — cached
-        cached_results = [
-            ("dature decorator (cache=True)", *run_mem_bench(dature_cache_eternal)),
-            ("dature decorator (cache=timedelta)", *run_mem_bench(dature_cache_ttl)),
-            ("pydantic-settings + @lru_cache", *run_mem_bench(pydantic_cached)),
-            ("python-decouple + @lru_cache", *run_mem_bench(decouple_cached)),
-            ("dynaconf + @lru_cache", *run_mem_bench(dynaconf_cached)),
-        ]
-        print_mem_table("Cached load  (8 ENV fields)", cached_results)
-        print("  Note: @lru_cache has no TTL. dature's cache=timedelta supports TTL natively.")
-
+        print_mem_table("Warm reuse  (8 ENV fields, hot path only)", warm)
     finally:
         clear_env_vars()
+
+
+if __name__ == "__main__":
+    main()

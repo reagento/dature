@@ -1,287 +1,192 @@
 # Performance Benchmarks
 
-Comparison of dature against pydantic-settings, python-decouple, dynaconf, and hydra across two dimensions: **speed** (µs per call) and **memory** (peak KiB allocated per call).
+Comparison of dature against pydantic-settings, python-decouple, dynaconf, and hydra, split
+into three independent costs:
+
+1. **Import** — the one-time cost of importing the library into a process. Measured in a clean
+   per-library venv (see below), because it's easy to overstate.
+2. **Build + load** — one full cycle with nothing reused: declare the model, build the source
+   and loader, load. This is what "function mode" pays on every call.
+3. **Warm reuse** — dature only: the hot path once the loader is built once and reused, or cached.
 
 ## Methodology
 
-**Speed** — `timeit.repeat(number=500, repeat=5)`, mean ± stddev in µs per call.  
-**Memory** — `tracemalloc` peak allocation per call, mean of 20 runs with 5 warmup calls. Tracks Python heap only; pydantic-settings uses a Rust extension (`pydantic_core`) whose internal allocations are invisible here, so its memory numbers are understated.
+**Import** (`bench_import.py`) — each library is measured in its **own fresh virtualenv** with
+only that package installed, and the common stdlib is **pre-imported** first, so the number is
+the library's own marginal import cost. Measuring inside the project's benchmark venv would
+overstate it roughly 2× — a large `site-packages` slows Python's import machinery, and part of
+any import is really the stdlib the library pulls in. Each sample is a fresh subprocess timed
+inside itself; speed in ms, memory as `tracemalloc` peak in MiB.
 
-Machine: Apple M3, Python 3.13.13.  
-Schema: 8 fields — `host: str`, `port: int`, `debug: bool`, `max_connections: int`, `timeout: float`, `db_name: str`, `workers: int`, `log_level: str`.  
+**Build + load** and **Warm reuse** (`bench_speed.py`, `bench_memory.py`) — in-process,
+`timeit.repeat(number=500, repeat=5)` for speed and `tracemalloc` peak for memory. The library
+is already imported (a warmup call warms `sys.modules`), so these numbers exclude import and
+capture only the per-call work. Every library re-declares its model class each call, so it's
+apples-to-apples.
+
+`tracemalloc` tracks the Python heap only; pydantic-settings uses a Rust extension
+(`pydantic_core`) whose allocations are invisible here, so its memory numbers are understated.
+
+Machine: Apple M3, Python 3.13.13.
+Schema (flat): 8 fields — `host: str`, `port: int`, `debug: bool`, `max_connections: int`,
+`timeout: float`, `db_name: str`, `workers: int`, `log_level: str`.
 Library versions: pydantic-settings 2.14.2 · python-decouple 3.8 · dynaconf 3.2.13 · hydra-core 1.3.3.
-
-Run yourself:
 
 ```bash
 uv sync --group benchmarks
+uv run --group benchmarks python benchmarks/bench_import.py
 uv run --group benchmarks python benchmarks/bench_speed.py
 uv run --group benchmarks python benchmarks/bench_memory.py
 ```
 
----
-
-## dature: function mode vs decorator mode vs Loader reuse
-
-dature has three usage patterns with very different performance profiles:
-
-**Function mode** — a throwaway `Loader` is created on every call:
-```python
-config = dature.load(source, schema=Config)
-```
-
-**Decorator mode** — `Loader` is built once at class-decoration time (import); each call only runs `loader.load()`:
-```python
-Config = dature.load(source)(BenchConfig)  # at module level
-config = Config()                           # hot path
-```
-
-**Loader reuse** — one `Loader` is created explicitly (same one-time cost as decorator startup), `.load()` called repeatedly:
-```python
-_loader = Loader(source, schema=Config)  # once, at module level
-config = _loader.load()                  # hot path
-```
-
-The decorator and Loader reuse patterns pay a one-time **startup cost** of ~63–120 µs and ~7 KiB at import time, then never again. Function mode avoids that upfront cost — useful for scripts and one-shot tools — but reconstructs the full `Loader` (schema introspection + adaptix retort setup, ~790 KiB overhead) on every call.
-
-The benchmark tables below show all three modes. "decorator, hot" and "Loader reuse" are both steady-state after startup — they perform identically.
+The `vs` columns are ratios to the best value **in that column** (speed and memory have
+independent baselines).
 
 ---
 
-## ENV loading
+## 1. Import (one-time, per process)
 
-`os.environ` → typed dataclass, 8 fields with `BENCH_` prefix.
+Clean per-library venv, stdlib pre-imported.
 
-### Speed (µs per call)
+| Library | Import speed | vs | Import memory | vs |
+|---------|-------------:|---:|--------------:|---:|
+| pydantic-settings | 108.7 ms | baseline | 12.1 MiB | 1.5× |
+| adaptix (dature's engine) | 122.1 ms | 1.1× | 8.3 MiB | baseline |
+| dature | 152.9 ms | 1.4× | 11.5 MiB | 1.4× |
 
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| python-decouple | 4.9 µs | ±0.1 | baseline |
-| dature (Loader reuse) | 59.7 µs | ±1.6 | 12.2× |
-| dature (decorator, hot) | 61.2 µs | ±1.2 | 12.5× |
-| pydantic-settings | 104.9 µs | ±1.6 | 21.4× |
-| dature (func mode) | 1 325.4 µs | ±20.9 | 270.5× |
-| dynaconf | 4 951.7 µs | ±193.2 | 1 010.6× |
-
-### Memory (peak KiB per call)
-
-| Library | Peak | vs lightest |
-|---------|-----:|-----:|
-| python-decouple | 2.8 KiB | baseline |
-| dature (Loader reuse) | 5.5 KiB | 1.9× |
-| dature (decorator, hot) | 5.9 KiB | 2.1× |
-| pydantic-settings | 16.6 KiB | 5.9× |
-| dynaconf | 138.5 KiB | 49.0× |
-| dature (func mode) | 792.5 KiB | 280.2× |
-
-python-decouple leads on both dimensions because it parses env vars with minimal abstraction and caches its internal state.
+dature imports in ~153 ms and ~11.5 MiB — about 1.4× pydantic-settings on time, and slightly
+**lighter** on memory. Most of dature's import is adaptix (its type engine, ~122 ms); dature's
+own code adds ~30 ms. This is a one-time cost paid once per process, not per config load.
 
 ---
 
-## JSON file loading
+## 2. Build + load (per fresh load, import excluded)
 
-JSON file → typed dataclass.
+One full cycle with nothing reused. Rows ordered by speed.
 
-### Speed (µs per call)
+### ENV (`os.environ` → typed dataclass)
 
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| pydantic-settings | 245.2 µs | ±18.6 | baseline |
-| dature (decorator, hot) | 381.0 µs | ±7.1 | 1.6× |
-| dature (Loader reuse) | 446.2 µs | ±19.5 | 1.8× |
-| dature (func mode) | 2 719.0 µs | ±314.6 | 11.1× |
-| dynaconf | 5 720.7 µs | ±130.5 | 23.3× |
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| python-decouple | 156 µs | baseline | 150.3 KiB | 3.7× |
+| pydantic-settings | 304 µs | 1.9× | 40.5 KiB | baseline |
+| dature (func) | 1.6 ms | 10.3× | 808.8 KiB | 20.0× |
+| dature (decorator) | 1.6 ms | 10.5× | 814.9 KiB | 20.1× |
+| dynaconf | 9.9 ms | 63.4× | 176.8 KiB | 4.4× |
 
-### Memory (peak KiB per call)
+### ENV file (`.env` → typed dataclass)
 
-| Library | Peak | vs lightest |
-|---------|-----:|-----:|
-| dature (Loader reuse) | 8.6 KiB | baseline |
-| dature (decorator, hot) | 8.9 KiB | 1.0× |
-| pydantic-settings | 22.4 KiB | 2.6× |
-| dynaconf | 141.6 KiB | 16.5× |
-| dature (func mode) | 790.1 KiB | 92.0× |
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| python-decouple | 707 µs | baseline | 151.8 KiB | 2.4× |
+| pydantic-settings | 1.0 ms | 1.4× | 64.4 KiB | baseline |
+| dature (func) | 2.8 ms | 3.9× | 806.8 KiB | 12.5× |
+| dature (decorator) | 3.0 ms | 4.2× | 812.9 KiB | 12.6× |
+| dynaconf | 17.2 ms | 24.3× | 251.7 KiB | 3.9× |
 
-*python-decouple: no JSON file support. hydra: YAML only.*
+### JSON file
 
-dature (decorator or Loader reuse) is the lightest on memory (2.6× less than pydantic-settings) while pydantic-settings leads on speed, likely due to its Rust-backed JSON parser.
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| pydantic-settings | 529 µs | baseline | 47.2 KiB | baseline |
+| dature (func) | 2.5 ms | 4.7× | 802.4 KiB | 17.0× |
+| dature (decorator) | 2.7 ms | 5.1× | 817.7 KiB | 17.3× |
+| dynaconf | 5.5 ms | 10.4× | 152.4 KiB | 3.2× |
 
----
+*python-decouple: no JSON file support.*
 
-## TOML file loading
+### TOML file
 
-TOML file → typed dataclass.
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| pydantic-settings | 711 µs | baseline | 47.4 KiB | baseline |
+| dature (decorator) | 2.7 ms | 3.8× | 819.8 KiB | 17.3× |
+| dature (func) | 2.7 ms | 3.9× | 804.6 KiB | 17.0× |
+| dynaconf | 5.5 ms | 7.7× | 151.7 KiB | 3.2× |
 
-### Speed (µs per call)
+*python-decouple: no TOML file support.*
 
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| pydantic-settings | 256.2 µs | ±20.3 | baseline |
-| dature (Loader reuse) | 419.9 µs | ±34.2 | 1.6× |
-| dature (decorator, hot) | 424.1 µs | ±36.4 | 1.7× |
-| dature (func mode) | 3 261.7 µs | ±155.1 | 12.7× |
-| dynaconf | 5 629.9 µs | ±151.2 | 22.0× |
+### YAML file
 
-### Memory (peak KiB per call)
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| pydantic-settings | 1.3 ms | baseline | 59.4 KiB | baseline |
+| dature (func) | 3.4 ms | 2.7× | 813.9 KiB | 13.7× |
+| dature (decorator) | 3.5 ms | 2.7× | 829.1 KiB | 14.0× |
+| dynaconf | 6.3 ms | 5.0× | 164.7 KiB | 2.8× |
+| hydra (DictConfig, not typed) | 18.2 ms | 14.5× | 502.6 KiB | 8.5× |
 
-| Library | Peak | vs lightest |
-|---------|-----:|-----:|
-| dature (Loader reuse) | 7.9 KiB | baseline |
-| dature (decorator, hot) | 8.2 KiB | 1.0× |
-| pydantic-settings | 22.3 KiB | 2.8× |
-| dynaconf | 140.8 KiB | 17.8× |
-| dature (func mode) | 792.2 KiB | 100.2× |
+*python-decouple: no YAML file support. hydra returns an `OmegaConf DictConfig`, not a typed dataclass.*
 
-*python-decouple: no TOML file support. hydra: YAML only.*
+### Nested model, 5 levels deep (ENV source)
 
-Same pattern as JSON: pydantic-settings wins on speed, dature (decorator or Loader reuse) is the lightest on memory.
+Five dataclasses nested five levels deep (`Level1.inner → … → Level5`), from `__`-joined env keys.
 
----
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| pydantic-settings | 681 µs | baseline | 77.3 KiB | baseline |
+| dature (func) | 3.3 ms | 4.8× | 567.9 KiB | 7.3× |
+| dature (decorator) | 3.4 ms | 5.0× | 575.2 KiB | 7.4× |
 
-## YAML file loading
+*python-decouple / hydra: no schema-driven nested model from ENV.*
 
-YAML file → typed dataclass (hydra returns `OmegaConf DictConfig`, not a typed dataclass).
+### Three models loaded at once (ENV source)
 
-### Speed (µs per call)
+| Library | Speed | vs | Memory | vs |
+|---------|------:|---:|-------:|---:|
+| pydantic-settings | 578 µs | baseline | 60.7 KiB | baseline |
+| dature (decorator) | 3.2 ms | 5.6× | 672.5 KiB | 11.1× |
+| dature (func) | 3.2 ms | 5.6× | 586.1 KiB | 9.7× |
+| dynaconf | 14.0 ms | 24.2× | 211.9 KiB | 3.5× |
 
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| pydantic-settings | 535.1 µs | ±46.8 | baseline |
-| dature (decorator, hot) | 868.8 µs | ±37.2 | 1.6× |
-| dature (Loader reuse) | 1 096.5 µs | ±412.4 | 2.0× |
-| dature (func mode) | 3 194.6 µs | ±487.2 | 6.0× |
-| dynaconf | 6 087.6 µs | ±142.1 | 11.4× |
-| hydra (DictConfig, not typed) | 18 974.9 µs | ±509.6 | 35.5× |
-
-### Memory (peak KiB per call)
-
-| Library | Peak | vs lightest |
-|---------|-----:|-----:|
-| dature (Loader reuse) | 28.9 KiB | baseline |
-| dature (decorator, hot) | 29.2 KiB | 1.0× |
-| pydantic-settings | 35.5 KiB | 1.2× |
-| dynaconf | 155.5 KiB | 5.4× |
-| hydra (DictConfig, not typed) | 502.5 KiB | 17.4× |
-| dature (func mode) | 800.8 KiB | 27.7× |
-
-*python-decouple: no YAML file support.*
-
-YAML parsing is more expensive than JSON/TOML across all libraries. Hydra's `GlobalHydra` singleton forces a reset on every call (+14 ms, +470 KiB), making it unsuitable for per-call benchmarking; in production it initializes once at startup.
+On a fresh build, dature is ~2.5–5× slower than pydantic-settings and allocates far more
+(~0.6–0.8 MiB vs tens of KiB) because it constructs a fresh adaptix retort — full type analysis
+of the schema — on every call. pydantic-settings rebuilds its (Rust-backed) schema too but is
+cheaper at it. This is the price of function mode; it's not how dature is meant to run in a hot
+path (see below). pydantic-settings' memory is also understated (Rust core invisible to `tracemalloc`).
 
 ---
 
-## .env file loading
+## 3. Warm reuse
 
-`.env` file → typed dataclass.
+Hot path once the loader is built at module level, and with caching. The steady state of a
+long-running service.
 
-### Speed (µs per call)
+Both dature (loader built once) and pydantic-settings (schema cached on the class) are measured
+re-loading over their pre-built object.
 
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| python-decouple | 8.8 µs | ±2.6 | baseline |
-| dature (decorator, hot) | 423.3 µs | ±20.2 | 48.1× |
-| dature (Loader reuse) | 430.5 µs | ±33.7 | 48.9× |
-| pydantic-settings | 824.5 µs | ±330.1 | 93.7× |
-| dature (func mode) | 3 091.5 µs | ±277.1 | 351.3× |
-| dynaconf | 12 563.9 µs | ±251.4 | 1 427.7× |
+| Mode | Speed | vs | Memory | vs |
+|------|------:|---:|-------:|---:|
+| dature — `cache=True` (eternal) | 1.2 µs | baseline | 1.0 KiB | baseline |
+| dature — `cache=timedelta(...)` (TTL) | 1.2 µs | baseline | 1.1 KiB | baseline |
+| dature — `Loader` reuse | 98.7 µs | 81.1× | 11.4 KiB | 11.1× |
+| dature — decorator, hot | 101.8 µs | 83.6× | 11.7 KiB | 11.4× |
+| pydantic-settings — reuse | 112.6 µs | 92.5× | 20.8 KiB | 20.3× |
 
-### Memory (peak KiB per call)
-
-| Library | Peak | vs lightest |
-|---------|-----:|-----:|
-| python-decouple | 2.2 KiB | baseline |
-| dature (Loader reuse) | 15.5 KiB | 7.1× |
-| dature (decorator, hot) | 15.8 KiB | 7.2× |
-| pydantic-settings | 35.5 KiB | 16.2× |
-| dynaconf | 224.6 KiB | 102.2× |
-| dature (func mode) | 794.1 KiB | 361.4× |
-
-*hydra: no .env file support.*
-
-python-decouple wins by a wide margin on both dimensions: it caches the parsed file internally and returns values with minimal per-call overhead.
-
----
-
-## Multi-source merge
-
-JSON file (base defaults) + ENV vars (overrides) → typed dataclass.
-
-### Speed (µs per call)
-
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| pydantic-settings | 272.0 µs | ±15.0 | baseline |
-| dature (decorator, hot) | 485.7 µs | ±33.0 | 1.8× |
-| dature (Loader reuse) | 534.9 µs | ±27.7 | 2.0× |
-| dature (func mode) | 3 007.1 µs | ±71.1 | 11.1× |
-| dynaconf | 4 859.5 µs | ±1 266.2 | 17.9× |
-
-### Memory (peak KiB per call)
-
-| Library | Peak | vs lightest |
-|---------|-----:|-----:|
-| dature (Loader reuse) | 11.7 KiB | baseline |
-| dature (decorator, hot) | 12.1 KiB | 1.0× |
-| pydantic-settings | 23.0 KiB | 2.0× |
-| dynaconf | 88.6 KiB | 7.6× |
-| dature (func mode) | 798.3 KiB | 68.3× |
-
-*python-decouple: not designed for multi-source merging. hydra: YAML only, no native ENV merge.*
-
----
-
-## Caching
-
-Caching is a separate concern from source type. All caching benchmarks use `EnvSource` as the baseline.
-
-### Speed (µs per call) — no caching
-
-| Library | Mean | ±Std | vs fastest |
-|---------|-----:|-----:|-----:|
-| python-decouple | 4.8 µs | ±0.1 | baseline |
-| dature (decorator, no cache) | 68.5 µs | ±1.9 | 14.1× |
-| pydantic-settings | 107.0 µs | ±1.1 | 22.1× |
-| dature (func mode) | 1 399.0 µs | ±67.4 | 288.7× |
-| dynaconf | 4 889.3 µs | ±83.4 | 1 009.1× |
-
-### Speed (µs per call) — with caching
-
-| Mode | Mean | ±Std |
-|------|-----:|-----:|
-| `dature.load(source, cache=False)(Config)` — no cache | 68.5 µs | ±1.9 |
-| `dature.load(source, cache=True)(Config)` — eternal | 1.3 µs | ±1.8 |
-| `dature.load(source, cache=timedelta(minutes=5))(Config)` — TTL | 1.3 µs | ±1.4 |
-
-With caching enabled, dature drops to ~1.3 µs — a ~53× improvement over the uncached decorator. The TTL mode (`cache=timedelta`) adds automatic expiry with no extra code.
-
-### Memory (peak KiB per call) — no caching
-
-| Library | Peak |
-|---------|-----:|
-| dature (decorator, no cache) | 5.9 KiB |
-
-### Memory (peak KiB per call) — with caching
-
-| Mode | Peak |
-|------|-----:|
-| pydantic-settings + `@lru_cache` | 0.0 KiB |
-| python-decouple + `@lru_cache` | 0.0 KiB |
-| dynaconf + `@lru_cache` | 0.0 KiB |
-| `dature.load(source, cache=True)(Config)` — eternal | 1.0 KiB |
-| `dature.load(source, cache=timedelta(minutes=5))(Config)` — TTL | 1.1 KiB |
-
-`@lru_cache` returns the exact same object reference on every call — zero allocation. dature's built-in cache creates a fresh dataclass instance each call (~1.0–1.1 KiB), which matters when callers mutate the config or need isolated copies. The trade-off: `@lru_cache` has no TTL; dature's `cache=timedelta` expires automatically.
+In steady state the ranking flips versus build+load: dature (loader reused) is a touch **faster**
+than pydantic-settings reused (~99 µs vs ~113 µs) and about half the memory (11.4 vs 20.8 KiB).
+Caching drops dature to ~1.2 µs / ~1 KiB — ~90× faster than either. `cache=timedelta` adds
+automatic TTL expiry a plain `@lru_cache` wrapper can't do.
 
 ---
 
 ## Key takeaways
 
-**The decorator/function choice matters more than the library choice.** Function mode allocates ~790–800 KiB per call and takes ~1.4–3.1 ms regardless of source type — the cost of rebuilding the `Loader` on every call (schema introspection + building adaptix retorts from scratch). Decorator mode and Loader reuse pay ~63–120 µs and ~7 KiB once at import, then each call costs <1 ms and <35 KiB. **Loader reuse (`_loader = Loader(source, schema=Config)` at module level, then `_loader.load()` per call) gives identical hot-path performance to decorator mode** — use it when you want explicit control without the class-decoration syntax.
+**Split the cost and dature looks very different from a naïve "full-cycle" number.** The three
+pieces are independent: import (~153 ms, once per process), fresh build+load (~1.6–3.5 ms, only
+in function mode), and warm reuse (~100 µs, or ~1.2 µs cached).
 
-**On ENV (the most common source), dature (decorator or Loader reuse) beats pydantic-settings.** dature sits at ~60–61 µs vs pydantic-settings at ~105 µs; python-decouple at ~5 µs is 12× faster but doesn't do schema-driven type coercion — you cast fields manually.
+**Import is reasonable — comparable to pydantic-settings, lighter on RAM.** ~153 ms vs ~109 ms,
+and 11.5 MiB vs 12.1 MiB. (A naïve measurement inside a fat venv reports ~2× higher for everyone —
+`site-packages` size inflates import time; always measure imports in a clean venv.)
 
-**On file sources, the roles flip between speed and memory.** pydantic-settings is ~1.6–1.8× faster than dature on JSON/TOML/YAML (its Rust parser), but dature (decorator or Loader reuse) allocates 2.6× less. For memory-sensitive services with many workers, dature's file-source footprint is smaller.
+**Don't use function mode in a hot path.** Rebuilding the adaptix retort every call costs
+~1.6–3.5 ms and ~0.6–0.8 MiB — the heaviest column here. Build the loader once (decorator or
+`Loader` reuse) and it drops to ~100 µs / ~11 KiB; cache it and it's ~1.2 µs / ~1 KiB. Function
+mode is for scripts and one-shot tools, not per-request loading.
 
-**dynaconf is consistently the heaviest option.** 90–225 KiB per call and 9–22× slower than dature (decorator) across every source type. Its flexibility comes at a significant per-call cost.
-
-**Caching is worth it when config doesn't change per request.** Dature's `cache=True` brings per-call cost from ~69 µs to ~1.3 µs (~53×). The `cache=timedelta` variant adds TTL expiry — something `@lru_cache` wrappers can't do without extra code.
+**pydantic-settings leads on fresh build+load, but dature wins the steady state.** On a cold
+build pydantic-settings is faster and lighter (though its memory is understated — Rust core
+invisible to `tracemalloc`). Reused, dature is slightly faster and about half the memory, and
+cached it's ~90× faster than either. For a long-running service — build once, load many — that
+steady state is what matters.
