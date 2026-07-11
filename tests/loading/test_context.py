@@ -91,70 +91,60 @@ class TestMergeFields:
         assert result == {}
 
 
+class Permission(Flag):
+    READ = 1
+    WRITE = 2
+    EXECUTE = 4
+
+
+@dataclass
+class FlagConfig:
+    name: str
+    perms: Permission
+
+
+_PERMS: frozenset[str] = frozenset({"perms"})
+
+
 class TestCoerceFlagFields:
-    class Permission(Flag):
-        READ = 1
-        WRITE = 2
-        EXECUTE = 4
+    @pytest.mark.parametrize(
+        ("flag_field_names", "data", "expected"),
+        [
+            pytest.param(_PERMS, {"name": "test", "perms": "3"}, {"name": "test", "perms": 3}, id="string-to-int"),
+            pytest.param(_PERMS, {"name": "test", "perms": 3}, {"name": "test", "perms": 3}, id="int-unchanged"),
+            pytest.param(
+                _PERMS,
+                {"name": "test", "perms": Permission.READ | Permission.WRITE},
+                {"name": "test", "perms": 3},
+                id="flag-object-to-int",
+            ),
+            pytest.param(
+                _PERMS,
+                {"name": "test", "perms": "READ|WRITE"},
+                {"name": "test", "perms": "READ|WRITE"},
+                id="non-numeric-string-unchanged",
+            ),
+            pytest.param(_PERMS, {"name": "test"}, {"name": "test"}, id="missing-flag-field"),
+            pytest.param(
+                _PERMS,
+                {"name": "hello", "perms": "5"},
+                {"name": "hello", "perms": 5},
+                id="non-flag-field-untouched",
+            ),
+            pytest.param(
+                frozenset(),
+                {"name": "test", "perms": "3"},
+                {"name": "test", "perms": "3"},
+                id="empty-set-returns-data-as-is",
+            ),
+            pytest.param(_PERMS, [1, 2, 3], [1, 2, 3], id="non-dict-returned-as-is"),
+        ],
+    )
+    def test_coerce(self, flag_field_names: frozenset[str], data: Any, expected: Any):
+        assert coerce_flag_fields(data, flag_field_names) == expected
 
-    @dataclass
-    class FlagConfig:
-        name: str
-        perms: "TestCoerceFlagFields.Permission"
-
-    def test_string_value_coerced_to_int(self):
-        data = {"name": "test", "perms": "3"}
-
-        result = coerce_flag_fields(data, self.FlagConfig)
-
-        assert result == {"name": "test", "perms": 3}
-
-    def test_int_value_unchanged(self):
-        data = {"name": "test", "perms": 3}
-
-        result = coerce_flag_fields(data, self.FlagConfig)
-
-        assert result == {"name": "test", "perms": 3}
-
-    def test_non_flag_string_fields_unchanged(self):
-        data = {"name": "hello", "perms": "5"}
-
-        result = coerce_flag_fields(data, self.FlagConfig)
-
-        assert result["name"] == "hello"
-
-    def test_non_dict_data_returned_as_is(self):
-        result = coerce_flag_fields([1, 2, 3], self.FlagConfig)
-
-        assert result == [1, 2, 3]
-
-    def test_non_dataclass_returns_data_as_is(self):
-        data = {"name": "test", "perms": "3"}
-
-        result = coerce_flag_fields(data, str)
-
-        assert result == {"name": "test", "perms": "3"}
-
-    def test_missing_flag_field_no_error(self):
-        data = {"name": "test"}
-
-        result = coerce_flag_fields(data, self.FlagConfig)
-
-        assert result == {"name": "test"}
-
-    def test_non_numeric_string_left_unchanged(self):
-        data = {"name": "test", "perms": "READ|WRITE"}
-
-        result = coerce_flag_fields(data, self.FlagConfig)
-
-        assert result == {"name": "test", "perms": "READ|WRITE"}
-
-    def test_flag_object_coerced_to_int(self):
-        data = {"name": "test", "perms": self.Permission.READ | self.Permission.WRITE}
-
-        result = coerce_flag_fields(data, self.FlagConfig)
-
-        assert result == {"name": "test", "perms": 3}
+    def test_retort_cache_derives_flag_field_names(self):
+        assert RetortCache(FlagConfig).flag_field_names == _PERMS
 
 
 class TestBuildErrorCtx:

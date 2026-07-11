@@ -55,6 +55,10 @@ class _PydanticEnv(BaseSettings):
     log_level: str
 
 
+def dature_env_func_fixed_schema() -> BenchConfig:
+    return dature.load(_env_source, schema=BenchConfig)
+
+
 def dature_env_hot() -> BenchConfig:
     return _HotEnvCfg()
 

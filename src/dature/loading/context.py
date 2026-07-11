@@ -1,8 +1,8 @@
 import contextlib
 import logging
-from dataclasses import Field, fields, is_dataclass
+from dataclasses import Field
 from enum import Flag
-from typing import Any, cast, get_type_hints
+from typing import Any
 
 from adaptix import Retort
 
@@ -16,23 +16,24 @@ from dature.type_aliases import JSONValue, NestedConflicts
 logger = logging.getLogger("dature")
 
 
-def coerce_flag_fields[T](data: JSONValue, schema: type[T]) -> JSONValue:
-    if not isinstance(data, dict) or not is_dataclass(schema):
+def coerce_flag_fields(data: JSONValue, flag_field_names: frozenset[str]) -> JSONValue:
+    """Coerce ``enum.Flag`` field values (str → int, Flag → int) for the named fields.
+
+    *flag_field_names* is precomputed once per schema by ``RetortCache`` so this stays a
+    cheap dict walk on the load hot path — no ``get_type_hints`` per call. When the schema
+    has no Flag fields the set is empty and *data* is returned unchanged.
+    """
+    if not flag_field_names or not isinstance(data, dict):
         return data
 
-    type_hints = get_type_hints(schema)
     coerced = dict(data)
-    for field in fields(cast("type[DataclassInstance]", schema)):
-        hint = type_hints.get(field.name)
-        if hint is None:
-            continue
-        if isinstance(hint, type) and issubclass(hint, Flag):
-            value = coerced.get(field.name)
-            if isinstance(value, str):
-                with contextlib.suppress(ValueError):
-                    coerced[field.name] = int(value)
-            elif isinstance(value, Flag):
-                coerced[field.name] = value.value
+    for name in flag_field_names:
+        value = coerced.get(name)
+        if isinstance(value, str):
+            with contextlib.suppress(ValueError):
+                coerced[name] = int(value)
+        elif isinstance(value, Flag):
+            coerced[name] = value.value
     return coerced
 
 

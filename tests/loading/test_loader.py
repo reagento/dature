@@ -6,7 +6,7 @@ from datetime import timedelta
 from enum import Flag
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import ClassVar
+from typing import Annotated, ClassVar
 from unittest.mock import patch
 
 import pytest
@@ -823,3 +823,34 @@ class TestValidationLoaderRuntimeSource:
             )
         # B is lazy-disabled (FEAT=off), so A is the actual last_source.
         assert result.x == "from_a"
+
+
+class TestLazyRevalidation:
+    """W2: the decorator revalidation loader is built lazily, only on the slow path."""
+
+    def test_load_does_not_build_revalidation(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "c.json"
+        json_file.write_text('{"host": "h", "port": 5}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=False)
+
+        loader.load()
+
+        # Eager build_revalidation is removed — nothing needs it in function mode.
+        assert loader.validation_loader is None
+        # It is still available on demand for the decorator slow path.
+        loader._ensure_revalidation()
+        assert loader.validation_loader is not None
+
+    def test_decorator_bad_explicit_override_still_revalidates(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "c.json"
+        json_file.write_text('{"port": 5}')
+
+        @load(JsonSource(file=json_file), cache=False)
+        @dataclass
+        class Cfg:
+            port: Annotated[int, V >= 0]
+
+        assert Cfg().port == 5
+
+        with pytest.raises(DatureConfigError):
+            Cfg(port=-1)

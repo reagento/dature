@@ -205,7 +205,7 @@ def _run_field_passes(
 
     for entry in field_pass_entries:
         source = entry.indexed.source
-        own_raw = coerce_flag_fields(entry.own_raw, schema)
+        own_raw = coerce_flag_fields(entry.own_raw, retort_cache.flag_field_names)
         if source.skip_field_if_invalid:
             if isinstance(own_raw, dict):
                 validated_field_names.update(own_raw.keys())
@@ -253,7 +253,7 @@ def _finalize_load[T: DataclassInstance](
     """
     validated_field_names, deferred_field_errors = _run_field_passes(field_pass_entries, schema, retort_cache, ctx)
 
-    merged = coerce_flag_fields(ctx.merged, schema)
+    merged = coerce_flag_fields(ctx.merged, retort_cache.flag_field_names)
     try:
         result: T = handle_load_errors(
             func=lambda: retort_cache.final_retort(
@@ -281,7 +281,9 @@ def _finalize_load[T: DataclassInstance](
         field_pass_error = DatureConfigError(schema.__name__, deferred_field_errors)
         _raise_config_error(field_pass_error, schema, ctx.report_obj, ctx.skipped_fields)
 
-    fallback_errors = compute_default_fallback_errors(schema, validated_field_names, result)
+    fallback_errors = compute_default_fallback_errors(
+        retort_cache.annotated_default_fields, validated_field_names, result
+    )
     if fallback_errors:
         fallback_error = DatureConfigError(schema.__name__, fallback_errors)
         if ctx.report_obj is not None:

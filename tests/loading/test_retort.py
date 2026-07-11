@@ -1,13 +1,17 @@
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 import pytest
 from adaptix import NameStyle as AdaptixNameStyle
+from adaptix import Retort
+from adaptix.load_error import AggregateLoadError
 
-from dature import V
+from dature import Loader, V
+from dature.errors.exceptions import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.loading.retort import (
     RetortCache,
+    _DualRetort,
     build_base_recipe,
     get_adaptix_name_style,
     get_name_mapping_providers,
@@ -313,7 +317,7 @@ class TestFieldPassRetort:
         assert retort is not None
 
     def test_field_pass_and_plain_are_distinct(self):
-        """field_pass must return a separate cached retort from plain."""
+        """field_pass must return something separate from plain."""
 
         @dataclass
         class Config:
@@ -323,13 +327,13 @@ class TestFieldPassRetort:
         cache = RetortCache(Config)
         indexed = IndexedSource(source, 0)
 
-        fp = cache.field_pass(indexed, skip=False)
-        plain = cache.plain(indexed)
+        fp: object = cache.field_pass(indexed, skip=False)
+        plain: object = cache.plain(indexed)
 
         assert fp is not plain
 
     def test_field_pass_skip_and_noskip_are_distinct(self):
-        """field_pass(skip=True) and field_pass(skip=False) must produce separate retorts."""
+        """field_pass(skip=True) and field_pass(skip=False) must return separate objects."""
 
         @dataclass
         class Config:
@@ -339,7 +343,76 @@ class TestFieldPassRetort:
         cache = RetortCache(Config)
         indexed = IndexedSource(source, 0)
 
-        fp_skip = cache.field_pass(indexed, skip=True)
-        fp_noskip = cache.field_pass(indexed, skip=False)
+        fp_skip: object = cache.field_pass(indexed, skip=True)
+        fp_noskip: object = cache.field_pass(indexed, skip=False)
 
         assert fp_skip is not fp_noskip
+
+
+def _rich_cache_keys(cache: RetortCache) -> list[tuple[Any, ...]]:
+    # Cache keys are (source_idx, sentinel, rich_bool, type_loaders). rich lives at index 2.
+    return [k for k in cache._cache if len(k) >= 3 and k[2] is True]
+
+
+class TestFastRichSplit:
+    """DebugTrail fast/rich split: happy path loads through the fast (DISABLE) retort; the rich
+    (ALL) retort is built lazily only to reproduce a trailed error."""
+
+    def test_final_retort_returns_dual_facade(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        assert isinstance(cache.final_retort(IndexedSource(MockSource(), 0)), _DualRetort)
+
+    def test_field_pass_skip_true_stays_raw_rich(self):
+        @dataclass
+        class Config:
+            port: int
+
+        cache = RetortCache(Config)
+        probe = cache.field_pass(IndexedSource(MockSource(), 0), skip=True)
+
+        assert isinstance(probe, Retort)
+
+    def test_success_does_not_compile_rich_retort(self):
+        @dataclass
+        class Config:
+            name: str
+            port: int
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        result = cache.final_retort(idx).load({"name": "app", "port": "5"}, Config)
+
+        assert result == Config(name="app", port=5)
+        assert _rich_cache_keys(cache) == []  # happy path never builds the rich retort
+
+    def test_error_replays_through_rich_retort(self):
+        @dataclass
+        class Config:
+            name: str
+            port: int
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        with pytest.raises(AggregateLoadError):  # rich replay re-raises the trailed load error
+            cache.final_retort(idx).load({"name": "app", "port": "not_an_int"}, Config)
+
+        assert _rich_cache_keys(cache)  # a rich retort was compiled to reproduce the error
+
+    def test_multiple_bad_fields_still_aggregated(self):
+        @dataclass
+        class Config:
+            a: int
+            b: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            Loader(MockSource(test_data={"a": "x", "b": "y"}), schema=Config).load()
+
+        errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
+        paths = {tuple(e.field_path) for e in errors}
+        assert paths == {("a",), ("b",)}

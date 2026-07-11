@@ -1,9 +1,12 @@
 from collections.abc import Callable, Iterable
+from contextlib import suppress
+from dataclasses import fields, is_dataclass
 from datetime import timedelta
-from typing import Any, Final
+from enum import Flag
+from typing import Any, Final, Literal, cast, get_type_hints, overload
 
+from adaptix import DebugTrail, Retort, loader, name_mapping
 from adaptix import NameStyle as AdaptixNameStyle
-from adaptix import Retort, loader, name_mapping
 from adaptix.provider import Provider
 
 from dature.coercion.base import (
@@ -38,8 +41,10 @@ from dature.type_aliases import (
 from dature.validators.base import (
     create_metadata_validator_providers,
     create_root_validator_providers,
+    extract_and_check_validators,
     get_validator_providers,
 )
+from dature.validators.predicate import Predicate
 
 
 def get_adaptix_name_style(name_style: NameStyle | None) -> AdaptixNameStyle | None:
@@ -91,6 +96,21 @@ def get_name_mapping_providers(
     return providers
 
 
+_DEFAULT_LOADERS: Final[tuple[Provider, ...]] = (
+    loader(int, int_from_string),
+    loader(float, float_passthrough),
+    loader(bytes, bytes_from_string),
+    loader(complex, complex_from_string),
+    loader(timedelta, timedelta_from_string),
+    loader(URL, url_from_string),
+    loader(Base64UrlBytes, base64url_bytes_from_string),
+    loader(Base64UrlStr, base64url_str_from_string),
+    loader(SecretStr, secret_str_from_string),
+    loader(PaymentCardNumber, payment_card_number_from_string),
+    loader(ByteSize, byte_size_from_string),
+)
+
+
 def build_base_recipe(
     source: SourceProtocol,
     *,
@@ -99,23 +119,10 @@ def build_base_recipe(
     user_loaders: list[Provider] = [
         loader(type_, func) for type_, func in (resolved_type_loaders or source.type_loaders or {}).items()
     ]
-    default_loaders: list[Provider] = [
-        loader(int, int_from_string),
-        loader(float, float_passthrough),
-        loader(bytes, bytes_from_string),
-        loader(complex, complex_from_string),
-        loader(timedelta, timedelta_from_string),
-        loader(URL, url_from_string),
-        loader(Base64UrlBytes, base64url_bytes_from_string),
-        loader(Base64UrlStr, base64url_str_from_string),
-        loader(SecretStr, secret_str_from_string),
-        loader(PaymentCardNumber, payment_card_number_from_string),
-        loader(ByteSize, byte_size_from_string),
-    ]
     return [
         *user_loaders,
         *source.additional_loaders(),
-        *default_loaders,
+        *_DEFAULT_LOADERS,
         *get_name_mapping_providers(source.name_style, source.field_mapping),
     ]
 
@@ -125,13 +132,88 @@ _FIELD_PASS_SKIP_SENTINEL: Final[object] = object()
 _FIELD_PASS_NOSKIP_SENTINEL: Final[object] = object()
 _FINAL_SENTINEL: Final[object] = object()
 
-# Shared across all RetortCache instances — Retort(strict_coercion=True) holds no schema- or
-# source-specific state; all customisation is added via .extend() which returns a new object.
-_BASE_RETORT: Final[Retort] = Retort(strict_coercion=True)
+# Two shared base retorts differing only in debug_trail. The FAST base (DebugTrail.DISABLE)
+# generates leaner loader code — ~30% cheaper to compile — but its errors carry no field-path
+# trail. The RICH base (DebugTrail.ALL) is the historical behaviour and produces the trailed
+# AggregateLoadError that dature's error extraction relies on. The happy path loads through FAST;
+# on any failure the load is replayed through RICH (built lazily) to obtain the trailed error.
+# Both hold no schema-/source-specific state; all customisation is added via .extend().
+_BASE_FAST: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.DISABLE)
+_BASE_RICH: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.ALL)
+
+
+class _DualRetort:
+    """Facade over a FAST (DebugTrail.DISABLE) retort with a lazy RICH (DebugTrail.ALL) fallback."""
+
+    __slots__ = ("_fast", "_rich_factory")
+
+    def __init__(self, fast: Retort, rich_factory: Callable[[], Retort]) -> None:
+        self._fast = fast
+        self._rich_factory = rich_factory
+
+    def load[T](self, data: Any, tp: type[T]) -> T:  # noqa: ANN401
+        with suppress(Exception):
+            return self._fast.load(data, tp)
+        return self._rich_factory().load(data, tp)
+
+    def get_loader(self, tp: Any) -> Callable[[Any], Any]:  # noqa: ANN401
+        fast_loader = self._fast.get_loader(tp)
+        rich_factory = self._rich_factory
+
+        def _dual(data: Any) -> Any:  # noqa: ANN401
+            with suppress(Exception):
+                return fast_loader(data)
+            return rich_factory().get_loader(tp)(data)
+
+        return _dual
 
 
 def _loaders_frozenset(resolved_type_loaders: TypeLoaderMap | None) -> frozenset[Any]:
     return frozenset(resolved_type_loaders.items()) if resolved_type_loaders is not None else frozenset()
+
+
+def _compute_flag_field_names[T](schema: type[T]) -> frozenset[str]:
+    """Return the names of top-level *schema* fields whose type is an ``enum.Flag`` subclass.
+
+    Pure static reflection — computed once per ``RetortCache`` so ``coerce_flag_fields`` does
+    not call ``get_type_hints`` on every load.  Non-dataclass schemas yield an empty set.
+    """
+    if not is_dataclass(schema):
+        return frozenset()
+    try:
+        type_hints = get_type_hints(cast("type[DataclassInstance]", schema))
+    except Exception:  # noqa: BLE001
+        return frozenset()
+    names: set[str] = set()
+    for field in fields(cast("type[DataclassInstance]", schema)):
+        hint = type_hints.get(field.name)
+        if isinstance(hint, type) and issubclass(hint, Flag):
+            names.add(field.name)
+    return frozenset(names)
+
+
+def _compute_annotated_default_fields[T](schema: type[T]) -> tuple[tuple[str, list[Predicate]], ...]:
+    """Return ``(field_name, predicates)`` for top-level *schema* fields with ``Annotated`` validators.
+
+    Pure static reflection — computed once per ``RetortCache``.  At load time
+    ``compute_default_fallback_errors`` only filters this list by the set of fields a source
+    actually provided, avoiding a per-load ``get_type_hints`` + validator extraction.
+    """
+    if not is_dataclass(schema):
+        return ()
+    try:
+        type_hints = get_type_hints(cast("type[DataclassInstance]", schema), include_extras=True)
+    except Exception:  # noqa: BLE001
+        return ()
+    result: list[tuple[str, list[Predicate]]] = []
+    for field in fields(cast("type[DataclassInstance]", schema)):
+        field_type = type_hints.get(field.name)
+        if field_type is None:
+            continue
+        predicates = extract_and_check_validators(field_type, field_path=[field.name])
+        if predicates:
+            result.append((field.name, predicates))
+    return tuple(result)
 
 
 class RetortCache:
@@ -149,52 +231,78 @@ class RetortCache:
     """
 
     def __init__[T](self, schema: type[T], *, root_validators: Iterable[Any] = ()) -> None:
-        self._base: Retort = _BASE_RETORT
         self._cache: dict[tuple[Any, ...], Retort] = {}
         self._schema = schema
         self._has_annotated_field_validators: bool = bool(get_validator_providers(schema))
         self._root_providers: list[Any] = create_root_validator_providers(schema, root_validators)
         self.constructor: Callable[..., Any] | None = None
+        # Per-schema static reflection, computed once so the load hot path does not re-run
+        # get_type_hints on every call (see coerce_flag_fields / compute_default_fallback_errors).
+        self.flag_field_names: frozenset[str] = _compute_flag_field_names(schema)
+        self.annotated_default_fields: tuple[tuple[str, list[Predicate]], ...] = _compute_annotated_default_fields(
+            schema
+        )
 
-    def _plain_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
-        return (source_idx, _PLAIN_SENTINEL, _loaders_frozenset(type_loaders))
+    @staticmethod
+    def _base(rich: bool) -> Retort:  # noqa: FBT001
+        return _BASE_RICH if rich else _BASE_FAST
+
+    def _plain_key(
+        self,
+        source_idx: int,
+        rich: bool,  # noqa: FBT001
+        type_loaders: TypeLoaderMap | None,
+    ) -> tuple[int, object, bool, frozenset[Any]]:
+        return (source_idx, _PLAIN_SENTINEL, rich, _loaders_frozenset(type_loaders))
 
     def _field_pass_key(
         self,
         source_idx: int,
         skip: bool,  # noqa: FBT001
+        rich: bool,  # noqa: FBT001
         type_loaders: TypeLoaderMap | None,
-    ) -> tuple[int, object, frozenset[Any]]:
+    ) -> tuple[int, object, bool, frozenset[Any]]:
         sentinel = _FIELD_PASS_SKIP_SENTINEL if skip else _FIELD_PASS_NOSKIP_SENTINEL
-        return (source_idx, sentinel, _loaders_frozenset(type_loaders))
+        return (source_idx, sentinel, rich, _loaders_frozenset(type_loaders))
 
-    def plain(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> Retort:
+    def _final_key(
+        self,
+        source_idx: int,
+        rich: bool,  # noqa: FBT001
+        type_loaders: TypeLoaderMap | None,
+    ) -> tuple[int, object, bool, frozenset[Any]]:
+        return (source_idx, _FINAL_SENTINEL, rich, _loaders_frozenset(type_loaders))
+
+    def plain(
+        self,
+        indexed: IndexedSource,
+        *,
+        rich: bool = False,
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> Retort:
         """Return the plain loading retort for *indexed.source*, building and caching it on first call."""
-        key = self._plain_key(indexed.index, resolved_type_loaders)
+        key = self._plain_key(indexed.index, rich, resolved_type_loaders)
         if key not in self._cache:
             recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
-            self._cache[key] = self._base.extend(recipe=recipe)
+            self._cache[key] = self._base(rich).extend(recipe=recipe)
         return self._cache[key]
 
-    def field_pass(
+    def _field_pass_raw(
         self,
         indexed: IndexedSource,
         *,
         skip: bool,
+        rich: bool,
         resolved_type_loaders: TypeLoaderMap | None = None,
     ) -> Retort:
-        """Return a per-source field-validating retort that produces a ``dict`` keyed by field name.
+        """Build (and cache) the raw field-pass ``Retort`` for the given *skip*/*rich* combination.
 
-        Runs on the source's own raw dict (not the cumulative merged state).  Fields absent
-        from the raw dict are left as ``NOT_LOADED`` by ``ModelToDictProvider`` — their
-        validators do not fire and no missing-field error is raised.
-
-        When *skip* is ``True`` (i.e. ``source.skip_field_if_invalid``), ``SkipFieldProvider``
-        is prepended to the recipe so that fields whose coercion *or validation* fails are
-        silently dropped (``NOT_LOADED``) rather than raising.  This extends the old probe
-        behaviour — which only checked coercibility — to also drop business-rule violations.
+        Produces a ``dict`` keyed by field name, running on the source's own raw dict. Fields absent
+        from the raw dict stay ``NOT_LOADED`` (``ModelToDictProvider``) so their validators do not
+        fire. When *skip* is ``True`` (``source.skip_field_if_invalid``), ``SkipFieldProvider`` drops
+        fields whose coercion *or validation* fails instead of raising.
         """
-        key = self._field_pass_key(indexed.index, skip, resolved_type_loaders)
+        key = self._field_pass_key(indexed.index, skip, rich, resolved_type_loaders)
         if key not in self._cache:
             source = indexed.source
             schema = self._schema
@@ -205,7 +313,7 @@ class RetortCache:
             # When skip=False (validate mode), restrict to the top-level schema so that
             # validators on Annotated[NestedDC, V.check(...)] receive real instances.
             to_dict_provider = ModelToDictProvider() if skip else ModelToDictProvider(schema)
-            self._cache[key] = self.plain(indexed, resolved_type_loaders=resolved_type_loaders).extend(
+            self._cache[key] = self.plain(indexed, rich=rich, resolved_type_loaders=resolved_type_loaders).extend(
                 recipe=[
                     *skip_provider,
                     *get_validator_providers(schema),
@@ -215,36 +323,94 @@ class RetortCache:
             )
         return self._cache[key]
 
-    def _final_key(self, source_idx: int, type_loaders: TypeLoaderMap | None) -> tuple[int, object, frozenset[Any]]:
-        return (source_idx, _FINAL_SENTINEL, _loaders_frozenset(type_loaders))
+    @overload
+    def field_pass(
+        self,
+        indexed: IndexedSource,
+        *,
+        skip: Literal[True],
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> Retort: ...
+
+    @overload
+    def field_pass(
+        self,
+        indexed: IndexedSource,
+        *,
+        skip: Literal[False],
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> _DualRetort: ...
+
+    def field_pass(
+        self,
+        indexed: IndexedSource,
+        *,
+        skip: bool,
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> Retort | _DualRetort:
+        """Return the per-source field-validating loader (a ``dict`` keyed by field name).
+
+        ``skip=False`` (validate mode) returns a fast/rich facade. ``skip=True`` (probe mode for
+        ``skip_invalid_fields``) returns a raw rich ``Retort``: that path uses load errors as
+        per-field control flow, so replaying through a rich fallback on every skipped field would
+        double the work — it stays on the trailed retort directly.
+        """
+        if skip:
+            return self._field_pass_raw(indexed, skip=True, rich=True, resolved_type_loaders=resolved_type_loaders)
+        fast = self._field_pass_raw(indexed, skip=False, rich=False, resolved_type_loaders=resolved_type_loaders)
+        return _DualRetort(
+            fast,
+            lambda: self._field_pass_raw(indexed, skip=False, rich=True, resolved_type_loaders=resolved_type_loaders),
+        )
 
     def prewarm(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> None:
-        """Force-compile field-pass retorts so the first real load() is fast.
+        """Force-compile the happy-path field-pass retorts so the first real load() is fast.
 
-        ``plain`` and ``final_retort`` are lazy — they compile on first use and
-        are cached, so no explicit pre-warming is needed for them.
+        Only the FAST variant is pre-warmed (the RICH fallback compiles lazily on first error).
+        ``plain`` and ``final_retort`` are lazy — they compile on first use and are cached.
         """
         schema = self._schema
         if self.has_validators(indexed):
-            self.field_pass(indexed, skip=False, resolved_type_loaders=resolved_type_loaders).get_loader(schema)
+            self._field_pass_raw(
+                indexed, skip=False, rich=False, resolved_type_loaders=resolved_type_loaders
+            ).get_loader(schema)
         if indexed.source.skip_field_if_invalid:
-            self.field_pass(indexed, skip=True, resolved_type_loaders=resolved_type_loaders).get_loader(schema)
+            self._field_pass_raw(indexed, skip=True, rich=True, resolved_type_loaders=resolved_type_loaders).get_loader(
+                schema
+            )
 
-    def final_retort(self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None) -> Retort:
-        """Return the final-construction retort: type coercion + optional constructor override + root validators.
+    def _final_raw(
+        self,
+        indexed: IndexedSource,
+        *,
+        rich: bool,
+        resolved_type_loaders: TypeLoaderMap | None = None,
+    ) -> Retort:
+        """Build (and cache) the raw final-construction ``Retort`` for the given *rich* variant."""
+        key = self._final_key(indexed.index, rich, resolved_type_loaders)
+        if key not in self._cache:
+            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
+            override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
+            self._cache[key] = self._base(rich).extend(recipe=[*recipe, *override, *self._root_providers])
+        return self._cache[key]
 
+    def final_retort(
+        self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None
+    ) -> _DualRetort:
+        """Return the final-construction loader as a fast/rich facade.
+
+        Does type coercion + optional constructor override + root validators.
         In decorator mode (``self.constructor`` is set by ``_make_loader_subclass``), a
         ``ConstructorOverrideProvider`` is prepended so that adaptix calls the internal
         ``_dature_constructor`` instead of the raw schema constructor.
         In functional mode (``self.constructor`` is ``None``) adaptix uses the schema directly.
         Root validator providers always run at the end inside adaptix.
         """
-        key = self._final_key(indexed.index, resolved_type_loaders)
-        if key not in self._cache:
-            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
-            override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
-            self._cache[key] = self._base.extend(recipe=[*recipe, *override, *self._root_providers])
-        return self._cache[key]
+        fast = self._final_raw(indexed, rich=False, resolved_type_loaders=resolved_type_loaders)
+        return _DualRetort(
+            fast,
+            lambda: self._final_raw(indexed, rich=True, resolved_type_loaders=resolved_type_loaders),
+        )
 
     def has_validators(self, indexed: IndexedSource) -> bool:
         """Return ``True`` when the source or schema has field validators requiring a ``field_pass``."""

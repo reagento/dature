@@ -17,59 +17,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 import examples_warm
 import prepare  # noqa: F401  (import creates temp files + exports path env vars)
 from _common import clear_env_vars, print_table, run_bench, set_env_vars
+from bench_scenarios import EXPERIMENTS, SOURCES
 
 import examples
-
-# (label, examples function name) per table — order = display order
-SOURCES: dict[str, list[tuple[str, str]]] = {
-    "ENV  (os.environ → typed dataclass)": [
-        ("dature (func)", "dature_env"),
-        ("dature (decorator)", "dature_env_dec"),
-        ("pydantic-settings", "pydantic_env"),
-        ("python-decouple", "decouple_env"),
-        ("dynaconf", "dynaconf_env"),
-    ],
-    "ENV file (.env → typed dataclass)": [
-        ("dature (func)", "dature_dotenv"),
-        ("dature (decorator)", "dature_dotenv_dec"),
-        ("pydantic-settings", "pydantic_dotenv"),
-        ("python-decouple", "decouple_dotenv"),
-        ("dynaconf", "dynaconf_dotenv"),
-    ],
-    "JSON file (→ typed dataclass)": [
-        ("dature (func)", "dature_json"),
-        ("dature (decorator)", "dature_json_dec"),
-        ("pydantic-settings", "pydantic_json"),
-        ("dynaconf", "dynaconf_json"),
-    ],
-    "TOML file (→ typed dataclass)": [
-        ("dature (func)", "dature_toml"),
-        ("dature (decorator)", "dature_toml_dec"),
-        ("pydantic-settings", "pydantic_toml"),
-        ("dynaconf", "dynaconf_toml"),
-    ],
-    "YAML file (→ typed dataclass / DictConfig)": [
-        ("dature (func)", "dature_yaml"),
-        ("dature (decorator)", "dature_yaml_dec"),
-        ("pydantic-settings", "pydantic_yaml"),
-        ("dynaconf", "dynaconf_yaml"),
-        ("hydra (DictConfig, not typed)", "hydra_yaml"),
-    ],
-}
-
-EXPERIMENTS: dict[str, list[tuple[str, str]]] = {
-    "Nested model, 5 levels deep (ENV source)": [
-        ("dature (func)", "dature_nested"),
-        ("dature (decorator)", "dature_nested_dec"),
-        ("pydantic-settings", "pydantic_nested"),
-    ],
-    "Three models loaded at once (ENV source)": [
-        ("dature (func)", "dature_multi_model"),
-        ("dature (decorator)", "dature_multi_model_dec"),
-        ("pydantic-settings", "pydantic_multi_model"),
-        ("dynaconf", "dynaconf_multi_model"),
-    ],
-}
 
 
 def main() -> None:
@@ -86,6 +36,7 @@ def main() -> None:
         print("  WARM reuse — dature only, hot path over a pre-built loader")
         print("#" * 72)
         warm = [
+            ("dature (func, fixed schema, no reuse)", *run_bench(examples_warm.dature_env_func_fixed_schema)),
             ("dature (decorator, hot)", *run_bench(examples_warm.dature_env_hot)),
             ("dature (Loader reuse)", *run_bench(examples_warm.dature_env_loader)),
             ("dature (cache=True)", *run_bench(examples_warm.dature_env_cached)),

@@ -166,9 +166,9 @@ class Loader[T: DataclassInstance]:
         self._type_loaders: TypeLoaderMap | None = None
         self._probe_retort: Retort | None = None
 
-        # Set by build_revalidation after each load; read by the loading subclass __post_init__.
         self.validation_loader: Callable[[JSONValue], DataclassInstance] | None = None
         self.error_ctx: ErrorContext | None = None
+        self._revalidation_indexed: IndexedSource | None = None
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -339,6 +339,11 @@ class Loader[T: DataclassInstance]:
             )
 
     def _do_load(self) -> T:
+        # Reset lazy re-validation state so a prior load's loader/ctx can't leak into this one
+        # (relevant when conditional sources flip the enabled set between single- and multi-mode).
+        self.validation_loader = None
+        self.error_ctx = None
+        self._revalidation_indexed = None
         if self._is_single:
             return self._do_load_single()
         return self._do_load_multi()
@@ -355,14 +360,9 @@ class Loader[T: DataclassInstance]:
             probe_retort=self._probe_retort,
             debug=self.debug,
         )
-        self.validation_loader, _ = build_revalidation(
-            indexed=indexed,
-            schema=self._schema,
-            retort_cache=self._retort_cache,
-            type_loaders=self._type_loaders_arg,
-            secret_paths=self.secret_paths,
-            mask_secrets=self._mask_secrets_arg,
-        )
+        # Single-source uses the load's own error_ctx (it may carry nested-conflict detail that a
+        # freshly built ctx would lack); the validation_loader itself is built lazily on demand.
+        self._revalidation_indexed = indexed
         self.error_ctx = data.error_ctx
         return data.result
 
@@ -374,15 +374,30 @@ class Loader[T: DataclassInstance]:
             debug=self.debug,
             secret_paths=self.secret_paths,
         )
-        self.validation_loader, self.error_ctx = build_revalidation(
-            indexed=data.last_loaded,
+        self._revalidation_indexed = data.last_loaded
+        return data.result
+
+    def _ensure_revalidation(self) -> None:
+        """Build the decorator-mode ``(validation_loader, error_ctx)`` pair on first slow-path use.
+
+        Invoked only from the decorator subclass ``__init__`` when the caller passed explicit
+        overrides. Reuses the ``IndexedSource`` captured by the last ``load()``; runs synchronously
+        right after that load, so multi-mode ``last_loaded`` is still current.
+        """
+        if self.validation_loader is not None or self._revalidation_indexed is None:
+            return
+        validation_loader, ctx = build_revalidation(
+            indexed=self._revalidation_indexed,
             schema=self._schema,
             retort_cache=self._retort_cache,
             type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
             mask_secrets=self._mask_secrets_arg,
         )
-        return data.result
+        self.validation_loader = validation_loader
+        # Single-source set error_ctx eagerly (richer ctx); multi-source takes build_revalidation's.
+        if self.error_ctx is None:
+            self.error_ctx = ctx
 
     def _make_loader_subclass(self, target_cls: type[T]) -> type[T]:
         """Return a subclass of *target_cls* that auto-loads on every ``__init__`` call.
@@ -421,10 +436,11 @@ class Loader[T: DataclassInstance]:
                 _attach_debug_report(self, loaded_data)
             if original_post_init is not None:
                 original_post_init(self)
+            loader._ensure_revalidation()
             validation_loader = loader.validation_loader
             error_ctx = loader.error_ctx
             if validation_loader is not None and error_ctx is not None:
-                obj_dict = coerce_flag_fields(asdict(self), target_cls)
+                obj_dict = coerce_flag_fields(asdict(self), loader._retort_cache.flag_field_names)
                 handle_load_errors(func=lambda: validation_loader(obj_dict), ctx=error_ctx)
 
         # update_wrapper sets __wrapped__ so inspect.signature follows through to the
