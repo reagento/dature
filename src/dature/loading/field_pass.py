@@ -14,9 +14,8 @@ Four public entry points:
 """
 
 from collections.abc import Callable
-from dataclasses import fields
 from functools import partial
-from typing import Any, cast, get_type_hints
+from typing import Any, cast
 
 from dature.errors import DatureConfigError, FieldLoadError
 from dature.errors.extraction import handle_load_errors
@@ -28,45 +27,19 @@ from dature.loading.retort import RetortCache
 from dature.protocols import DataclassInstance
 from dature.sources.base import IndexedSource
 from dature.type_aliases import JSONValue, TypeLoaderMap
-from dature.validators.base import extract_and_check_validators
-
-
-def _get_unvalidated_annotated_fields[T](
-    schema: type[T],
-    validated_field_names: set[str],
-) -> list[tuple[str, list[Any]]]:
-    """Return ``(field_name, predicates)`` for schema fields that have ``Annotated`` validators
-    but were NOT provided by any source (i.e. took their dataclass default).
-
-    Used as the final fallback: fields provided by at least one source were already validated
-    per-source via the field pass; only default-value fields need this.
-    """
-    result: list[tuple[str, list[Any]]] = []
-    try:
-        type_hints = get_type_hints(cast("type[DataclassInstance]", schema), include_extras=True)
-    except Exception:  # noqa: BLE001
-        return result
-    for field in fields(cast("type[DataclassInstance]", schema)):
-        if field.name in validated_field_names:
-            continue
-        field_type = type_hints.get(field.name)
-        if field_type is None:
-            continue
-        predicates = extract_and_check_validators(field_type, field_path=[field.name])
-        if predicates:
-            result.append((field.name, predicates))
-    return result
 
 
 def compute_default_fallback_errors[T: DataclassInstance](
-    schema: type[T],
+    annotated_default_fields: tuple[tuple[str, list[Any]], ...],
     validated_field_names: set[str],
     result: T,
 ) -> list[FieldLoadError]:
     """Run ``Annotated`` validators for fields no source provided (took their dataclass default).
 
-    Fields provided by at least one source are already in *validated_field_names* and are
-    skipped — they were validated per-source via the field pass.
+    *annotated_default_fields* is the schema's ``(field_name, predicates)`` map, precomputed
+    once per ``RetortCache`` (pure static reflection).  Fields provided by at least one source
+    are already in *validated_field_names* and are skipped — they were validated per-source via
+    the field pass; only default-value fields need this fallback.
     """
     return [
         FieldLoadError(
@@ -74,7 +47,8 @@ def compute_default_fallback_errors[T: DataclassInstance](
             message=predicate.get_error_message(),
             input_value=cast("JSONValue", getattr(result, name, None)),
         )
-        for name, predicates in _get_unvalidated_annotated_fields(schema, validated_field_names)
+        for name, predicates in annotated_default_fields
+        if name not in validated_field_names
         for predicate in predicates
         if not predicate.get_validator_func()(getattr(result, name, None))
     ]

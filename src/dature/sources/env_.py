@@ -28,6 +28,24 @@ class EnvSource(FlatKeySource):
     def _load(self) -> JSONValue:
         return cast("JSONValue", os.environ)
 
+    def _iter_raw_items(self, data_dict: dict[str, str]) -> Iterable[tuple[str, str]]:
+        """Skip decoding values for keys ``_pre_process_row`` would reject anyway.
+
+        ``os._Environ.items()`` decodes every value from bytes; with a ``prefix`` set,
+        most keys are discarded right after. Iterating keys only (cheap) and decoding
+        values (``data_dict[key]``, the actual bytes->str cost) only for accepted keys
+        avoids that wasted work, scaling with environment size instead of matched keys.
+        """
+        absolute_keys = self._absolute_alias_keys()
+        if not self.prefix and not absolute_keys:
+            yield from data_dict.items()
+            return
+        matched_keys = (
+            key for key in data_dict if (not self.prefix) or key.startswith(self.prefix) or key in absolute_keys
+        )
+        for key in matched_keys:
+            yield key, data_dict[key]
+
     def resolve_location(
         self,
         *,

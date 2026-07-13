@@ -107,7 +107,7 @@ jobs:
               f.write(f"versions={json.dumps(final_versions)}\n")
 
   test:
-    needs: [get-adaptix-versions]
+    needs: [lint, get-adaptix-versions]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

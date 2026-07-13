@@ -12,7 +12,7 @@ import logging
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
-from typing import ClassVar, cast
+from typing import ClassVar, Final, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
@@ -52,18 +52,21 @@ from dature.validators.aliases import FieldValidators
 logger = logging.getLogger("dature")
 
 
+_STRING_VALUE_LOADERS: Final[tuple[Provider, ...]] = (
+    loader(str, str_from_scalar),
+    loader(float, float_from_string),
+    loader(date, date_from_string),
+    loader(datetime, datetime_from_string),
+    loader(time, time_from_string),
+    loader(bytearray, bytearray_from_json_string),
+    loader(type(None), none_from_empty_string),
+    loader(str | None, optional_from_empty_string),
+    loader(bool, bool_loader),
+)
+
+
 def string_value_loaders() -> list[Provider]:
-    return [
-        loader(str, str_from_scalar),
-        loader(float, float_from_string),
-        loader(date, date_from_string),
-        loader(datetime, datetime_from_string),
-        loader(time, time_from_string),
-        loader(bytearray, bytearray_from_json_string),
-        loader(type(None), none_from_empty_string),
-        loader(str | None, optional_from_empty_string),
-        loader(bool, bool_loader),
-    ]
+    return list(_STRING_VALUE_LOADERS)
 
 
 def _set_value_at_path(
@@ -159,6 +162,22 @@ class Source(abc.ABC):
                 if alias == raw_key and field_path.parts:
                     return field_path.parts[-1]
         return None
+
+    def _absolute_alias_keys(self) -> frozenset[str]:
+        """Return the set of :class:`~dature.field_path.Absolute` alias source keys.
+
+        Absolute aliases bypass the prefix filter and are matched against the full
+        source key, so a prefix-based early filter must always let these keys through.
+        """
+        if not self.field_mapping:
+            return frozenset()
+        keys: set[str] = set()
+        for field_path, aliases in self.field_mapping.items():
+            if not isinstance(field_path, FieldPath):
+                continue
+            alias_list: tuple[str, ...] = (aliases,) if isinstance(aliases, str) else tuple(aliases)
+            keys.update(alias for alias in alias_list if isinstance(alias, Absolute))
+        return frozenset(keys)
 
     def additional_loaders(self) -> "list[Provider]":
         return []

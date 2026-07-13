@@ -26,7 +26,7 @@ try:
 except ImportError:  # pragma: no cover
     CommentedMap = object  # type: ignore[misc, assignment]
     CommentedSeq = object  # type: ignore[misc, assignment]
-    ScalarString = object  # type: ignore[misc, assignment]
+    ScalarString = object  # type: ignore[misc]
     Version = object  # type: ignore[misc, assignment]
 
 

@@ -16,6 +16,7 @@ from dature.loading.field_pass import (
     run_source_field_pass,
 )
 from dature.loading.retort import RetortCache
+from dature.protocols import DataclassInstance
 from dature.sources.base import IndexedSource, Source
 from dature.type_aliases import JSONValue
 
@@ -93,35 +94,33 @@ class _ConfigWithDefault:
     name: str = "default"
 
 
+@dataclass
+class _PlainDefault:
+    value: int = 0
+
+
 class TestComputeDefaultFallbackErrors:
-    def test_failing_default_produces_error(self):
-        result = _ConfigWithDefault()
-        errors = compute_default_fallback_errors(_ConfigWithDefault, set(), result)
+    @pytest.mark.parametrize(
+        ("schema", "result", "validated_field_names", "expected_paths"),
+        [
+            pytest.param(_ConfigWithDefault, _ConfigWithDefault(), set(), [["port"]], id="failing-default"),
+            pytest.param(_ConfigWithDefault, _ConfigWithDefault(), {"port"}, [], id="field-in-validated-set-skipped"),
+            pytest.param(_ConfigWithDefault, _ConfigWithDefault(port=5), set(), [], id="passing-default"),
+            pytest.param(_PlainDefault, _PlainDefault(), set(), [], id="no-validator"),
+        ],
+    )
+    def test_compute(
+        self,
+        schema: type,
+        result: DataclassInstance,
+        validated_field_names: set[str],
+        expected_paths: list[list[str]],
+    ):
+        # annotated_default_fields is the schema's precomputed (field, predicates) map (W1).
+        annotated_default_fields = RetortCache(schema).annotated_default_fields
+        errors = compute_default_fallback_errors(annotated_default_fields, validated_field_names, result)
 
-        assert len(errors) == 1
-        assert errors[0].field_path == ["port"]
-
-    def test_field_in_validated_set_is_skipped(self):
-        result = _ConfigWithDefault()
-        errors = compute_default_fallback_errors(_ConfigWithDefault, {"port"}, result)
-
-        assert errors == []
-
-    def test_passing_default_returns_empty(self):
-        result = _ConfigWithDefault(port=5)
-        errors = compute_default_fallback_errors(_ConfigWithDefault, set(), result)
-
-        assert errors == []
-
-    def test_plain_type_no_validator_returns_empty(self):
-        @dataclass
-        class Plain:
-            value: int = 0
-
-        result = Plain()
-        errors = compute_default_fallback_errors(Plain, set(), result)
-
-        assert errors == []
+        assert [e.field_path for e in errors] == expected_paths
 
 
 @dataclass
