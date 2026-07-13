@@ -12,7 +12,7 @@ import logging
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
-from typing import ClassVar, cast
+from typing import ClassVar, Final, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
@@ -52,18 +52,21 @@ from dature.validators.aliases import FieldValidators
 logger = logging.getLogger("dature")
 
 
+_STRING_VALUE_LOADERS: Final[tuple[Provider, ...]] = (
+    loader(str, str_from_scalar),
+    loader(float, float_from_string),
+    loader(date, date_from_string),
+    loader(datetime, datetime_from_string),
+    loader(time, time_from_string),
+    loader(bytearray, bytearray_from_json_string),
+    loader(type(None), none_from_empty_string),
+    loader(str | None, optional_from_empty_string),
+    loader(bool, bool_loader),
+)
+
+
 def string_value_loaders() -> list[Provider]:
-    return [
-        loader(str, str_from_scalar),
-        loader(float, float_from_string),
-        loader(date, date_from_string),
-        loader(datetime, datetime_from_string),
-        loader(time, time_from_string),
-        loader(bytearray, bytearray_from_json_string),
-        loader(type(None), none_from_empty_string),
-        loader(str | None, optional_from_empty_string),
-        loader(bool, bool_loader),
-    ]
+    return list(_STRING_VALUE_LOADERS)
 
 
 def _set_value_at_path(

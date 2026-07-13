@@ -621,6 +621,21 @@ class TestStringValueLoaders:
 
         assert len(loaders) == 9
 
+    def test_repeated_calls_are_equal_by_stable_identity(self):
+        """Each call returns a new list, but of the *same* provider objects.
+
+        This stability is what lets retort.py's cold-load fast path recognize a source's
+        recipe via ``additional_loaders() == string_value_loaders()``: adaptix ``Provider``
+        objects have no ``__eq__``, so list equality only holds when both sides hold the same
+        objects, not merely equivalent ones.
+        """
+        first = string_value_loaders()
+        second = string_value_loaders()
+
+        assert first == second
+        assert first is not second
+        assert all(a is b for a, b in zip(first, second, strict=True))
+
 
 class TestResolveLocation:
     def test_file_content_none_returns_empty(self):

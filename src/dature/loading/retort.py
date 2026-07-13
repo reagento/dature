@@ -28,7 +28,7 @@ from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import ConstructorOverrideProvider, ModelToDictProvider, SkipFieldProvider
-from dature.sources.base import IndexedSource
+from dature.sources.base import IndexedSource, string_value_loaders
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     URL,
@@ -140,6 +140,27 @@ _FINAL_SENTINEL: Final[object] = object()
 # Both hold no schema-/source-specific state; all customisation is added via .extend().
 _BASE_FAST: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.DISABLE)
 _BASE_RICH: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.ALL)
+
+# Precomputed FAST retorts for the two built-in "uncustomized" default recipes (string-value
+# sources like EnvSource/CLI vs. plain sources like JSON/TOML/YAML). Sources with no
+# type_loaders/name_style/field_mapping and no constructor override/root validators reuse one
+# of these instead of paying `.extend()` on every cold load (see `_uncustomized_fast_retort`).
+# Only FAST is precomputed: RICH only compiles on the rare error-replay path, so precomputing
+# it would add import cost without a happy-path payoff.
+_FAST_STRING: Final[Retort] = _BASE_FAST.extend(recipe=[*string_value_loaders(), *_DEFAULT_LOADERS])
+_FAST_PLAIN: Final[Retort] = _BASE_FAST.extend(recipe=[*_DEFAULT_LOADERS])
+
+
+def _uncustomized_fast_retort(source: SourceProtocol) -> Retort | None:
+    """Return a precomputed FAST retort for *source* if it needs no per-call ``.extend()``."""
+    if source.type_loaders or source.name_style or source.field_mapping:
+        return None
+    additional = source.additional_loaders()
+    if additional == string_value_loaders():
+        return _FAST_STRING
+    if not additional:
+        return _FAST_PLAIN
+    return None
 
 
 class _DualRetort:
@@ -389,9 +410,17 @@ class RetortCache:
         """Build (and cache) the raw final-construction ``Retort`` for the given *rich* variant."""
         key = self._final_key(indexed.index, rich, resolved_type_loaders)
         if key not in self._cache:
-            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
-            override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
-            self._cache[key] = self._base(rich).extend(recipe=[*recipe, *override, *self._root_providers])
+            precomputed = (
+                _uncustomized_fast_retort(indexed.source)
+                if not rich and resolved_type_loaders is None and self.constructor is None and not self._root_providers
+                else None
+            )
+            if precomputed is not None:
+                self._cache[key] = precomputed
+            else:
+                recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
+                override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
+                self._cache[key] = self._base(rich).extend(recipe=[*recipe, *override, *self._root_providers])
         return self._cache[key]
 
     def final_retort(

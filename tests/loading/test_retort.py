@@ -3,21 +3,25 @@ from typing import Annotated, Any, cast
 
 import pytest
 from adaptix import NameStyle as AdaptixNameStyle
-from adaptix import Retort
+from adaptix import Retort, loader
 from adaptix.load_error import AggregateLoadError
+from adaptix.provider import Provider
 
 from dature import Loader, V
 from dature.errors.exceptions import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.loading.retort import (
+    _FAST_PLAIN,
+    _FAST_STRING,
     RetortCache,
     _DualRetort,
+    _uncustomized_fast_retort,
     build_base_recipe,
     get_adaptix_name_style,
     get_name_mapping_providers,
     get_validator_providers,
 )
-from dature.sources.base import IndexedSource, Source
+from dature.sources.base import FlatKeySource, IndexedSource, Source, string_value_loaders
 from dature.type_aliases import JSONValue
 
 
@@ -34,6 +38,62 @@ class MockSource(Source):
 
     def _load(self) -> JSONValue:
         return self.test_data
+
+
+@dataclass(kw_only=True)
+class MockFlatKeySource(FlatKeySource):
+    format_name = "mock_flat"
+    location_label = "MOCK FLAT"
+    test_data: JSONValue = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.test_data is None:
+            self.test_data = {}
+
+    def _load(self) -> JSONValue:
+        return self.test_data
+
+
+@dataclass(kw_only=True)
+class MockCustomLoadersSource(Source):
+    """A source with its own distinct, non-empty recipe — must never match a precomputed constant."""
+
+    format_name = "mock_custom"
+    location_label = "MOCK CUSTOM"
+    test_data: JSONValue = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.test_data is None:
+            self.test_data = {}
+
+    def _load(self) -> JSONValue:
+        return self.test_data
+
+    def additional_loaders(self) -> "list[Provider]":
+        return [loader(int, lambda x: int(x))]  # noqa: PLW0108
+
+
+@dataclass(kw_only=True)
+class MockStringRecipeSource(Source):
+    """A plain ``Source`` subclass (not ``FlatKeySource``) that itself returns the canonical
+    string-value recipe — proves the fast-path detection is class-agnostic, matching by content."""
+
+    format_name = "mock_string_recipe"
+    location_label = "MOCK STRING RECIPE"
+    test_data: JSONValue = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.test_data is None:
+            self.test_data = {}
+
+    def _load(self) -> JSONValue:
+        return self.test_data
+
+    def additional_loaders(self) -> "list[Provider]":
+        return string_value_loaders()
 
 
 class TestGetAdaptixNameStyle:
@@ -416,3 +476,169 @@ class TestFastRichSplit:
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
         paths = {tuple(e.field_path) for e in errors}
         assert paths == {("a",), ("b",)}
+
+
+class TestUncustomizedFastRetort:
+    """Uncustomized sources reuse a precomputed module-level FAST retort instead of extending.
+
+    Detection is by content, not by class: a source is matched by what ``additional_loaders()``
+    returns, regardless of its type in the ``Source`` hierarchy.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            (MockSource(), _FAST_PLAIN),
+            (MockFlatKeySource(), _FAST_STRING),
+            # A plain `Source` subclass that itself returns the canonical string-value recipe
+            # matches _FAST_STRING too — proves detection doesn't key off FlatKeySource.
+            (MockStringRecipeSource(), _FAST_STRING),
+        ],
+    )
+    def test_uncustomized_source_matches_by_recipe_content(self, source, expected):
+        assert _uncustomized_fast_retort(source) is expected
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            MockSource(type_loaders={str: lambda x: str(x).upper()}),
+            MockSource(name_style="lower_camel"),
+            MockFlatKeySource(type_loaders={str: lambda x: str(x).upper()}),
+        ],
+    )
+    def test_customized_source_returns_none(self, source):
+        assert _uncustomized_fast_retort(source) is None
+
+    def test_field_mapping_returns_none(self):
+        @dataclass
+        class Config:
+            name: str
+
+        source = MockSource(field_mapping={F[Config].name: "fullName"})
+
+        assert _uncustomized_fast_retort(source) is None
+
+    def test_distinct_nonempty_recipe_returns_none(self):
+        """A source with its own, different non-empty recipe matches neither constant."""
+        assert _uncustomized_fast_retort(MockCustomLoadersSource()) is None
+
+
+class TestFinalRetortPrecomputedFastPath:
+    """``final_retort``'s FAST branch reuses the precomputed constant for uncustomized sources."""
+
+    def test_plain_source_fast_is_precomputed_constant(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        assert cache.final_retort(idx)._fast is _FAST_PLAIN
+
+    def test_flat_key_source_fast_is_precomputed_constant(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockFlatKeySource(), 0)
+
+        assert cache.final_retort(idx)._fast is _FAST_STRING
+
+    def test_type_loaders_bypass_precomputed_constant(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(type_loaders={str: lambda x: str(x).upper()}), 0)
+
+        fast = cache.final_retort(idx)._fast
+
+        assert fast is not _FAST_PLAIN
+        assert fast is not _FAST_STRING
+
+    def test_constructor_override_bypasses_precomputed_constant(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        cache.constructor = Config
+        idx = IndexedSource(MockSource(), 0)
+
+        fast = cache.final_retort(idx)._fast
+
+        assert fast is not _FAST_PLAIN
+
+    def test_root_validators_bypass_precomputed_constant(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config, root_validators=(V.root(lambda _: True),))
+        idx = IndexedSource(MockSource(), 0)
+
+        fast = cache.final_retort(idx)._fast
+
+        assert fast is not _FAST_PLAIN
+
+    def test_precomputed_fast_path_load_result_matches_extend_path(self):
+        """Precomputed-constant path and freshly-extended path load identical results."""
+
+        @dataclass
+        class Config:
+            name: str
+            port: int
+
+        data = {"name": "app", "port": "8080"}
+
+        precomputed_cache = RetortCache(Config)
+        precomputed_result = precomputed_cache.final_retort(IndexedSource(MockSource(), 0)).load(data, Config)
+
+        # Force the extend()-built path by attaching a constructor override, whose result
+        # must be identical since ConstructorOverrideProvider(Config, Config) is a no-op wrapper.
+        extend_cache = RetortCache(Config)
+        extend_cache.constructor = Config
+        extend_idx = IndexedSource(MockSource(), 0)
+        assert extend_cache.final_retort(extend_idx)._fast is not _FAST_PLAIN
+        extend_result = extend_cache.final_retort(extend_idx).load(data, Config)
+
+        assert precomputed_result == extend_result == Config(name="app", port=8080)
+
+    def test_error_replay_still_uses_lazy_rich_retort(self):
+        """RICH is never precomputed; the fallback still compiles lazily on error."""
+
+        @dataclass
+        class Config:
+            name: str
+            port: int
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        with pytest.raises(AggregateLoadError):
+            cache.final_retort(idx).load({"name": "app", "port": "not_an_int"}, Config)
+
+        assert _rich_cache_keys(cache)
+
+    def test_precomputed_constants_are_isolated_across_sources(self):
+        """Two different uncustomized sources share the constant without cross-contamination."""
+
+        @dataclass
+        class ConfigA:
+            name: str
+
+        @dataclass
+        class ConfigB:
+            port: int
+
+        cache_a = RetortCache(ConfigA)
+        cache_b = RetortCache(ConfigB)
+
+        result_a = cache_a.final_retort(IndexedSource(MockSource(), 0)).load({"name": "x"}, ConfigA)
+        result_b = cache_b.final_retort(IndexedSource(MockSource(), 0)).load({"port": "5"}, ConfigB)
+
+        assert result_a == ConfigA(name="x")
+        assert result_b == ConfigB(port=5)
