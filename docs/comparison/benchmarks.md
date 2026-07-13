@@ -174,10 +174,10 @@ re-loading over their pre-built object.
 
 | Mode | Speed | vs | Memory | vs |
 |------|------:|---:|-------:|---:|
-| dature — `cache=True` (eternal) | 1.0 µs | baseline | 1.0 KiB | baseline |
-| dature — `cache=timedelta(...)` (TTL) | 1.1 µs | 1.1× | 1.1 KiB | 1.1× |
-| dature — `Loader` reuse | 74.0 µs | 72.1× | 10.2 KiB | 10.2× |
-| dature — decorator, hot | 76.8 µs | 74.7× | 10.5 KiB | 10.5× |
+| dature — decorator, hot,  `cache=True` (eternal) | 1.0 µs | baseline | 1.0 KiB | baseline |
+| dature — decorator, hot, `cache=timedelta(...)` (TTL) | 1.1 µs | 1.1× | 1.1 KiB | 1.1× |
+| dature — decorator, hot, no cache | 76.8 µs | 74.7× | 10.5 KiB | 10.5× |
+| dature — `Loader` reuse, no cache | 74.0 µs | 72.1× | 10.2 KiB | 10.2× |
 | pydantic-settings — reuse | 113.8 µs | 110.8× | 20.3 KiB | 20.3× |
 | dature — function mode, fixed schema, no reuse | 1.1 ms | 1027× | 427.8 KiB | 428× |
 
@@ -195,12 +195,12 @@ The last row is the honest counter-example: function mode with the schema declar
 
 ## Key takeaways
 
-**Split the cost and dature looks very different from a naïve "full-cycle" number.** The three
+**Split the cost and dature looks very different from a native "full-cycle" number.** The three
 pieces are independent: import (~162 ms, once per process), fresh build+load (~1.2–3.0 ms, only
 in function mode), and warm reuse (~74 µs, or ~1 µs cached).
 
 **Import is reasonable — comparable to pydantic-settings, lighter on RAM.** ~162 ms vs ~114 ms,
-and 11.5 MiB vs 12.1 MiB. (A naïve measurement inside a fat venv reports ~2× higher for everyone —
+and 11.5 MiB vs 12.1 MiB. (A native measurement inside a fat venv reports ~2× higher for everyone —
 `site-packages` size inflates import time; always measure imports in a clean venv.)
 
 **Don't use function mode in a hot path.** Building and compiling the adaptix loader every call

@@ -160,6 +160,22 @@ class Source(abc.ABC):
                     return field_path.parts[-1]
         return None
 
+    def _absolute_alias_keys(self) -> frozenset[str]:
+        """Return the set of :class:`~dature.field_path.Absolute` alias source keys.
+
+        Absolute aliases bypass the prefix filter and are matched against the full
+        source key, so a prefix-based early filter must always let these keys through.
+        """
+        if not self.field_mapping:
+            return frozenset()
+        keys: set[str] = set()
+        for field_path, aliases in self.field_mapping.items():
+            if not isinstance(field_path, FieldPath):
+                continue
+            alias_list: tuple[str, ...] = (aliases,) if isinstance(aliases, str) else tuple(aliases)
+            keys.update(alias for alias in alias_list if isinstance(alias, Absolute))
+        return frozenset(keys)
+
     def additional_loaders(self) -> "list[Provider]":
         return []
 

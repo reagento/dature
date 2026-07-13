@@ -1,6 +1,7 @@
 """FlatKeySource: env-var / CLI style sources with ``__`` nesting."""
 
 import abc
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import cast
 
@@ -124,13 +125,22 @@ class FlatKeySource(Source, abc.ABC):
             resolved_nested_resolve=resolved_nested_resolve,
         )
 
+    def _iter_raw_items(self, data_dict: dict[str, str]) -> Iterable[tuple[str, str]]:
+        """Return the ``(key, value)`` pairs ``load_raw`` should process.
+
+        Default: every entry. Overridden by :class:`~dature.sources.env_.EnvSource` to
+        skip decoding values for keys ``_pre_process_row`` would reject anyway (e.g. keys
+        outside ``prefix``), since ``os._Environ.items()`` decodes every value from bytes.
+        """
+        return data_dict.items()
+
     def load_raw(self) -> LoadRawResult:
         data = self._load()
         data_dict = cast("dict[str, str]", data)
         result: dict[str, JSONValue] = {}
         conflicts: NestedConflicts = {}
 
-        for key, value in data_dict.items():
+        for key, value in self._iter_raw_items(data_dict):
             self._pre_process_row(
                 key=key,
                 value=value,
