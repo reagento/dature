@@ -29,6 +29,7 @@ def load[T](
     *sources: SourceProtocol,
     schema: type[T],
     cache: bool | timedelta | None = None,
+    cache_engine: bool | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -51,6 +52,7 @@ def load(
     *sources: SourceProtocol,
     schema: None = None,
     cache: bool | timedelta | None = None,
+    cache_engine: bool | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -73,6 +75,7 @@ def load(  # noqa: PLR0913
     *sources: SourceProtocol,
     schema: type[Any] | None = None,
     cache: bool | timedelta | None = None,
+    cache_engine: bool | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
@@ -94,6 +97,8 @@ def load(  # noqa: PLR0913
     if isinstance(cache, timedelta) and cache < timedelta(0):
         msg = f"cache timedelta must be non-negative, got {cache!r}"
         raise ValueError(msg)
+    if cache_engine is None:
+        cache_engine = config.loading.cache_engine
     if debug is None:
         debug = config.loading.debug
 
@@ -115,6 +120,7 @@ def load(  # noqa: PLR0913
 
     common_kwargs: dict[str, Any] = {
         "cache": cache,
+        "cache_engine": cache_engine,
         "debug": debug,
         "strategy": strategy,
         "field_merges": field_merges,

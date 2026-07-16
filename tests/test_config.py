@@ -55,6 +55,11 @@ class TestConfigure:
                 True,
             ),
             (
+                {"loading": {"cache_engine": True}},
+                ("loading", "cache_engine"),
+                True,
+            ),
+            (
                 {"loading": {"search_system_paths": False}},
                 ("loading", "search_system_paths"),
                 False,
@@ -66,6 +71,7 @@ class TestConfigure:
             "error_display-max_visible_lines",
             "loading-cache",
             "loading-debug",
+            "loading-cache_engine",
             "loading-search_system_paths",
         ],
     )

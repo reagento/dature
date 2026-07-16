@@ -12,7 +12,8 @@ Each entry is ``(display label, examples.<function name>)``; order = display ord
 SOURCES: dict[str, list[tuple[str, str]]] = {
     "ENV  (os.environ → typed dataclass)": [
         ("dature (func)", "dature_env"),
-        ("dature (decorator)", "dature_env_dec"),
+        ("dature (decorator, cache_engine=False, default)", "dature_env_dec"),
+        ("dature (decorator, cache_engine=True)", "dature_env_dec_warm"),
         ("pydantic-settings", "pydantic_env"),
         ("python-decouple", "decouple_env"),
         ("dynaconf", "dynaconf_env"),

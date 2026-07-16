@@ -34,10 +34,14 @@ class BenchConfig:
 
 _env_source = EnvSource(prefix="BENCH_")
 
-# hot decorator (cache=False): Loader built once at decoration time, reused per call
-_HotEnvCfg = dature.load(_env_source, cache=False)(BenchConfig)
+# hot decorator (cache=False, cache_engine=True): the compiled retort is retained explicitly,
+# so repeated calls skip recompilation — this is the "pay memory for warm speed" opt-in.
+_HotEnvCfg = dature.load(_env_source, cache=False, cache_engine=True)(BenchConfig)
 # Loader reuse: explicit Loader kept at module level, .load() called repeatedly
-_loader_env = Loader(_env_source, schema=BenchConfig, cache=False)
+_loader_env = Loader(_env_source, schema=BenchConfig, cache=False, cache_engine=True)
+# Same hot decorator, but cache_engine left at its default (False): every call recompiles the
+# retort from scratch. Contrast against _HotEnvCfg above to see the speed/memory trade-off.
+_HotEnvCfgNoEngineCache = dature.load(_env_source, cache=False)(BenchConfig)
 # caching variants (eternal and TTL) — cache hit after the first warmup call
 _CachedEnvCfg = dature.load(_env_source, cache=True)(BenchConfig)
 _CachedTTLCfg = dature.load(_env_source, cache=timedelta(minutes=5))(BenchConfig)
@@ -65,6 +69,10 @@ def dature_env_hot() -> BenchConfig:
 
 def dature_env_loader() -> BenchConfig:
     return _loader_env.load()
+
+
+def dature_env_hot_no_engine_cache() -> BenchConfig:
+    return _HotEnvCfgNoEngineCache()
 
 
 def dature_env_cached() -> BenchConfig:

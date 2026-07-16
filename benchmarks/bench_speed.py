@@ -37,8 +37,12 @@ def main() -> None:
         print("#" * 72)
         warm = [
             ("dature (func, fixed schema, no reuse)", *run_bench(examples_warm.dature_env_func_fixed_schema)),
-            ("dature (decorator, hot)", *run_bench(examples_warm.dature_env_hot)),
-            ("dature (Loader reuse)", *run_bench(examples_warm.dature_env_loader)),
+            ("dature (decorator, hot, cache_engine=True)", *run_bench(examples_warm.dature_env_hot)),
+            (
+                "dature (decorator, hot, cache_engine=False)",
+                *run_bench(examples_warm.dature_env_hot_no_engine_cache),
+            ),
+            ("dature (Loader reuse, cache_engine=True)", *run_bench(examples_warm.dature_env_loader)),
             ("dature (cache=True)", *run_bench(examples_warm.dature_env_cached)),
             ("dature (cache=timedelta)", *run_bench(examples_warm.dature_env_cached_ttl)),
             ("pydantic-settings (reuse)", *run_bench(examples_warm.pydantic_env_reuse)),
