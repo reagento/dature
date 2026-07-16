@@ -251,8 +251,15 @@ class RetortCache:
     per call, so there is no per-call id(schema) lookup.
     """
 
-    def __init__[T](self, schema: type[T], *, root_validators: Iterable[Any] = ()) -> None:
+    def __init__[T](
+        self,
+        schema: type[T],
+        *,
+        root_validators: Iterable[Any] = (),
+        cache_engine: bool = False,
+    ) -> None:
         self._cache: dict[tuple[Any, ...], Retort] = {}
+        self._cache_engine = cache_engine
         self._schema = schema
         self._has_annotated_field_validators: bool = bool(get_validator_providers(schema))
         self._root_providers: list[Any] = create_root_validator_providers(schema, root_validators)
@@ -294,6 +301,19 @@ class RetortCache:
     ) -> tuple[int, object, bool, frozenset[Any]]:
         return (source_idx, _FINAL_SENTINEL, rich, _loaders_frozenset(type_loaders))
 
+    def _get_or_build(self, key: tuple[Any, ...], build: Callable[[], Retort]) -> Retort:
+        """Return ``self._cache[key]``, building it via *build* on a miss.
+
+        When ``cache_engine`` is disabled, the result is never written to ``_cache`` — each call
+        rebuilds from scratch and nothing compiled here outlives the call. This is the single
+        chokepoint that makes retort caching opt-in.
+        """
+        if not self._cache_engine:
+            return build()
+        if key not in self._cache:
+            self._cache[key] = build()
+        return self._cache[key]
+
     def plain(
         self,
         indexed: IndexedSource,
@@ -303,10 +323,12 @@ class RetortCache:
     ) -> Retort:
         """Return the plain loading retort for *indexed.source*, building and caching it on first call."""
         key = self._plain_key(indexed.index, rich, resolved_type_loaders)
-        if key not in self._cache:
-            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
-            self._cache[key] = self._base(rich).extend(recipe=recipe)
-        return self._cache[key]
+        return self._get_or_build(
+            key,
+            lambda: self._base(rich).extend(
+                recipe=build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
+            ),
+        )
 
     def _field_pass_raw(
         self,
@@ -323,8 +345,8 @@ class RetortCache:
         fire. When *skip* is ``True`` (``source.skip_field_if_invalid``), ``SkipFieldProvider`` drops
         fields whose coercion *or validation* fails instead of raising.
         """
-        key = self._field_pass_key(indexed.index, skip, rich, resolved_type_loaders)
-        if key not in self._cache:
+
+        def build() -> Retort:
             source = indexed.source
             schema = self._schema
             skip_provider: list[Any] = [SkipFieldProvider()] if skip else []
@@ -334,7 +356,7 @@ class RetortCache:
             # When skip=False (validate mode), restrict to the top-level schema so that
             # validators on Annotated[NestedDC, V.check(...)] receive real instances.
             to_dict_provider = ModelToDictProvider() if skip else ModelToDictProvider(schema)
-            self._cache[key] = self.plain(indexed, rich=rich, resolved_type_loaders=resolved_type_loaders).extend(
+            return self.plain(indexed, rich=rich, resolved_type_loaders=resolved_type_loaders).extend(
                 recipe=[
                     *skip_provider,
                     *get_validator_providers(schema),
@@ -342,7 +364,9 @@ class RetortCache:
                     to_dict_provider,
                 ],
             )
-        return self._cache[key]
+
+        key = self._field_pass_key(indexed.index, skip, rich, resolved_type_loaders)
+        return self._get_or_build(key, build)
 
     @overload
     def field_pass(
@@ -408,20 +432,25 @@ class RetortCache:
         resolved_type_loaders: TypeLoaderMap | None = None,
     ) -> Retort:
         """Build (and cache) the raw final-construction ``Retort`` for the given *rich* variant."""
-        key = self._final_key(indexed.index, rich, resolved_type_loaders)
-        if key not in self._cache:
+
+        def build() -> Retort:
             precomputed = (
                 _uncustomized_fast_retort(indexed.source)
-                if not rich and resolved_type_loaders is None and self.constructor is None and not self._root_providers
+                if not rich
+                and resolved_type_loaders is None
+                and self.constructor is None
+                and not self._root_providers
+                and self._cache_engine
                 else None
             )
             if precomputed is not None:
-                self._cache[key] = precomputed
-            else:
-                recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
-                override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
-                self._cache[key] = self._base(rich).extend(recipe=[*recipe, *override, *self._root_providers])
-        return self._cache[key]
+                return precomputed
+            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
+            override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
+            return self._base(rich).extend(recipe=[*recipe, *override, *self._root_providers])
+
+        key = self._final_key(indexed.index, rich, resolved_type_loaders)
+        return self._get_or_build(key, build)
 
     def final_retort(
         self, indexed: IndexedSource, *, resolved_type_loaders: TypeLoaderMap | None = None

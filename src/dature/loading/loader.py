@@ -63,6 +63,16 @@ from dature.validators.root import RootPredicate
 logger = logging.getLogger("dature")
 
 
+def _validate_sources(sources: tuple[SourceProtocol, ...]) -> None:
+    if not sources:
+        msg = "Loader requires at least one Source"
+        raise TypeError(msg)
+    for s in sources:
+        if not isinstance(s, SourceProtocol):
+            msg = f"Loader positional arguments must be SourceProtocol instances, got {s!r}"
+            raise TypeError(msg)
+
+
 class Loader[T: DataclassInstance]:
     """Encapsulates a ``load`` call. ``.load()`` honours the cache."""
 
@@ -71,6 +81,7 @@ class Loader[T: DataclassInstance]:
         *sources: SourceProtocol,
         schema: type[T],
         cache: bool | timedelta | None = None,
+        cache_engine: bool | None = None,
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
@@ -86,19 +97,15 @@ class Loader[T: DataclassInstance]:
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
     ) -> None:
-        if not sources:
-            msg = "Loader requires at least one Source"
-            raise TypeError(msg)
-        for s in sources:
-            if not isinstance(s, SourceProtocol):
-                msg = f"Loader positional arguments must be SourceProtocol instances, got {s!r}"
-                raise TypeError(msg)
+        _validate_sources(sources)
 
         if cache is None:
             cache = config.loading.cache
         if isinstance(cache, timedelta) and cache < timedelta(0):
             msg = f"cache timedelta must be non-negative, got {cache!r}"
             raise ValueError(msg)
+        if cache_engine is None:
+            cache_engine = config.loading.cache_engine
         if debug is None:
             debug = config.loading.debug
 
@@ -108,6 +115,7 @@ class Loader[T: DataclassInstance]:
         self._sources = sources
         self._schema = schema
         self._cache: bool | timedelta = cache
+        self._cache_engine: bool = cache_engine
         self.debug = debug
 
         # Loader-level parameters stored for deferred MergeConfig construction in _prepare_for_load.
@@ -151,13 +159,17 @@ class Loader[T: DataclassInstance]:
         # on Source — Source is a pure config DTO. Per-source retorts are keyed by the
         # source's positional index so that clones produced during load() share the entry
         # pre-warmed here against the original source object.
-        self._retort_cache = RetortCache(schema, root_validators=root_validators)
+        # ``cache_engine`` controls whether RetortCache retains what it builds: with it off,
+        # nothing compiled here (or later, during load()) stays reachable past its use, which
+        # is what keeps the decorator's retained memory down when `cache=True` already avoids
+        # ever needing it again.
+        self._retort_cache = RetortCache(schema, root_validators=root_validators, cache_engine=cache_engine)
 
-        # Pre-warm retorts for all sources (pure type analysis, no env read).
-        for source_idx, source in enumerate(sources):
-            indexed = IndexedSource(source, source_idx)
-            source_type_loaders = resolve_type_loaders(source, type_loaders)
-            self._retort_cache.prewarm(indexed, resolved_type_loaders=source_type_loaders)
+        # Pre-warm retorts for all sources (pure type analysis, no env read). Only worth doing
+        # eagerly when the result is actually retained — otherwise it's compiled for nothing
+        # since it won't survive past this call anyway.
+        if cache_engine:
+            self._prewarm_sources(sources, type_loaders)
 
         # Runtime state set by _prepare_for_load on each .load() call.
         self._merge_meta: MergeConfig | None = None
@@ -169,6 +181,12 @@ class Loader[T: DataclassInstance]:
         self.validation_loader: Callable[[JSONValue], DataclassInstance] | None = None
         self.error_ctx: ErrorContext | None = None
         self._revalidation_indexed: IndexedSource | None = None
+
+    def _prewarm_sources(self, sources: tuple[SourceProtocol, ...], type_loaders: TypeLoaderMap | None) -> None:
+        for source_idx, source in enumerate(sources):
+            indexed = IndexedSource(source, source_idx)
+            source_type_loaders = resolve_type_loaders(source, type_loaders)
+            self._retort_cache.prewarm(indexed, resolved_type_loaders=source_type_loaders)
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -215,6 +233,7 @@ class Loader[T: DataclassInstance]:
     def as_decorator[DC: DataclassInstance](  # noqa: PLR0913
         *sources: SourceProtocol,
         cache: bool | timedelta | None = None,
+        cache_engine: bool | None = None,
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
@@ -241,6 +260,7 @@ class Loader[T: DataclassInstance]:
                 *sources,
                 schema=target_cls,
                 cache=cache,
+                cache_engine=cache_engine,
                 debug=debug,
                 strategy=strategy,
                 field_merges=field_merges,
