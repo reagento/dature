@@ -39,7 +39,6 @@ from dature.type_aliases import (
     TypeLoaderMap,
 )
 from dature.validators.base import (
-    create_metadata_validator_providers,
     create_root_validator_providers,
     extract_and_check_validators,
     get_validator_providers,
@@ -257,12 +256,14 @@ class RetortCache:
         *,
         root_validators: Iterable[Any] = (),
         cache_engine: bool = False,
+        metadata_providers: list[list[Provider]] | None = None,
     ) -> None:
         self._cache: dict[tuple[Any, ...], Retort] = {}
         self._cache_engine = cache_engine
         self._schema = schema
         self._has_annotated_field_validators: bool = bool(get_validator_providers(schema))
         self._root_providers: list[Any] = create_root_validator_providers(schema, root_validators)
+        self._metadata_providers: list[list[Provider]] = metadata_providers or []
         self.constructor: Callable[..., Any] | None = None
         # Per-schema static reflection, computed once so the load hot path does not re-run
         # get_type_hints on every call (see coerce_flag_fields / compute_default_fallback_errors).
@@ -347,10 +348,11 @@ class RetortCache:
         """
 
         def build() -> Retort:
-            source = indexed.source
             schema = self._schema
             skip_provider: list[Any] = [SkipFieldProvider()] if skip else []
-            metadata_validator_providers = create_metadata_validator_providers(source.validators or {})
+            metadata_validator_providers = (
+                self._metadata_providers[indexed.index] if indexed.index < len(self._metadata_providers) else []
+            )
             # When skip=True (probe mode), ModelToDictProvider must apply to ALL nested
             # dataclasses so each nested field can be individually pruned.
             # When skip=False (validate mode), restrict to the top-level schema so that

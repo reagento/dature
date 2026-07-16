@@ -58,6 +58,7 @@ from dature.type_aliases import (
     NestedResolveStrategy,
     TypeLoaderMap,
 )
+from dature.validators.base import create_metadata_validator_providers
 from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
@@ -155,6 +156,7 @@ class Loader[T: DataclassInstance]:
             extra_patterns = secret_field_names or ()
             self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
+        metadata_providers = [create_metadata_validator_providers(source.validators or {}) for source in sources]
         # Build the shared retort cache for this Loader. All retorts are owned here, not
         # on Source — Source is a pure config DTO. Per-source retorts are keyed by the
         # source's positional index so that clones produced during load() share the entry
@@ -163,7 +165,12 @@ class Loader[T: DataclassInstance]:
         # nothing compiled here (or later, during load()) stays reachable past its use, which
         # is what keeps the decorator's retained memory down when `cache=True` already avoids
         # ever needing it again.
-        self._retort_cache = RetortCache(schema, root_validators=root_validators, cache_engine=cache_engine)
+        self._retort_cache = RetortCache(
+            schema,
+            root_validators=root_validators,
+            cache_engine=cache_engine,
+            metadata_providers=metadata_providers,
+        )
 
         # Pre-warm retorts for all sources (pure type analysis, no env read). Only worth doing
         # eagerly when the result is actually retained — otherwise it's compiled for nothing
