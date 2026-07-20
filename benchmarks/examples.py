@@ -637,6 +637,31 @@ def dature_env_dec():
     return Cfg()
 
 
+def dature_env_dec_warm():
+    """Same as ``dature_env_dec`` but with ``cache_engine=True`` — the compiled retort is
+    retained for the class lifetime instead of being rebuilt (and discarded) on every load.
+    Contrast the retained RSS of this against ``dature_env_dec`` to see what cache_engine buys.
+    """
+    from dataclasses import dataclass
+
+    import dature
+    from dature import EnvSource
+
+    @dature.load(EnvSource(prefix="BENCH_"), cache=False, cache_engine=True)
+    @dataclass
+    class Cfg:
+        host: str
+        port: int
+        debug: bool
+        max_connections: int
+        timeout: float
+        db_name: str
+        workers: int
+        log_level: str
+
+    return Cfg()
+
+
 def dature_dotenv_dec():
     from dataclasses import dataclass
     from pathlib import Path

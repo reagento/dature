@@ -247,12 +247,28 @@ class TestRetortCache:
             name: str
 
         source = MockSource()
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
 
         first = cache.plain(IndexedSource(source, 0))
         second = cache.plain(IndexedSource(source, 0))
 
         assert first is second
+
+    def test_plain_cache_engine_false_rebuilds_every_call(self):
+        """With ``cache_engine=False`` (the default), nothing is retained between calls."""
+
+        @dataclass
+        class Config:
+            name: str
+
+        source = MockSource()
+        cache = RetortCache(Config)
+
+        first = cache.plain(IndexedSource(source, 0))
+        second = cache.plain(IndexedSource(source, 0))
+
+        assert first is not second
+        assert cache._cache == {}
 
     def test_different_type_loaders_produce_distinct_retorts(self):
         @dataclass
@@ -442,7 +458,7 @@ class TestFastRichSplit:
             name: str
             port: int
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         idx = IndexedSource(MockSource(), 0)
 
         result = cache.final_retort(idx).load({"name": "app", "port": "5"}, Config)
@@ -456,7 +472,7 @@ class TestFastRichSplit:
             name: str
             port: int
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         idx = IndexedSource(MockSource(), 0)
 
         with pytest.raises(AggregateLoadError):  # rich replay re-raises the trailed load error
@@ -531,7 +547,7 @@ class TestFinalRetortPrecomputedFastPath:
         class Config:
             name: str
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         idx = IndexedSource(MockSource(), 0)
 
         assert cache.final_retort(idx)._fast is _FAST_PLAIN
@@ -541,7 +557,7 @@ class TestFinalRetortPrecomputedFastPath:
         class Config:
             name: str
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         idx = IndexedSource(MockFlatKeySource(), 0)
 
         assert cache.final_retort(idx)._fast is _FAST_STRING
@@ -551,7 +567,7 @@ class TestFinalRetortPrecomputedFastPath:
         class Config:
             name: str
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         idx = IndexedSource(MockSource(type_loaders={str: lambda x: str(x).upper()}), 0)
 
         fast = cache.final_retort(idx)._fast
@@ -564,7 +580,7 @@ class TestFinalRetortPrecomputedFastPath:
         class Config:
             name: str
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         cache.constructor = Config
         idx = IndexedSource(MockSource(), 0)
 
@@ -577,7 +593,7 @@ class TestFinalRetortPrecomputedFastPath:
         class Config:
             name: str
 
-        cache = RetortCache(Config, root_validators=(V.root(lambda _: True),))
+        cache = RetortCache(Config, cache_engine=True, root_validators=(V.root(lambda _: True),))
         idx = IndexedSource(MockSource(), 0)
 
         fast = cache.final_retort(idx)._fast
@@ -594,12 +610,12 @@ class TestFinalRetortPrecomputedFastPath:
 
         data = {"name": "app", "port": "8080"}
 
-        precomputed_cache = RetortCache(Config)
+        precomputed_cache = RetortCache(Config, cache_engine=True)
         precomputed_result = precomputed_cache.final_retort(IndexedSource(MockSource(), 0)).load(data, Config)
 
         # Force the extend()-built path by attaching a constructor override, whose result
         # must be identical since ConstructorOverrideProvider(Config, Config) is a no-op wrapper.
-        extend_cache = RetortCache(Config)
+        extend_cache = RetortCache(Config, cache_engine=True)
         extend_cache.constructor = Config
         extend_idx = IndexedSource(MockSource(), 0)
         assert extend_cache.final_retort(extend_idx)._fast is not _FAST_PLAIN
@@ -615,7 +631,7 @@ class TestFinalRetortPrecomputedFastPath:
             name: str
             port: int
 
-        cache = RetortCache(Config)
+        cache = RetortCache(Config, cache_engine=True)
         idx = IndexedSource(MockSource(), 0)
 
         with pytest.raises(AggregateLoadError):
@@ -634,11 +650,90 @@ class TestFinalRetortPrecomputedFastPath:
         class ConfigB:
             port: int
 
-        cache_a = RetortCache(ConfigA)
-        cache_b = RetortCache(ConfigB)
+        cache_a = RetortCache(ConfigA, cache_engine=True)
+        cache_b = RetortCache(ConfigB, cache_engine=True)
 
         result_a = cache_a.final_retort(IndexedSource(MockSource(), 0)).load({"name": "x"}, ConfigA)
         result_b = cache_b.final_retort(IndexedSource(MockSource(), 0)).load({"port": "5"}, ConfigB)
 
         assert result_a == ConfigA(name="x")
         assert result_b == ConfigB(port=5)
+
+
+class TestCacheEngineDefault:
+    """``cache_engine`` defaults to ``False``: nothing built here is retained, and the shared,
+    process-wide precomputed constants are never touched — even for otherwise-uncustomized
+    sources that would qualify for them under ``cache_engine=True``.
+    """
+
+    def test_default_is_false(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+
+        assert cache._cache_engine is False
+
+    def test_final_retort_never_reuses_precomputed_constant(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        assert cache.final_retort(idx)._fast is not _FAST_PLAIN
+
+    def test_final_retort_rebuilds_every_call(self):
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        first = cache.final_retort(idx)._fast
+        second = cache.final_retort(idx)._fast
+
+        assert first is not second
+        assert cache._cache == {}
+
+    def test_field_pass_rebuilds_every_call(self):
+        @dataclass
+        class Config:
+            port: Annotated[int, V >= 0]
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        first = cache.field_pass(idx, skip=False)
+        second = cache.field_pass(idx, skip=False)
+
+        assert first is not second
+        assert cache._cache == {}
+
+    def test_load_result_still_correct_without_caching(self):
+        @dataclass
+        class Config:
+            name: str
+            port: int
+
+        cache = RetortCache(Config)
+        idx = IndexedSource(MockSource(), 0)
+
+        result = cache.final_retort(idx).load({"name": "app", "port": "8080"}, Config)
+
+        assert result == Config(name="app", port=8080)
+
+    def test_cache_engine_true_opts_into_precomputed_constant(self):
+        """Sanity check: the same source, with ``cache_engine=True``, does reuse the constant."""
+
+        @dataclass
+        class Config:
+            name: str
+
+        cache = RetortCache(Config, cache_engine=True)
+        idx = IndexedSource(MockSource(), 0)
+
+        assert cache.final_retort(idx)._fast is _FAST_PLAIN

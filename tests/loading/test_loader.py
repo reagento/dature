@@ -215,6 +215,84 @@ class TestLoaderCache:
         assert cfg_b.name == "B"
 
 
+class TestLoaderCacheEngine:
+    """``cache_engine`` controls whether the compiled retort survives past a ``.load()`` call —
+    independent of ``cache``, which controls whether the *loaded result* is reused.
+    """
+
+    def test_default_does_not_retain_compiled_engine(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=True)
+
+        loader.load()
+
+        assert loader._retort_cache._cache == {}
+
+    def test_cache_engine_true_retains_compiled_engine(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=False, cache_engine=True)
+
+        loader.load()
+
+        assert loader._retort_cache._cache != {}
+
+    def test_cache_false_cache_engine_true_reuses_engine_across_loads(self, tmp_path: Path) -> None:
+        """``cache=False, cache_engine=True`` re-reads on every call, without recompiling."""
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "original", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=False, cache_engine=True)
+
+        first = loader.load()
+        retort_after_first = next(iter(loader._retort_cache._cache.values()))
+        json_file.write_text('{"host": "updated", "port": 2}')
+        second = loader.load()
+        retort_after_second = next(iter(loader._retort_cache._cache.values()))
+
+        assert first.host == "original"
+        assert second.host == "updated"
+        assert retort_after_first is retort_after_second
+
+    def test_cache_false_cache_engine_false_rebuilds_and_reloads(self, tmp_path: Path) -> None:
+        """The cheapest-memory combination: no result cache, no engine cache — still correct."""
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "original", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=False, cache_engine=False)
+
+        first = loader.load()
+        json_file.write_text('{"host": "updated", "port": 2}')
+        second = loader.load()
+
+        assert first.host == "original"
+        assert second.host == "updated"
+        assert loader._retort_cache._cache == {}
+
+    def test_cache_engine_none_falls_back_to_config_default(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache_engine=None)
+
+        assert loader._cache_engine is False
+
+    def test_decorator_default_still_loads_correctly(self, tmp_path: Path) -> None:
+        """Decorator mode (default cache_engine=False) must keep working end-to-end."""
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+
+        @dature.load(JsonSource(file=json_file), cache=True)
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        first = Config()
+        second = Config()
+
+        assert first.host == "h"
+        assert first == second  # cache=True still reuses the loaded data
+
+
 class TestLoaderMulti:
     def test_two_sources_merge(self, tmp_path: Path) -> None:
         defaults = tmp_path / "defaults.json"

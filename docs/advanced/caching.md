@@ -75,4 +75,26 @@ The `Loader` carries all the load-time parameters and the cache state. Identity 
 
 `Loader` supports the same constructor parameters as `dature.load(...)` for function mode.
 
+## `cache_engine`: retaining the compiled engine
+
+`cache` caches the *loaded result*. `cache_engine` is a separate knob that controls whether the
+**compiled engine** dature builds internally to convert raw source data into your dataclass is
+kept around for reuse, or discarded after every load.
+
+- `cache_engine=False` (the default) — nothing about the compiled engine is retained; each load
+  builds it fresh and lets it go. This keeps a decorated class's retained memory low.
+- `cache_engine=True` — the compiled engine is kept alive for the `Loader`/class lifetime, so
+  repeated loads skip recompiling it. This is what makes a hot, uncached reload fast.
+- `cache_engine=None` (the default when passed explicitly) — falls back to
+  `configure(loading={"cache_engine": ...})`, same as other loading options.
+
+Because the default `cache=True` already caches the result forever, the compiled engine is only
+ever needed once — retaining it brings no benefit, so `cache_engine` defaults to `False`. Turn it
+on explicitly when you need `cache=False` (or a short TTL) *and* a fast reload, at the cost of
+extra retained memory. See the [benchmarks](../comparison/benchmarks.md) for the concrete
+speed/memory trade-off.
+
+```python
+loader = Loader(source, schema=Config, cache=False, cache_engine=True)
+```
 
