@@ -55,9 +55,9 @@ class VaultSource(RemoteSource):
 
         try:
             if self.kv_version == 1:
-                resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)
+                resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)  # type: ignore[no-untyped-call]
                 return cast("JSONValue", resp["data"])
-            resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
+            resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)  # type: ignore[no-untyped-call]
             return cast("JSONValue", resp["data"]["data"])
         except hvac.exceptions.InvalidPath:
             msg = f"Vault path not found: {self.remote_address()}"

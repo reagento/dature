@@ -18,6 +18,8 @@ repos:
       - id: mypy
         name: mypy
         entry: .venv/bin/mypy
+        args: [src, tests, docs]
         language: system
         types: [python]
+        pass_filenames: false
         exclude: "docs/examples/advanced/cross_source_refs/t_string\\.py"

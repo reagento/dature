@@ -38,7 +38,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync --all-extras --dev
+        run: uv sync --all-extras --dev --group integration-tests
 
       - name: Run ruff check
         run: uv run ruff check .
@@ -47,7 +47,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Run mypy
-        run: uv run mypy src
+        run: uv run mypy src tests docs
 
   get-adaptix-versions:
     runs-on: ubuntu-latest
