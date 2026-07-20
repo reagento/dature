@@ -248,12 +248,12 @@ showcontent = false
 
 [dependency-groups]
 dev = [
-    "mypy>=2.3.0",
+    "mypy>=2.1.0,<2.3.0",
     "pytest>=9.1.1",
-    "ruff>=0.15.21",
-    "prek>=0.4.9",
+    "ruff>=0.15.20",
+    "prek>=0.4.8",
     "towncrier>=25.8.0",
-    "tzdata>=2026.3; sys_platform == 'win32'",
+    "tzdata>=2026.2; sys_platform == 'win32'",
     "pytest-cov>=7.1.0",
     "time-machine>=3.2.0",
 ]

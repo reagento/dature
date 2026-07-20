@@ -47,7 +47,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Run mypy
-        run: uv run mypy src
+        run: uv run mypy src tests docs
 
   get-adaptix-versions:
     runs-on: ubuntu-latest
