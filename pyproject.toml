@@ -28,7 +28,7 @@ keywords = [
     "loader",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -40,7 +40,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "adaptix>=3.0.0b11",
+    "adaptix>=3.0.0b12",
 ]
 
 [project.urls]
