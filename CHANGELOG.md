@@ -1,3 +1,41 @@
+## 1.0.0
+
+### Features
+
+- Added ``cache_engine: bool | None`` — a new load-time option (``dature.load(...)``, ``Loader``,
+  and ``configure(loading={...})``) that controls whether the compiled engine dature builds
+  internally to convert raw source data into your dataclass is retained across loads, independent
+  of ``cache`` (which caches the *loaded result*).
+
+  - ``cache_engine=False`` (the default) — nothing about the compiled engine survives a load; it is
+    built fresh every time and discarded. A decorated class now retains only a fraction of the
+    memory it used to (~30 KiB vs ~100 KiB for a flat 8-field schema).
+  - ``cache_engine=True`` — the compiled engine is kept alive for the ``Loader``/class lifetime, so
+    repeated loads skip recompiling it. This is the opt-in for a fast, uncached hot path
+    (``cache=False`` with frequent reloads).
+
+  The default pairs ``cache=True`` (caches forever) with ``cache_engine=False``, since a cached
+  result never needs to recompile the engine again anyway. See the
+  `caching docs <https://dature.readthedocs.io/en/latest/advanced/caching/#cache_engine-retaining-the-compiled-engine>`_
+  and the updated `benchmarks <https://dature.readthedocs.io/en/latest/comparison/benchmarks/>`_ for
+  the concrete speed/memory trade-off.
+
+  ([#cache_engine](https://github.com/reagento/dature/issues/cache_engine))
+
+### Bugfixes
+
+- Invalid ``source.validators`` entries — such as ``V.root(...)`` placed in
+  ``source.validators`` instead of ``root_validators=`` — now raise ``TypeError``
+  eagerly at ``Loader`` / ``load()`` construction time, regardless of
+  ``cache_engine``. Previously, with ``cache_engine=False`` (the default), the
+  check was deferred to the first ``load()`` call and the error was wrapped in
+  ``DatureConfigError``. ([#eager_source_validators](https://github.com/reagento/dature/issues/eager_source_validators))
+
+### Misc
+
+- [#release_1_0](https://github.com/reagento/dature/issues/release_1_0)
+
+
 ## 0.22.4
 
 ### Docs
