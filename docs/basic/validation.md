@@ -89,15 +89,15 @@ Field validators can be specified in `Source` using the `validators` parameter. 
 
 A single validator can be passed directly. Multiple validators require a tuple:
 
-    ```python
-    --8<-- "docs/examples/basic/validation/validation_metadata_syntax.py"
-    ```
+```python
+--8<-- "docs/examples/basic/validation/validation_metadata_syntax.py"
+```
 
 Nested fields are supported via `F[Config].field` — see [Field Paths](field-paths.md):
 
-    ```python
-    --8<-- "docs/examples/basic/validation/validation_metadata_nested.py"
-    ```
+```python
+--8<-- "docs/examples/basic/validation/validation_metadata_nested.py"
+```
 
 ## Custom Validators
 

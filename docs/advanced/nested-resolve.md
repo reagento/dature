@@ -15,8 +15,8 @@ When **both** forms are present for the same field, dature needs to know which o
 
 ## The Problem
 
-    ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_problem.py"
+```python
+--8<-- "docs/examples/advanced/nested_resolve/nested_resolve_problem.py"
 ```
 
 By default, flat keys win (`nested_resolve_strategy="flat"`). This is usually what you want — flat keys are more specific and easier to override in CI/CD.
@@ -53,16 +53,16 @@ Set `nested_resolve_strategy` on `Source` to choose the source for **all** neste
 
 Use `nested_resolve` to set different strategies for individual fields:
 
-    ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_per_field.py"
+```python
+--8<-- "docs/examples/advanced/nested_resolve/nested_resolve_per_field.py"
 ```
 
 ## Per-Field Overrides Global
 
 When both `nested_resolve_strategy` and `nested_resolve` are set, per-field takes priority:
 
-    ```python
-    --8<-- "docs/examples/advanced/nested_resolve/nested_resolve_override.py"
+```python
+--8<-- "docs/examples/advanced/nested_resolve/nested_resolve_override.py"
 ```
 
 ## All Flat-Key Sources

@@ -13,8 +13,8 @@ For formats that dature doesn't support out of the box, you can create your own 
 
 All base classes are in `dature.sources.base`:
 
-    ```python
-    --8<-- "docs/examples/advanced/custom_sources/custom_source_import.py"
+```python
+--8<-- "docs/examples/advanced/custom_sources/custom_source_import.py"
 ```
 
 ## Minimal interface
@@ -39,13 +39,17 @@ Every custom source needs:
 
 The most common case — reading a file format:
 
+=== "Python"
+
     ```python
     --8<-- "docs/examples/advanced/custom_sources/custom_loader.py:example"
-```
+    ```
+
+=== "custom_loader.xml"
 
     ```xml title="custom_loader.xml"
     --8<-- "docs/examples/advanced/custom_sources/sources/custom_loader.xml"
-```
+    ```
 
 `FileSource` handles the `file` parameter, path expansion, and stream detection. Your `_load_file()` receives a `Path` or file-like object and returns a dict.
 
@@ -53,8 +57,8 @@ The most common case — reading a file format:
 
 For sources that don't read files — e.g. an API, a database, or an in-memory dict:
 
-    ```python
-    --8<-- "docs/examples/advanced/custom_sources/custom_dict_source.py"
+```python
+--8<-- "docs/examples/advanced/custom_sources/custom_dict_source.py"
 ```
 
 ## Protocol-based sources

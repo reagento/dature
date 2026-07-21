@@ -47,9 +47,17 @@ Explicit field renaming using `F` objects — see [Field Paths](field-paths.md).
 
 A field can have multiple aliases — the first matching key in the source wins:
 
-```python
---8<-- "docs/examples/basic/naming/naming_field_mapping_aliases.py:example"
-```
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/basic/naming/naming_field_mapping_aliases.py:example"
+    ```
+
+=== "naming_field_mapping_aliases.yaml"
+
+    ```yaml
+    --8<-- "docs/examples/basic/naming/sources/naming_field_mapping_aliases.yaml"
+    ```
 
 ### Absolute Aliases
 
@@ -89,17 +97,25 @@ Nested fields are supported via `F[Owner].field` syntax on inner dataclasses —
 
 In decorator mode where the class is not yet defined, use a string:
 
-```python
---8<-- "docs/examples/basic/naming/naming_field_mapping_decorator.py:example"
-```
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/basic/naming/naming_field_mapping_decorator.py:example"
+    ```
+
+=== "naming_field_mapping_decorator.yaml"
+
+    ```yaml
+    --8<-- "docs/examples/basic/naming/sources/naming_field_mapping_decorator.yaml"
+    ```
 
 ## prefix
 
 Filters keys for ENV, or extracts a nested object from files:
 
-    ```python
-    --8<-- "docs/examples/basic/naming/naming_prefix.py"
-    ```
+```python
+--8<-- "docs/examples/basic/naming/naming_prefix.py"
+```
 
 For file-based sources, `prefix` navigates into nested objects using dot notation:
 
@@ -119,6 +135,6 @@ For file-based sources, `prefix` navigates into nested objects using dot notatio
 
 Delimiter for building nested structures from flat ENV variables and Docker secrets file names. Default: `"__"`.
 
-    ```python
-    --8<-- "docs/examples/basic/naming/naming_nested_sep.py"
-    ```
+```python
+--8<-- "docs/examples/basic/naming/naming_nested_sep.py"
+```
