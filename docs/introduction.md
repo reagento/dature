@@ -120,16 +120,21 @@ See the full list of Source classes and their extra dependencies on the [main pa
 | `field_mapping` | Explicit field renaming with `F` objects. See [Naming](basic/naming.md), [Field Paths](basic/field-paths.md) |
 | `validators` | Per-field validators in metadata. See [Validation](basic/validation.md) |
 | `expand_env_vars` | ENV variable expansion mode. See [Advanced — ENV Expansion](advanced/env-expansion.md) |
-| `skip_if_broken` | Skip this source if it fails to parse. See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
-| `skip_if_missing` | Skip this source if its file does not exist. See [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) |
 | `skip_field_if_invalid` | Skip invalid fields from this source. See [Advanced — Skipping Invalid Fields](advanced/skip-behaviors.md#skipping-invalid-fields) |
 | `type_loaders` | Custom type converters for this source. See [Custom Types & Loaders](advanced/custom_types.md#custom-types) |
+| `tag` | Explicit tag for `${@tag.key}` cross-refs. Defaults to the format name. See [Cross-Source References](advanced/cross_source_refs.md) |
+| `when` | Include this source only when a condition is met, built with the `When()` DSL. See [Conditional Sources](advanced/conditional_sources.md) |
 
 **FileSource** subclasses (`JsonSource`, `Yaml*Source`, `Toml*Source`, `IniSource`, `Json5Source`) also have:
 
 | Parameter | Description |
 |-----------|-------------|
 | `file` | Path to config file (`str`, `Path`) or file-like object (`BytesIO`, `StringIO`). `None` → empty path |
+| `search_system_paths` | Automatically search standard system locations for the config file. See [Automatic Config File Search](advanced/config-search.md) |
+| `system_config_dirs` | Override the directories searched when `search_system_paths` is enabled. See [Automatic Config File Search](advanced/config-search.md) |
+| `encoding` | Text encoding used to read the file |
+| `skip_if_broken` | Skip this source if it fails to parse. See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
+| `skip_if_missing` | Skip this source if its file does not exist. See [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) |
 
 **FlatKeySource** subclasses (`EnvSource`, `EnvFileSource`, `DockerSecretsSource`) also have:
 
