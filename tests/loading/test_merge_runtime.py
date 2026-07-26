@@ -3,11 +3,11 @@
 import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Literal
 
 import pytest
 
-from dature import JsonSource, When, Yaml12Source, configure, load
+from dature import F, JsonSource, When, Yaml12Source, configure, load
 from dature.errors.exceptions import DatureError
 from dature.loading.merge_runtime import (
     MergeConfig,
@@ -20,7 +20,7 @@ from dature.loading.merge_runtime import (
 )
 from dature.sources.base import Source
 from dature.sources.env_ import EnvSource
-from dature.type_aliases import JSONValue
+from dature.type_aliases import JSONValue, SkipFieldsInvalid
 
 
 class TestApplySourceInitParamsNestedStrategy:
@@ -79,8 +79,8 @@ class _FakeRemote(Source):
     kv_version: Literal[1, 2] | None = None
     irrelevant: str | None = None
 
-    format_name = "_fake_remote"
-    config_group: ClassVar[str | None] = "vault"
+    format_name: str = "_fake_remote"
+    config_group: str | None = "vault"
 
     def _load(self) -> JSONValue:
         return {}
@@ -88,10 +88,9 @@ class _FakeRemote(Source):
 
 @pytest.mark.usefixtures("_reset_config")
 class TestApplySourceConfigGroup:
-    def test_noop_when_config_group_is_none(self, monkeypatch):
-        monkeypatch.setattr(_FakeRemote, "config_group", None)
+    def test_noop_when_config_group_is_none(self):
         configure(vault={"url": "http://x"})
-        src = _FakeRemote(url=None)
+        src = _FakeRemote(url=None, config_group=None)
         assert apply_source_config_group(src) is src
 
     def test_returns_same_instance_when_no_overrides(self):
@@ -201,23 +200,23 @@ class TestResolveSkipInvalid:
     @pytest.mark.parametrize(
         ("source_skip", "merge_skip", "expected"),
         [
-            (True, False, True),
-            (None, True, True),
+            (F.ANY, [], F.ANY),
+            (None, F.ANY, F.ANY),
         ],
         ids=["source-overrides", "source-none-inherits"],
     )
     def test_resolve(
         self,
         tmp_path: Path,
-        source_skip: bool | None,
-        merge_skip: bool,
-        expected: bool,
+        source_skip: SkipFieldsInvalid,
+        merge_skip: SkipFieldsInvalid,
+        expected: SkipFieldsInvalid,
     ):
         json_file = tmp_path / "c.json"
         json_file.write_text("{}")
         kwargs = {} if source_skip is None else {"skip_field_if_invalid": source_skip}
         source = JsonSource(file=json_file, **kwargs)
-        merge = MergeConfig(sources=(source,), skip_invalid_fields=merge_skip)
+        merge = MergeConfig(sources=(source,), skip_field_if_invalid=merge_skip)
 
         assert resolve_skip_invalid(source, merge) is expected
 
@@ -227,8 +226,8 @@ class _StubSource(Source):
     """Minimal in-memory source that returns its own data field."""
 
     data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
-    format_name: ClassVar[str] = "stubmr"
-    location_label: ClassVar[str] = "STUBMR"
+    format_name: str = "stubmr"
+    location_label: str = "STUBMR"
 
     def _load(self) -> JSONValue:
         return dict(self.data)
@@ -264,8 +263,8 @@ class _StubSourceB(Source):
     """Second stub variant — same format_name as _StubSource so they share resolved_tag."""
 
     data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
-    format_name: ClassVar[str] = "stubmr"  # same as _StubSource → same resolved_tag when tag= unset
-    location_label: ClassVar[str] = "STUBMRB"
+    format_name: str = "stubmr"  # same as _StubSource → same resolved_tag when tag= unset
+    location_label: str = "STUBMRB"
 
     def _load(self) -> JSONValue:
         return dict(self.data)

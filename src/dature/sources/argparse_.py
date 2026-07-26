@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import Any
 
 from dature.sources.base import CliSource
 from dature.type_aliases import JSONValue
@@ -45,7 +45,7 @@ class ArgparseSource(CliSource):
     """
 
     parser: argparse.ArgumentParser
-    format_name: ClassVar[str] = "argparse"
+    format_name: str = "argparse"
 
     @cached_property
     def _ns(self) -> argparse.Namespace:

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar, Literal, cast
+from typing import Literal, cast
 
 from dature._deps import require_dep
 from dature.sources.base import RemoteSource
@@ -19,9 +19,9 @@ class VaultSource(RemoteSource):
     namespace: str | None = None
     verify: bool | str | None = None
 
-    format_name = "vault"
-    location_label: ClassVar[str] = "VAULT"
-    config_group: ClassVar[str | None] = "vault"
+    format_name: str = "vault"
+    location_label: str = "VAULT"
+    config_group: str | None = "vault"
 
     def remote_address(self) -> str:
         if self.kv_version == 1:
@@ -55,9 +55,9 @@ class VaultSource(RemoteSource):
 
         try:
             if self.kv_version == 1:
-                resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)  # type: ignore[no-untyped-call]
+                resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)
                 return cast("JSONValue", resp["data"])
-            resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)  # type: ignore[no-untyped-call]
+            resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
             return cast("JSONValue", resp["data"]["data"])
         except hvac.exceptions.InvalidPath:
             msg = f"Vault path not found: {self.remote_address()}"

@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
-from typing import ClassVar
 
 import pytest
 import time_machine
@@ -279,9 +278,9 @@ class _ConfigAwareSource(Source):
     """Single-field source that emits its own ``url`` so we can assert config-merge happened."""
 
     url: str | None = None
-    format_name = "_config_aware"
-    location_label: ClassVar[str] = "TEST"
-    config_group: ClassVar[str | None] = "vault"
+    format_name: str = "_config_aware"
+    location_label: str = "TEST"
+    config_group: str | None = "vault"
 
     def _load(self) -> JSONValue:
         return {"url_value": self.url}

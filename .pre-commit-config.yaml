@@ -23,3 +23,12 @@ repos:
         types: [python]
         pass_filenames: false
         exclude: "docs/examples/advanced/cross_source_refs/t_string\\.py"
+
+      - id: pyright
+        name: pyright
+        entry: .venv/bin/pyright
+        args: [src, tests, docs]
+        language: system
+        types: [python]
+        pass_filenames: false
+        exclude: "docs/examples/advanced/cross_source_refs/t_string\\.py"

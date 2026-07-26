@@ -1,0 +1,1 @@
+Renamed the custom-source extension point ``Source.additional_loaders()`` to ``Source.format_loaders()`` to make its purpose (per-format adaptix loaders) explicit. Custom sources overriding ``additional_loaders()`` still work but emit a ``DeprecationWarning``; rename the method to ``format_loaders()`` before dature 1.2, when the old name stops being called.

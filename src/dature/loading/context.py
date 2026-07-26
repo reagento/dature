@@ -1,5 +1,6 @@
 import contextlib
 import logging
+from collections.abc import Sequence
 from dataclasses import Field
 from enum import Flag
 from typing import Any
@@ -7,11 +8,11 @@ from typing import Any
 from adaptix import Retort
 
 from dature.errors.location import ErrorContext
-from dature.field_path import FieldPath, extract_field_path
+from dature.field_path import F, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
 from dature.sources.protocol import SourceProtocol
-from dature.type_aliases import JSONValue, NestedConflicts
+from dature.type_aliases import JSONValue, NestedConflicts, SkipFieldsInvalid
 
 logger = logging.getLogger("dature")
 
@@ -56,12 +57,12 @@ def build_error_ctx(
 
 def get_allowed_fields(
     *,
-    skip_value: bool | tuple[FieldPath, ...],
+    skip_value: SkipFieldsInvalid,
     schema: type[DataclassInstance] | None = None,
 ) -> set[str] | None:
-    if skip_value is True:
+    if skip_value is F.ANY:
         return None
-    if isinstance(skip_value, tuple):
+    if isinstance(skip_value, Sequence) and not isinstance(skip_value, str):
         return {extract_field_path(field_path, schema) for field_path in skip_value}
     return None
 
@@ -69,7 +70,7 @@ def get_allowed_fields(
 def apply_skip_invalid(
     *,
     raw: JSONValue,
-    skip_field_if_invalid: bool | tuple[FieldPath, ...] | None,
+    skip_field_if_invalid: SkipFieldsInvalid,
     schema: type[DataclassInstance],
     log_prefix: str,
     probe_retort: Retort | None = None,

@@ -3,7 +3,7 @@ import os
 from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import ClassVar, cast
+from typing import cast
 
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.sources.base import FileFieldMixin, FlatKeySource
@@ -22,8 +22,8 @@ from dature.type_aliases import (
 
 @dataclass(kw_only=True, repr=False)
 class EnvSource(FlatKeySource):
-    format_name = "env"
-    location_label: ClassVar[str] = "ENV"
+    format_name: str = "env"
+    location_label: str = "ENV"
 
     def _load(self) -> JSONValue:
         return cast("JSONValue", os.environ)
@@ -124,9 +124,9 @@ class EnvSource(FlatKeySource):
 
 @dataclass(kw_only=True, repr=False)
 class EnvFileSource(FileFieldMixin, EnvSource):
-    format_name = "envfile"
-    location_label: ClassVar[str] = "ENV FILE"
-    file: "FileLike | FilePath" = ".env"
+    format_name: str = "envfile"
+    location_label: str = "ENV FILE"
+    file: "FileLike | FilePath | None" = ".env"
 
     def __repr__(self) -> str:
         display = self.format_name

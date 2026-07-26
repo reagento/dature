@@ -1,6 +1,5 @@
 import sys
 from dataclasses import dataclass
-from typing import ClassVar
 
 import click
 import dature
@@ -11,7 +10,7 @@ from dature.sources.base import CliSource
 class ClickSource(CliSource):
     cli: click.Command
     discriminator: str = "command"
-    format_name: ClassVar[str] = "click"
+    format_name: str = "click"
 
     def _parse_argv(self) -> dict[str, dature.type_aliases.JSONValue]:
         ctx = self.cli.make_context(

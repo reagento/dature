@@ -8,19 +8,19 @@ graph TD
     S2["Source 2"] --> R2["Read source data"]
     SN["Source N"] --> RN["Read source data"]
 
-    R1 --> SK1{"skip_invalid_fields?"}
+    R1 --> SK1{"skip_field_if_invalid?"}
     SK1 -- yes --> D1["Drop fields that fail\ntype or constraint check"] --> M["Apply merge strategy\n(last_wins / first_wins / …)"]
     SK1 -- no --> HV1{"Has field\nvalidators?"}
     HV1 -- yes --> FP1["Validate fields\nprovided by this source"] --> M
     HV1 -- no --> M
 
-    R2 --> SK2{"skip_invalid_fields?"}
+    R2 --> SK2{"skip_field_if_invalid?"}
     SK2 -- yes --> D2["Drop fields that fail\ntype or constraint check"] --> M
     SK2 -- no --> HV2{"Has field\nvalidators?"}
     HV2 -- yes --> FP2["Validate fields\nprovided by this source"] --> M
     HV2 -- no --> M
 
-    RN --> SKN{"skip_invalid_fields?"}
+    RN --> SKN{"skip_field_if_invalid?"}
     SKN -- yes --> DN["Drop fields that fail\ntype or constraint check"] --> M
     SKN -- no --> HVN{"Has field\nvalidators?"}
     HVN -- yes --> FPN["Validate fields\nprovided by this source"] --> M
@@ -38,7 +38,7 @@ produces one validated instance. Crucially, **each source is validated on its ow
 contribution**, so an override only needs to be valid for the fields it actually sets.
 
 1. **Load and validate each source independently.** Every source is read (with `expand_env_vars`
-   substitution and `mask_secrets` / `secret_field_names` masking). If `skip_invalid_fields`
+   substitution and `mask_secrets` / `secret_field_names` masking). If `skip_field_if_invalid`
    is on, invalid values are dropped per source before field validation. Then each source's own
    values are coerced and run through field-level validation — type coercion, `Annotated`
    constraints, source-level `validators=`. A source is judged only on the fields it provides,
@@ -222,7 +222,7 @@ All merge-related parameters are passed directly to `dature.load()` as keyword a
 | `field_groups` | Enforce related fields are overridden together. See [Field Groups](../advanced/field-groups.md) |
 | `skip_if_broken` | Skip sources that fail to parse (invalid syntax, config error). See [Skipping Sources with Parse Errors](../advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
 | `skip_if_missing` | Skip sources whose file does not exist. See [Skipping Missing Sources](../advanced/skip-behaviors.md#skipping-missing-sources) |
-| `skip_invalid_fields` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields) |
+| `skip_field_if_invalid` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields) |
 | `expand_env_vars` | ENV variable expansion mode. See [ENV Expansion](../advanced/env-expansion.md) |
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](masking.md) |
 | `mask_secrets` | Enable/disable secret masking for all sources. See [Masking](masking.md) |

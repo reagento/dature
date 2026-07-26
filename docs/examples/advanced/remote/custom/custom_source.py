@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import ClassVar
 
 import dature
 from dature.sources.base import RemoteSource
@@ -11,8 +10,8 @@ class InMemorySource(RemoteSource):
     backend: dict[str, dict[str, JSONValue]]
     key: str
 
-    format_name = "in-memory"
-    location_label: ClassVar[str] = "MEMORY"
+    format_name: str = "in-memory"
+    location_label: str = "MEMORY"
 
     def remote_address(self) -> str:
         return f"memory://{self.key}"

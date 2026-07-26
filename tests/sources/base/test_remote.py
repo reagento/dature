@@ -11,8 +11,8 @@ class _FakeRemote(RemoteSource):
     """Fixed-data remote source — no external service."""
 
     data: JSONValue = None
-    format_name = "_fake_remote"
-    location_label = "FAKE"
+    format_name: str = "_fake_remote"
+    location_label: str = "FAKE"
 
     def remote_address(self) -> str:
         return "fake://test"

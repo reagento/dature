@@ -4,13 +4,20 @@ import json
 import re
 import types
 import typing
+import warnings
+from collections.abc import Sequence
 from dataclasses import field, make_dataclass
 from functools import cache
 from typing import Any, Literal, Protocol, get_args, get_origin, get_type_hints
 
+from dature._deprecations import REMOVAL_NOTICE
+from dature.field_path import F, _FieldAny
 from dature.main import load
 from dature.protocols import DataclassInstance
 from dature.sources.protocol import SourceProtocol
+
+#: Deprecated alias for --skip-field-if-invalid; removed in dature 1.2.
+_LEGACY_SKIP_FLAG = "skip_invalid_fields"
 
 
 class CliCommonArgs(DataclassInstance, Protocol):
@@ -39,7 +46,7 @@ CLI_LOAD_PARAMS: tuple[str, ...] = (
     "strategy",
     "skip_if_broken",
     "skip_if_missing",
-    "skip_invalid_fields",
+    "skip_field_if_invalid",
     "expand_env_vars",
     "secret_field_names",
     "mask_secrets",
@@ -144,20 +151,23 @@ def _cli_field_type(annotation: Any) -> Any:  # noqa: ANN401
 
     Mirrors candidate-selection in :func:`add_typed_arg`: returns the first
     union arm matching one of the supported categories (``bool``, ``Literal``,
-    ``tuple[str, ...]``, ``str``). ``tuple[str, ...]`` is downgraded to
-    ``list[str]`` because argparse ``action="append"`` produces a list and
-    adaptix does not coerce list to tuple.
+    ``tuple[str, ...]``/``Sequence[str]``, ``str``, the ``F.ANY`` sentinel).
+    Both ``tuple[str, ...]`` and ``Sequence[str]`` are downgraded to ``list[str]``
+    because argparse ``action="append"`` produces a list. The ``F.ANY``
+    sentinel arm (e.g. in ``skip_field_if_invalid``) becomes a plain ``bool``
+    flag — the ``Sequence[FieldPath]`` arm is not CLI-expressible and is
+    skipped.
     """
     for raw_cand in _non_none_args(annotation):
         cand = _resolve_alias(raw_cand)
-        if cand is bool:
+        if cand is bool or cand is _FieldAny:
             return bool
         origin = get_origin(cand)
         if origin is Literal:
             return cand
-        if origin is tuple:
-            tuple_args = get_args(cand)
-            if tuple_args and tuple_args[0] is str:
+        if origin in (tuple, Sequence):
+            item_args = get_args(cand)
+            if item_args and item_args[0] is str:
                 return list[str]
         if cand is str:
             return str
@@ -168,21 +178,22 @@ def _cli_field_type(annotation: Any) -> Any:  # noqa: ANN401
 def add_typed_arg(parser: argparse.ArgumentParser, name: str, annotation: Any) -> None:  # noqa: ANN401
     """Add an argparse flag inferred from a Python type annotation.
 
-    Supports: ``bool``, ``Literal[...]``, ``tuple[str, ...]``, ``str``, and unions/aliases of these.
+    Supports: ``bool``, ``Literal[...]``, ``tuple[str, ...]``/``Sequence[str]``,
+    ``str``, the ``F.ANY`` sentinel, and unions/aliases of these.
     """
     flag = f"--{name.replace('_', '-')}"
     for raw_cand in _non_none_args(annotation):
         cand = _resolve_alias(raw_cand)
-        if cand is bool:
+        if cand is bool or cand is _FieldAny:
             parser.add_argument(flag, action="store_true", default=None)
             return
         origin = get_origin(cand)
         if origin is Literal:
             parser.add_argument(flag, choices=list(get_args(cand)), default=None)
             return
-        if origin is tuple:
-            tuple_args = get_args(cand)
-            if tuple_args and tuple_args[0] is str:
+        if origin in (tuple, Sequence):
+            item_args = get_args(cand)
+            if item_args and item_args[0] is str:
                 parser.add_argument(flag, action="append", default=None)
                 return
         if cand is str:
@@ -205,6 +216,13 @@ def add_load_args(parser: argparse.ArgumentParser) -> None:
             msg = f"{name!r} not found in load() signature"
             raise RuntimeError(msg)
         add_typed_arg(parser, name, hints[name])
+    # Deprecated alias for --skip-field-if-invalid, removed in dature 1.2.
+    parser.add_argument(
+        "--skip-invalid-fields",
+        action="store_true",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
 
 
 def add_common_args(parser: argparse.ArgumentParser) -> None:
@@ -235,6 +253,13 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
     the CLI schema downgrades ``tuple[str, ...]`` to ``list[str]`` (argparse
     ``action="append"`` produces a list and adaptix does not coerce list to
     tuple), so we have to undo that before calling ``load()``.
+
+    Booleans on params whose annotation carries the ``F.ANY`` sentinel arm
+    (e.g. ``skip_field_if_invalid``) are mapped ``True`` → ``F.ANY``, since the
+    CLI flag for that arm is a plain ``store_true`` boolean.
+
+    ``--skip-invalid-fields`` is a deprecated alias for ``--skip-field-if-invalid``
+    (removed in dature 1.2): when set, it warns and maps to ``F.ANY``.
     """
     hints = _load_type_hints()
     result: dict[str, Any] = {}
@@ -244,13 +269,32 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
             continue
         if isinstance(value, list) and _orig_wants_tuple(hints[name]):
             value = tuple(value)
+        elif isinstance(value, bool) and value and _orig_wants_field_any(hints[name]):
+            value = F.ANY
         result[name] = value
+
+    if getattr(args, _LEGACY_SKIP_FLAG, None):
+        warnings.warn(
+            f"`--skip-invalid-fields` is deprecated; use `--skip-field-if-invalid` instead. {REMOVAL_NOTICE}",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if "skip_field_if_invalid" in result:
+            msg = "pass only one of --skip-invalid-fields / --skip-field-if-invalid, not both"
+            raise TypeError(msg)
+        result["skip_field_if_invalid"] = F.ANY
+
     return result
 
 
 def _orig_wants_tuple(annotation: Any) -> bool:  # noqa: ANN401
     """Return True if any non-None arm of ``annotation`` is ``tuple[...]``."""
     return any(get_origin(_resolve_alias(cand)) is tuple for cand in _non_none_args(annotation))
+
+
+def _orig_wants_field_any(annotation: Any) -> bool:  # noqa: ANN401
+    """Return True if any non-None arm of ``annotation`` is the ``F.ANY`` sentinel type."""
+    return any(_resolve_alias(cand) is _FieldAny for cand in _non_none_args(annotation))
 
 
 @cache
@@ -276,6 +320,8 @@ def derive_cli_schema() -> type:
             raise RuntimeError(msg)
         cli_type = _cli_field_type(hints[name])
         common.append((name, cli_type | None, field(default=None)))
+    # Deprecated alias for --skip-field-if-invalid, removed in dature 1.2.
+    common.append((_LEGACY_SKIP_FLAG, bool | None, field(default=None)))
 
     inspect_args = make_dataclass(
         "InspectArgs",

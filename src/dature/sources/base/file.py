@@ -4,7 +4,6 @@ import abc
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar
 
 from dature.config_paths import find_config
 from dature.errors import CaretSpan, LineRange, SourceLocation
@@ -41,13 +40,13 @@ class FileFieldMixin:
     # --8<-- [end:file-source]
 
     def __post_init__(self) -> None:
-        _super = super()
-        if hasattr(_super, "__post_init__"):
-            _super.__post_init__()
+        next_post_init = getattr(super(), "__post_init__", None)
+        if next_post_init is not None:
+            next_post_init()
 
-        # Convert t-string Template to string (Python 3.14+)
+        # Convert t-string Template to string (Python 3.14+).
         if TEMPLATE_SUPPORTED and isinstance(self.file, Template):
-            self.file = template_to_str(self.file)
+            self.file = template_to_str(self.file)  # pyright: ignore[reportArgumentType]
         if isinstance(self.file, (str, Path)):
             self.file = expand_file_path(self.file, mode="strict")
         self.resolved_file_path = self._compute_resolved_file_path()
@@ -105,7 +104,7 @@ class FileFieldMixin:
 
 @dataclass(kw_only=True, repr=False)
 class FileSource(FileFieldMixin, Source, abc.ABC):
-    location_label: ClassVar[str] = "FILE"
+    location_label: str = "FILE"
 
     def __repr__(self) -> str:
         display = self.format_name

@@ -1,0 +1,1 @@
+``SourceProtocol.format_name``/``location_label``/``config_group`` are now declared as read-only properties instead of ``ClassVar``s. This matches how sources actually expose them (instance-readable, per-class overridable) and requires no changes for existing sources — plain class attributes and ``ClassVar``-annotated fields still satisfy the protocol.

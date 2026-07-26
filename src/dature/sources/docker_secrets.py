@@ -1,7 +1,6 @@
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar
 
 from dature.errors import CaretSpan, SourceLocation
 from dature.expansion.env_expand import expand_file_path
@@ -15,8 +14,8 @@ class DockerSecretsSource(FlatKeySource):
     encoding: str | None = None
     skip_if_broken: bool | None = None
     skip_if_missing: bool | None = None
-    format_name = "docker_secrets"
-    location_label: ClassVar[str] = "SECRET FILE"
+    format_name: str = "docker_secrets"
+    location_label: str = "SECRET FILE"
 
     def __post_init__(self) -> None:
         if isinstance(self.dir_, (str, Path)):

@@ -1,0 +1,1 @@
+Renamed the load-level ``skip_invalid_fields`` parameter (``load()``, ``Loader``, and the ``--skip-invalid-fields`` CLI flag) to ``skip_field_if_invalid``, matching the source-level field name of the same behavior. The old name still works as a deprecated alias (``DeprecationWarning``) until dature 1.2; update calls to use the new name before then.

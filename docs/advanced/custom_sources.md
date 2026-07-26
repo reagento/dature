@@ -28,7 +28,7 @@ Every custom source needs:
 
 | Method | Default | Override when |
 |--------|---------|---------------|
-| `additional_loaders()` | `[]` (FileSource) or string-value loaders (FlatKeySource) | Your format stores all values as strings and needs extra type parsers (e.g. `bool`, `float`). |
+| `format_loaders()` | `[]` (FileSource) or string-value loaders (FlatKeySource) | Your format stores all values as strings and needs extra type parsers (e.g. `bool`, `float`). |
 | `_build_line_index(content)` | `None` (no diagnostics) | You want errors to show exact line numbers from your source. Return a `dict[tuple[str, ...], LineRange]` mapping dotted key paths to line ranges. See `sources/yaml_.py` as reference. |
 | `file_display()` | `None` | Your source has a meaningful display path (shown in logs and errors). |
 | `file_path_for_errors()` | `None` | Your source points to a file on disk (used in error messages). |
@@ -79,5 +79,5 @@ from dature.sources.protocol import SourceProtocol, FileSourceProtocol
 ## Tips
 
 - All built-in features (type coercion, validation, prefix extraction, ENV expansion, merge support) work automatically with any custom source.
-- Override `additional_loaders()` to return `string_value_loaders()` from `dature.sources.base` if your format stores everything as strings (like INI or ENV).
+- Override `format_loaders()` to return `string_value_loaders()` from `dature.sources.base` if your format stores everything as strings (like INI or ENV).
 - Pass your custom source to `dature.load()` the same way as any built-in source.

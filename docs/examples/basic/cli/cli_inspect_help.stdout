@@ -1,7 +1,7 @@
 usage: dature inspect [-h] --schema MODULE:ATTR --source SPEC
                       [--strategy {last_wins,first_wins,first_found,raise_on_conflict}]
                       [--skip-if-broken] [--skip-if-missing]
-                      [--skip-invalid-fields]
+                      [--skip-field-if-invalid]
                       [--expand-env-vars {disabled,default,empty,strict}]
                       [--secret-field-names SECRET_FIELD_NAMES]
                       [--mask-secrets] [--field DOTTED.PATH]
@@ -17,7 +17,7 @@ options:
   --strategy {last_wins,first_wins,first_found,raise_on_conflict}
   --skip-if-broken
   --skip-if-missing
-  --skip-invalid-fields
+  --skip-field-if-invalid
   --expand-env-vars {disabled,default,empty,strict}
   --secret-field-names SECRET_FIELD_NAMES
   --mask-secrets

@@ -308,7 +308,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     if secret_paths is None:
         computed: frozenset[str] = frozenset()
         if mask_secrets:
-            extra_patterns = merge_meta.secret_field_names or ()
+            extra_patterns = tuple(merge_meta.secret_field_names) if merge_meta.secret_field_names else ()
             computed = build_secret_paths(schema, extra_patterns=extra_patterns)
         secret_paths = computed
 
@@ -321,13 +321,15 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     on_merge_step: Callable[[MergeStepEvent], None] | None = None
     if logger.isEnabledFor(logging.DEBUG):
 
-        def on_merge_step(event: MergeStepEvent) -> None:
+        def _log_merge_step(event: MergeStepEvent) -> None:
             log_merge_step(
                 event=event,
                 dataclass_name=schema.__name__,
                 strategy_label=strategy_label,
                 secret_paths=secret_paths,
             )
+
+        on_merge_step = _log_merge_step
 
     field_merge_strategies = build_field_merge_map(
         merge_meta.field_merges,

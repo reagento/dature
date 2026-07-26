@@ -149,7 +149,7 @@ def filter_invalid_fields(
     if not isinstance(raw_dict, dict):
         return FilterResult(cleaned_dict=raw_dict, skipped_paths=[])
 
-    probed: ProbeDict = probe_retort.load(raw_dict, schema)
+    probed: ProbeDict = probe_retort.load(raw_dict, schema)  # pyright: ignore[reportAssignmentType]
     all_not_loaded = collect_not_loaded_paths(probed, "")
 
     skipped: list[str] = []

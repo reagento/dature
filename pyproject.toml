@@ -178,6 +178,34 @@ follow_untyped_imports = true
 module = "docker.*"
 follow_untyped_imports = true
 
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.12"
+include = ["src", "tests", "docs"]
+exclude = ["docs/examples/advanced/cross_source_refs/t_string.py", "benchmarks"]
+extraPaths = ["src", "."]
+
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+reportArgumentType = "none"
+reportCallIssue = "none"
+reportAttributeAccessIssue = "none"
+reportIndexIssue = "none"
+reportGeneralTypeIssues = "none"
+reportUnhashable = "none"
+reportOptionalSubscript = "none"
+reportMissingImports = "none"
+
+[[tool.pyright.executionEnvironments]]
+root = "docs/examples"
+reportArgumentType = "none"
+reportCallIssue = "none"
+reportAttributeAccessIssue = "none"
+reportUnhashable = "none"
+
+[[tool.pyright.executionEnvironments]]
+root = "."
+
 [tool.coverage.run]
 source = ["dature"]
 omit = ["src/dature/_version.py"]
@@ -256,6 +284,7 @@ dev = [
     "tzdata>=2026.2; sys_platform == 'win32'",
     "pytest-cov>=7.1.0",
     "time-machine>=3.2.0",
+    "pyright>=1.1.411",
 ]
 integration-tests = [
     "testcontainers[vault]>=4.0",

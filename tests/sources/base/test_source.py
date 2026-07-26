@@ -16,8 +16,8 @@ from dature.type_aliases import JSONValue
 class MockSource(Source):
     """Mock source for testing base class functionality."""
 
-    format_name = "mock"
-    location_label = "MOCK"
+    format_name: str = "mock"
+    location_label: str = "MOCK"
     test_data: JSONValue = None
 
     def __post_init__(self) -> None:
@@ -625,7 +625,7 @@ class TestStringValueLoaders:
         """Each call returns a new list, but of the *same* provider objects.
 
         This stability is what lets retort.py's cold-load fast path recognize a source's
-        recipe via ``additional_loaders() == string_value_loaders()``: adaptix ``Provider``
+        recipe via ``format_loaders() == string_value_loaders()``: adaptix ``Provider``
         objects have no ``__eq__``, so list equality only holds when both sides hold the same
         objects, not merely equivalent ones.
         """

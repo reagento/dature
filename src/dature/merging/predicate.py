@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass, fields, is_dataclass
 from typing import get_type_hints
 
@@ -25,7 +26,7 @@ def build_field_merge_map(
     for predicate, strategy in field_merges.items():
         path = extract_field_path(predicate, schema)
         if isinstance(strategy, str):
-            result[path] = resolve_field_strategy(strategy, dataclass_name=dataclass_name)
+            result[path] = resolve_field_strategy(strategy, dataclass_name=dataclass_name)  # pyright: ignore[reportArgumentType]
         elif callable(strategy):
             result[path] = strategy
         else:
@@ -48,7 +49,7 @@ def _expand_dataclass_fields(prefix: str, dc_type: type) -> list[str]:
 
 
 def build_field_group_paths(
-    field_groups: tuple[FieldGroupTuple, ...],
+    field_groups: Sequence[FieldGroupTuple],
     schema: type[DataclassInstance],
 ) -> tuple[ResolvedFieldGroup, ...]:
     resolved: list[ResolvedFieldGroup] = []

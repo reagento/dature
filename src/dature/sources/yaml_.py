@@ -20,14 +20,25 @@ from dature.sources.base import FileSource
 from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 
 try:
-    from ruamel.yaml.comments import CommentedMap, CommentedSeq
-    from ruamel.yaml.docinfo import Version
-    from ruamel.yaml.scalarstring import ScalarString
+    from ruamel.yaml.comments import CommentedMap, CommentedSeq  # pyright: ignore[reportAssignmentType]
+    from ruamel.yaml.docinfo import Version  # pyright: ignore[reportAssignmentType]
+    from ruamel.yaml.scalarstring import ScalarString  # pyright: ignore[reportAssignmentType]
 except ImportError:  # pragma: no cover
-    CommentedMap = object  # type: ignore[misc, assignment]
-    CommentedSeq = object  # type: ignore[misc, assignment]
-    ScalarString = object  # type: ignore[misc, assignment]
-    Version = object  # type: ignore[misc, assignment]
+
+    class _LineCol:
+        data: dict[object, tuple[int, int, int, int]]
+
+    class CommentedMap(dict[str, object]):  # type: ignore[no-redef]
+        lc: _LineCol
+
+    class CommentedSeq(list[object]):  # type: ignore[no-redef]
+        ...
+
+    class ScalarString(str):  # type: ignore[no-redef]
+        __slots__ = ()
+
+    class Version:  # type: ignore[no-redef]
+        def __init__(self, *args: int) -> None: ...
 
 
 @dataclass(kw_only=True, repr=False)
@@ -58,12 +69,12 @@ class _BaseYamlSource(FileSource, abc.ABC):
 
 @dataclass(kw_only=True, repr=False)
 class Yaml11Source(_BaseYamlSource):
-    format_name = "yaml1.1"
+    format_name: str = "yaml1.1"
 
     def _yaml_version(self) -> tuple[int, int]:
         return (1, 1)
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return [
             loader(date, date_passthrough),
             loader(datetime, datetime_passthrough),
@@ -74,12 +85,12 @@ class Yaml11Source(_BaseYamlSource):
 
 @dataclass(kw_only=True, repr=False)
 class Yaml12Source(_BaseYamlSource):
-    format_name = "yaml1.2"
+    format_name: str = "yaml1.2"
 
     def _yaml_version(self) -> tuple[int, int]:
         return (1, 2)
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return [
             loader(date, date_passthrough),
             loader(datetime, datetime_passthrough),

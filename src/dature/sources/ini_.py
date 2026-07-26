@@ -2,7 +2,7 @@ import configparser
 import io
 import sys
 from dataclasses import dataclass
-from typing import cast
+from typing import Protocol, cast
 
 from adaptix.provider import Provider
 
@@ -15,9 +15,9 @@ from dature.type_aliases import BINARY_IO_TYPES, TEXT_IO_TYPES, ExpandEnvVarsMod
 
 @dataclass(kw_only=True, repr=False)
 class IniSource(FileSource):
-    format_name = "ini"
+    format_name: str = "ini"
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return string_value_loaders()
 
     def _pre_processing(
@@ -89,13 +89,30 @@ class IniSource(FileSource):
 
 if sys.version_info >= (3, 13):
 
+    class _RawConfigParserInternals(Protocol):
+        """Typed view of ``RawConfigParser``'s private parsing hooks.
+
+        These are real CPython implementation details (undocumented, unstable
+        across versions) that typeshed does not declare on the public stub, so
+        ``super()._handle_option(...)`` resolves to ``object`` without this.
+        """
+
+        def _handle_option(self, st: "configparser._ReadState", line: "configparser._Line", fpname: str) -> None: ...  # type: ignore[name-defined]
+
+        def _handle_continuation_line(
+            self,
+            st: "configparser._ReadState",  # type: ignore[name-defined]
+            line: "configparser._Line",  # type: ignore[name-defined]
+            fpname: str,
+        ) -> bool: ...
+
     class MetadataConfigParser(configparser.ConfigParser):
         def __init__(self) -> None:
             super().__init__(interpolation=None)
             self.line_metadata: dict[tuple[str, str], LineRange] = {}
 
         def _handle_option(self, st: configparser._ReadState, line: configparser._Line, fpname: str) -> None:  # type: ignore[name-defined]
-            super()._handle_option(st, line, fpname)
+            cast("_RawConfigParserInternals", super())._handle_option(st, line, fpname)  # noqa: SLF001
             if st.sectname is not None and st.optname is not None:
                 self.line_metadata[(st.sectname, st.optname)] = LineRange(
                     start=st.lineno,
@@ -103,7 +120,7 @@ if sys.version_info >= (3, 13):
                 )
 
         def _handle_continuation_line(self, st: configparser._ReadState, line: configparser._Line, fpname: str) -> bool:  # type: ignore[name-defined]
-            result = super()._handle_continuation_line(st, line, fpname)
+            result = cast("_RawConfigParserInternals", super())._handle_continuation_line(st, line, fpname)  # noqa: SLF001
             if result and st.sectname is not None and st.optname is not None:
                 key = (st.sectname, st.optname)
                 if key in self.line_metadata:
@@ -161,7 +178,11 @@ else:
 
             mo = optcre.match(stripped)
             if mo:
-                current_option = mo.group("option").rstrip().lower()
+                # match.group(name) is typed as `str | Any` (typeshed's `MaybeNone` is
+                # `Any` in disguise — group() is really `str | None`, but typeshed can't
+                # statically know whether a named group always matches). `optcre`'s
+                # "option" group always matches here, so the value is always `str`.
+                current_option = cast("str", mo.group("option").rstrip().lower())
                 line_map[(current_section, current_option)] = LineRange(start=lineno, end=lineno)
 
         return line_map

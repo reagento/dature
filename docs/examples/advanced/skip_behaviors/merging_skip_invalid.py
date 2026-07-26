@@ -6,6 +6,7 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 from dataclasses import dataclass
 
 import dature
+from dature import F
 
 
 @dataclass
@@ -17,7 +18,7 @@ class Config:
 config = dature.load(
     dature.Yaml12Source(
         file=SOURCES_DIR / "merging_skip_invalid_defaults.yaml",
-        skip_field_if_invalid=True,
+        skip_field_if_invalid=F.ANY,
     ),
     schema=Config,
 )

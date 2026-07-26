@@ -1,7 +1,7 @@
 import abc
 from dataclasses import dataclass
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import cast
 
 from dature.errors import CaretSpan, SourceLocation
 from dature.sources.base.flat_key import FlatKeySource
@@ -48,7 +48,7 @@ class CliSource(FlatKeySource, abc.ABC):
 
     nested_sep: str = "--"
     expand_env_vars: ExpandEnvVarsMode | None = "disabled"
-    location_label: ClassVar[str] = "CLI"
+    location_label: str = "CLI"
 
     @abc.abstractmethod
     def _parse_argv(self) -> dict[str, JSONValue]:

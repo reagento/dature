@@ -1,7 +1,7 @@
 """FlatKeySource: env-var / CLI style sources with ``__`` nesting."""
 
 import abc
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import cast
 
@@ -52,9 +52,15 @@ class FlatKeySource(Source, abc.ABC):
         )
         if effective_nested_resolve is not None:
             for strategy, field_paths in effective_nested_resolve.items():
-                paths = field_paths if isinstance(field_paths, tuple) else (field_paths,)
+                paths = (
+                    tuple(field_paths)
+                    if isinstance(field_paths, Sequence) and not isinstance(field_paths, str)
+                    else (field_paths,)
+                )
                 for field_path in paths:
-                    if self._field_path_matches(field_path, field_name):
+                    # `paths` elements are always FieldPath at runtime (see
+                    # _NestedResolveValue's comment on the F[Type] overload trick).
+                    if self._field_path_matches(field_path, field_name):  # pyright: ignore[reportArgumentType]
                         return strategy
         return resolved_nested_strategy
 
@@ -64,7 +70,7 @@ class FlatKeySource(Source, abc.ABC):
             return True
         return field_path.parts[0] == field_name
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return string_value_loaders()
 
     @staticmethod

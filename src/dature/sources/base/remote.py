@@ -3,7 +3,7 @@
 import abc
 import json
 from dataclasses import dataclass
-from typing import ClassVar, Final
+from typing import Final
 
 from dature.errors import SourceLocation
 from dature.sources.base.source import Source
@@ -16,7 +16,7 @@ _NOT_FOUND: Final[object] = object()
 # --8<-- [start:remote-source]
 @dataclass(kw_only=True, repr=False)
 class RemoteSource(Source, abc.ABC):
-    location_label: ClassVar[str] = "REMOTE"
+    location_label: str = "REMOTE"
 
     # --8<-- [end:remote-source]
 

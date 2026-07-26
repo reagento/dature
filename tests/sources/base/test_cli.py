@@ -1,7 +1,6 @@
 """Tests for the abstract CliSource base class."""
 
 from dataclasses import dataclass, field
-from typing import ClassVar
 
 import pytest
 
@@ -14,7 +13,7 @@ from dature.type_aliases import JSONValue
 class _DictCliSource(CliSource):
     """Minimal CliSource for testing — emits a user-supplied flat dict."""
 
-    format_name: ClassVar[str] = "mock"
+    format_name: str = "mock"
     data: dict[str, JSONValue] = field(default_factory=dict)
 
     def _parse_argv(self) -> dict[str, JSONValue]:

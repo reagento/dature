@@ -17,7 +17,7 @@ from dature.type_aliases import FileOrStream, JSONValue
 
 @dataclass(kw_only=True, repr=False)
 class XmlSource(FileSource):
-    format_name = "xml"
+    format_name: str = "xml"
 
     def _load_file(self, path: FileOrStream) -> JSONValue:
         if not isinstance(path, Path):
@@ -27,7 +27,7 @@ class XmlSource(FileSource):
         root = tree.getroot()
         return {child.tag: child.text or "" for child in root}
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return [
             loader(bool, bool_loader),
             loader(float, float_from_string),

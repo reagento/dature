@@ -8,8 +8,8 @@ from dature.type_aliases import JSONValue
 
 @dataclass(kw_only=True, repr=False)
 class DictSource(Source):
-    format_name = "dict"
-    location_label = "DICT"
+    format_name: str = "dict"
+    location_label: str = "DICT"
     data: dict[str, Any]
 
     def _load(self) -> JSONValue:

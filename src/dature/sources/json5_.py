@@ -20,20 +20,31 @@ from dature.sources.base import FileSource
 from dature.type_aliases import BINARY_IO_TYPES, TEXT_IO_TYPES, FileOrStream, JSONValue
 
 try:
-    from json5.model import Identifier, JSONArray, JSONObject, String, Value
+    from json5.model import Identifier, JSONArray, JSONObject, String, Value  # pyright: ignore[reportAssignmentType]
 except ImportError:  # pragma: no cover
-    Identifier = object  # type: ignore[misc, assignment]
-    JSONArray = object  # type: ignore[misc, assignment]
-    JSONObject = object  # type: ignore[misc, assignment]
-    String = object  # type: ignore[misc, assignment]
-    Value = object  # type: ignore[misc, assignment]
+
+    class Value:  # type: ignore[no-redef]
+        lineno: int | None
+        end_lineno: int | None
+
+    class Identifier(Value):  # type: ignore[no-redef]
+        name: str
+
+    class String(Value):  # type: ignore[no-redef]
+        characters: str
+
+    class JSONObject(Value):  # type: ignore[no-redef]
+        key_value_pairs: list[tuple[Value, Value]]
+
+    class JSONArray(Value):  # type: ignore[no-redef]
+        values: list[Value]
 
 
 @dataclass(kw_only=True, repr=False)
 class Json5Source(FileSource):
-    format_name = "json5"
+    format_name: str = "json5"
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return [
             loader(str, str_from_json_identifier),
             loader(float, float_from_string),
@@ -66,7 +77,10 @@ def _build_json5_line_map(content: str) -> dict[tuple[str, ...], LineRange]:
 
     model = parse_source(content)
     line_map: dict[tuple[str, ...], LineRange] = {}
-    _walk_json5(model.value, (), line_map)
+    # model.value is always the real json5.model.Value at runtime (require_dep above
+    # already guarantees json5 is installed); pyright's declared type for Value here
+    # is the try/except stub union, hence the mismatch.
+    _walk_json5(model.value, (), line_map)  # pyright: ignore[reportArgumentType]
     return line_map
 
 

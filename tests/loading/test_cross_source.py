@@ -5,7 +5,6 @@ import json
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar
 
 import pytest
 
@@ -33,8 +32,8 @@ class _Stub(Source):
     path: str | None = None
     data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
 
-    format_name: ClassVar[str] = "stub"
-    location_label: ClassVar[str] = "STUB"
+    format_name: str = "stub"
+    location_label: str = "STUB"
 
     def _load(self) -> JSONValue:
         result = dict(self.data)
@@ -49,8 +48,8 @@ class _Stub(Source):
 class _BrokenDepStub(FileFieldMixin, Source):
     """Source that always raises FileNotFoundError — used to simulate skipped deps."""
 
-    format_name: ClassVar[str] = "broken_dep_stub"
-    location_label: ClassVar[str] = "BROKEN_DEP"
+    format_name: str = "broken_dep_stub"
+    location_label: str = "BROKEN_DEP"
 
     def _load(self) -> JSONValue:
         msg = "simulated missing source"
@@ -300,7 +299,7 @@ class _DictCliSource(CliSource):
     unfolds to ``{"db": {"host": "v"}}``, so ``${@cli.db.host}`` resolves.
     """
 
-    format_name: ClassVar[str] = "cli"
+    format_name: str = "cli"
     data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
 
     def _parse_argv(self) -> dict[str, JSONValue]:
@@ -494,8 +493,8 @@ class TestWhenHasCrossRefs:
     def test_when_has_cross_refs(self, when, expected: bool) -> None:
         @dataclass(kw_only=True, repr=False)
         class _S(Source):
-            format_name = "s"
-            location_label = "S"
+            format_name: str = "s"
+            location_label: str = "S"
 
             def _load(self) -> JSONValue:
                 return {}

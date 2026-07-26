@@ -27,8 +27,8 @@ from dature.type_aliases import JSONValue
 
 @dataclass(kw_only=True)
 class MockSource(Source):
-    format_name = "mock"
-    location_label = "MOCK"
+    format_name: str = "mock"
+    location_label: str = "MOCK"
     test_data: JSONValue = None
 
     def __post_init__(self) -> None:
@@ -42,8 +42,8 @@ class MockSource(Source):
 
 @dataclass(kw_only=True)
 class MockFlatKeySource(FlatKeySource):
-    format_name = "mock_flat"
-    location_label = "MOCK FLAT"
+    format_name: str = "mock_flat"
+    location_label: str = "MOCK FLAT"
     test_data: JSONValue = None
 
     def __post_init__(self) -> None:
@@ -59,8 +59,8 @@ class MockFlatKeySource(FlatKeySource):
 class MockCustomLoadersSource(Source):
     """A source with its own distinct, non-empty recipe — must never match a precomputed constant."""
 
-    format_name = "mock_custom"
-    location_label = "MOCK CUSTOM"
+    format_name: str = "mock_custom"
+    location_label: str = "MOCK CUSTOM"
     test_data: JSONValue = None
 
     def __post_init__(self) -> None:
@@ -71,7 +71,7 @@ class MockCustomLoadersSource(Source):
     def _load(self) -> JSONValue:
         return self.test_data
 
-    def additional_loaders(self) -> "list[Provider]":
+    def format_loaders(self) -> "list[Provider]":
         return [loader(int, lambda x: int(x))]  # noqa: PLW0108
 
 
@@ -80,8 +80,8 @@ class MockStringRecipeSource(Source):
     """A plain ``Source`` subclass (not ``FlatKeySource``) that itself returns the canonical
     string-value recipe — proves the fast-path detection is class-agnostic, matching by content."""
 
-    format_name = "mock_string_recipe"
-    location_label = "MOCK STRING RECIPE"
+    format_name: str = "mock_string_recipe"
+    location_label: str = "MOCK STRING RECIPE"
     test_data: JSONValue = None
 
     def __post_init__(self) -> None:
@@ -92,7 +92,7 @@ class MockStringRecipeSource(Source):
     def _load(self) -> JSONValue:
         return self.test_data
 
-    def additional_loaders(self) -> "list[Provider]":
+    def format_loaders(self) -> "list[Provider]":
         return string_value_loaders()
 
 
@@ -497,7 +497,7 @@ class TestFastRichSplit:
 class TestUncustomizedFastRetort:
     """Uncustomized sources reuse a precomputed module-level FAST retort instead of extending.
 
-    Detection is by content, not by class: a source is matched by what ``additional_loaders()``
+    Detection is by content, not by class: a source is matched by what ``format_loaders()``
     returns, regardless of its type in the ``Source`` hierarchy.
     """
 
