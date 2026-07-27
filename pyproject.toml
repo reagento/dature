@@ -282,9 +282,9 @@ showcontent = false
 
 [dependency-groups]
 dev = [
-    "mypy>=2.1.0,<2.2.0",
+    "mypy>=2.3.0",
     "pytest>=9.1.1",
-    "ruff>=0.15.20",
+    "ruff>=0.16.0",
     "prek>=0.4.8",
     "towncrier>=25.8.0",
     "tzdata>=2026.2; sys_platform == 'win32'",
