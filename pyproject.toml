@@ -76,6 +76,11 @@ extend-exclude = [
     "src/dature/_version.py",
 ]
 
+[tool.ruff.format]
+exclude = [
+    "docs/**/*.md",
+]
+
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
