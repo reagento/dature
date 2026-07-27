@@ -21,11 +21,10 @@ from dature.errors.location import (
     read_file_content,
     resolve_source_location,
 )
-from dature.field_path import FieldPath
 from dature.loading.context import apply_skip_invalid, build_error_ctx
 from dature.protocols import DataclassInstance
 from dature.sources.protocol import FileSourceProtocol, SourceProtocol
-from dature.type_aliases import JSONValue, LoadRawResult
+from dature.type_aliases import JSONValue, LoadRawResult, SkipFieldsInvalid
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,7 +45,7 @@ def prepare_loaded_source(  # noqa: PLR0913
     schema: "type[DataclassInstance]",
     dataclass_name: str,
     base_error_ctx: ErrorContext,
-    skip_value: "bool | tuple[FieldPath, ...] | None",
+    skip_value: "SkipFieldsInvalid",
     secret_paths: frozenset[str],
     mask_secrets: bool,
     log_prefix: str,

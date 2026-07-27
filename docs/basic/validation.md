@@ -127,7 +127,7 @@ Custom validators can be combined with built-in ones in `Annotated`.
 
 ### Skip-invalid probe
 
-When `skip_invalid_fields=True`, dature silently drops any field whose value fails
+When `skip_field_if_invalid=F.ANY`, dature silently drops any field whose value fails
 **coercion or a field validator** (`Annotated` predicates and `source.validators`). Business-rule
 violations cause the field to be omitted rather than an error being raised.
 

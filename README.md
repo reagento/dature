@@ -49,11 +49,13 @@ from dataclasses import dataclass
 
 import dature
 
+
 @dataclass
 class Config:
     host: str
     port: int
     debug: bool = False
+
 
 config = dature.load(dature.Yaml12Source(file="config.yaml"), Config)
 ```

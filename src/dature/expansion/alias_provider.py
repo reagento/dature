@@ -114,7 +114,7 @@ def _build_alias_map(
         if isinstance(aliases, str):
             alias_tuple = (aliases,)
         else:
-            alias_tuple = aliases
+            alias_tuple = tuple(aliases)
 
         if len(field_path_key.parts) == 0:
             msg = "FieldPath must contain at least one field name"

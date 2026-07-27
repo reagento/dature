@@ -35,7 +35,6 @@ from dature.config import config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import SkippedFieldSource, SourceContext
-from dature.field_path import FieldPath
 from dature.loading.context import build_error_ctx
 from dature.loading.cross_source import (
     CrossRefPlan,
@@ -61,6 +60,7 @@ from dature.type_aliases import (
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
+    SkipFieldsInvalid,
     SystemConfigDirsArg,
     TypeLoaderMap,
 )
@@ -114,8 +114,8 @@ def apply_source_config_group[T: SourceProtocol](source: T) -> T:
     """Fill None-valued source fields from ``dature.config.<source.config_group>``.
 
     Sources whose connection/credential params are typically configured globally
-    (e.g. ``VaultSource`` → ``config.vault``) opt in via the ClassVar
-    ``config_group``. Source-level non-None values always win; this only fills gaps.
+    (e.g. ``VaultSource`` → ``config.vault``) opt in via the ``config_group``
+    attribute. Source-level non-None values always win; this only fills gaps.
     Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
 
@@ -123,7 +123,7 @@ def apply_source_config_group[T: SourceProtocol](source: T) -> T:
     ``LoadCtx.load`` after cross-ref interpolation has been applied so that
     string fields contain real values before invariants are checked.
     """
-    group_name: str | None = getattr(type(source), "config_group", None)
+    group_name: str | None = source.config_group
     cfg_group = getattr(config, group_name, None) if group_name is not None else None
 
     if cfg_group is None:
@@ -165,11 +165,11 @@ class MergeConfig:
     source_params: SourceParams = field(default_factory=SourceParams)
     strategy: "MergeStrategyName | SourceMergeStrategy" = "last_wins"
     field_merges: FieldMergeMap | None = None
-    field_groups: tuple[FieldGroupTuple, ...] = ()
+    field_groups: Sequence[FieldGroupTuple] = ()
     skip_if_broken: bool = False
     skip_if_missing: bool = False
-    skip_invalid_fields: bool = False
-    secret_field_names: tuple[str, ...] | None = None
+    skip_field_if_invalid: SkipFieldsInvalid = None
+    secret_field_names: Sequence[str] | None = None
     mask_secrets: bool | None = None
     type_loaders: TypeLoaderMap | None = None
     cross_ref_plan: CrossRefPlan | None = field(default=None, init=False)
@@ -218,10 +218,10 @@ def should_skip_missing(source: SourceProtocol, merge_meta: MergeConfig) -> bool
 def resolve_skip_invalid(
     source: SourceProtocol,
     merge_meta: MergeConfig,
-) -> bool | tuple[FieldPath, ...]:
+) -> SkipFieldsInvalid:
     if source.skip_field_if_invalid is not None:
         return source.skip_field_if_invalid
-    return merge_meta.skip_invalid_fields
+    return merge_meta.skip_field_if_invalid
 
 
 @dataclass(frozen=True, slots=True)
@@ -575,7 +575,7 @@ class LoadCtx:
         for path, skipped_source in prepared.skipped:
             self._skipped_fields.setdefault(path, []).append(skipped_source)
 
-        format_name = type(source).format_name
+        format_name = source.format_name
 
         logger.debug(
             "[%s] Source %d loaded: loader=%s, file=%s, keys=%s",

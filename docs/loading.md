@@ -5,7 +5,7 @@
 ```mermaid
 graph TD
     S["Source"] --> RAW["Read source data"]
-    RAW --> SK{"skip_invalid_fields?"}
+    RAW --> SK{"skip_field_if_invalid?"}
     SK -- yes --> DROP["Drop fields that fail\ntype or constraint check"]
     SK -- no --> FV{"Source has field validators?"}
     DROP --> ROOT
@@ -24,7 +24,7 @@ it failed.
 1. **Read the source.** Raw values are pulled from the source. With `expand_env_vars`,
    `${VAR}` placeholders are substituted first; secrets are masked in error/debug output per
    `mask_secrets` / `secret_field_names`.
-2. **Optionally drop invalid values** (`skip_invalid_fields`). When enabled, each provided
+2. **Optionally drop invalid values** (`skip_field_if_invalid`). When enabled, each provided
    value is probed against its field's type and rules, and anything that would fail is quietly
    dropped so the field can fall back to its dataclass default instead of failing the whole
    load. The field-validator pass (step 3) is then skipped — remaining fields are counted as
@@ -184,5 +184,5 @@ not exist, or `skip_if_broken=True` for files that exist but may be malformed:
 If **every** source fails, dature still raises — there is no value to load.
 See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors)
 and [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) for the full picture,
-including per-source overrides and `skip_invalid_fields`.
+including per-source overrides and `skip_field_if_invalid`.
 

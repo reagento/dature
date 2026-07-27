@@ -246,13 +246,11 @@ class TestBuildLoadKwargsFromDataclass:
         )
         assert build_load_kwargs_from_dataclass(validate_args) == {}
 
-    def test_secret_field_names_returned_as_tuple(self):
-        """Regression: load() expects tuple[str, ...]; argparse action=append gives list.
+    def test_secret_field_names_returned_as_list(self):
+        """``secret_field_names`` is ``Sequence[str] | None``; argparse action=append gives list.
 
-        ``build_secret_paths`` (and other load() internals) treat
-        ``secret_field_names`` as a tuple — uses it as part of a dict cache key
-        and concatenates with another tuple. A list would crash with
-        ``TypeError: unhashable type: 'list'``.
+        Unlike genuine ``tuple[...]``-typed params, ``Sequence[str]`` accepts a
+        ``list`` directly — no re-tupling needed before passing to ``load()``.
         """
         cls = derive_cli_schema()
         validate_field = next(f for f in fields(cls) if f.name == "validate")
@@ -262,8 +260,8 @@ class TestBuildLoadKwargsFromDataclass:
             secret_field_names=["password", "api_key"],
         )
         kwargs = build_load_kwargs_from_dataclass(validate_args)
-        assert kwargs == {"secret_field_names": ("password", "api_key")}
-        assert isinstance(kwargs["secret_field_names"], tuple)
+        assert kwargs == {"secret_field_names": ["password", "api_key"]}
+        assert isinstance(kwargs["secret_field_names"], list)
 
 
 class TestDeriveCliSchema:

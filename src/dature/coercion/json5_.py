@@ -1,7 +1,9 @@
 try:
-    from json5 import JsonIdentifier
+    from json5 import JsonIdentifier  # pyright: ignore[reportAssignmentType]
 except ImportError:  # pragma: no cover  -- ``json5`` extra not installed
-    JsonIdentifier = str  # type: ignore[misc, assignment]
+
+    class JsonIdentifier(str):  # type: ignore[no-redef]
+        __slots__ = ()
 
 
 def str_from_json_identifier(value: JsonIdentifier) -> str:

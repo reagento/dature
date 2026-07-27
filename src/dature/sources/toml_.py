@@ -22,9 +22,11 @@ from dature.type_aliases import FILE_LIKE_TYPES, FileOrStream, JSONValue
 type _TomlVersionStr = Literal["1.0.0", "1.1.0"]
 
 try:
-    from toml_rs._toml_rs import KeyMeta
+    from toml_rs._toml_rs import KeyMeta  # pyright: ignore[reportAssignmentType]
 except ImportError:  # pragma: no cover  -- ``KeyMeta`` lives in the .pyi stub only
-    KeyMeta = dict  # type: ignore[misc, assignment]
+
+    class KeyMeta(dict[str, object]):  # type: ignore[no-redef]
+        ...
 
 
 @dataclass(kw_only=True, repr=False)
@@ -52,7 +54,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
     def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         return _build_toml_line_map(content, self._toml_version())
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return [
             loader(date, date_passthrough),
             loader(datetime, datetime_passthrough),
@@ -66,7 +68,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
 
 @dataclass(kw_only=True, repr=False)
 class Toml10Source(_BaseTomlSource):
-    format_name = "toml1.0"
+    format_name: str = "toml1.0"
 
     def _toml_version(self) -> _TomlVersionStr:
         return "1.0.0"
@@ -74,7 +76,7 @@ class Toml10Source(_BaseTomlSource):
 
 @dataclass(kw_only=True, repr=False)
 class Toml11Source(_BaseTomlSource):
-    format_name = "toml1.1"
+    format_name: str = "toml1.1"
 
     def _toml_version(self) -> _TomlVersionStr:
         return "1.1.0"
@@ -86,7 +88,10 @@ def _build_toml_line_map(content: str, toml_version: _TomlVersionStr) -> dict[tu
 
     doc = toml_rs.load_with_metadata(content, toml_version=toml_version)
     line_map: dict[tuple[str, ...], LineRange] = {}
-    _walk_toml_nodes(doc.meta["nodes"], (), line_map)
+    # doc.meta["nodes"] is always the real toml_rs.KeyMeta at runtime (require_dep above
+    # already guarantees toml_rs is installed); pyright's declared type for KeyMeta here
+    # is the try/except stub union, hence the mismatch.
+    _walk_toml_nodes(doc.meta["nodes"], (), line_map)  # pyright: ignore[reportArgumentType]
     return line_map
 
 
@@ -119,7 +124,9 @@ def _process_toml_leaf_or_inline_table(
             end = value_line[1]
         else:
             end = value_line
-        line_map[path] = LineRange(start=start, end=end)
+        # KeyMeta's fallback stub types values as `object`; the real toml_rs.KeyMeta
+        # stub (used whenever toml_rs is actually installed) declares them as int.
+        line_map[path] = LineRange(start=start, end=end)  # pyright: ignore[reportArgumentType]
         if isinstance(value, dict):
             _walk_toml_nodes(cast("dict[str, KeyMeta]", value), path, line_map)
         return

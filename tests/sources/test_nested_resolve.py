@@ -157,18 +157,22 @@ class TestPartialNestedResolveEnv:
             (
                 "json",
                 False,
-                "  [var.bar]  Missing required field\n"
-                '   ├── MYAPP__VAR={"foo": "from_json"}\n'
-                "   │              ^^^^^^^^^^^^^^^^^^^^\n"
-                "   └── ENV 'MYAPP__VAR'",
+                (
+                    "  [var.bar]  Missing required field\n"
+                    '   ├── MYAPP__VAR={"foo": "from_json"}\n'
+                    "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+                    "   └── ENV 'MYAPP__VAR'"
+                ),
             ),
             (
                 "json",
                 True,
-                "  [var.bar]  Missing required field\n"
-                '   ├── MYAPP__VAR={"foo": "from_json"}\n'
-                "   │              ^^^^^^^^^^^^^^^^^^^^\n"
-                "   └── ENV 'MYAPP__VAR'",
+                (
+                    "  [var.bar]  Missing required field\n"
+                    '   ├── MYAPP__VAR={"foo": "from_json"}\n'
+                    "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+                    "   └── ENV 'MYAPP__VAR'"
+                ),
             ),
         ],
         ids=["flat-global", "flat-local", "json-global", "json-local"],

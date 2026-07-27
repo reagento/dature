@@ -18,8 +18,8 @@ from dature.type_aliases import JSONValue
 
 @dataclass(kw_only=True)
 class _MockSource(Source):
-    format_name = "mock"
-    location_label = "MOCK"
+    format_name: str = "mock"
+    location_label: str = "MOCK"
     test_data: JSONValue = None
 
     def __post_init__(self) -> None:

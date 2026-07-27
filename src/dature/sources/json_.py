@@ -31,9 +31,9 @@ class _ExtractedKey:
 
 @dataclass(kw_only=True, repr=False)
 class JsonSource(FileSource):
-    format_name = "json"
+    format_name: str = "json"
 
-    def additional_loaders(self) -> list[Provider]:
+    def format_loaders(self) -> list[Provider]:
         return [
             loader(float, float_from_string),
             loader(date, date_from_string),

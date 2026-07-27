@@ -1,12 +1,12 @@
 import types
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from io import BufferedIOBase, RawIOBase, TextIOBase
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal, Self
 from urllib.parse import ParseResult
 
-from dature.field_path import FieldPath
+from dature.field_path import FieldPath, _FieldAny
 
 type JSONValue = dict[str, JSONValue] | list[JSONValue] | str | int | float | bool | None
 
@@ -55,7 +55,7 @@ type NameStyle = Literal[
 # type, so FieldRef must be Any — an exhaustive union is impossible.
 type FieldRef = Any
 
-type FieldMapping = dict[FieldRef, str | tuple[str, ...]]
+type FieldMapping = dict[FieldRef, str | Sequence[str]]
 
 type URL = ParseResult
 
@@ -71,14 +71,16 @@ type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsL
 type NestedResolveStrategy = Literal["flat", "json"]
 # Values are FieldPath at runtime, but F[Type] returns the dataclass type itself
 # due to the overload trick for IDE autocompletion, so we accept Any here.
-type _NestedResolveValue = tuple[FieldPath | Any, ...]
+type _NestedResolveValue = Sequence[FieldPath | Any]
 type NestedResolve = dict[NestedResolveStrategy, _NestedResolveValue]
+
+type SkipFieldsInvalid = _FieldAny | Sequence[FieldPath | Any] | None
 
 type MergeStrategyName = Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]
 type FieldMergeStrategyName = Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]
 type TypeLoaderMap = dict[type, Callable[..., Any]]
 type FieldMergeMap = dict[FieldRef, "FieldMergeStrategyName | Callable[..., Any]"]
-type FieldGroupTuple = tuple[FieldRef, ...]
+type FieldGroupTuple = Sequence[FieldRef]
 
 type FileLike = TextIOBase | BufferedIOBase | RawIOBase
 FILE_LIKE_TYPES: Final = (TextIOBase, BufferedIOBase, RawIOBase)

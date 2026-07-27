@@ -6,7 +6,7 @@ from datetime import timedelta
 from enum import Flag
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Annotated, ClassVar
+from typing import Annotated
 from unittest.mock import patch
 
 import pytest
@@ -32,8 +32,8 @@ class _Stub(dature.sources.base.Source):
 
     data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
 
-    format_name: ClassVar[str] = "stub"
-    location_label: ClassVar[str] = "STUB"
+    format_name: str = "stub"
+    location_label: str = "STUB"
 
     def _load(self) -> JSONValue:
         return dict(self.data)
@@ -44,8 +44,8 @@ class _StubUrl(dature.sources.base.Source):
     """In-memory source that returns a single url key — used for cross-ref tests."""
 
     url: str = ""
-    format_name: ClassVar[str] = "stuburl"
-    location_label: ClassVar[str] = "STUB"
+    format_name: str = "stuburl"
+    location_label: str = "STUB"
 
     def _load(self) -> JSONValue:
         return {"url": self.url}
@@ -707,8 +707,8 @@ class TestEagerWhen:
         class _Tracked(dature.sources.base.Source):
             name: str = ""
             data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
-            format_name: ClassVar[str] = "tracked"
-            location_label: ClassVar[str] = "STUB"
+            format_name: str = "tracked"
+            location_label: str = "STUB"
 
             def _load(self) -> JSONValue:
                 load_calls.append(self.name)
@@ -882,8 +882,8 @@ class TestValidationLoaderRuntimeSource:
         @dataclass(kw_only=True, repr=False)
         class _StubB(dature.sources.base.Source):
             data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
-            format_name: ClassVar[str] = "stub_b"
-            location_label: ClassVar[str] = "STUB"
+            format_name: str = "stub_b"
+            location_label: str = "STUB"
 
             def _load(self) -> JSONValue:
                 return dict(self.data)

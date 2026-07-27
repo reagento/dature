@@ -18,7 +18,7 @@ delegates to ``loader.load()``.  The original dataclass is never modified.
 """
 
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import asdict, fields, is_dataclass
 from datetime import timedelta
 from functools import update_wrapper
@@ -26,6 +26,7 @@ from typing import Any, cast
 
 from adaptix import Retort
 
+from dature._deprecations import UNSET, normalize_skip_bool, resolve_renamed_skip
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
@@ -56,6 +57,7 @@ from dature.type_aliases import (
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
+    SkipFieldsInvalid,
     TypeLoaderMap,
 )
 from dature.validators.base import create_metadata_validator_providers
@@ -86,19 +88,23 @@ class Loader[T: DataclassInstance]:
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
-        field_groups: tuple[FieldGroupTuple, ...] = (),
+        field_groups: Sequence[FieldGroupTuple] = (),
         root_validators: Iterable[RootPredicate] = (),
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
-        skip_invalid_fields: bool = False,
+        skip_field_if_invalid: SkipFieldsInvalid = None,
+        skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
         expand_env_vars: ExpandEnvVarsMode | None = None,
-        secret_field_names: tuple[str, ...] | None = None,
+        secret_field_names: Sequence[str] | None = None,
         mask_secrets: bool | None = None,
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
     ) -> None:
         _validate_sources(sources)
+        skip_field_if_invalid = normalize_skip_bool(
+            resolve_renamed_skip(skip_field_if_invalid, skip_invalid_fields),
+        )
 
         if cache is None:
             cache = config.loading.cache
@@ -120,12 +126,12 @@ class Loader[T: DataclassInstance]:
         self.debug = debug
 
         # Loader-level parameters stored for deferred MergeConfig construction in _prepare_for_load.
-        self._strategy = strategy
+        self._strategy: MergeStrategyName | SourceMergeStrategy = strategy
         self._field_merges = field_merges
         self._field_groups = field_groups
         self._skip_if_broken = skip_if_broken
         self._skip_if_missing = skip_if_missing
-        self._skip_invalid_fields = skip_invalid_fields
+        self._skip_field_if_invalid = skip_field_if_invalid
         self._secret_field_names = secret_field_names
         self._mask_secrets_arg = mask_secrets
         self._type_loaders_arg = type_loaders
@@ -153,7 +159,7 @@ class Loader[T: DataclassInstance]:
         resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
         self.secret_paths: frozenset[str] = frozenset()
         if resolved_mask_secrets:
-            extra_patterns = secret_field_names or ()
+            extra_patterns = tuple(secret_field_names) if secret_field_names else ()
             self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
 
         metadata_providers = [create_metadata_validator_providers(source.validators or {}) for source in sources]
@@ -230,7 +236,7 @@ class Loader[T: DataclassInstance]:
             raise
         except Exception as exc:  # noqa: BLE001
             exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
-            raise DatureConfigError(self._schema.__name__, [exc]) from None
+            raise DatureConfigError(self._schema.__name__, [exc]) from None  # pyright: ignore[reportArgumentType]
         if self._cache is not False:
             self._cached_data = result
             self._cached_at = _aligned_now(self._cache)
@@ -244,13 +250,14 @@ class Loader[T: DataclassInstance]:
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
-        field_groups: tuple[FieldGroupTuple, ...] = (),
+        field_groups: Sequence[FieldGroupTuple] = (),
         root_validators: Iterable[RootPredicate] = (),
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
-        skip_invalid_fields: bool = False,
+        skip_field_if_invalid: SkipFieldsInvalid = None,
+        skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
         expand_env_vars: ExpandEnvVarsMode | None = None,
-        secret_field_names: tuple[str, ...] | None = None,
+        secret_field_names: Sequence[str] | None = None,
         mask_secrets: bool | None = None,
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
@@ -275,6 +282,7 @@ class Loader[T: DataclassInstance]:
                 root_validators=root_validators,
                 skip_if_broken=skip_if_broken,
                 skip_if_missing=skip_if_missing,
+                skip_field_if_invalid=skip_field_if_invalid,
                 skip_invalid_fields=skip_invalid_fields,
                 expand_env_vars=expand_env_vars,
                 secret_field_names=secret_field_names,
@@ -341,7 +349,7 @@ class Loader[T: DataclassInstance]:
             field_groups=self._field_groups,
             skip_if_broken=self._skip_if_broken,
             skip_if_missing=self._skip_if_missing,
-            skip_invalid_fields=self._skip_invalid_fields,
+            skip_field_if_invalid=self._skip_field_if_invalid,
             secret_field_names=self._secret_field_names,
             mask_secrets=self._mask_secrets_arg,
             type_loaders=self._type_loaders_arg,

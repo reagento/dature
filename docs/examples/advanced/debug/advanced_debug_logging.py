@@ -62,8 +62,10 @@ expected_log_lines = [
         "[Config] Merged result (strategy=last_wins, 2 sources): "
         f"{overrides_data}"
     ),
-    f"[Config] Field 'host' = 'production.example.com'"
-    f"  <-- source 1 ({overrides})",
+    (
+        f"[Config] Field 'host' = 'production.example.com'"
+        f"  <-- source 1 ({overrides})"
+    ),
     f"[Config] Field 'port' = 8080  <-- source 1 ({overrides})",
     f"[Config] Field 'tags' = ['web', 'api']  <-- source 1 ({overrides})",
 ]

@@ -76,6 +76,11 @@ extend-exclude = [
     "src/dature/_version.py",
 ]
 
+[tool.ruff.format]
+exclude = [
+    "docs/**/*.md",
+]
+
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
@@ -86,6 +91,7 @@ ignore = [
     "TC001",  # typing-only first-party import — TYPE_CHECKING is banned in dature
     "TC002",  # typing-only third-party import — TYPE_CHECKING is banned in dature
     "TC003",  # typing-only standard-library import — TYPE_CHECKING is banned in dature
+    "CPY001", # Missing copyright notice at top of file
 ]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
@@ -178,6 +184,34 @@ follow_untyped_imports = true
 module = "docker.*"
 follow_untyped_imports = true
 
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.12"
+include = ["src", "tests", "docs"]
+exclude = ["docs/examples/advanced/cross_source_refs/t_string.py", "benchmarks"]
+extraPaths = ["src", "."]
+
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+reportArgumentType = "none"
+reportCallIssue = "none"
+reportAttributeAccessIssue = "none"
+reportIndexIssue = "none"
+reportGeneralTypeIssues = "none"
+reportUnhashable = "none"
+reportOptionalSubscript = "none"
+reportMissingImports = "none"
+
+[[tool.pyright.executionEnvironments]]
+root = "docs/examples"
+reportArgumentType = "none"
+reportCallIssue = "none"
+reportAttributeAccessIssue = "none"
+reportUnhashable = "none"
+
+[[tool.pyright.executionEnvironments]]
+root = "."
+
 [tool.coverage.run]
 source = ["dature"]
 omit = ["src/dature/_version.py"]
@@ -248,14 +282,15 @@ showcontent = false
 
 [dependency-groups]
 dev = [
-    "mypy>=2.1.0,<2.2.0",
+    "mypy>=2.3.0",
     "pytest>=9.1.1",
-    "ruff>=0.15.20",
+    "ruff>=0.16.0",
     "prek>=0.4.8",
     "towncrier>=25.8.0",
     "tzdata>=2026.2; sys_platform == 'win32'",
     "pytest-cov>=7.1.0",
     "time-machine>=3.2.0",
+    "pyright>=1.1.411",
 ]
 integration-tests = [
     "testcontainers[vault]>=4.0",

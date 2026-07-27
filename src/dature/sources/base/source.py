@@ -9,14 +9,16 @@ rendering helpers live in ``presentation``.
 import abc
 import json
 import logging
+import warnings
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
-from typing import ClassVar, Final, cast
+from typing import Final, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
 
+from dature._deprecations import REMOVAL_NOTICE, normalize_skip_bool
 from dature.coercion import (
     bool_loader,
     bytearray_from_json_string,
@@ -45,6 +47,7 @@ from dature.type_aliases import (
     LoadRawResult,
     NameStyle,
     NestedConflict,
+    SkipFieldsInvalid,
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
@@ -92,14 +95,14 @@ class Source(abc.ABC):
     field_mapping: "FieldMapping | None" = None
     validators: "FieldValidators | None" = None
     expand_env_vars: "ExpandEnvVarsMode | None" = None
-    skip_field_if_invalid: "bool | tuple[FieldPath, ...] | None" = None
+    skip_field_if_invalid: "SkipFieldsInvalid" = None
     type_loaders: "TypeLoaderMap | None" = None
     tag: str | None = None
     when: "Condition | None" = None
 
-    format_name: ClassVar[str]
-    location_label: ClassVar[str]
-    config_group: ClassVar[str | None] = None
+    format_name: str = ""
+    location_label: str = ""
+    config_group: str | None = None
 
     # --8<-- [end:load-metadata]
     def __post_init__(self) -> None:
@@ -110,6 +113,7 @@ class Source(abc.ABC):
                 'Example: when=When("${APP_ENV}") == "prod"'
             )
             raise TypeError(msg)
+        self.skip_field_if_invalid = normalize_skip_bool(self.skip_field_if_invalid)
 
     def __repr__(self) -> str:
         parts = []
@@ -179,7 +183,16 @@ class Source(abc.ABC):
             keys.update(alias for alias in alias_list if isinstance(alias, Absolute))
         return frozenset(keys)
 
-    def additional_loaders(self) -> "list[Provider]":
+    def format_loaders(self) -> "list[Provider]":
+        legacy = getattr(type(self), "additional_loaders", None)
+        if legacy is not None:
+            warnings.warn(
+                f"{type(self).__name__}.additional_loaders() is deprecated; rename it to "
+                f"format_loaders(). {REMOVAL_NOTICE}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return cast("list[Provider]", legacy(self))
         return []
 
     def check_invariants(self) -> None:

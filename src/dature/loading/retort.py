@@ -74,12 +74,14 @@ def get_name_mapping_providers(
     if field_mapping:
         owner_fields: dict[type[DataclassInstance] | str, dict[str, str]] = {}
         for field_path_key in field_mapping:
-            if not isinstance(field_path_key, FieldPath):
+            if not isinstance(field_path_key, FieldPath) or not field_path_key.parts:
                 continue
             owner: type[DataclassInstance] | str = field_path_key.owner
-            if len(field_path_key.parts) > 1 and not isinstance(field_path_key.owner, str):
-                owner = resolve_nested_owner(field_path_key.owner, field_path_key.parts[:-1])
-            field_name = field_path_key.parts[-1]
+            parts = field_path_key.parts
+            has_nested_parts = len(parts) > 1
+            if has_nested_parts and not isinstance(field_path_key.owner, str):
+                owner = resolve_nested_owner(field_path_key.owner, parts[:-1])
+            field_name = parts[-1]
             if owner not in owner_fields:
                 owner_fields[owner] = {}
             owner_fields[owner][field_name] = field_name
@@ -120,7 +122,7 @@ def build_base_recipe(
     ]
     return [
         *user_loaders,
-        *source.additional_loaders(),
+        *source.format_loaders(),
         *_DEFAULT_LOADERS,
         *get_name_mapping_providers(source.name_style, source.field_mapping),
     ]
@@ -154,7 +156,7 @@ def _uncustomized_fast_retort(source: SourceProtocol) -> Retort | None:
     """Return a precomputed FAST retort for *source* if it needs no per-call ``.extend()``."""
     if source.type_loaders or source.name_style or source.field_mapping:
         return None
-    additional = source.additional_loaders()
+    additional = source.format_loaders()
     if additional == string_value_loaders():
         return _FAST_STRING
     if not additional:
@@ -398,7 +400,7 @@ class RetortCache:
         """Return the per-source field-validating loader (a ``dict`` keyed by field name).
 
         ``skip=False`` (validate mode) returns a fast/rich facade. ``skip=True`` (probe mode for
-        ``skip_invalid_fields``) returns a raw rich ``Retort``: that path uses load errors as
+        ``skip_field_if_invalid``) returns a raw rich ``Retort``: that path uses load errors as
         per-field control flow, so replaying through a rich fallback on every skipped field would
         double the work — it stays on the trailed retort directly.
         """

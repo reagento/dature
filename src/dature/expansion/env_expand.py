@@ -44,7 +44,7 @@ def _resolve_simple_default(var_name: str, full: str) -> str:
 
 class _EnvExpander:
     def __init__(self, *, mode: ExpandEnvVarsMode, source_text: str) -> None:
-        self._mode = mode
+        self._mode: ExpandEnvVarsMode = mode
         self._source_text = source_text
         self._errors: list[MissingEnvVarError] = []
 

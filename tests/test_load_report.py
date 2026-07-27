@@ -310,8 +310,10 @@ class TestDebugLogging:
         messages = [r.message for r in caplog.records if r.name == "dature"]
 
         expected = [
-            f"[JsonSource] load_raw: source={defaults},"
-            " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']",
+            (
+                f"[JsonSource] load_raw: source={defaults},"
+                " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']"
+            ),
             f"[Config] Source 0 loaded: loader=json, file={defaults}, keys=['host', 'port']",
             "[Config] Source 0 raw data: {'host': 'localhost', 'port': 3000}",
             "[Config] Merge step 0 (strategy=last_wins): added=['host', 'port'], overwritten=[]",
@@ -342,8 +344,10 @@ class TestDebugLogging:
         messages = [r.message for r in caplog.records if r.name == "dature"]
 
         expected = [
-            f"[JsonSource] load_raw: source={json_file},"
-            " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']",
+            (
+                f"[JsonSource] load_raw: source={json_file},"
+                " raw_keys=['host', 'port'], after_preprocessing_keys=['host', 'port']"
+            ),
             f"[Config] Single-source load: loader=json, file={json_file}",
             "[Config] Loaded data: {'host': 'localhost', 'port': 3000}",
         ]

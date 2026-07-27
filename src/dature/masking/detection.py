@@ -71,7 +71,7 @@ def _walk_dataclass_fields(
 
 @lru_cache(maxsize=128)
 def _compute_secret_paths(dataclass_type: type, extra_patterns: tuple[str, ...]) -> frozenset[str]:
-    all_patterns = config.masking.secret_field_names + extra_patterns
+    all_patterns = (*config.masking.secret_field_names, *extra_patterns)
     result: set[str] = set()
     _walk_dataclass_fields(dataclass_type, prefix="", all_patterns=all_patterns, result=result)
     return frozenset(result)

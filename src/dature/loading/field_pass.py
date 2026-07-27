@@ -29,10 +29,10 @@ from dature.sources.base import IndexedSource
 from dature.type_aliases import JSONValue, TypeLoaderMap
 
 
-def compute_default_fallback_errors[T: DataclassInstance](
+def compute_default_fallback_errors(
     annotated_default_fields: tuple[tuple[str, list[Any]], ...],
     validated_field_names: set[str],
-    result: T,
+    result: DataclassInstance,
 ) -> list[FieldLoadError]:
     """Run ``Annotated`` validators for fields no source provided (took their dataclass default).
 

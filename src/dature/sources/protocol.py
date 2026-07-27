@@ -21,7 +21,6 @@ from adaptix.provider import Provider
 
 from dature.conditions import Condition
 from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
-from dature.field_path import FieldPath
 from dature.type_aliases import (
     DotSeparatedPath,
     ExpandEnvVarsMode,
@@ -30,6 +29,7 @@ from dature.type_aliases import (
     LoadRawResult,
     NameStyle,
     NestedConflict,
+    SkipFieldsInvalid,
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
@@ -46,16 +46,16 @@ class SourceProtocol(Protocol):
 
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
-    format_name: ClassVar[str]
-    location_label: ClassVar[str]
-    config_group: ClassVar[str | None]
+    format_name: str
+    location_label: str
+    config_group: str | None
 
     prefix: DotSeparatedPath | None
     name_style: NameStyle | None
     field_mapping: FieldMapping | None
     validators: FieldValidators | None
     expand_env_vars: ExpandEnvVarsMode | None
-    skip_field_if_invalid: bool | tuple[FieldPath, ...] | None
+    skip_field_if_invalid: SkipFieldsInvalid
     type_loaders: TypeLoaderMap | None
     tag: str | None
     when: Condition | None
@@ -69,7 +69,7 @@ class SourceProtocol(Protocol):
 
     def check_invariants(self) -> None: ...
 
-    def additional_loaders(self) -> list[Provider]: ...
+    def format_loaders(self) -> list[Provider]: ...
 
     def resolve_location(
         self,

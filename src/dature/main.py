@@ -1,8 +1,9 @@
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from datetime import timedelta
 from typing import Any, overload
 
+from dature._deprecations import UNSET, resolve_renamed_skip
 from dature.config import config
 from dature.loading.loader import Loader
 from dature.loading.merge_runtime import SourceMergeStrategy
@@ -15,6 +16,7 @@ from dature.type_aliases import (
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
+    SkipFieldsInvalid,
     TypeLoaderMap,
 )
 from dature.validators.root import RootPredicate
@@ -33,13 +35,14 @@ def load[T](
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
-    field_groups: tuple[FieldGroupTuple, ...] = (),
+    field_groups: Sequence[FieldGroupTuple] = (),
     root_validators: Iterable[RootPredicate] = (),
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
-    skip_invalid_fields: bool = False,
+    skip_field_if_invalid: SkipFieldsInvalid = None,
+    skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
     expand_env_vars: ExpandEnvVarsMode | None = None,
-    secret_field_names: tuple[str, ...] | None = None,
+    secret_field_names: Sequence[str] | None = None,
     mask_secrets: bool | None = None,
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
@@ -56,13 +59,14 @@ def load(
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
-    field_groups: tuple[FieldGroupTuple, ...] = (),
+    field_groups: Sequence[FieldGroupTuple] = (),
     root_validators: Iterable[RootPredicate] = (),
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
-    skip_invalid_fields: bool = False,
+    skip_field_if_invalid: SkipFieldsInvalid = None,
+    skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
     expand_env_vars: ExpandEnvVarsMode | None = None,
-    secret_field_names: tuple[str, ...] | None = None,
+    secret_field_names: Sequence[str] | None = None,
     mask_secrets: bool | None = None,
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
@@ -79,19 +83,21 @@ def load(  # noqa: PLR0913
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
-    field_groups: tuple[FieldGroupTuple, ...] = (),
+    field_groups: Sequence[FieldGroupTuple] = (),
     root_validators: Iterable[RootPredicate] = (),
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
-    skip_invalid_fields: bool = False,
+    skip_field_if_invalid: SkipFieldsInvalid = None,
+    skip_invalid_fields: Any = UNSET,
     expand_env_vars: ExpandEnvVarsMode | None = None,
-    secret_field_names: tuple[str, ...] | None = None,
+    secret_field_names: Sequence[str] | None = None,
     mask_secrets: bool | None = None,
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
 ) -> Any:
     # --8<-- [end:load]
+    skip_field_if_invalid = resolve_renamed_skip(skip_field_if_invalid, skip_invalid_fields)
     if cache is None:
         cache = config.loading.cache
     if isinstance(cache, timedelta) and cache < timedelta(0):
@@ -111,10 +117,10 @@ def load(  # noqa: PLR0913
     if len(sources) == 1 and (
         user_set_strategy
         or field_merges is not None
-        or field_groups != ()
+        or len(field_groups) != 0
         or skip_if_broken
         or skip_if_missing
-        or skip_invalid_fields
+        or skip_field_if_invalid
     ):
         logger.warning("Merge-related parameters have no effect with a single source")
 
@@ -128,7 +134,7 @@ def load(  # noqa: PLR0913
         "root_validators": root_validators,
         "skip_if_broken": skip_if_broken,
         "skip_if_missing": skip_if_missing,
-        "skip_invalid_fields": skip_invalid_fields,
+        "skip_field_if_invalid": skip_field_if_invalid,
         "expand_env_vars": expand_env_vars,
         "secret_field_names": secret_field_names,
         "mask_secrets": mask_secrets,

@@ -28,8 +28,17 @@ try:
     TEMPLATE_SUPPORTED = True
 except ImportError:
 
+    class _Interpolation:
+        """Stub mirroring ``string.templatelib.Interpolation`` on Python < 3.14."""
+
+        value: object
+        format_spec: str
+
     class Template:  # type: ignore[no-redef]
         """Stub used on Python < 3.14 where string.templatelib is unavailable."""
+
+        strings: tuple[str, ...]
+        interpolations: tuple[_Interpolation, ...]
 
     TEMPLATE_SUPPORTED = False
 

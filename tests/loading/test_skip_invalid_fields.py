@@ -1,4 +1,4 @@
-"""Tests for skip_field_if_invalid / skip_invalid_fields feature."""
+"""Tests for skip_field_if_invalid (per-source and load-level) feature."""
 
 import logging
 from dataclasses import dataclass
@@ -27,7 +27,7 @@ class TestMergeSkipInvalidFields:
             JsonSource(file=source1),
             JsonSource(file=source2),
             schema=Config,
-            skip_invalid_fields=True,
+            skip_field_if_invalid=F.ANY,
         )
 
         assert result.host == "localhost"
@@ -49,7 +49,7 @@ class TestMergeSkipInvalidFields:
             JsonSource(file=source1),
             JsonSource(file=source2),
             schema=Config,
-            skip_invalid_fields=True,
+            skip_field_if_invalid=F.ANY,
         )
 
         assert result.host == "localhost"
@@ -72,7 +72,7 @@ class TestMergeSkipInvalidFields:
                 JsonSource(file=source1),
                 JsonSource(file=source2),
                 schema=Config,
-                skip_invalid_fields=True,
+                skip_field_if_invalid=F.ANY,
             )
 
         err = exc_info.value
@@ -108,7 +108,7 @@ class TestMergeSkipInvalidFields:
             JsonSource(file=source1),
             JsonSource(file=source2),
             schema=Config,
-            skip_invalid_fields=True,
+            skip_field_if_invalid=F.ANY,
         )
 
         assert result.db.host == "s2-host"
@@ -127,13 +127,38 @@ class TestMergeSkipInvalidFields:
             port: int
 
         result = load(
-            JsonSource(file=source1, skip_field_if_invalid=True),
+            JsonSource(file=source1, skip_field_if_invalid=F.ANY),
             JsonSource(file=source2),
             schema=Config,
         )
 
         assert result.host == "localhost"
         assert result.port == 8080
+
+    def test_empty_list_overrides_global_any(self, tmp_path: Path):
+        # Multi-source on purpose: resolve_skip_invalid() (the precedence logic
+        # this test targets) only runs on the multi-source path — a single
+        # source reads source.skip_field_if_invalid directly and never
+        # consults the load-level default, so this wouldn't exercise the
+        # override at all with just one source.
+        source1 = tmp_path / "s1.json"
+        source1.write_text('{"host": "localhost", "port": "abc"}')
+
+        source2 = tmp_path / "s2.json"
+        source2.write_text("{}")
+
+        @dataclass
+        class Config:
+            host: str
+            port: int
+
+        with pytest.raises(DatureConfigError):
+            load(
+                JsonSource(file=source1, skip_field_if_invalid=[]),
+                JsonSource(file=source2),
+                schema=Config,
+                skip_field_if_invalid=F.ANY,
+            )
 
     def test_global_flag(self, tmp_path: Path):
         source1 = tmp_path / "s1.json"
@@ -151,7 +176,7 @@ class TestMergeSkipInvalidFields:
             JsonSource(file=source1),
             JsonSource(file=source2),
             schema=Config,
-            skip_invalid_fields=True,
+            skip_field_if_invalid=F.ANY,
         )
 
         assert result.host == "localhost"
@@ -199,7 +224,7 @@ class TestMergeSkipInvalidFields:
             JsonSource(file=source2),
             schema=Config,
             strategy="raise_on_conflict",
-            skip_invalid_fields=True,
+            skip_field_if_invalid=F.ANY,
         )
 
         assert result.host == "localhost"
@@ -221,7 +246,7 @@ class TestMergeSkipInvalidFields:
         result = load(
             JsonSource(
                 file=source1,
-                skip_field_if_invalid=(F[Config].port, F[Config].timeout),
+                skip_field_if_invalid=[F[Config].port, F[Config].timeout],
             ),
             JsonSource(file=source2),
             schema=Config,
@@ -244,7 +269,7 @@ class TestMergeSkipInvalidFields:
             load(
                 JsonSource(
                     file=source1,
-                    skip_field_if_invalid=(F[Config].port,),
+                    skip_field_if_invalid=[F[Config].port],
                 ),
                 schema=Config,
             )
@@ -282,7 +307,7 @@ class TestMergeSkipInvalidFields:
                 JsonSource(file=source1),
                 JsonSource(file=source2),
                 schema=Config,
-                skip_invalid_fields=True,
+                skip_field_if_invalid=F.ANY,
             )
 
         warning_messages = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
@@ -303,7 +328,7 @@ class TestSingleSourceSkipInvalidFields:
             port: int = 8080
 
         result = load(
-            JsonSource(file=json_file, skip_field_if_invalid=True),
+            JsonSource(file=json_file, skip_field_if_invalid=F.ANY),
             schema=Config,
         )
 
@@ -321,7 +346,7 @@ class TestSingleSourceSkipInvalidFields:
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                JsonSource(file=json_file, skip_field_if_invalid=True),
+                JsonSource(file=json_file, skip_field_if_invalid=F.ANY),
                 schema=Config,
             )
 
@@ -339,7 +364,7 @@ class TestSingleSourceSkipInvalidFields:
         json_file = tmp_path / "config.json"
         json_file.write_text('{"host": "localhost", "port": "abc"}')
 
-        @load(JsonSource(file=json_file, skip_field_if_invalid=True))
+        @load(JsonSource(file=json_file, skip_field_if_invalid=F.ANY))
         @dataclass
         class Config:
             host: str
@@ -362,7 +387,7 @@ class TestSingleSourceSkipInvalidFields:
         result = load(
             JsonSource(
                 file=json_file,
-                skip_field_if_invalid=(F[Config].port,),
+                skip_field_if_invalid=[F[Config].port],
             ),
             schema=Config,
         )
@@ -382,7 +407,7 @@ class TestSingleSourceSkipInvalidFields:
 
         with caplog.at_level(logging.WARNING, logger="dature"):
             load(
-                JsonSource(file=json_file, skip_field_if_invalid=True),
+                JsonSource(file=json_file, skip_field_if_invalid=F.ANY),
                 schema=Config,
             )
 
@@ -407,7 +432,7 @@ class TestSkipInvalidSameFieldNameNested:
         result = load(
             JsonSource(
                 file=source,
-                skip_field_if_invalid=(F[Config].port,),
+                skip_field_if_invalid=[F[Config].port],
             ),
             schema=Config,
         )
@@ -434,7 +459,7 @@ class TestSkipInvalidSameFieldNameNested:
         result = load(
             JsonSource(
                 file=source1,
-                skip_field_if_invalid=(F[Config].inner.port,),
+                skip_field_if_invalid=[F[Config].inner.port],
             ),
             JsonSource(file=source2),
             schema=Config,
@@ -462,7 +487,7 @@ class TestSkipInvalidSameFieldNameNested:
         result = load(
             JsonSource(
                 file=source1,
-                skip_field_if_invalid=(F[Config].port, F[Config].inner.port),
+                skip_field_if_invalid=[F[Config].port, F[Config].inner.port],
             ),
             JsonSource(file=source2),
             schema=Config,

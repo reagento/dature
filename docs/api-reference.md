@@ -33,12 +33,12 @@ Main entry point. Two calling patterns:
 | `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `configure()`. Retrieve with `load_report()`. |
 | `strategy` | `MergeStrategyName \| SourceMergeStrategy` | `"last_wins"` | Merge strategy: a built-in name or a custom object implementing `SourceMergeStrategy`. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
 | `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy name, callable, or any object implementing `FieldMergeStrategy`. See [Field Merge Strategies](#field-merge-strategies). |
-| `field_groups` | `tuple[FieldGroupTuple, ...]` | `()` | Groups of fields that must change together. Each group is a tuple of `F[Config].field` references. |
+| `field_groups` | `Sequence[FieldGroupTuple]` | `()` | Groups of fields that must change together. Each group is a sequence of `F[Config].field` references. |
 | `skip_if_broken` | `bool` | `False` | Skip sources that fail to parse (invalid syntax, config error) instead of raising. |
 | `skip_if_missing` | `bool` | `False` | Skip sources whose file does not exist instead of raising. |
-| `skip_invalid_fields` | `bool` | `False` | Skip fields that fail validation instead of raising. |
+| `skip_field_if_invalid` | `SkipFieldsInvalid` | `None` | Skip fields that fail validation instead of raising. `F.ANY` skips any invalid field, a sequence of `F[Config].field` skips only those, `None`/`[]` skip nothing. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | Env var expansion mode applied to all sources. Source-level setting takes priority. |
-| `secret_field_names` | `tuple[str, ...] \| None` | `None` | Extra secret field name patterns for masking. |
+| `secret_field_names` | `Sequence[str] \| None` | `None` | Extra secret field name patterns for masking. |
 | `mask_secrets` | `bool \| None` | `None` | Enable/disable secret masking globally. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type loaders mapping types to conversion functions. Merged with source-level and global loaders. |
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Default priority for JSON vs flat keys in `FlatKeySource`. See [Nested Resolve](advanced/nested-resolve.md). |
@@ -89,7 +89,7 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | `field_mapping` | `FieldMapping \| None` | `None` | Explicit field renaming with `F` objects. |
 | `validators` | `FieldValidators \| None` | `None` | Per-field validators via `Annotated` metadata or explicit mapping. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | ENV variable expansion: `"disabled"`, `"default"`, `"empty"`, `"strict"`. |
-| `skip_field_if_invalid` | `bool \| tuple[FieldPath, ...] \| None` | `None` | Skip invalid fields from this source. `True` for all, or a tuple of specific fields. |
+| `skip_field_if_invalid` | `SkipFieldsInvalid` | `None` | Skip invalid fields from this source. `F.ANY` for all, a sequence of `F[Config].field` for specific ones, `None` delegates to the load-level default. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type converters `{type: callable}` for this source. |
 | `tag` | `str \| None` | `None` | Explicit tag for `${@tag.key}` cross-refs. Defaults to the format name. See [Cross-Source References](advanced/cross_source_refs.md). |
 | `when` | `Condition \| None` | `None` | Include this source only when a condition is met, built with the `When()` DSL. A non-`Condition` value raises `TypeError`. See [Conditional Sources](advanced/conditional_sources.md). |
@@ -855,13 +855,13 @@ line. Re-exported via `dature.errors`.
 | `NameStyle` | `Literal["lower_snake", "upper_snake", "lower_camel", "upper_camel", "lower_kebab", "upper_kebab"]` | `dature.type_aliases` |
 | `ExpandEnvVarsMode` | `Literal["disabled", "default", "empty", "strict"]` | `dature.type_aliases` |
 | `FieldRef` | `FieldPath \| str \| int \| float \| bool \| list \| dict \| tuple \| set \| bytes \| None` | `dature.type_aliases` |
-| `FieldMapping` | `dict[FieldRef, str \| tuple[str, ...]]` | `dature.type_aliases` |
+| `FieldMapping` | `dict[FieldRef, str \| Sequence[str]]` | `dature.type_aliases` |
 | `FieldValidators` | `dict[FieldRef, ValidatorProtocol \| tuple[ValidatorProtocol, ...]]` | `dature.type_aliases` |
 | `FieldMergeMap` | `dict[FieldRef, FieldMergeStrategyName \| Callable[..., Any]]` | `dature.type_aliases` |
 | `FieldMergeCallable` | `Callable[[list[JSONValue]], JSONValue]` | `dature.type_aliases` |
 | `FieldMergeStrategyName` | `Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]` | `dature.type_aliases` |
 | `FieldMergeStrategy` | `Protocol` with `__call__(values: list[JSONValue]) -> JSONValue` | `dature.strategies.field` |
-| `FieldGroupTuple` | `tuple[FieldRef, ...]` | `dature.type_aliases` |
+| `FieldGroupTuple` | `Sequence[FieldRef]` | `dature.type_aliases` |
 | `TypeLoaderMap` | `dict[type, Callable[..., Any]]` | `dature.type_aliases` |
 | `MergeStrategyName` | `Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]` | `dature.type_aliases` |
 | `SourceMergeStrategy` | `Protocol` with `__call__(sources: Sequence[Source], ctx: LoadCtx) -> JSONValue` | `dature.strategies.source` |

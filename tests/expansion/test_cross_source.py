@@ -126,22 +126,28 @@ class TestExpandCrossRefs:
             (
                 "${@cli.missing}",
                 {"cli": {}},
-                "Cross-source reference errors (1)\n\n"
-                "  '${@cli.missing}': key 'missing' not found in 'cli' data and no default provided\n",
+                (
+                    "Cross-source reference errors (1)\n\n"
+                    "  '${@cli.missing}': key 'missing' not found in 'cli' data and no default provided\n"
+                ),
             ),
             (
                 "${@cli.nested}",
                 {"cli": {"nested": {"a": 1}}},
-                "Cross-source reference errors (1)\n\n"
-                "  '${@cli.nested}': key 'nested' in 'cli' is a dict;"
-                " only scalar values (str, int, float, bool) are supported\n",
+                (
+                    "Cross-source reference errors (1)\n\n"
+                    "  '${@cli.nested}': key 'nested' in 'cli' is a dict;"
+                    " only scalar values (str, int, float, bool) are supported\n"
+                ),
             ),
             (
                 "${@unknown1.key} ${@unknown2.key}",
                 {},
-                "Cross-source reference errors (2)\n\n"
-                "  '${@unknown1.key}': unknown tag 'unknown1'; known tags: none\n\n"
-                "  '${@unknown2.key}': unknown tag 'unknown2'; known tags: none\n",
+                (
+                    "Cross-source reference errors (2)\n\n"
+                    "  '${@unknown1.key}': unknown tag 'unknown1'; known tags: none\n\n"
+                    "  '${@unknown2.key}': unknown tag 'unknown2'; known tags: none\n"
+                ),
             ),
         ],
         ids=["unknown-tag", "missing-key", "non-scalar-value", "multiple-errors"],

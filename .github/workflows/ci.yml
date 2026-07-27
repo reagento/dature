@@ -49,6 +49,9 @@ jobs:
       - name: Run mypy
         run: uv run mypy src tests docs
 
+      - name: Run pyright
+        run: uv run pyright src tests docs
+
   get-adaptix-versions:
     runs-on: ubuntu-latest
     outputs:

@@ -1,6 +1,6 @@
 from contextlib import suppress
 from dataclasses import dataclass, fields, is_dataclass
-from typing import Any, TypeVar, get_type_hints, overload
+from typing import Any, TypeVar, final, get_type_hints, overload
 
 from dature.protocols import DataclassInstance
 
@@ -97,6 +97,19 @@ def extract_field_path(predicate: Any, schema: type[DataclassInstance] | None = 
     return predicate.as_path()
 
 
+@final
+class _FieldAny:
+    """Sentinel ``F.ANY`` — skip every invalid field (see ``skip_field_if_invalid``)."""
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return "F.ANY"
+
+
+_ANY = _FieldAny()
+
+
 # --8<-- [start:field-path-factory]
 class _FieldPathFactory:
     @overload
@@ -110,6 +123,11 @@ class _FieldPathFactory:
             msg = f"'{owner.__name__}' is not a dataclass"
             raise TypeError(msg)
         return FieldPath(owner=owner)
+
+    @property
+    def ANY(self) -> _FieldAny:  # noqa: N802 -- constant-style name, mirrors adaptix's P.ANY
+        """Sentinel meaning "skip every invalid field" for ``skip_field_if_invalid``."""
+        return _ANY
 
 
 F = _FieldPathFactory()
