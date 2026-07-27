@@ -1,3 +1,32 @@
+## 1.1.0
+
+### Features
+
+- ``field_mapping`` values, ``nested_resolve``, ``field_groups``, and ``secret_field_names`` now accept any ``Sequence`` (e.g. ``list``), not just ``tuple``. ([#widen_sequence_fields](https://github.com/reagento/dature/issues/widen_sequence_fields))
+
+### Docs
+
+- Fixed numerous inaccuracies in ``docs/api-reference.md``: wrong parameter types/defaults (``root_validators``, ``nested_resolve_strategy``), a fabricated ``Loader.invalidate()`` method, a stale Validators section rewritten for the current ``V`` DSL, missing ``ArgparseSource``/``VaultSource`` and ``VaultConfig`` documentation, and missing exception classes (``DatureErrorGroup``, ``ValidatorTypeError``, ``ConfigEnvVarExpandError``, ``CrossRefError``/``CrossRefExpandError``).
+
+  Fixed parameter tables in ``docs/introduction.md`` that no longer matched the ``Source``/``FileSource`` dataclass fields.
+
+  Fixed several ``--8<--`` example includes that rendered empty due to broken indentation or missing ``[start:example]``/``[end:example]`` markers, in ``docs/basic/naming.md``, ``docs/basic/masking.md``, ``docs/advanced/custom_sources.md``, ``docs/advanced/nested-resolve.md``, and ``docs/basic/validation.md``.
+
+### Refactoring
+
+- ``SourceProtocol.format_name``/``location_label``/``config_group`` are now declared as read-only properties instead of ``ClassVar``s. This matches how sources actually expose them (instance-readable, per-class overridable) and requires no changes for existing sources — plain class attributes and ``ClassVar``-annotated fields still satisfy the protocol. ([#protocol_identity_properties](https://github.com/reagento/dature/issues/protocol_identity_properties))
+
+### Removals
+
+- Renamed the custom-source extension point ``Source.additional_loaders()`` to ``Source.format_loaders()`` to make its purpose (per-format adaptix loaders) explicit. Custom sources overriding ``additional_loaders()`` still work but emit a ``DeprecationWarning``; rename the method to ``format_loaders()`` before dature 1.2, when the old name stops being called. ([#rename_additional_loaders](https://github.com/reagento/dature/issues/rename_additional_loaders))
+- Renamed the load-level ``skip_invalid_fields`` parameter (``load()``, ``Loader``, and the ``--skip-invalid-fields`` CLI flag) to ``skip_field_if_invalid``, matching the source-level field name of the same behavior. The old name still works as a deprecated alias (``DeprecationWarning``) until dature 1.2; update calls to use the new name before then. ([#rename_skip_invalid_fields](https://github.com/reagento/dature/issues/rename_skip_invalid_fields))
+- ``skip_field_if_invalid`` (source-level field and load-level parameter) no longer accepts ``bool`` as its primary form. Use ``F.ANY`` instead of ``True`` to skip any invalid field, an empty sequence (or ``None``) instead of ``False`` to skip nothing, or a sequence of ``F[Config].field`` references for specific fields. Passing a ``bool`` still works but emits a ``DeprecationWarning`` until dature 1.2. ([#skip_field_if_invalid_any_sentinel](https://github.com/reagento/dature/issues/skip_field_if_invalid_any_sentinel))
+
+### Misc
+
+- [#pyright_type_checking](https://github.com/reagento/dature/issues/pyright_type_checking)
+
+
 ## 1.0.0
 
 ### Features
