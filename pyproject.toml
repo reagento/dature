@@ -86,6 +86,7 @@ ignore = [
     "TC001",  # typing-only first-party import — TYPE_CHECKING is banned in dature
     "TC002",  # typing-only third-party import — TYPE_CHECKING is banned in dature
     "TC003",  # typing-only standard-library import — TYPE_CHECKING is banned in dature
+    "CPY001", # Missing copyright notice at top of file
 ]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]

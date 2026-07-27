@@ -413,7 +413,7 @@ class TestEnvVarExpandErrorFormat:
         ],
         ids=["yaml", "json", "toml", "ini", "env"],
     )
-    def test_error_format(  # noqa: PLR0913
+    def test_error_format(  # noqa: PLR0913, PLR0917, RUF100
         self,
         monkeypatch: pytest.MonkeyPatch,
         source_cls: type,
