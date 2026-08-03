@@ -110,12 +110,22 @@ def apply_source_init_params[T: SourceProtocol](source: T, params: SourceParams)
     return clone_source(source, overrides)
 
 
+def _is_unset(value: object) -> bool:
+    """Whether a source field should be treated as not configured.
+
+    ``None`` is the usual sentinel. ``""`` covers non-optional ``str`` fields
+    (e.g. ``VaultSource.mount_point``) that cannot express "unset" via ``None``.
+    """
+    return value is None or value == ""
+
+
 def apply_source_config_group[T: SourceProtocol](source: T) -> T:
-    """Fill None-valued source fields from ``dature.config.<source.config_group>``.
+    """Fill unset source fields from ``dature.config.<source.config_group>``.
 
     Sources whose connection/credential params are typically configured globally
     (e.g. ``VaultSource`` → ``config.vault``) opt in via the ``config_group``
-    attribute. Source-level non-None values always win; this only fills gaps.
+    attribute. Source-level values always win; this only fills gaps — a field
+    is considered a gap when it is ``None`` or ``""`` (see ``_is_unset``).
     Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
 
@@ -135,10 +145,10 @@ def apply_source_config_group[T: SourceProtocol](source: T) -> T:
         name = f.name
         if name not in source_field_names:
             continue
-        if getattr(source, name, None) is not None:
+        if not _is_unset(getattr(source, name, None)):
             continue  # source-level wins
         cfg_val = getattr(cfg_group, name)
-        if cfg_val is not None:
+        if not _is_unset(cfg_val):
             overrides[name] = cfg_val
 
     if overrides:

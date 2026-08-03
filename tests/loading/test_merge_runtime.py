@@ -112,6 +112,7 @@ class TestApplySourceConfigGroup:
         ("instance_kwargs", "config_kwargs", "field", "expected"),
         [
             pytest.param({"url": None}, {"url": "http://x"}, "url", "http://x", id="config_fills_none"),
+            pytest.param({"url": ""}, {"url": "http://x"}, "url", "http://x", id="config_fills_empty_string"),
             pytest.param(
                 {"url": "http://instance"},
                 {"url": "http://config"},
