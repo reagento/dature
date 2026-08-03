@@ -67,10 +67,8 @@ def format_location(
         lines.append(f"   {connector} {loc.location_label} '{loc.env_var_name}'" + suffix)
         return lines
 
-    if loc.file_path is None:
-        return []
-
-    lines.append(_format_fileline(loc, connector=connector, suffix=suffix))
+    if loc.file_path:
+        lines.append(_format_fileline(loc, connector=connector, suffix=suffix))
     return lines
 
 

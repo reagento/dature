@@ -1,4 +1,4 @@
-"""Integration tests for the RemoteSource doc examples — require a live Vault container.
+"""Integration tests for the VaultSource doc examples — require a live Vault container.
 
 The ``integration`` marker is applied automatically by ``tests/integration/conftest.py``;
 CI common jobs pass ``--ignore=tests/integration`` to skip them. To run these tests:
@@ -11,7 +11,7 @@ import pytest
 
 from tests.example_helpers import DOCS_EXAMPLES_DIR, run_script
 
-REMOTE_SOURCE_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "advanced" / "remote"
+VAULT_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "advanced" / "remote" / "vault"
 
 
 @pytest.fixture(scope="module")
@@ -29,7 +29,7 @@ def vault_examples_env(vault_container, vault_client) -> dict[str, str]:
 
 @pytest.mark.parametrize(
     "script",
-    [pytest.param(p, id=p.name) for p in sorted(REMOTE_SOURCE_EXAMPLES_DIR.rglob("*.py"))],
+    [pytest.param(p, id=p.name) for p in sorted(VAULT_EXAMPLES_DIR.rglob("*.py"))],
 )
 def test_example_script(script: Path, vault_examples_env: dict[str, str]) -> None:
     result = run_script(script, extra_env=vault_examples_env)

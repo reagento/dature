@@ -8,6 +8,7 @@ from dature.main import load
 from dature.refs import ref
 from dature.report import load_report
 from dature.sources.argparse_ import ArgparseSource
+from dature.sources.consul_ import ConsulSource
 from dature.sources.docker_secrets import DockerSecretsSource
 from dature.sources.env_ import EnvFileSource, EnvSource
 from dature.sources.ini_ import IniSource
@@ -21,6 +22,7 @@ from dature.validators.v import V
 __all__ = [
     "Absolute",
     "ArgparseSource",
+    "ConsulSource",
     "DockerSecretsSource",
     "EnvFileSource",
     "EnvSource",

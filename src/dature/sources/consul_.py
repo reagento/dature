@@ -1,0 +1,120 @@
+import json
+from dataclasses import dataclass
+from typing import Any, Literal, cast
+
+from dature._deps import require_dep
+from dature.sources.base import RemoteSource
+from dature.type_aliases import JSONValue
+
+
+@dataclass(kw_only=True, repr=False)
+class ConsulSource(RemoteSource):
+    path: str
+    """KV key (``recursive=False``) or prefix (``recursive=True``) inside Consul's KV store."""
+
+    host: str = ""
+    port: int | None = None
+    scheme: Literal["http", "https"] | None = None
+    token: str | None = None
+    datacenter: str | None = None
+    verify: bool | str | None = None
+    recursive: bool = True
+    decode: Literal["utf-8", "json", "raw"] = "utf-8"
+    separator: str | None = "/"
+
+    format_name: str = "consul"
+    location_label: str = "CONSUL"
+    config_group: str | None = "consul"
+
+    def remote_address(self) -> str:
+        scheme = self.scheme or "http"
+        host = self.host or "localhost"
+        port = self.port if self.port is not None else 8500
+        return f"{scheme}://{host}:{port}/v1/kv/{self.path}"
+
+    def check_invariants(self) -> None:
+        if not self.host:
+            msg = (
+                "ConsulSource: host is required (set on instance or via configure(consul={...}) / DATURE_CONSUL__HOST)"
+            )
+            raise ValueError(msg)
+        if self.scheme is not None and self.scheme not in ("http", "https"):
+            msg = f"ConsulSource: scheme must be 'http' or 'https', got {self.scheme!r}"
+            raise ValueError(msg)
+        if self.decode not in ("utf-8", "json", "raw"):
+            msg = f"ConsulSource: decode must be 'utf-8', 'json' or 'raw', got {self.decode!r}"
+            raise ValueError(msg)
+        if self.port is not None and self.port <= 0:
+            msg = f"ConsulSource: port must be a positive integer, got {self.port!r}"
+            raise ValueError(msg)
+
+    def _decode_value(self, raw: "bytes | None") -> JSONValue:
+        if raw is None:
+            return None
+        if self.decode == "raw":
+            return cast("JSONValue", raw)
+        if self.decode == "json":
+            return cast("JSONValue", json.loads(raw))
+        return raw.decode("utf-8")
+
+    def _build_nested(self, items: "list[dict[str, Any]]") -> JSONValue:
+        """Turn a recursive KV listing into a nested dict, splitting each key on ``separator``.
+
+        The prefix (``self.path``) is stripped from every key first. A key that matches the
+        prefix exactly (the "directory" marker Consul writes for a prefix) has no remainder
+        and is dropped — it has no leaf name to store a value under.
+        """
+        root: dict[str, JSONValue] = {}
+        for item in items:
+            key = cast("str", item["Key"])
+            remainder = key.removeprefix(self.path)
+            if self.separator:
+                remainder = remainder.lstrip(self.separator)
+            if not remainder:
+                continue
+            parts = remainder.split(self.separator) if self.separator else [remainder]
+            node = root
+            for part in parts[:-1]:
+                node = cast("dict[str, JSONValue]", node.setdefault(part, {}))
+            node[parts[-1]] = self._decode_value(item.get("Value"))
+        return root
+
+    def _build_single(self, item: "dict[str, Any]") -> JSONValue:
+        value = self._decode_value(item.get("Value"))
+        if self.decode == "json":
+            # The single key holds the entire config document — it *is* the root, not a leaf.
+            return value
+        key = cast("str", item["Key"])
+        last_segment = key.rsplit(self.separator, 1)[-1] if self.separator else key
+        return {last_segment: value}
+
+    def _fetch(self) -> JSONValue:
+        require_dep("consul", "consul")
+        # py-consul's __init__.py re-exports these without __all__, which mypy's
+        # no_implicit_reexport (part of strict=true) rejects — import from the
+        # defining submodules directly instead.
+        from consul.exceptions import ACLDisabled, ACLPermissionDenied  # noqa: PLC0415
+        from consul.std import Consul  # noqa: PLC0415
+
+        client = Consul(
+            host=self.host or None,
+            port=self.port,
+            scheme=self.scheme,
+            token=self.token,
+            dc=self.datacenter,
+            verify=self.verify,
+        )
+
+        try:
+            _index, data = client.kv.get(self.path, recurse=self.recursive)
+        except (ACLPermissionDenied, ACLDisabled):
+            msg = f"Consul auth failed for {self.remote_address()}"
+            raise PermissionError(msg) from None
+
+        if data is None:
+            msg = f"Consul key not found: {self.remote_address()}"
+            raise KeyError(msg) from None
+
+        if self.recursive:
+            return self._build_nested(cast("list[dict[str, Any]]", data))
+        return self._build_single(cast("dict[str, Any]", data))

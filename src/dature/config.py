@@ -94,12 +94,27 @@ class VaultConfig:
 # --8<-- [end:vault-config]
 
 
+# --8<-- [start:consul-config]
+@dataclass(frozen=True, slots=True)
+class ConsulConfig:
+    host: str = "localhost"
+    port: int = 8500
+    scheme: Literal["http", "https"] = "http"
+    token: str | None = None
+    datacenter: str | None = None
+    verify: bool | str = True
+
+
+# --8<-- [end:consul-config]
+
+
 @dataclass(frozen=True, slots=True)
 class DatureConfig:
     masking: MaskingConfig = MaskingConfig()
     error_display: ErrorDisplayConfig = ErrorDisplayConfig()
     loading: LoadingConfig = LoadingConfig()
     vault: VaultConfig = VaultConfig()
+    consul: ConsulConfig = ConsulConfig()
 
 
 def _load_config() -> DatureConfig:
@@ -162,6 +177,15 @@ class VaultOptions(TypedDict, total=False):
     kv_version: Literal[1, 2]
 
 
+class ConsulOptions(TypedDict, total=False):
+    host: str
+    port: int
+    scheme: Literal["http", "https"]
+    token: str | None
+    datacenter: str | None
+    verify: bool | str
+
+
 _config_lock: threading.RLock = threading.RLock()
 
 
@@ -210,6 +234,10 @@ class _ConfigProxy:
         return self.ensure_loaded().vault
 
     @property
+    def consul(self) -> ConsulConfig:
+        return self.ensure_loaded().consul
+
+    @property
     def type_loaders(self) -> TypeLoaderMap:
         return _ConfigProxy._type_loaders
 
@@ -232,6 +260,7 @@ def configure(
     error_display: ErrorDisplayOptions | None = None,
     loading: LoadingOptions | None = None,
     vault: VaultOptions | None = None,
+    consul: ConsulOptions | None = None,
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
@@ -242,6 +271,7 @@ def configure(
         merged_error = _merge_group(current.error_display, error_display, ErrorDisplayConfig)
         merged_loading = _merge_group(current.loading, loading, LoadingConfig)
         merged_vault = _merge_group(current.vault, vault, VaultConfig)
+        merged_consul = _merge_group(current.consul, consul, ConsulConfig)
 
         config.set_instance(
             DatureConfig(
@@ -249,6 +279,7 @@ def configure(
                 error_display=merged_error,
                 loading=merged_loading,
                 vault=merged_vault,
+                consul=merged_consul,
             ),
         )
         if type_loaders is not None:

@@ -61,7 +61,7 @@ class RemoteSource(Source, abc.ABC):
         if search_path and loaded_data is not None:
             value = self._lookup_loaded(search_path, loaded_data)
             if value is not _NOT_FOUND:
-                rendered = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+                rendered = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, default=repr)
                 line_content = [f"{addr}: {key} = {rendered}"]
         return [
             SourceLocation(

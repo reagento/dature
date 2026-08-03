@@ -5,6 +5,8 @@ Container-based integration tests live in ``tests/integration/sources/test_vault
 
 from dataclasses import dataclass
 
+import hvac
+import hvac.exceptions
 import pytest
 
 from dature import VaultSource, configure, load
@@ -145,6 +147,64 @@ class TestVaultSourceConfigFallback:
         assert merged.mount_point == expected
 
 
+class FakeKvV2:
+    """Stand-in for hvac's ``client.secrets.kv.v2``."""
+
+    def __init__(self, data: object) -> None:
+        self._data = data
+
+    def read_secret_version(self, *, path: str, mount_point: str) -> dict[str, object]:  # noqa: ARG002
+        if self._data is None:
+            raise hvac.exceptions.InvalidPath
+        return {"data": {"data": self._data}}
+
+
+class FakeSecrets:
+    def __init__(self, data: object) -> None:
+        self.kv = type("FakeKv", (), {"v2": FakeKvV2(data)})()
+
+
+class FakeClient:
+    def __init__(self, data: object, **kwargs: object) -> None:  # noqa: ARG002
+        self.secrets = FakeSecrets(data)
+        self.token = None
+
+
+@dataclass
+class _FetchConfig:
+    port: int
+
+
+class TestVaultSourceFetch:
+    def _make_source(self, monkeypatch: pytest.MonkeyPatch, data: object, **kwargs: object) -> VaultSource:
+        def _fake_client(**kw: object) -> FakeClient:
+            return FakeClient(data, **kw)
+
+        monkeypatch.setattr(hvac, "Client", _fake_client)
+        return VaultSource(url="https://v", token="t", path="myapp", **kwargs)
+
+    def test_missing_path_error_message_includes_path(self, monkeypatch):
+        self._make_source(monkeypatch, None)
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(VaultSource(url="https://v", token="t", path="myapp"), schema=_FetchConfig)
+
+        assert len(exc_info.value.exceptions) == 1
+        assert str(exc_info.value.exceptions[0]) == "'Vault path not found: https://v/v1/secret/data/myapp'"
+
+    def test_bad_type_error_message_includes_path_and_value(self, monkeypatch):
+        self._make_source(monkeypatch, {"port": "not_a_number"})
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(VaultSource(url="https://v", token="t", path="myapp"), schema=_FetchConfig)
+
+        assert len(exc_info.value.exceptions) == 1
+        assert str(exc_info.value.exceptions[0]) == (
+            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
+            "   ├── https://v/v1/secret/data/myapp: port = not_a_number"
+        )
+
+
 @pytest.mark.usefixtures("_reset_config")
 def test_missing_hvac_raises_on_load(block_import, monkeypatch):
     """`import dature` works without hvac; only _fetch() requires it."""
@@ -159,4 +219,4 @@ def test_missing_hvac_raises_on_load(block_import, monkeypatch):
         load(VaultSource(path="p"), schema=Config)
 
     assert isinstance(exc_info.value.exceptions[0], ImportError)
-    assert "hvac" in str(exc_info.value.exceptions[0])
+    assert str(exc_info.value.exceptions[0]) == "'hvac' is not installed. Run: pip install 'dature[vault]'"

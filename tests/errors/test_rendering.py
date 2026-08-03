@@ -471,3 +471,36 @@ class TestMultilineValueDisplay:
             "   │          ^^^^^^^^^^^^\n"
             f"   └── FILE '{array_of_tables_error_last_toml_file}', line 7"
         )
+
+
+class TestNoFilePathNoEnvVarLocation:
+    """RemoteSource locations set both file_path and env_var_name to None.
+
+    Regression: format_location() built the content lines (address + field/value) into
+    `lines`, then discarded them with `return []` whenever file_path was None and the
+    env_var_name branch didn't match — so VaultSource/ConsulSource errors never showed
+    their remote address, no matter what resolve_location() produced.
+    """
+
+    def test_content_lines_are_not_discarded(self) -> None:
+        errors = [
+            FieldLoadError(
+                field_path=["port"],
+                message="invalid literal for int() with base 10: 'not_a_number'",
+                input_value="not_a_number",
+                locations=[
+                    SourceLocation(
+                        location_label="CONSUL",
+                        file_path=None,
+                        line_range=None,
+                        line_content=["http://c:8500/v1/kv/myapp: port = not_a_number"],
+                        env_var_name=None,
+                    ),
+                ],
+            ),
+        ]
+        exc = DatureConfigError("Config", errors)
+        assert str(exc.exceptions[0]) == (
+            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
+            "   ├── http://c:8500/v1/kv/myapp: port = not_a_number"
+        )

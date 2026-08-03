@@ -1,4 +1,4 @@
-"""Shared fixtures for integration tests under ``tests/integration/sources/``."""
+"""Shared fixtures for VaultSource integration tests under ``tests/integration/sources/vault/``."""
 
 from collections.abc import Generator
 

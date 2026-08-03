@@ -60,6 +60,15 @@ class TestRemoteSourceResolveLocation:
                 "fake://test: missing",
                 id="missing_field_key_only",
             ),
+            # Regression: json.dumps() raises TypeError on bytes (e.g. ConsulSource with
+            # decode="raw"), which used to crash error rendering instead of showing the value.
+            pytest.param(
+                None,
+                {"secret": b"s3cret"},
+                ["secret"],
+                "fake://test: secret = \"b's3cret'\"",
+                id="bytes_value",
+            ),
         ],
     )
     def test_resolve_location(self, prefix, data, field_path, expected):
