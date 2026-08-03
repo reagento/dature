@@ -11,23 +11,27 @@ CONSUL_IMAGE = "hashicorp/consul:1.18"
 
 
 @pytest.fixture(scope="package")
-def consul_port() -> int:
-    """The port that the Consul container is listening on."""
+def consul_internal_port() -> int:
+    """The port that the Consul container is listening on (inside the container)."""
     return 8500
 
 
 @pytest.fixture(scope="package")
-def consul_container(consul_port) -> Generator[DockerContainer]:
+def consul_container(consul_internal_port) -> Generator[DockerContainer]:
     """One Consul dev-mode container shared by every test under sources/consul/ for the run."""
-    container = DockerContainer(CONSUL_IMAGE).with_command("agent -dev -client=0.0.0.0").with_exposed_ports(consul_port)
+    container = (
+        DockerContainer(CONSUL_IMAGE)
+        .with_command("agent -dev -client=0.0.0.0")
+        .with_exposed_ports(consul_internal_port)
+    )
     with container as c:
         wait_for_logs(c, "Synced node info")
         yield c
 
 
 @pytest.fixture(scope="package")
-def consul_client(consul_container: DockerContainer, consul_port) -> consul.std.Consul:
+def consul_client(consul_container: DockerContainer, consul_internal_port) -> consul.std.Consul:
     """``consul.Consul`` client pointed at the running container."""
     host = consul_container.get_container_host_ip()
-    port = int(consul_container.get_exposed_port(consul_port))
+    port = int(consul_container.get_exposed_port(consul_internal_port))
     return consul.std.Consul(host=host, port=port)

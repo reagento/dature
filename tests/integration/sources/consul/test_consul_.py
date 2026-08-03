@@ -34,8 +34,8 @@ def consul_host(consul_container) -> str:
 
 
 @pytest.fixture
-def consul_port(consul_container, consul_port) -> int:
-    return int(consul_container.get_exposed_port(consul_port))
+def consul_port(consul_container, consul_internal_port) -> int:
+    return int(consul_container.get_exposed_port(consul_internal_port))
 
 
 @pytest.fixture
