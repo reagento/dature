@@ -128,6 +128,22 @@ class TestVaultSourceConfigFallback:
         merged = apply_source_config_group(VaultSource(path="p", kv_version=instance_value))
         assert merged.kv_version == expected
 
+    @pytest.mark.parametrize(
+        ("global_value", "instance_value", "expected"),
+        [
+            pytest.param("kv1", "", "kv1", id="mount_point_from_global"),
+            pytest.param("kv1", "secret2", "secret2", id="mount_point_instance_wins"),
+            pytest.param(None, "", "secret", id="mount_point_default"),
+        ],
+    )
+    def test_mount_point_fallback(self, global_value, instance_value, expected):
+        config_kwargs = {"url": "u", "token": "t"}
+        if global_value is not None:
+            config_kwargs["mount_point"] = global_value
+        configure(vault=config_kwargs)
+        merged = apply_source_config_group(VaultSource(path="p", mount_point=instance_value))
+        assert merged.mount_point == expected
+
 
 @pytest.mark.usefixtures("_reset_config")
 def test_missing_hvac_raises_on_load(block_import, monkeypatch):

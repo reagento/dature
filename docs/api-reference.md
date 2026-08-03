@@ -665,7 +665,7 @@ fetched over the network via `_fetch()` rather than read from a local file.
 |-----------|------|---------|-------------|
 | `path` | `str` | — | Secret path within the mount. Required. |
 | `url` | `str \| None` | `None` | Vault server address. Falls back to `VaultConfig.url`; required (directly or via config). |
-| `mount_point` | `str \| None` | `None` | Secrets engine mount point. Falls back to `VaultConfig.mount_point`. |
+| `mount_point` | `str` | `""` | Secrets engine mount point. Falls back to `VaultConfig.mount_point` when empty. |
 | `kv_version` | `Literal[1, 2] \| None` | `None` | KV engine version. Falls back to `VaultConfig.kv_version`. |
 | `token` | `str \| None` | `None` | Vault token. Mutually exclusive with `role_id`/`secret_id`. |
 | `role_id` | `str \| None` | `None` | AppRole `role_id`. Mutually exclusive with `token`. |
