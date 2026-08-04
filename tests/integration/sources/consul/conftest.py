@@ -6,6 +6,7 @@ from typing import Final
 
 import consul.std
 import pytest
+import requests.exceptions
 from consul.exceptions import ConsulException
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_container_is_ready
@@ -49,13 +50,17 @@ def consul_token() -> str:
     return CONSUL_MGMT_TOKEN
 
 
-@wait_container_is_ready(ConsulException, ConnectionError)
+@wait_container_is_ready(ConsulException, ConnectionError, requests.exceptions.ConnectionError)
 def _wait_acl_ready(client: consul.std.Consul) -> None:
     """Block until *client* can perform a real, token-authenticated KV write.
 
     "Synced node info" (the previous log-line wait) is logged before the ACL subsystem
     finishes initializing, so it isn't a reliable readiness signal once ACLs are enabled.
     A live write is: it fails with ConsulException until the token is actually honored.
+
+    ``requests.exceptions.ConnectionError`` is a distinct class from the builtin
+    ``ConnectionError`` (it doesn't subclass it), so both must be listed explicitly — the
+    consul client raises the former while the agent is still bringing up its HTTP listener.
     """
     client.kv.put("_readiness", "ok")
 
