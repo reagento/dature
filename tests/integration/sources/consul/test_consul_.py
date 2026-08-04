@@ -133,17 +133,26 @@ class TestConsulSourceRawDecode:
 @pytest.mark.usefixtures("_reset_config")
 class TestConsulSourceAcl:
     @pytest.mark.usefixtures("_kv_tree")
-    @pytest.mark.parametrize(
-        "token",
-        [
-            pytest.param(None, id="no_token"),
-            pytest.param("bogus-token", id="bad_token"),
-        ],
-    )
-    def test_denied_without_valid_token_raises_permission_error(self, consul_host, consul_port, token):
+    def test_no_token_yields_not_found(self, consul_host, consul_port):
+        # The anonymous token has no policies attached (default_policy=deny), and for a
+        # *recursive* read Consul silently filters out keys the token can't see rather than
+        # 403ing the whole request — so this surfaces as "key not found", not a permission error.
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=token),
+                ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=None),
+                schema=_Config,
+            )
+        inner = exc_info.value.exceptions[0]
+        assert isinstance(inner, KeyError)
+        assert inner.args[0] == f"Consul key not found: http://{consul_host}:{consul_port}/v1/kv/{KV_PREFIX}"
+
+    @pytest.mark.usefixtures("_kv_tree")
+    def test_bad_token_raises_permission_error(self, consul_host, consul_port):
+        # A token that doesn't exist at all fails identification itself, which Consul 403s
+        # outright — unlike the anonymous-token case above, this is a real ACLPermissionDenied.
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token="bogus-token"),
                 schema=_Config,
             )
         inner = exc_info.value.exceptions[0]
