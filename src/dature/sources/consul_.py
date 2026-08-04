@@ -59,7 +59,13 @@ class ConsulSource(RemoteSource):
 
     def _decode_value(self, raw: "bytes | None") -> JSONValue:
         if raw is None:
-            return None
+            # A live Consul agent reports "Value": null for a key stored with an empty
+            # value (0 bytes), indistinguishable at this point from a genuine directory
+            # marker. For decode="utf-8" the empty-bytes reading is "" — consistent with
+            # how every other flat-key source represents an empty value, and letting
+            # ``none_from_empty_string`` (in string_value_loaders) turn it into None when
+            # the target field is Optional/None-typed.
+            return "" if self.decode == "utf-8" else None
         if self.decode == "raw":
             return cast("JSONValue", raw)
         if self.decode == "json":

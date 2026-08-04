@@ -226,6 +226,22 @@ class TestConsulSourceFetch:
         with pytest.raises(KeyError, match="Consul key not found"):
             src.load_raw()
 
+    def test_utf8_decode_none_value_becomes_empty_string(self, monkeypatch):
+        data = [{"Key": "myapp/name", "Value": None}]
+        src = self._make_source(monkeypatch, data)
+        assert src.load_raw().loaded_data == {"name": ""}
+
+    def test_utf8_decode_none_value_loads_into_none_field(self, monkeypatch):
+        data = [{"Key": "myapp/none_value", "Value": None}]
+        self._make_source(monkeypatch, data)
+
+        @dataclass
+        class Config:
+            none_value: None
+
+        result = load(ConsulSource(host="c", path="myapp"), schema=Config)
+        assert result == Config(none_value=None)
+
     def test_comprehensive_type_conversion(self, monkeypatch, all_types_consul_kv_file: Path):
         """Test loading a recursive Consul KV tree (decode='utf-8') with full type coercion."""
         kv_map = json.loads(all_types_consul_kv_file.read_text())
