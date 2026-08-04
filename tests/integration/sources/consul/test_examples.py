@@ -15,14 +15,15 @@ CONSUL_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "advanced" / "remote" / "consul"
 
 
 @pytest.fixture(scope="module")
-def consul_examples_env(consul_container, consul_client, consul_port) -> dict[str, str]:
+def consul_examples_env(consul_container, consul_client, consul_internal_port, consul_token) -> dict[str, str]:
     """Write the secret used by the examples and yield matching env vars."""
     consul_client.kv.put("myapp/db_password", "s3cret")
     consul_client.kv.put("myapp/port", "5432")
     consul_client.kv.put("myapp/name", "myapp")
     return {
         "CONSUL_HOST": consul_container.get_container_host_ip(),
-        "CONSUL_PORT": str(consul_container.get_exposed_port(consul_port)),
+        "CONSUL_PORT": str(consul_container.get_exposed_port(consul_internal_port)),
+        "CONSUL_TOKEN": consul_token,
     }
 
 

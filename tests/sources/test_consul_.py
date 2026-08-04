@@ -12,6 +12,7 @@ import pytest
 from dature import ConsulSource, configure, load
 from dature.errors import DatureConfigError
 from dature.loading.merge_runtime import apply_source_config_group
+from dature.sources.base import bytes_value_loaders
 
 
 class TestConsulSourceDisplayProperties:
@@ -25,6 +26,18 @@ class TestConsulSourceDisplayProperties:
     )
     def test_class_attribute(self, attr, expected):
         assert getattr(ConsulSource, attr) == expected
+
+    @pytest.mark.parametrize(
+        ("decode", "expected"),
+        [
+            pytest.param("utf-8", [], id="utf8"),
+            pytest.param("json", [], id="json"),
+            pytest.param("raw", bytes_value_loaders(), id="raw"),
+        ],
+    )
+    def test_format_loaders(self, decode, expected):
+        src = ConsulSource(host="c", path="myapp", decode=decode)
+        assert src.format_loaders() == expected
 
     @pytest.mark.parametrize(
         ("scheme", "host", "port", "path", "expected"),
@@ -230,6 +243,31 @@ class TestConsulSourceFetch:
             "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
             "   ├── http://c:8500/v1/kv/myapp: port = not_a_number"
         )
+
+    def test_raw_decode_loads_into_bytes_field(self, monkeypatch):
+        data = [{"Key": "myapp/blob", "Value": b"\x00\x01raw"}]
+        self._make_source(monkeypatch, data, decode="raw")
+
+        @dataclass
+        class Config:
+            blob: bytes
+
+        result = load(ConsulSource(host="c", path="myapp", decode="raw"), schema=Config)
+        assert result == Config(blob=b"\x00\x01raw")
+
+    def test_raw_decode_none_value_raises(self, monkeypatch):
+        # A key with Value=None (e.g. a directory marker) reaching a bytes-typed field must
+        # raise, not silently produce None. In the recursive case _build_nested drops keys
+        # equal to the prefix itself, but a single-key fetch has no such filter.
+        item = {"Key": "myapp/blob", "Value": None}
+        self._make_source(monkeypatch, item, recursive=False, decode="raw")
+
+        @dataclass
+        class Config:
+            blob: bytes
+
+        with pytest.raises(DatureConfigError):
+            load(ConsulSource(host="c", path="myapp", recursive=False, decode="raw"), schema=Config)
 
     def test_acl_permission_denied_raises_permission_error(self, monkeypatch):
         class DeniedKV:

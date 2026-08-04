@@ -11,6 +11,7 @@ from dature import Loader, V
 from dature.errors.exceptions import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.loading.retort import (
+    _FAST_BYTES,
     _FAST_PLAIN,
     _FAST_STRING,
     RetortCache,
@@ -21,7 +22,7 @@ from dature.loading.retort import (
     get_name_mapping_providers,
     get_validator_providers,
 )
-from dature.sources.base import FlatKeySource, IndexedSource, Source, string_value_loaders
+from dature.sources.base import FlatKeySource, IndexedSource, Source, bytes_value_loaders, string_value_loaders
 from dature.type_aliases import JSONValue
 
 
@@ -94,6 +95,27 @@ class MockStringRecipeSource(Source):
 
     def format_loaders(self) -> "list[Provider]":
         return string_value_loaders()
+
+
+@dataclass(kw_only=True)
+class MockRawRecipeSource(Source):
+    """A plain ``Source`` subclass returning the canonical raw-value recipe (Consul's
+    decode="raw"), proving the fast-path detection matches _FAST_BYTES by content too."""
+
+    format_name: str = "mock_raw_recipe"
+    location_label: str = "MOCK RAW RECIPE"
+    test_data: JSONValue = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.test_data is None:
+            self.test_data = {}
+
+    def _load(self) -> JSONValue:
+        return self.test_data
+
+    def format_loaders(self) -> "list[Provider]":
+        return bytes_value_loaders()
 
 
 class TestGetAdaptixNameStyle:
@@ -509,6 +531,8 @@ class TestUncustomizedFastRetort:
             # A plain `Source` subclass that itself returns the canonical string-value recipe
             # matches _FAST_STRING too — proves detection doesn't key off FlatKeySource.
             (MockStringRecipeSource(), _FAST_STRING),
+            # Same proof for the raw-value recipe (Consul's decode="raw").
+            (MockRawRecipeSource(), _FAST_BYTES),
         ],
     )
     def test_uncustomized_source_matches_by_recipe_content(self, source, expected):

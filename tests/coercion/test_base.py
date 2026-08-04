@@ -4,12 +4,14 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 import pytest
+from adaptix.load_error import TypeLoadError
 
 from dature.coercion.base import (
     base64url_bytes_from_string,
     base64url_str_from_string,
     byte_size_from_string,
     bytes_from_string,
+    bytes_passthrough,
     complex_from_string,
     payment_card_number_from_string,
     secret_str_from_string,
@@ -29,6 +31,18 @@ from dature.fields.secret_str import SecretStr
 )
 def test_bytes_from_string(input_value, expected):
     assert bytes_from_string(input_value) == expected
+
+
+def test_bytes_passthrough_returns_same_object():
+    value = b"\x00\x01raw"
+    assert bytes_passthrough(value) is value
+
+
+def test_bytes_passthrough_rejects_none():
+    # Consul's decode="raw" can surface a directory-marker key whose Value is None;
+    # passthrough must reject it instead of silently returning None for a bytes field.
+    with pytest.raises(TypeLoadError):
+        bytes_passthrough(None)
 
 
 @pytest.mark.parametrize(

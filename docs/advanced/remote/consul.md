@@ -28,7 +28,8 @@ which maps directly to a flat dataclass.
 - `host` — Consul address; default `""` (falls through to `ConsulConfig.host`, then `"localhost"`).
 - `port` — Consul HTTP port; default `None` (falls through to `ConsulConfig.port`, then `8500`).
 - `scheme` — `"http"` or `"https"`; default `None` (falls through to `ConsulConfig.scheme`, then `"http"`).
-- `token` — ACL token; default `None`.
+- `token` — ACL token; default `None`. Required whenever the Consul agent has ACLs enabled
+  with `default_policy = "deny"` — without a valid token, `load()` raises `PermissionError`.
 - `datacenter` — Consul datacenter; default `None` (uses the agent's datacenter).
 - `verify` — TLS verification: `True`, a CA bundle path, or `False`; default `None`.
 - `recursive` — read the prefix tree recursively; default `True`.

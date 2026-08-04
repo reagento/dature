@@ -22,6 +22,7 @@ from dature._deprecations import REMOVAL_NOTICE, normalize_skip_bool
 from dature.coercion import (
     bool_loader,
     bytearray_from_json_string,
+    bytes_passthrough,
     date_from_string,
     datetime_from_string,
     float_from_string,
@@ -70,6 +71,13 @@ _STRING_VALUE_LOADERS: Final[tuple[Provider, ...]] = (
 
 def string_value_loaders() -> list[Provider]:
     return list(_STRING_VALUE_LOADERS)
+
+
+_BYTES_VALUE_LOADERS: Final[tuple[Provider, ...]] = (loader(bytes, bytes_passthrough),)
+
+
+def bytes_value_loaders() -> list[Provider]:
+    return list(_BYTES_VALUE_LOADERS)
 
 
 def _set_value_at_path(

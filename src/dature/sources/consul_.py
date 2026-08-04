@@ -2,8 +2,10 @@ import json
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
+from adaptix.provider import Provider
+
 from dature._deps import require_dep
-from dature.sources.base import RemoteSource
+from dature.sources.base import RemoteSource, bytes_value_loaders
 from dature.type_aliases import JSONValue
 
 
@@ -47,6 +49,9 @@ class ConsulSource(RemoteSource):
         if self.port is not None and self.port <= 0:
             msg = f"ConsulSource: port must be a positive integer, got {self.port!r}"
             raise ValueError(msg)
+
+    def format_loaders(self) -> "list[Provider]":
+        return bytes_value_loaders() if self.decode == "raw" else []
 
     def _decode_value(self, raw: "bytes | None") -> JSONValue:
         if raw is None:

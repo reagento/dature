@@ -15,6 +15,7 @@ config = dature.load(
     dature.ConsulSource(
         host=os.environ["CONSUL_HOST"],
         port=int(os.environ["CONSUL_PORT"]),
+        token=os.environ["CONSUL_TOKEN"],
         path="myapp",
     ),
     schema=Config,

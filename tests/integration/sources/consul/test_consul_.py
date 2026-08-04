@@ -38,6 +38,13 @@ def consul_port(consul_container, consul_internal_port) -> int:
     return int(consul_container.get_exposed_port(consul_internal_port))
 
 
+@pytest.fixture(autouse=True)
+def _no_consul_http_token_env(monkeypatch):
+    # CONSUL_HTTP_TOKEN silently overrides an explicitly-passed token (consul/base.py), which
+    # would let a "no token" test case pass for the wrong reason.
+    monkeypatch.delenv("CONSUL_HTTP_TOKEN", raising=False)
+
+
 @pytest.fixture
 def _kv_tree(consul_client):
     """Write the canonical secret as a flat key per field, nested under KV_PREFIX."""
@@ -54,17 +61,20 @@ def _kv_json_doc(consul_client):
 @pytest.mark.usefixtures("_reset_config")
 class TestConsulSourceRecursive:
     @pytest.mark.usefixtures("_kv_tree")
-    def test_load_basic(self, consul_host, consul_port):
+    def test_load_basic(self, consul_host, consul_port, consul_token):
         result = load(
-            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX),
+            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=consul_token),
             schema=_Config,
         )
         assert result == EXPECTED_DATACLASS
 
-    def test_missing_prefix_raises(self, consul_host, consul_port):
+    def test_missing_prefix_raises(self, consul_host, consul_port, consul_token):
+        # A wrong-but-authenticated path still 404s: the management token reads anything, so
+        # this stays a not-found case rather than an ACL denial (ACL is checked first in
+        # _fetch, but the token here is valid — it's the path that doesn't exist).
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                ConsulSource(host=consul_host, port=consul_port, path="does/not/exist"),
+                ConsulSource(host=consul_host, port=consul_port, path="does/not/exist", token=consul_token),
                 schema=_Config,
             )
         inner = exc_info.value.exceptions[0]
@@ -72,8 +82,8 @@ class TestConsulSourceRecursive:
         assert inner.args[0] == f"Consul key not found: http://{consul_host}:{consul_port}/v1/kv/does/not/exist"
 
     @pytest.mark.usefixtures("_kv_tree")
-    def test_resolve_location_renders_real_value(self, consul_host, consul_port):
-        source = ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX)
+    def test_resolve_location_renders_real_value(self, consul_host, consul_port, consul_token):
+        source = ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=consul_token)
         result = source.load_raw()
         locations = source.resolve_location(
             field_path=["db_password"], nested_conflict=None, loaded_data=result.loaded_data
@@ -94,9 +104,11 @@ class TestConsulSourceRecursive:
 
 @pytest.mark.usefixtures("_reset_config", "_kv_json_doc")
 class TestConsulSourceSingleKeyJson:
-    def test_load_json_document_as_root(self, consul_host, consul_port):
+    def test_load_json_document_as_root(self, consul_host, consul_port, consul_token):
         result = load(
-            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, recursive=False, decode="json"),
+            ConsulSource(
+                host=consul_host, port=consul_port, path=KV_PREFIX, recursive=False, decode="json", token=consul_token
+            ),
             schema=_Config,
         )
         assert result == EXPECTED_DATACLASS
@@ -104,7 +116,7 @@ class TestConsulSourceSingleKeyJson:
 
 @pytest.mark.usefixtures("_reset_config")
 class TestConsulSourceRawDecode:
-    def test_raw_decode_yields_bytes(self, consul_client, consul_host, consul_port):
+    def test_raw_decode_yields_bytes(self, consul_client, consul_host, consul_port, consul_token):
         consul_client.kv.put(f"{KV_PREFIX}/blob", b"\x00\x01raw")
 
         @dataclass
@@ -112,7 +124,7 @@ class TestConsulSourceRawDecode:
             blob: bytes
 
         result = load(
-            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, decode="raw"),
+            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, decode="raw", token=consul_token),
             schema=Config,
         )
         assert result == Config(blob=b"\x00\x01raw")
@@ -121,17 +133,22 @@ class TestConsulSourceRawDecode:
 @pytest.mark.usefixtures("_reset_config")
 class TestConsulSourceAcl:
     @pytest.mark.usefixtures("_kv_tree")
-    def test_invalid_token_raises(self, consul_host, consul_port):
+    @pytest.mark.parametrize(
+        "token",
+        [
+            pytest.param(None, id="no_token"),
+            pytest.param("bogus-token", id="bad_token"),
+        ],
+    )
+    def test_denied_without_valid_token_raises_permission_error(self, consul_host, consul_port, token):
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token="bad-token"),
+                ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=token),
                 schema=_Config,
             )
-        # In Consul dev mode ACLs are disabled by default; a bogus token is simply ignored
-        # rather than rejected, so this exercises the happy path through the token field
-        # rather than the ACLPermissionDenied/ACLDisabled translation to PermissionError.
         inner = exc_info.value.exceptions[0]
-        assert not isinstance(inner, PermissionError)
+        assert isinstance(inner, PermissionError)
+        assert inner.args[0] == f"Consul auth failed for http://{consul_host}:{consul_port}/v1/kv/{KV_PREFIX}"
 
 
 @pytest.mark.usefixtures("_reset_config", "_kv_tree")
@@ -143,12 +160,13 @@ class TestConsulSourceGlobalConfigEndToEnd:
             pytest.param("env", id="creds_from_env"),
         ],
     )
-    def test_load_with_creds(self, via, consul_host, consul_port, monkeypatch):
+    def test_load_with_creds(self, via, consul_host, consul_port, consul_token, monkeypatch):
         if via == "configure":
-            configure(consul={"host": consul_host, "port": consul_port})
+            configure(consul={"host": consul_host, "port": consul_port, "token": consul_token})
         else:
             monkeypatch.setenv("DATURE_CONSUL__HOST", consul_host)
             monkeypatch.setenv("DATURE_CONSUL__PORT", str(consul_port))
+            monkeypatch.setenv("DATURE_CONSUL__TOKEN", consul_token)
 
         result = load(ConsulSource(path=KV_PREFIX), schema=_Config)
         assert result == EXPECTED_DATACLASS
