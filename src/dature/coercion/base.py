@@ -3,6 +3,8 @@ import re
 from datetime import timedelta
 from urllib.parse import urlparse
 
+from adaptix.load_error import TypeLoadError
+
 from dature.fields.byte_size import ByteSize
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
@@ -17,6 +19,12 @@ _TIMEDELTA_RE = re.compile(
 
 def bytes_from_string(value: str) -> bytes:
     return value.encode("utf-8")
+
+
+def bytes_passthrough(value: bytes) -> bytes:
+    if not isinstance(value, bytes):
+        raise TypeLoadError(bytes, value)
+    return value
 
 
 def complex_from_string(value: str) -> complex:

@@ -78,6 +78,7 @@ nav:
         - Custom CLI Source: advanced/cli/custom.md
       - Remote:
         - VaultSource: advanced/remote/vault.md
+        - ConsulSource: advanced/remote/consul.md
         - Custom Remote Source: advanced/remote/custom.md
       - Custom Types: advanced/custom_types.md
       - Custom Sources: advanced/custom_sources.md
@@ -144,6 +145,7 @@ plugins:
           - advanced/cli/argparse.md
           - advanced/cli/custom.md
           - advanced/remote/vault.md
+          - advanced/remote/consul.md
           - advanced/remote/custom.md
           - advanced/custom_types.md
           - advanced/custom_sources.md

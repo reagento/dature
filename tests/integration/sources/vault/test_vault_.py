@@ -6,7 +6,9 @@ CI common jobs pass ``--ignore=tests/integration`` to skip them. To run these te
 """
 
 import contextlib
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Final, cast
 
 import hvac
@@ -14,9 +16,12 @@ import pytest
 
 from dature import VaultSource, configure, load
 from dature.errors import DatureConfigError, SourceLocation
+from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
+from tests.sources.checker import assert_all_types_equal
 
 KV_PATH: Final = "myapp/config"
 KV1_MOUNT: Final = "kv1"
+ALL_TYPES_PATH: Final = "myapp/all_types"
 EXPECTED_SECRET: Final = {"db_password": "s3cret", "port": "5432", "name": "myapp"}
 
 
@@ -44,6 +49,13 @@ def vault_root_token(vault_container) -> str:
 def _kv2_secret(vault_client):
     """Write the canonical secret in the default KV v2 mount."""
     vault_client.secrets.kv.v2.create_or_update_secret(path=KV_PATH, secret=EXPECTED_SECRET)
+
+
+@pytest.fixture
+def _kv2_all_types(vault_client, all_types_vault_file: Path):
+    """Write the all-types payload in the default KV v2 mount, as a single secret."""
+    payload = json.loads(all_types_vault_file.read_text())
+    vault_client.secrets.kv.v2.create_or_update_secret(path=ALL_TYPES_PATH, secret=payload)
 
 
 @pytest.fixture
@@ -133,6 +145,17 @@ class TestVaultSourceTokenKv2:
                 line_carets=None,
             ),
         ]
+
+
+@pytest.mark.usefixtures("_reset_config")
+class TestVaultSourceAllTypes:
+    @pytest.mark.usefixtures("_kv2_all_types")
+    def test_comprehensive_type_conversion(self, vault_url, vault_root_token):
+        result = load(
+            VaultSource(url=vault_url, token=vault_root_token, path=ALL_TYPES_PATH),
+            schema=AllPythonTypesCompact,
+        )
+        assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
 
 @pytest.mark.usefixtures("_reset_config", "_kv1_mount")

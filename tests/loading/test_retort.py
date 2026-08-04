@@ -7,11 +7,13 @@ from adaptix import Retort, loader
 from adaptix.load_error import AggregateLoadError
 from adaptix.provider import Provider
 
-from dature import Loader, V
+from dature import ConsulSource, Loader, V, VaultSource
 from dature.errors.exceptions import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.loading.retort import (
+    _FAST_BYTES,
     _FAST_PLAIN,
+    _FAST_REMOTE,
     _FAST_STRING,
     RetortCache,
     _DualRetort,
@@ -21,7 +23,14 @@ from dature.loading.retort import (
     get_name_mapping_providers,
     get_validator_providers,
 )
-from dature.sources.base import FlatKeySource, IndexedSource, Source, string_value_loaders
+from dature.sources.base import (
+    FlatKeySource,
+    IndexedSource,
+    Source,
+    bytes_value_loaders,
+    remote_value_loaders,
+    string_value_loaders,
+)
 from dature.type_aliases import JSONValue
 
 
@@ -94,6 +103,48 @@ class MockStringRecipeSource(Source):
 
     def format_loaders(self) -> "list[Provider]":
         return string_value_loaders()
+
+
+@dataclass(kw_only=True)
+class MockRawRecipeSource(Source):
+    """A plain ``Source`` subclass returning the canonical raw-value recipe (Consul's
+    decode="raw"), proving the fast-path detection matches _FAST_BYTES by content too."""
+
+    format_name: str = "mock_raw_recipe"
+    location_label: str = "MOCK RAW RECIPE"
+    test_data: JSONValue = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.test_data is None:
+            self.test_data = {}
+
+    def _load(self) -> JSONValue:
+        return self.test_data
+
+    def format_loaders(self) -> "list[Provider]":
+        return bytes_value_loaders()
+
+
+@dataclass(kw_only=True)
+class MockRemoteRecipeSource(Source):
+    """A plain ``Source`` subclass returning the canonical native-JSON remote recipe (Vault,
+    Consul decode="json"), proving the fast-path detection matches _FAST_REMOTE by content too."""
+
+    format_name: str = "mock_remote_recipe"
+    location_label: str = "MOCK REMOTE RECIPE"
+    test_data: JSONValue = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.test_data is None:
+            self.test_data = {}
+
+    def _load(self) -> JSONValue:
+        return self.test_data
+
+    def format_loaders(self) -> "list[Provider]":
+        return remote_value_loaders()
 
 
 class TestGetAdaptixNameStyle:
@@ -509,6 +560,10 @@ class TestUncustomizedFastRetort:
             # A plain `Source` subclass that itself returns the canonical string-value recipe
             # matches _FAST_STRING too — proves detection doesn't key off FlatKeySource.
             (MockStringRecipeSource(), _FAST_STRING),
+            # Same proof for the raw-value recipe (Consul's decode="raw").
+            (MockRawRecipeSource(), _FAST_BYTES),
+            # Same proof for the native-JSON remote recipe (Vault, Consul decode="json").
+            (MockRemoteRecipeSource(), _FAST_REMOTE),
         ],
     )
     def test_uncustomized_source_matches_by_recipe_content(self, source, expected):
@@ -537,6 +592,19 @@ class TestUncustomizedFastRetort:
     def test_distinct_nonempty_recipe_returns_none(self):
         """A source with its own, different non-empty recipe matches neither constant."""
         assert _uncustomized_fast_retort(MockCustomLoadersSource()) is None
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            pytest.param(ConsulSource(host="c", path="p", decode="utf-8"), _FAST_STRING, id="consul_utf8"),
+            pytest.param(ConsulSource(host="c", path="p", decode="json"), _FAST_REMOTE, id="consul_json"),
+            pytest.param(ConsulSource(host="c", path="p", decode="raw"), _FAST_BYTES, id="consul_raw"),
+            pytest.param(VaultSource(url="u", token="t", path="p"), _FAST_REMOTE, id="vault"),
+        ],
+    )
+    def test_real_remote_sources_match_by_recipe_content(self, source, expected):
+        """Consul and Vault stay on a precomputed fast retort, never paying per-call .extend()."""
+        assert _uncustomized_fast_retort(source) is expected
 
 
 class TestFinalRetortPrecomputedFastPath:

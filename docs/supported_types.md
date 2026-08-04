@@ -12,6 +12,10 @@ the input accordingly. Input sources:
 - **INI** — all values are strings; collections are JSON literals
 - **ENV / ENV File** — all values are strings; nested fields use `__`
 - **Docker Secrets** — each file = one field (filename = field name, uppercased); file content is the value
+- **Vault** — KV v2 secret data is native JSON; same coercion as JSON
+- **Consul** (`decode="utf-8"`, the default) — all values are strings; nested fields use `/`;
+  collections are JSON literals — same dialect as ENV. `decode="json"` behaves like Vault;
+  `decode="raw"` yields raw `bytes` and sits outside this matrix
 
 Across this page the **Syntax** column shows the raw value — apply the source
 format's own quoting rules around it.
@@ -101,6 +105,35 @@ format's own quoting rules around it.
     | float | `float("nan")`    | `FLOAT_NAN` → `nan`      | —                                |
     | bool  | `True` / `False`  | `BOOLEAN_VALUE` → `true` | also: `false`/`1`/`0`/`yes`/`no` |
     | None  | `None`            | file absent or empty     | —                                |
+
+=== "Vault"
+
+    Same as JSON — Vault KV v2 secret data is native JSON.
+
+    | Type  | Python            | Syntax           | Notes                    |
+    |-------|-------------------|------------------|--------------------------|
+    | str   | `"hello"`         | `"hello"`        | —                        |
+    | int   | `42`              | `42`             | —                        |
+    | float | `3.14`            | `3.14`           | —                        |
+    | float | `float("inf")`    | `"inf"`          | JSON has no native `inf` |
+    | float | `float("nan")`    | `"nan"`          | JSON has no native `nan` |
+    | bool  | `True` / `False`  | `true` / `false` | —                        |
+    | None  | `None`            | `null`           | —                        |
+
+=== "Consul"
+
+    `decode="utf-8"` (default) — same dialect as ENV, `/` instead of `__`.
+    `decode="json"` behaves like Vault above. `decode="raw"` yields raw `bytes`.
+
+    | Type  | Python            | Syntax                | Notes                            |
+    |-------|-------------------|------------------------|----------------------------------|
+    | str   | `"hello"`         | `myapp/name=hello`     | —                                |
+    | int   | `42`              | `myapp/port=42`        | —                                |
+    | float | `3.14`            | `myapp/ratio=3.14`     | —                                |
+    | float | `float("inf")`    | `myapp/ratio=inf`      | —                                |
+    | float | `float("nan")`    | `myapp/ratio=nan`      | —                                |
+    | bool  | `True` / `False`  | `myapp/flag=true`      | also: `false`/`1`/`0`/`yes`/`no` |
+    | None  | `None`            | `myapp/value=`         | —                                |
 
 ### Numeric
 
@@ -260,6 +293,32 @@ All time components and days/weeks support negative values: `-2:30`,
     | frozenset[int]       | `frozenset({1, 2, 3})`  | `VAR` → `[1,2,3]`                                 | JSON literal              |
     | dict[str, str]       | `{"k": "v"}`            | `VAR__K` → `v` or `VAR` → `{"k":"v"}`             | `__` separator or JSON    |
     | deque[str]           | `deque(["a", "b"])`     | `VAR` → `["a","b"]`                               | JSON literal              |
+
+=== "Vault"
+
+    Same as JSON — Vault KV v2 secret data is native JSON.
+
+    | Type                 | Python                  | Syntax             | Notes               |
+    |----------------------|-------------------------|--------------------|---------------------|
+    | list[int]            | `[1, 2, 3]`             | `[1, 2, 3]`        | —                   |
+    | tuple[int, int, int] | `(1, 2, 3)`             | `[1, 2, 3]`        | fixed length        |
+    | set[int]             | `{1, 2, 3}`             | `[1, 2, 3]`        | duplicates removed  |
+    | frozenset[int]       | `frozenset({1, 2, 3})`  | `[1, 2, 3]`        | duplicates removed  |
+    | dict[str, str]       | `{"k": "v"}`            | `{"k": "v"}`       | int keys as strings |
+    | deque[str]           | `deque(["a", "b"])`     | `["a", "b"]`       | —                   |
+
+=== "Consul"
+
+    `decode="utf-8"` (default) — same dialect as ENV, `/` instead of `__`.
+
+    | Type                 | Python                  | Syntax                                     | Notes                     |
+    |----------------------|-------------------------|---------------------------------------------|---------------------------|
+    | list[int]            | `[1, 2, 3]`             | `myapp/items=[1,2,3]`                       | JSON literal              |
+    | tuple[int, int, int] | `(1, 2, 3)`             | `myapp/items=[1,2,3]`                       | JSON literal              |
+    | set[int]             | `{1, 2, 3}`             | `myapp/items=[1,2,3]`                       | JSON literal              |
+    | frozenset[int]       | `frozenset({1, 2, 3})`  | `myapp/items=[1,2,3]`                       | JSON literal              |
+    | dict[str, str]       | `{"k": "v"}`            | `myapp/address/k=v` or `myapp/address={"k":"v"}` | `/` separator or JSON |
+    | deque[str]           | `deque(["a", "b"])`     | `myapp/items=["a","b"]`                     | JSON literal              |
 
 ### Binary & encoding
 

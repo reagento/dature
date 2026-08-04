@@ -181,6 +181,20 @@ def all_types_docker_secrets_dir(examples_dir: Path) -> Path:
     return examples_dir / "sources" / "all_types_docker_secrets"
 
 
+# Vault fixtures
+@pytest.fixture
+def all_types_vault_file(examples_dir: Path) -> Path:
+    """Path to all_types_vault.json file."""
+    return examples_dir / "sources" / "all_types_vault.json"
+
+
+# Consul fixtures
+@pytest.fixture
+def all_types_consul_kv_file(examples_dir: Path) -> Path:
+    """Path to all_types_consul_kv.json file."""
+    return examples_dir / "sources" / "all_types_consul_kv.json"
+
+
 @pytest.fixture
 def _clean_dature_modules() -> Generator[None]:
     removed: dict[str, object] = {}
