@@ -5,8 +5,10 @@ import json
 from dataclasses import dataclass
 from typing import Final
 
+from adaptix.provider import Provider
+
 from dature.errors import SourceLocation
-from dature.sources.base.source import Source
+from dature.sources.base.source import Source, remote_value_loaders
 from dature.sources.presentation import build_search_path
 from dature.type_aliases import JSONValue, NestedConflict
 
@@ -25,6 +27,9 @@ class RemoteSource(Source, abc.ABC):
 
     @abc.abstractmethod
     def _fetch(self) -> JSONValue: ...
+
+    def format_loaders(self) -> "list[Provider]":
+        return remote_value_loaders()
 
     def _load(self) -> JSONValue:
         return self._fetch()

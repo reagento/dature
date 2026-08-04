@@ -3,7 +3,9 @@
 Container-based integration tests live in ``tests/integration/sources/consul/``.
 """
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 import consul.exceptions
 import consul.std
@@ -12,7 +14,9 @@ import pytest
 from dature import ConsulSource, configure, load
 from dature.errors import DatureConfigError
 from dature.loading.merge_runtime import apply_source_config_group
-from dature.sources.base import bytes_value_loaders
+from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
+from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
+from tests.sources.checker import assert_all_types_equal
 
 
 class TestConsulSourceDisplayProperties:
@@ -30,8 +34,8 @@ class TestConsulSourceDisplayProperties:
     @pytest.mark.parametrize(
         ("decode", "expected"),
         [
-            pytest.param("utf-8", [], id="utf8"),
-            pytest.param("json", [], id="json"),
+            pytest.param("utf-8", string_value_loaders(), id="utf8"),
+            pytest.param("json", remote_value_loaders(), id="json"),
             pytest.param("raw", bytes_value_loaders(), id="raw"),
         ],
     )
@@ -169,7 +173,7 @@ class TestConsulSourceFetch:
         ]
         src = self._make_source(monkeypatch, data)
         assert src.load_raw().loaded_data == {
-            "db": {"host": "localhost", "port": "5432"},
+            "db": {"host": "localhost", "port": 5432},
             "name": "svc",
         }
 
@@ -221,6 +225,19 @@ class TestConsulSourceFetch:
         src = self._make_source(monkeypatch, None)
         with pytest.raises(KeyError, match="Consul key not found"):
             src.load_raw()
+
+    def test_comprehensive_type_conversion(self, monkeypatch, all_types_consul_kv_file: Path):
+        """Test loading a recursive Consul KV tree (decode='utf-8') with full type coercion."""
+        kv_map = json.loads(all_types_consul_kv_file.read_text())
+        data = [
+            {"Key": key.replace("all_types", "myapp", 1), "Value": value.encode("utf-8")}
+            for key, value in kv_map.items()
+        ]
+        src = self._make_source(monkeypatch, data)
+
+        result = load(src, schema=AllPythonTypesCompact)
+
+        assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
     def test_missing_key_error_message_includes_path(self, monkeypatch):
         self._make_source(monkeypatch, None)

@@ -15,6 +15,7 @@ from dature.sources.base.source import (
     Source,
     bytes_value_loaders,
     clone_source,
+    remote_value_loaders,
     string_value_loaders,
 )
 from dature.sources.protocol import SourceProtocol
@@ -30,5 +31,6 @@ __all__ = [
     "SourceProtocol",
     "bytes_value_loaders",
     "clone_source",
+    "remote_value_loaders",
     "string_value_loaders",
 ]

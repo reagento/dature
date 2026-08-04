@@ -7,14 +7,18 @@ CI common jobs pass ``--ignore=tests/integration`` to skip them. To run these te
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Final, cast
 
 import pytest
 
 from dature import ConsulSource, configure, load
 from dature.errors import DatureConfigError, SourceLocation
+from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
+from tests.sources.checker import assert_all_types_equal
 
 KV_PREFIX: Final = "myapp"
+ALL_TYPES_PREFIX: Final = "all_types"
 EXPECTED_SECRET: Final = {"db_password": "s3cret", "port": "5432", "name": "myapp"}
 
 
@@ -56,6 +60,14 @@ def _kv_tree(consul_client):
 def _kv_json_doc(consul_client):
     """Write the canonical secret as a single JSON document at KV_PREFIX."""
     consul_client.kv.put(KV_PREFIX, json.dumps(EXPECTED_SECRET))
+
+
+@pytest.fixture
+def _kv_all_types(consul_client, all_types_consul_kv_file: Path):
+    """Write every key of the all-types KV tree individually."""
+    kv_map = json.loads(all_types_consul_kv_file.read_text())
+    for key, value in kv_map.items():
+        consul_client.kv.put(key, value)
 
 
 @pytest.mark.usefixtures("_reset_config")
@@ -100,6 +112,17 @@ class TestConsulSourceRecursive:
                 line_carets=None,
             ),
         ]
+
+
+@pytest.mark.usefixtures("_reset_config")
+class TestConsulSourceAllTypes:
+    @pytest.mark.usefixtures("_kv_all_types")
+    def test_comprehensive_type_conversion(self, consul_host, consul_port, consul_token):
+        result = load(
+            ConsulSource(host=consul_host, port=consul_port, path=ALL_TYPES_PREFIX, token=consul_token),
+            schema=AllPythonTypesCompact,
+        )
+        assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
 
 @pytest.mark.usefixtures("_reset_config", "_kv_json_doc")

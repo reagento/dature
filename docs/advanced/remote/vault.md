@@ -27,6 +27,12 @@ pip install dature[vault,type-stubs]   # runtime + mypy/pyright stubs for hvac
 - `namespace` — Vault Enterprise namespace.
 - `verify` — TLS verification (`True`, a CA bundle path, or `False`).
 
+## Supported types
+
+Vault KV v2 secret data is native JSON, so `VaultSource` follows the same
+coercion rules as the JSON source — see [Supported Types](../../supported_types.md)
+for the full matrix.
+
 ## Global configuration via configure()
 
 Connection settings rarely change per-call, so they can be set once via

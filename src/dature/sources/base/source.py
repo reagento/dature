@@ -22,6 +22,7 @@ from dature._deprecations import REMOVAL_NOTICE, normalize_skip_bool
 from dature.coercion import (
     bool_loader,
     bytearray_from_json_string,
+    bytearray_from_string,
     bytes_passthrough,
     date_from_string,
     datetime_from_string,
@@ -78,6 +79,23 @@ _BYTES_VALUE_LOADERS: Final[tuple[Provider, ...]] = (loader(bytes, bytes_passthr
 
 def bytes_value_loaders() -> list[Provider]:
     return list(_BYTES_VALUE_LOADERS)
+
+
+_REMOTE_VALUE_LOADERS: Final[tuple[Provider, ...]] = (
+    loader(float, float_from_string),
+    loader(bytearray, bytearray_from_string),
+)
+
+
+def remote_value_loaders() -> list[Provider]:
+    """Loaders for native-JSON remote responses (Vault, Consul ``decode="json"``).
+
+    ``float`` needs a string loader because JSON has no ``Infinity``/``NaN`` literals, so
+    those values arrive as strings (``"inf"``/``"nan"``) even though the rest of the payload
+    is natively typed. ``bytearray`` has no JSON representation at all, so it always arrives
+    as a plain string.
+    """
+    return list(_REMOTE_VALUE_LOADERS)
 
 
 def _set_value_at_path(

@@ -36,6 +36,14 @@ which maps directly to a flat dataclass.
 - `decode` — how to decode each value's raw bytes: `"utf-8"` (default), `"json"`, or `"raw"`.
 - `separator` — path segment separator for nesting; default `"/"`. Set to `None` to disable nesting.
 
+## Supported types
+
+With `decode="utf-8"` (the default) every value is a string and collections are
+JSON literals — the same dialect as ENV, with `/` nesting instead of `__`.
+`decode="json"` behaves like [`VaultSource`](vault.md) (native JSON). `decode="raw"`
+yields raw `bytes` and sits outside the type-coercion matrix. See
+[Supported Types](../../supported_types.md) for the full matrix.
+
 ## Global configuration via configure()
 
 Connection settings rarely change per-call, so they can be set once via

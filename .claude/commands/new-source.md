@@ -5,7 +5,7 @@ Use the following checklist. Ask me for the format name before starting, then ex
 **Steps:**
 
 1. **Source class** — create `src/dature/sources/<format>_.py`
-   - Subclass `FileSource` (structured format) or `FlatKeySource` (flat key=value)
+   - Subclass `FileSource` (structured format) or `FlatKeySource` (flat key=value) or `RemoteSource` (remote API)
    - Set `format_name: ClassVar[str]` and `location_label: ClassVar[str]`
    - Implement `_load_file(self, path: FileOrStream) -> JSONValue`
    - Import the optional dependency *inside* `_load_file`, not at module level
@@ -31,6 +31,7 @@ Use the following checklist. Ask me for the format name before starting, then ex
    - Test missing optional dep via `block_import` fixture
    - Test file-not-found error
    - Mirror structure of existing `tests/sources/test_yaml12_.py` or similar
+   - Test EXPECTED_ALL_TYPES/AllPythonTypesCompact unit and integration
 
 6. **Changelog fragment** — create `changes/+add-<format>-source.feature.md`
 

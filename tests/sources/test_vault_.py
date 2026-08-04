@@ -3,7 +3,9 @@
 Container-based integration tests live in ``tests/integration/sources/test_vault_.py``.
 """
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 import hvac
 import hvac.exceptions
@@ -12,6 +14,8 @@ import pytest
 from dature import VaultSource, configure, load
 from dature.errors import DatureConfigError
 from dature.loading.merge_runtime import apply_source_config_group
+from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
+from tests.sources.checker import assert_all_types_equal
 
 
 class TestVaultSourceDisplayProperties:
@@ -203,6 +207,15 @@ class TestVaultSourceFetch:
             "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
             "   ├── https://v/v1/secret/data/myapp: port = not_a_number"
         )
+
+    def test_comprehensive_type_conversion(self, monkeypatch, all_types_vault_file: Path):
+        """Test loading Vault KV v2's native-JSON payload with full type coercion."""
+        payload = json.loads(all_types_vault_file.read_text())
+        src = self._make_source(monkeypatch, payload)
+
+        result = load(src, schema=AllPythonTypesCompact)
+
+        assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
 
 @pytest.mark.usefixtures("_reset_config")

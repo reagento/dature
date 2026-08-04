@@ -28,7 +28,7 @@ from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import ConstructorOverrideProvider, ModelToDictProvider, SkipFieldProvider
-from dature.sources.base import IndexedSource, bytes_value_loaders, string_value_loaders
+from dature.sources.base import IndexedSource, bytes_value_loaders, remote_value_loaders, string_value_loaders
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     URL,
@@ -150,6 +150,7 @@ _BASE_RICH: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.
 # it would add import cost without a happy-path payoff.
 _FAST_STRING: Final[Retort] = _BASE_FAST.extend(recipe=[*string_value_loaders(), *_DEFAULT_LOADERS])
 _FAST_BYTES: Final[Retort] = _BASE_FAST.extend(recipe=[*bytes_value_loaders(), *_DEFAULT_LOADERS])
+_FAST_REMOTE: Final[Retort] = _BASE_FAST.extend(recipe=[*remote_value_loaders(), *_DEFAULT_LOADERS])
 _FAST_PLAIN: Final[Retort] = _BASE_FAST.extend(recipe=[*_DEFAULT_LOADERS])
 
 
@@ -162,6 +163,8 @@ def _uncustomized_fast_retort(source: SourceProtocol) -> Retort | None:
         return _FAST_STRING
     if additional == bytes_value_loaders():
         return _FAST_BYTES
+    if additional == remote_value_loaders():
+        return _FAST_REMOTE
     if not additional:
         return _FAST_PLAIN
     return None

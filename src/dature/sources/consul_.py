@@ -5,7 +5,7 @@ from typing import Any, Literal, cast
 from adaptix.provider import Provider
 
 from dature._deps import require_dep
-from dature.sources.base import RemoteSource, bytes_value_loaders
+from dature.sources.base import RemoteSource, bytes_value_loaders, string_value_loaders
 from dature.type_aliases import JSONValue
 
 
@@ -51,7 +51,11 @@ class ConsulSource(RemoteSource):
             raise ValueError(msg)
 
     def format_loaders(self) -> "list[Provider]":
-        return bytes_value_loaders() if self.decode == "raw" else []
+        if self.decode == "raw":
+            return bytes_value_loaders()
+        if self.decode == "utf-8":
+            return string_value_loaders()
+        return super().format_loaders()
 
     def _decode_value(self, raw: "bytes | None") -> JSONValue:
         if raw is None:
@@ -121,5 +125,10 @@ class ConsulSource(RemoteSource):
             raise KeyError(msg) from None
 
         if self.recursive:
-            return self._build_nested(cast("list[dict[str, Any]]", data))
-        return self._build_single(cast("dict[str, Any]", data))
+            result = self._build_nested(cast("list[dict[str, Any]]", data))
+        else:
+            result = self._build_single(cast("dict[str, Any]", data))
+
+        if self.decode == "utf-8":
+            return self._parse_string_values(result)
+        return result
