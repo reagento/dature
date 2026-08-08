@@ -33,13 +33,13 @@ EXPECTED_DATACLASS: Final = _Config(db_password="s3cret", port=5432, name="myapp
 
 
 @pytest.fixture
-def _secret(secrets_manager_client):
-    secrets_manager_client.create_secret(Name=SECRET_NAME, SecretString=json.dumps(EXPECTED_SECRET))
+def _secret(secrets_manager_put_secret):
+    secrets_manager_put_secret(name=SECRET_NAME, secret_string=json.dumps(EXPECTED_SECRET))
 
 
 @pytest.fixture
-def _all_types_secret(secrets_manager_client, all_types_vault_file: Path):
-    secrets_manager_client.create_secret(Name=SECRET_NAME, SecretString=all_types_vault_file.read_text())
+def _all_types_secret(secrets_manager_put_secret, all_types_secrets_manager_file: Path):
+    secrets_manager_put_secret(name=SECRET_NAME, secret_string=all_types_secrets_manager_file.read_text())
 
 
 def _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, **kwargs) -> AwsSecretsManagerSource:
@@ -118,9 +118,9 @@ class TestAwsSecretsManagerSourceAllTypes:
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSecretsManagerSourceAuth:
     def test_wrong_credentials_raise_permission_error(
-        self, secrets_manager_endpoint_url, secrets_manager_region_name, secrets_manager_client
+        self, secrets_manager_endpoint_url, secrets_manager_region_name, secrets_manager_put_secret
     ):
-        secrets_manager_client.create_secret(Name=SECRET_NAME, SecretString=json.dumps(EXPECTED_SECRET))
+        secrets_manager_put_secret(name=SECRET_NAME, secret_string=json.dumps(EXPECTED_SECRET))
         source = AwsSecretsManagerSource(
             endpoint_url=secrets_manager_endpoint_url,
             region_name=secrets_manager_region_name,

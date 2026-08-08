@@ -17,9 +17,9 @@ SSM_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "advanced" / "remote" / "ssm"
 @pytest.fixture(scope="module")
 def ssm_examples_env(localstack_container, ssm_client) -> dict[str, str]:
     """Write the secret used by the examples and yield matching env vars."""
-    ssm_client.put_parameter(Name="/myapp/db_password", Value="s3cret", Type="String")
-    ssm_client.put_parameter(Name="/myapp/port", Value="5432", Type="String")
-    ssm_client.put_parameter(Name="/myapp/name", Value="myapp", Type="String")
+    ssm_client.put_parameter(Name="/myapp/db_password", Value="s3cret", Type="String", Overwrite=True)
+    ssm_client.put_parameter(Name="/myapp/port", Value="5432", Type="String", Overwrite=True)
+    ssm_client.put_parameter(Name="/myapp/name", Value="myapp", Type="String", Overwrite=True)
 
     return {
         "SSM_ENDPOINT_URL": localstack_container.get_url(),

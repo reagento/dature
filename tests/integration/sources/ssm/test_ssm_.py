@@ -36,19 +36,25 @@ EXPECTED_DATACLASS: Final = _Config(db_password="s3cret", port=5432, name="myapp
 @pytest.fixture
 def _kv_tree(ssm_client):
     for key, value in EXPECTED_SECRET.items():
-        ssm_client.put_parameter(Name=f"{KV_PREFIX}/{key}", Value=value, Type="String")
+        ssm_client.put_parameter(Name=f"{KV_PREFIX}/{key}", Value=value, Type="String", Overwrite=True)
 
 
 @pytest.fixture
 def _kv_json_doc(ssm_client):
-    ssm_client.put_parameter(Name=KV_PREFIX, Value=json.dumps(EXPECTED_SECRET), Type="String")
+    ssm_client.put_parameter(Name=KV_PREFIX, Value=json.dumps(EXPECTED_SECRET), Type="String", Overwrite=True)
 
 
 @pytest.fixture
-def _kv_all_types(ssm_client, all_types_etcd_kv_file: Path):
-    kv_map = json.loads(all_types_etcd_kv_file.read_text())
-    for key, value in kv_map.items():
-        ssm_client.put_parameter(Name="/" + key, Value=value, Type="String")
+def _kv_all_types(ssm_client, all_types_ssm_file: Path):
+    # SSM parameters cannot store empty strings in a recursive key/value tree.
+    # Store this comprehensive fixture as one JSON document so edge cases such
+    # as ``empty_string=""`` are still exercised against the real SSM API.
+    ssm_client.put_parameter(
+        Name=ALL_TYPES_PREFIX,
+        Value=all_types_ssm_file.read_text(),
+        Type="String",
+        Overwrite=True,
+    )
 
 
 def _make_source(ssm_endpoint_url, ssm_region_name, **kwargs) -> AwsSsmSource:
@@ -106,7 +112,7 @@ class TestAwsSsmSourceAllTypes:
     @pytest.mark.usefixtures("_kv_all_types")
     def test_comprehensive_type_conversion(self, ssm_endpoint_url, ssm_region_name):
         result = load(
-            _make_source(ssm_endpoint_url, ssm_region_name, path=ALL_TYPES_PREFIX),
+            _make_source(ssm_endpoint_url, ssm_region_name, path=ALL_TYPES_PREFIX, recursive=False, decode="json"),
             schema=AllPythonTypesCompact,
         )
 
@@ -127,7 +133,7 @@ class TestAwsSsmSourceSingleKeyJson:
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSsmSourceAuth:
     def test_wrong_credentials_raise_permission_error(self, ssm_endpoint_url, ssm_region_name, ssm_client):
-        ssm_client.put_parameter(Name=f"{KV_PREFIX}/name", Value="myapp", Type="String")
+        ssm_client.put_parameter(Name=f"{KV_PREFIX}/name", Value="myapp", Type="String", Overwrite=True)
         source = AwsSsmSource(
             endpoint_url=ssm_endpoint_url,
             region_name=ssm_region_name,

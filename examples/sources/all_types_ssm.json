@@ -1,0 +1,133 @@
+{
+  "string_value": "hello world",
+  "integer_value": 42,
+  "float_value": 3.14159,
+  "boolean_value": true,
+  "none_value": null,
+
+  "decimal_value": "3.14159265358979323846264338327950288",
+  "float_inf": "inf",
+  "float_nan": "nan",
+
+  "date_value": "2024-01-15",
+  "datetime_value": "2024-01-15T10:30:00",
+  "datetime_value_with_timezone": "2024-01-15T10:30:00+03:00",
+  "datetime_value_with_z_timezone": "2024-01-15T10:30:00Z",
+  "time_value": "10:30:00",
+  "timedelta_value_with_day": "1 day, 2:30:00",
+  "timedelta_value_without_day": "2:30:00",
+  "timedelta_value_without_seconds": "2:30",
+
+  "list_strings": ["item1", "item2", "item3"],
+  "list_integers": [1, 2, 3, 4, 5],
+  "list_mixed": ["string", 42, 3.14, true, null],
+  "list_nested": [["a", "b"], ["c", "d"]],
+  "list_dicts": [
+    {"name": "Alice", "age": 30},
+    {"name": "Bob", "age": 25}
+  ],
+
+  "tuple_simple": [1, 2, 3],
+  "tuple_mixed": ["text", 42, true],
+  "tuple_nested": [[1, 2, 3], ["a", "b", "c"]],
+
+  "set_integers": [1, 2, 3, 4, 5],
+  "set_strings": ["apple", "banana", "cherry"],
+
+  "dict_simple": {
+    "key1": "value1",
+    "key2": "value2"
+  },
+  "dict_mixed": {
+    "string": "text",
+    "number": 42,
+    "float": 3.14,
+    "bool": true,
+    "list": [1, 2, 3]
+  },
+  "dict_nested": {
+    "level1": {
+      "level2": {
+        "level3": "deep_value"
+      }
+    }
+  },
+  "dict_int_keys": {
+    "1": "one",
+    "2": "two",
+    "3": "three"
+  },
+  "dict_list_dict": {
+    "users": [
+      {"name": "Alice", "role": "admin"},
+      {"name": "Bob", "role": "user"}
+    ],
+    "teams": [
+      {"name": "backend", "size": 5}
+    ]
+  },
+
+  "bytes_value": "binary data",
+  "bytearray_value": "binary",
+  "complex_value": "1+2j",
+  "base64url_bytes_value": "SGVsbG8gV29ybGQ=",
+  "base64url_str_value": "c2VjcmV0IHRva2Vu",
+
+  "secret_str_value": "supersecret123",
+  "payment_card_number_value": "4111111111111111",
+  "byte_size_value": "1.5 GB",
+
+  "path_value": "/usr/local/bin",
+  "pure_posix_path_value": "/etc/hosts",
+  "pure_windows_path_value": "C:/Windows/System32",
+
+  "ipv4_address_value": "192.168.1.1",
+  "ipv6_address_value": "2001:db8::1",
+  "ipv4_network_value": "192.168.1.0/24",
+  "ipv6_network_value": "2001:db8::/32",
+  "ipv4_interface_value": "192.168.1.1/24",
+  "ipv6_interface_value": "2001:db8::1/32",
+
+  "uuid_value": "550e8400-e29b-41d4-a716-446655440000",
+  "url_value": "https://example.com/path?query=value#fragment",
+
+  "empty_string": "",
+  "empty_list": [],
+  "empty_dict": {},
+  "zero_int": 0,
+  "zero_float": 0.0,
+  "false_bool": false,
+
+  "optional_string": null,
+  "union_type": 42,
+  "nested_optional": [
+    {"name": "Alice", "email": "alice@example.com"},
+    {"name": "Bob", "email": null}
+  ],
+
+  "range_values": [0, 2, 4, 6, 8],
+
+  "nested_dc_single": {"city": "Moscow", "zip_code": "101000"},
+  "nested_dc_list": [
+    {"name": "urgent", "priority": 1},
+    {"name": "low", "priority": 5}
+  ],
+  "nested_dc_dict": {
+    "home": {"city": "Berlin", "zip_code": "10115"},
+    "work": {"city": "Paris", "zip_code": "75001"}
+  },
+  "nested_dc_tuple": [
+    {"name": "bug", "priority": 2},
+    {"name": "feature", "priority": 3}
+  ],
+
+  "enum_value": "green",
+  "flag_value": 3,
+  "literal_value": "info",
+
+  "regex_pattern": "^[a-z]+$",
+  "fraction_value": "1/3",
+  "deque_value": ["first", "second", "third"],
+
+  "frozenset_value": [1, 2, 3, 4, 5]
+}

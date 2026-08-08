@@ -188,6 +188,19 @@ def all_types_vault_file(examples_dir: Path) -> Path:
     return examples_dir / "sources" / "all_types_vault.json"
 
 
+# AWS fixtures
+@pytest.fixture
+def all_types_ssm_file(examples_dir: Path) -> Path:
+    """Path to all_types_ssm.json file."""
+    return examples_dir / "sources" / "all_types_ssm.json"
+
+
+@pytest.fixture
+def all_types_secrets_manager_file(examples_dir: Path) -> Path:
+    """Path to all_types_secrets_manager.json file."""
+    return examples_dir / "sources" / "all_types_secrets_manager.json"
+
+
 # Consul fixtures
 @pytest.fixture
 def all_types_consul_kv_file(examples_dir: Path) -> Path:
