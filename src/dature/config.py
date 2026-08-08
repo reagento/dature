@@ -129,6 +129,34 @@ class EtcdConfig:
 # --8<-- [end:etcd-config]
 
 
+# --8<-- [start:ssm-config]
+@dataclass(frozen=True, slots=True)
+class SsmConfig:
+    region_name: str = "us-east-1"
+    profile_name: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_session_token: str | None = None
+    endpoint_url: str | None = None
+
+
+# --8<-- [end:ssm-config]
+
+
+# --8<-- [start:secrets-manager-config]
+@dataclass(frozen=True, slots=True)
+class SecretsManagerConfig:
+    region_name: str = "us-east-1"
+    profile_name: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_session_token: str | None = None
+    endpoint_url: str | None = None
+
+
+# --8<-- [end:secrets-manager-config]
+
+
 @dataclass(frozen=True, slots=True)
 class DatureConfig:
     masking: MaskingConfig = MaskingConfig()
@@ -137,6 +165,8 @@ class DatureConfig:
     vault: VaultConfig = VaultConfig()
     consul: ConsulConfig = ConsulConfig()
     etcd: EtcdConfig = EtcdConfig()
+    ssm: SsmConfig = SsmConfig()
+    secrets_manager: SecretsManagerConfig = SecretsManagerConfig()
 
 
 def _load_config() -> DatureConfig:
@@ -223,6 +253,24 @@ class EtcdOptions(TypedDict, total=False):
     timeout: float | None
 
 
+class SsmOptions(TypedDict, total=False):
+    region_name: str
+    profile_name: str | None
+    aws_access_key_id: str | None
+    aws_secret_access_key: str | None
+    aws_session_token: str | None
+    endpoint_url: str | None
+
+
+class SecretsManagerOptions(TypedDict, total=False):
+    region_name: str
+    profile_name: str | None
+    aws_access_key_id: str | None
+    aws_secret_access_key: str | None
+    aws_session_token: str | None
+    endpoint_url: str | None
+
+
 _config_lock: threading.RLock = threading.RLock()
 
 
@@ -279,6 +327,14 @@ class _ConfigProxy:
         return self.ensure_loaded().etcd
 
     @property
+    def ssm(self) -> SsmConfig:
+        return self.ensure_loaded().ssm
+
+    @property
+    def secrets_manager(self) -> SecretsManagerConfig:
+        return self.ensure_loaded().secrets_manager
+
+    @property
     def type_loaders(self) -> TypeLoaderMap:
         return _ConfigProxy._type_loaders
 
@@ -303,6 +359,8 @@ def configure(  # noqa: PLR0913
     vault: VaultOptions | None = None,
     consul: ConsulOptions | None = None,
     etcd: EtcdOptions | None = None,
+    ssm: SsmOptions | None = None,
+    secrets_manager: SecretsManagerOptions | None = None,
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
@@ -315,6 +373,8 @@ def configure(  # noqa: PLR0913
         merged_vault = _merge_group(current.vault, vault, VaultConfig)
         merged_consul = _merge_group(current.consul, consul, ConsulConfig)
         merged_etcd = _merge_group(current.etcd, etcd, EtcdConfig)
+        merged_ssm = _merge_group(current.ssm, ssm, SsmConfig)
+        merged_secrets_manager = _merge_group(current.secrets_manager, secrets_manager, SecretsManagerConfig)
 
         config.set_instance(
             DatureConfig(
@@ -324,6 +384,8 @@ def configure(  # noqa: PLR0913
                 vault=merged_vault,
                 consul=merged_consul,
                 etcd=merged_etcd,
+                ssm=merged_ssm,
+                secrets_manager=merged_secrets_manager,
             ),
         )
         if type_loaders is not None:

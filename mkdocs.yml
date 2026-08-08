@@ -80,6 +80,8 @@ nav:
         - VaultSource: advanced/remote/vault.md
         - ConsulSource: advanced/remote/consul.md
         - EtcdSource: advanced/remote/etcd.md
+        - AwsSsmSource: advanced/remote/ssm.md
+        - AwsSecretsManagerSource: advanced/remote/secrets_manager.md
         - Custom Remote Source: advanced/remote/custom.md
       - Custom Types: advanced/custom_types.md
       - Custom Sources: advanced/custom_sources.md

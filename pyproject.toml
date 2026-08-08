@@ -60,9 +60,10 @@ secure = ["random-string-detector>=1.1.1"]
 vault = ["hvac>=2.0"]
 consul = ["py-consul>=1.7"]
 etcd = ["etcd3gw>=2.7"]
+aws = ["boto3>=1.34"]
 # Type stubs for the optional integrations above — only needed by users running
 # a static type checker (mypy/pyright). Add ``[<lib>,type-stubs]`` to opt in.
-type-stubs = ["types-hvac"]
+type-stubs = ["types-hvac", "boto3-stubs[secretsmanager,ssm]"]
 
 [tool.hatch.version]
 source = "vcs"
@@ -237,7 +238,7 @@ pythonpath = [
     "src",
 ]
 markers = [
-    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd)",
+    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd, LocalStack)",
     "examples: tests that execute the docs example scripts as subprocesses",
 ]
 
@@ -300,6 +301,7 @@ dev = [
 ]
 integration-tests = [
     "testcontainers[vault]>=4.0",
+    "testcontainers[localstack]>=4.0",
 ]
 docs = [
     "mkdocs>=1.6,<2",
