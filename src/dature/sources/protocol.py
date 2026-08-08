@@ -33,6 +33,7 @@ from dature.type_aliases import (
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
+from dature.validators.root import RootPredicate
 
 
 @runtime_checkable
@@ -49,6 +50,7 @@ class SourceProtocol(Protocol):
     format_name: str
     location_label: str
     config_group: str | None
+    root_validators: ClassVar[tuple[RootPredicate, ...]]
 
     prefix: DotSeparatedPath | None
     name_style: NameStyle | None
@@ -66,8 +68,6 @@ class SourceProtocol(Protocol):
     def load_raw(self) -> LoadRawResult: ...
 
     def display_name(self) -> str: ...
-
-    def check_invariants(self) -> None: ...
 
     def format_loaders(self) -> list[Provider]: ...
 

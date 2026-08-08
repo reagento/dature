@@ -599,7 +599,7 @@ class TestUncustomizedFastRetort:
             pytest.param(ConsulSource(host="c", path="p", decode="utf-8"), _FAST_STRING, id="consul_utf8"),
             pytest.param(ConsulSource(host="c", path="p", decode="json"), _FAST_REMOTE, id="consul_json"),
             pytest.param(ConsulSource(host="c", path="p", decode="raw"), _FAST_BYTES, id="consul_raw"),
-            pytest.param(VaultSource(url="u", token="t", path="p"), _FAST_REMOTE, id="vault"),
+            pytest.param(VaultSource(host="u", token="t", path="p"), _FAST_REMOTE, id="vault"),
         ],
     )
     def test_real_remote_sources_match_by_recipe_content(self, source, expected):

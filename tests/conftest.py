@@ -195,6 +195,13 @@ def all_types_consul_kv_file(examples_dir: Path) -> Path:
     return examples_dir / "sources" / "all_types_consul_kv.json"
 
 
+# etcd fixtures
+@pytest.fixture
+def all_types_etcd_kv_file(examples_dir: Path) -> Path:
+    """Path to all_types_etcd_kv.json file."""
+    return examples_dir / "sources" / "all_types_etcd_kv.json"
+
+
 @pytest.fixture
 def _clean_dature_modules() -> Generator[None]:
     removed: dict[str, object] = {}

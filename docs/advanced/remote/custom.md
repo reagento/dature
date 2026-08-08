@@ -22,8 +22,12 @@ Subclass `RemoteSource` and implement two methods:
 
 ## Optional hooks
 
-- `validate()` — runs after credential merge; override to enforce invariants
-  (e.g. "either `token` or `role_id+secret_id` is set", as `VaultSource` does).
+- Declarative validation, checked after config-group merge and before
+  fetching: `Literal`-typed fields are checked against their allowed values
+  automatically; single-field rules use `Annotated[..., V ...]` predicates
+  (e.g. `host: Annotated[str, (V.len() >= 1).with_error_message(...)]`); genuine
+  cross-field rules use the `root_validators` ClassVar (e.g. "either `token` or
+  `role_id+secret_id` is set", as `VaultSource` does).
 - `__repr__()` — defaults to `f"{self.format_name} '{self.remote_address()}'"`.
 
 The `config_group` ClassVar that ties `VaultSource` to

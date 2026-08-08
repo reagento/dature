@@ -318,6 +318,6 @@ class TestSingleSourceConfigGroup:
             x: str | None = None
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(VaultSource(path="p", token="t"), schema=Config)
-        expected = "VaultSource: url is required (set on instance or via configure(vault={...}) / DATURE_VAULT__URL)"
+            load(VaultSource(path="p", token="t", role_id="r"), schema=Config)
+        expected = "VaultSource: token and role_id/secret_id are mutually exclusive"
         assert str(exc_info.value.exceptions[0]) == expected

@@ -6,6 +6,7 @@ CI common jobs pass ``--ignore=tests/integration`` to skip them. To run these te
 """
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 
@@ -21,8 +22,11 @@ def vault_examples_env(vault_container, vault_client) -> dict[str, str]:
         path="myapp/config",
         secret={"db_password": "s3cret", "port": "5432", "name": "myapp"},
     )
+    parsed = urlparse(vault_container.get_connection_url())
     return {
-        "VAULT_ADDR": vault_container.get_connection_url(),
+        "VAULT_HOST": parsed.hostname or "",
+        "VAULT_PORT": str(parsed.port),
+        "VAULT_SCHEME": parsed.scheme,
         "VAULT_TOKEN": vault_container.root_token,
     }
 

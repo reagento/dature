@@ -14,6 +14,7 @@ import pytest
 from dature import VaultSource, configure, load
 from dature.errors import DatureConfigError
 from dature.loading.merge_runtime import apply_source_config_group
+from dature.loading.source_validation import validate_source
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -33,15 +34,17 @@ class TestVaultSourceDisplayProperties:
     @pytest.mark.parametrize(
         ("kv_version", "mount_point", "expected"),
         [
-            pytest.param(2, "secret", "https://v/v1/secret/data/myapp/config", id="v2"),
-            pytest.param(1, "secret", "https://v/v1/secret/myapp/config", id="v1"),
-            pytest.param(None, "secret", "https://v/v1/secret/data/myapp/config", id="default_kv_to_v2"),
-            pytest.param(2, "kv", "https://v/v1/kv/data/myapp/config", id="custom_mount"),
+            pytest.param(2, "secret", "https://v:8200/v1/secret/data/myapp/config", id="v2"),
+            pytest.param(1, "secret", "https://v:8200/v1/secret/myapp/config", id="v1"),
+            pytest.param(None, "secret", "https://v:8200/v1/secret/data/myapp/config", id="default_kv_to_v2"),
+            pytest.param(2, "kv", "https://v:8200/v1/kv/data/myapp/config", id="custom_mount"),
         ],
     )
-    def test_remote_address(self, kv_version, mount_point, expected):
+    def test_remote_address_from_host_port_scheme(self, kv_version, mount_point, expected):
         src = VaultSource(
-            url="https://v",
+            host="v",
+            port=8200,
+            scheme="https",
             token="x",
             path="myapp/config",
             kv_version=kv_version,
@@ -49,26 +52,56 @@ class TestVaultSourceDisplayProperties:
         )
         assert src.remote_address() == expected
 
+    def test_remote_address_url_overrides_host_port_scheme(self):
+        with pytest.warns(DeprecationWarning, match="host=/port=/scheme="):
+            src = VaultSource(
+                url="https://v",
+                host="ignored",
+                port=1,
+                scheme="http",
+                token="x",
+                path="myapp/config",
+                mount_point="secret",
+            )
+
+        assert src.remote_address() == "https://v/v1/secret/data/myapp/config"
+
+    def test_remote_address_url_trailing_slash_stripped(self):
+        with pytest.warns(DeprecationWarning, match="host=/port=/scheme="):
+            src = VaultSource(url="https://v/", token="x", path="myapp/config", mount_point="secret")
+
+        assert src.remote_address() == "https://v/v1/secret/data/myapp/config"
+
+
+class TestVaultSourceUrlDeprecation:
+    def test_url_emits_deprecation_warning(self):
+        with pytest.warns(DeprecationWarning, match="host=/port=/scheme="):
+            VaultSource(url="https://v", token="x", path="p")
+
+    def test_no_url_emits_no_warning(self, recwarn):
+        VaultSource(host="v", token="x", path="p")
+
+        assert len(recwarn) == 0
+
 
 @pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceValidation:
     @pytest.mark.parametrize(
         ("kwargs", "match"),
         [
-            pytest.param({"path": "p"}, "url is required", id="no_url"),
-            pytest.param({"path": "p", "url": "u"}, "token or role_id", id="no_auth"),
+            pytest.param({"path": "p"}, "token or role_id", id="no_auth"),
             pytest.param(
-                {"path": "p", "url": "u", "token": "t", "role_id": "r", "secret_id": "s"},
+                {"path": "p", "token": "t", "role_id": "r", "secret_id": "s"},
                 "mutually exclusive",
                 id="mixed_auth",
             ),
             pytest.param(
-                {"path": "p", "url": "u", "role_id": "r"},
+                {"path": "p", "role_id": "r"},
                 "token or role_id",
                 id="approle_missing_secret_id",
             ),
             pytest.param(
-                {"path": "p", "url": "u", "secret_id": "s"},
+                {"path": "p", "secret_id": "s"},
                 "token or role_id",
                 id="approle_missing_role_id",
             ),
@@ -76,18 +109,25 @@ class TestVaultSourceValidation:
     )
     def test_validate_raises_when_invalid(self, kwargs, match):
         with pytest.raises(ValueError, match=match):
-            apply_source_config_group(VaultSource(**kwargs)).check_invariants()
+            validate_source(apply_source_config_group(VaultSource(**kwargs)))
+
+    def test_no_host_raises(self):
+        # VaultConfig defaults host to "localhost", so the fallback group always fills it in
+        # — "host is required" is only reachable when validate_source() runs on a bare instance
+        # that skipped the config-group merge (e.g. config_group=None).
+        with pytest.raises(ValueError, match="host is required"):
+            validate_source(VaultSource(path="p", token="t"))
 
     @pytest.mark.parametrize(
         ("env_vars", "instance_kwargs"),
         [
             pytest.param(
-                {"DATURE_VAULT__URL": "http://x", "DATURE_VAULT__TOKEN": "t"},
+                {"DATURE_VAULT__HOST": "x", "DATURE_VAULT__TOKEN": "t"},
                 {},
                 id="full_creds_from_env",
             ),
             pytest.param(
-                {"DATURE_VAULT__URL": "http://x", "DATURE_VAULT__SECRET_ID": "s"},
+                {"DATURE_VAULT__HOST": "x", "DATURE_VAULT__SECRET_ID": "s"},
                 {"role_id": "r"},
                 id="approle_split_between_instance_and_env",
             ),
@@ -97,28 +137,28 @@ class TestVaultSourceValidation:
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
         merged = apply_source_config_group(VaultSource(path="p", **instance_kwargs))
-        merged.check_invariants()
+        validate_source(merged)
 
 
 @pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceConfigFallback:
-    def test_url_from_configure(self):
-        configure(vault={"url": "http://from-configure", "token": "t"})
+    def test_host_from_configure(self):
+        configure(vault={"host": "from-configure", "token": "t"})
         merged = apply_source_config_group(VaultSource(path="p"))
-        assert merged.url == "http://from-configure"
+        assert merged.host == "from-configure"
         assert merged.token == "t"
 
     def test_creds_from_env_vars(self, monkeypatch):
-        monkeypatch.setenv("DATURE_VAULT__URL", "http://localhost:8200")
+        monkeypatch.setenv("DATURE_VAULT__HOST", "localhost")
         monkeypatch.setenv("DATURE_VAULT__TOKEN", "root")
         merged = apply_source_config_group(VaultSource(path="myapp/config"))
-        assert merged.url == "http://localhost:8200"
+        assert merged.host == "localhost"
         assert merged.token == "root"
 
     def test_instance_overrides_global(self):
-        configure(vault={"url": "http://global", "token": "global-token"})
-        merged = apply_source_config_group(VaultSource(path="p", url="http://instance"))
-        assert merged.url == "http://instance"
+        configure(vault={"host": "global", "token": "global-token"})
+        merged = apply_source_config_group(VaultSource(path="p", host="instance"))
+        assert merged.host == "instance"
         assert merged.token == "global-token"
 
     @pytest.mark.parametrize(
@@ -130,7 +170,7 @@ class TestVaultSourceConfigFallback:
         ],
     )
     def test_kv_version_fallback(self, global_value, instance_value, expected):
-        configure(vault={"url": "u", "token": "t", "kv_version": global_value})
+        configure(vault={"host": "v", "token": "t", "kv_version": global_value})
         merged = apply_source_config_group(VaultSource(path="p", kv_version=instance_value))
         assert merged.kv_version == expected
 
@@ -143,7 +183,7 @@ class TestVaultSourceConfigFallback:
         ],
     )
     def test_mount_point_fallback(self, global_value, instance_value, expected):
-        config_kwargs = {"url": "u", "token": "t"}
+        config_kwargs = {"host": "v", "token": "t"}
         if global_value is not None:
             config_kwargs["mount_point"] = global_value
         configure(vault=config_kwargs)
@@ -185,27 +225,27 @@ class TestVaultSourceFetch:
             return FakeClient(data, **kw)
 
         monkeypatch.setattr(hvac, "Client", _fake_client)
-        return VaultSource(url="https://v", token="t", path="myapp", **kwargs)
+        return VaultSource(host="v", port=8200, scheme="https", token="t", path="myapp", **kwargs)
 
     def test_missing_path_error_message_includes_path(self, monkeypatch):
         self._make_source(monkeypatch, None)
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(VaultSource(url="https://v", token="t", path="myapp"), schema=_FetchConfig)
+            load(VaultSource(host="v", port=8200, scheme="https", token="t", path="myapp"), schema=_FetchConfig)
 
         assert len(exc_info.value.exceptions) == 1
-        assert str(exc_info.value.exceptions[0]) == "'Vault path not found: https://v/v1/secret/data/myapp'"
+        assert str(exc_info.value.exceptions[0]) == "'Vault path not found: https://v:8200/v1/secret/data/myapp'"
 
     def test_bad_type_error_message_includes_path_and_value(self, monkeypatch):
         self._make_source(monkeypatch, {"port": "not_a_number"})
 
         with pytest.raises(DatureConfigError) as exc_info:
-            load(VaultSource(url="https://v", token="t", path="myapp"), schema=_FetchConfig)
+            load(VaultSource(host="v", port=8200, scheme="https", token="t", path="myapp"), schema=_FetchConfig)
 
         assert len(exc_info.value.exceptions) == 1
         assert str(exc_info.value.exceptions[0]) == (
             "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── https://v/v1/secret/data/myapp: port = not_a_number"
+            "   ├── https://v:8200/v1/secret/data/myapp: port = not_a_number"
         )
 
     def test_comprehensive_type_conversion(self, monkeypatch, all_types_vault_file: Path):
@@ -221,7 +261,7 @@ class TestVaultSourceFetch:
 @pytest.mark.usefixtures("_reset_config")
 def test_missing_hvac_raises_on_load(block_import, monkeypatch):
     """`import dature` works without hvac; only _fetch() requires it."""
-    monkeypatch.setenv("DATURE_VAULT__URL", "http://x")
+    monkeypatch.setenv("DATURE_VAULT__HOST", "x")
     monkeypatch.setenv("DATURE_VAULT__TOKEN", "t")
 
     @dataclass

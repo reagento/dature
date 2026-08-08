@@ -45,6 +45,7 @@ from dature.loading.cross_source import (
 )
 from dature.loading.retort import RetortCache
 from dature.loading.source_loading import prepare_loaded_source
+from dature.loading.source_validation import validate_source
 from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.nested_dict import flatten_dict
@@ -129,7 +130,7 @@ def apply_source_config_group[T: SourceProtocol](source: T) -> T:
     Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
 
-    Note: ``check_invariants()`` is NOT called here — it runs lazily inside
+    Note: ``validate_source()`` is NOT called here — it runs lazily inside
     ``LoadCtx.load`` after cross-ref interpolation has been applied so that
     string fields contain real values before invariants are checked.
     """
@@ -411,7 +412,7 @@ class LoadCtx:
         self._enabled_by_tag[tag] = source_idx
 
     def _prepare_source_and_check_enabled(self, source_idx: int) -> bool:
-        """Coordinate lazy cross-ref resolution, when= evaluation, and check_invariants().
+        """Coordinate lazy cross-ref resolution, when= evaluation, and validate_source().
 
         Returns False when the source's lazy ``when=`` condition is not met —
         the caller caches None and skips loading.
@@ -423,7 +424,7 @@ class LoadCtx:
         if not self._eval_lazy_when(source, context):
             return False
         self._check_lazy_tag_collision(source, source_idx)
-        source.check_invariants()
+        validate_source(source)
         return True
 
     def field_origins(self) -> tuple[FieldOrigin, ...]:
@@ -487,7 +488,7 @@ class LoadCtx:
         which tries sources in order and is meant to tolerate misses).
 
         Repeated calls with the same index return the cached result without
-        re-parsing. Cross-ref interpolation and ``check_invariants()`` are applied
+        re-parsing. Cross-ref interpolation and ``validate_source()`` are applied
         lazily on first call, before ``load_raw()`` is invoked.
         """
         if source_idx in self._cache:

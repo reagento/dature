@@ -14,6 +14,7 @@ import pytest
 from dature import ConsulSource, configure, load
 from dature.errors import DatureConfigError
 from dature.loading.merge_runtime import apply_source_config_group
+from dature.loading.source_validation import validate_source
 from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -43,6 +44,7 @@ class TestConsulSourceDisplayProperties:
         src = ConsulSource(host="c", path="myapp", decode=decode)
         assert src.format_loaders() == expected
 
+    @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
         ("scheme", "host", "port", "path", "expected"),
         [
@@ -52,7 +54,7 @@ class TestConsulSourceDisplayProperties:
         ],
     )
     def test_remote_address(self, scheme, host, port, path, expected):
-        src = ConsulSource(host=host, port=port, scheme=scheme, path=path)
+        src = apply_source_config_group(ConsulSource(host=host, port=port, scheme=scheme, path=path))
         assert src.remote_address() == expected
 
 
@@ -69,18 +71,18 @@ class TestConsulSourceValidation:
     )
     def test_validate_raises_when_invalid(self, kwargs, match):
         with pytest.raises(ValueError, match=match):
-            apply_source_config_group(ConsulSource(**kwargs)).check_invariants()
+            validate_source(apply_source_config_group(ConsulSource(**kwargs)))
 
     def test_no_host_raises(self):
         # ConsulConfig defaults host to "localhost", so the fallback group always fills it in
-        # — "host is required" is only reachable when check_invariants() runs on a bare instance
+        # — "host is required" is only reachable when validate_source() runs on a bare instance
         # that skipped the config-group merge (e.g. config_group=None).
         with pytest.raises(ValueError, match="host is required"):
-            ConsulSource(path="p").check_invariants()
+            validate_source(ConsulSource(path="p"))
 
     def test_validate_passes(self):
         merged = apply_source_config_group(ConsulSource(path="p", host="c"))
-        merged.check_invariants()
+        validate_source(merged)
 
 
 @pytest.mark.usefixtures("_reset_config")

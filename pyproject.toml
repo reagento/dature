@@ -59,6 +59,7 @@ toml = ["toml-rs>=0.3.4"]
 secure = ["random-string-detector>=1.1.1"]
 vault = ["hvac>=2.0"]
 consul = ["py-consul>=1.7"]
+etcd = ["etcd3gw>=2.7"]
 # Type stubs for the optional integrations above — only needed by users running
 # a static type checker (mypy/pyright). Add ``[<lib>,type-stubs]`` to opt in.
 type-stubs = ["types-hvac"]
@@ -236,7 +237,7 @@ pythonpath = [
     "src",
 ]
 markers = [
-    "integration: tests that require external services via testcontainers (e.g. Vault, Consul)",
+    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd)",
     "examples: tests that execute the docs example scripts as subprocesses",
 ]
 
@@ -244,7 +245,7 @@ markers = [
 # Libs whose major versions are parametrized across the integration-tests matrix in CI.
 # Each entry maps the PyPI package name to the extras section in this file where its
 # version constraint lives. See .github/workflows/ci.yml::get-integration-lib-versions.
-integration-test-libs = {hvac = "vault", py-consul = "consul"}
+integration-test-libs = {hvac = "vault", py-consul = "consul", etcd3gw = "etcd"}
 
 [tool.towncrier]
 package = "dature"
