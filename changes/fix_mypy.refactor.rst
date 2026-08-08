@@ -1,1 +1,0 @@
-Fix: Change ``VaultSource.mount_point`` type from ``str | None`` to ``str``, using ``""`` as the "unset" sentinel. ``apply_source_config_group`` now treats an empty string the same as ``None`` when falling back to ``VaultConfig.mount_point``, so the global default is no longer silently overridden by an empty value.

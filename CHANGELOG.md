@@ -1,3 +1,56 @@
+## 1.1.1
+
+### Features
+
+- Added :class:`ConsulSource` — loads configuration from HashiCorp Consul KV store.
+  Install via ``pip install dature[consul]``; connection settings can be set globally with
+  ``configure(consul={...})`` or ``DATURE_CONSUL__*`` environment variables.
+  Supports recursive prefix reads with automatic ``/``-based nesting, single-key JSON
+  documents as config roots, and raw ``bytes`` decode mode. With ``decode="utf-8"``
+  (the default), JSON-literal collection values (``[1,2,3]``, ``{"k":"v"}``) are parsed
+  automatically, giving full type-coercion coverage matching the other flat-key sources
+  (ENV, Docker Secrets). ([#add_consul_source](https://github.com/reagento/dature/issues/add_consul_source))
+- Added :class:`EtcdSource` — loads configuration from etcd v3's KV store via ``etcd3gw``.
+  Install via ``pip install dature[etcd]``; connection settings can be set globally with
+  ``configure(etcd={...})`` or ``DATURE_ETCD__*`` environment variables.
+  Supports recursive prefix reads with automatic ``/``-based nesting, single-key JSON
+  documents as config roots, raw ``bytes`` decode mode, and ``user``/``password`` RBAC
+  authentication built on top of ``etcd3gw``'s ``Etcd3Client.post()``. With ``decode="utf-8"``
+  (the default), JSON-literal collection values (``[1,2,3]``, ``{"k":"v"}``) are parsed
+  automatically, giving full type-coercion coverage matching the other flat-key sources
+  (ENV, Docker Secrets, ConsulSource). ([#add_etcd_source](https://github.com/reagento/dature/issues/add_etcd_source))
+- :class:`VaultSource` and :class:`VaultConfig` now accept ``host``/``port``/``scheme``
+  fields, matching :class:`EtcdSource` and :class:`ConsulSource`. The previous ``url``
+  field is deprecated in favor of the three split fields and will be removed in dature 1.2. ([#vault_host_port_scheme](https://github.com/reagento/dature/issues/vault_host_port_scheme))
+
+### Bugfixes
+
+- Fixed error messages for :class:`VaultSource` and :class:`ConsulSource` never showing the
+  remote address/path of the failing key. ``format_location()`` built the location's content
+  line (address + field/value) and then discarded it whenever the location had no file path or
+  env var name — which is always the case for remote sources. ([#fix_remote_source_error_location](https://github.com/reagento/dature/issues/fix_remote_source_error_location))
+- Fixed :class:`VaultSource` failing to load ``bytearray`` fields — Vault's native-JSON
+  payload has no ``bytearray`` representation, and ``RemoteSource`` previously had no
+  loader for it. Also fixed ``float("inf")``/``float("nan")`` silently staying as strings
+  instead of coercing to ``float``, since JSON has no native ``Infinity``/``NaN`` literals. ([#remote_source_type_coercion](https://github.com/reagento/dature/issues/remote_source_type_coercion))
+
+### Docs
+
+- Documented the type-coercion matrix for :class:`VaultSource` and :class:`ConsulSource`
+  in :doc:`supported_types`, alongside the existing file/env-based sources. ([#remote_supported_types_docs](https://github.com/reagento/dature/issues/remote_supported_types_docs))
+
+### Refactoring
+
+- Migrated :class:`EtcdSource`, :class:`ConsulSource`, and :class:`VaultSource` from the
+  removed imperative ``check_invariants()`` hook to declarative validation: single-field
+  rules use ``Annotated[..., V ...]`` predicates, ``Literal``-typed fields are checked
+  automatically, and cross-field rules use the ``Source.root_validators`` ``ClassVar``
+  (renamed from ``source_invariants``). Note this is distinct from ``load()``'s
+  ``root_validators=`` parameter, which validates the merged schema instance rather than
+  the source itself. ([#declarative_source_root_validators](https://github.com/reagento/dature/issues/declarative_source_root_validators))
+- Fix: Change ``VaultSource.mount_point`` type from ``str | None`` to ``str``, using ``""`` as the "unset" sentinel. ``apply_source_config_group`` now treats an empty string the same as ``None`` when falling back to ``VaultConfig.mount_point``, so the global default is no longer silently overridden by an empty value. ([#fix_mypy](https://github.com/reagento/dature/issues/fix_mypy))
+
+
 ## 1.1.0
 
 ### Features
