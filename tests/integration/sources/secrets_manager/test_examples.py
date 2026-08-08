@@ -16,7 +16,11 @@ SECRETS_MANAGER_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "advanced" / "remote" / "secr
 
 
 @pytest.fixture(scope="module")
-def secrets_manager_examples_env(localstack_container, secrets_manager_put_secret) -> dict[str, str]:
+def secrets_manager_examples_env(
+    localstack_container,
+    secrets_manager_put_secret,
+    localstack_iam_credentials,
+) -> dict[str, str]:
     """Write the secret used by the examples and yield matching env vars."""
     secret = {"db_password": "s3cret", "port": 5432, "name": "myapp"}
     secrets_manager_put_secret(name="myapp/config", secret_string=json.dumps(secret))
@@ -24,8 +28,8 @@ def secrets_manager_examples_env(localstack_container, secrets_manager_put_secre
     return {
         "SECRETS_MANAGER_ENDPOINT_URL": localstack_container.get_url(),
         "SECRETS_MANAGER_REGION_NAME": localstack_container.region_name,
-        "AWS_ACCESS_KEY_ID": "test",
-        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_ACCESS_KEY_ID": localstack_iam_credentials["aws_access_key_id"],
+        "AWS_SECRET_ACCESS_KEY": localstack_iam_credentials["aws_secret_access_key"],
     }
 
 

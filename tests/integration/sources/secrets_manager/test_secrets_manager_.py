@@ -42,30 +42,40 @@ def _all_types_secret(secrets_manager_put_secret, all_types_secrets_manager_file
     secrets_manager_put_secret(name=SECRET_NAME, secret_string=all_types_secrets_manager_file.read_text())
 
 
-def _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, **kwargs) -> AwsSecretsManagerSource:
+def _make_source(
+    secrets_manager_endpoint_url,
+    secrets_manager_region_name,
+    localstack_iam_credentials,
+    **kwargs,
+) -> AwsSecretsManagerSource:
     kwargs.setdefault("name", SECRET_NAME)
     return AwsSecretsManagerSource(
         endpoint_url=secrets_manager_endpoint_url,
         region_name=secrets_manager_region_name,
-        aws_access_key_id="test",
-        aws_secret_access_key="test",
+        aws_access_key_id=localstack_iam_credentials["aws_access_key_id"],
+        aws_secret_access_key=localstack_iam_credentials["aws_secret_access_key"],
         **kwargs,
     )
 
 
 @pytest.mark.usefixtures("_reset_config", "_secret")
 class TestAwsSecretsManagerSourceLoad:
-    def test_load_basic(self, secrets_manager_endpoint_url, secrets_manager_region_name):
+    def test_load_basic(self, secrets_manager_endpoint_url, secrets_manager_region_name, localstack_iam_credentials):
         result = load(
-            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name),
+            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, localstack_iam_credentials),
             schema=_Config,
         )
 
         assert result == EXPECTED_DATACLASS
 
-    def test_resolve_location_renders_real_value(self, secrets_manager_endpoint_url, secrets_manager_region_name):
+    def test_resolve_location_renders_real_value(
+        self,
+        secrets_manager_endpoint_url,
+        secrets_manager_region_name,
+        localstack_iam_credentials,
+    ):
         source = apply_source_config_group(
-            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name),
+            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, localstack_iam_credentials),
         )
 
         result = source.load_raw()
@@ -89,10 +99,20 @@ class TestAwsSecretsManagerSourceLoad:
 
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSecretsManagerSourceMissing:
-    def test_missing_secret_raises(self, secrets_manager_endpoint_url, secrets_manager_region_name):
+    def test_missing_secret_raises(
+        self,
+        secrets_manager_endpoint_url,
+        secrets_manager_region_name,
+        localstack_iam_credentials,
+    ):
         with pytest.raises(DatureConfigError) as exc_info:
             load(
-                _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, name="does-not-exist"),
+                _make_source(
+                    secrets_manager_endpoint_url,
+                    secrets_manager_region_name,
+                    localstack_iam_credentials,
+                    name="does-not-exist",
+                ),
                 schema=_Config,
             )
 
@@ -106,9 +126,14 @@ class TestAwsSecretsManagerSourceMissing:
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSecretsManagerSourceAllTypes:
     @pytest.mark.usefixtures("_all_types_secret")
-    def test_comprehensive_type_conversion(self, secrets_manager_endpoint_url, secrets_manager_region_name):
+    def test_comprehensive_type_conversion(
+        self,
+        secrets_manager_endpoint_url,
+        secrets_manager_region_name,
+        localstack_iam_credentials,
+    ):
         result = load(
-            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name),
+            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, localstack_iam_credentials),
             schema=AllPythonTypesCompact,
         )
 
@@ -117,24 +142,42 @@ class TestAwsSecretsManagerSourceAllTypes:
 
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSecretsManagerSourceAuth:
-    def test_wrong_credentials_raise_permission_error(
-        self, secrets_manager_endpoint_url, secrets_manager_region_name, secrets_manager_put_secret
+    def test_iam_user_credentials_load_config(
+        self,
+        secrets_manager_endpoint_url,
+        secrets_manager_region_name,
+        secrets_manager_put_secret,
+        localstack_iam_credentials,
     ):
         secrets_manager_put_secret(name=SECRET_NAME, secret_string=json.dumps(EXPECTED_SECRET))
-        source = AwsSecretsManagerSource(
-            endpoint_url=secrets_manager_endpoint_url,
-            region_name=secrets_manager_region_name,
-            aws_access_key_id="wrong",
-            aws_secret_access_key="wrong",
-            name=SECRET_NAME,
+        source = _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, localstack_iam_credentials)
+
+        result = load(source, schema=_Config)
+
+        assert result == EXPECTED_DATACLASS
+
+    def test_wrong_credentials_raise_config_error(
+        self,
+        secrets_manager_endpoint_url,
+        secrets_manager_region_name,
+        secrets_manager_put_secret,
+        localstack_wrong_account_credentials,
+    ):
+        secrets_manager_put_secret(name=SECRET_NAME, secret_string=json.dumps(EXPECTED_SECRET))
+        source = _make_source(
+            secrets_manager_endpoint_url,
+            secrets_manager_region_name,
+            localstack_wrong_account_credentials,
         )
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(source, schema=_Config)
 
         inner = exc_info.value.exceptions[0]
-        assert isinstance(inner, PermissionError)
-        assert inner.args[0] == f"AWS auth failed for secretsmanager://{secrets_manager_endpoint_url}/{SECRET_NAME}"
+        assert isinstance(inner, KeyError)
+        assert inner.args[0] == (
+            f"Secrets Manager secret not found: secretsmanager://{secrets_manager_endpoint_url}/{SECRET_NAME}"
+        )
 
 
 @pytest.mark.usefixtures("_reset_config", "_secret")
@@ -146,20 +189,33 @@ class TestAwsSecretsManagerSourceGlobalConfigEndToEnd:
             pytest.param("env", id="settings_from_env"),
         ],
     )
-    def test_load_with_settings(self, via, secrets_manager_endpoint_url, secrets_manager_region_name, monkeypatch):
+    def test_load_with_settings(
+        self,
+        via,
+        secrets_manager_endpoint_url,
+        secrets_manager_region_name,
+        localstack_iam_credentials,
+        monkeypatch,
+    ):
         settings = {
             "region_name": secrets_manager_region_name,
             "endpoint_url": secrets_manager_endpoint_url,
-            "aws_access_key_id": "test",
-            "aws_secret_access_key": "test",
+            "aws_access_key_id": localstack_iam_credentials["aws_access_key_id"],
+            "aws_secret_access_key": localstack_iam_credentials["aws_secret_access_key"],
         }
         if via == "configure":
             configure(secrets_manager=settings)
         else:
             monkeypatch.setenv("DATURE_SECRETS_MANAGER__REGION_NAME", secrets_manager_region_name)
             monkeypatch.setenv("DATURE_SECRETS_MANAGER__ENDPOINT_URL", secrets_manager_endpoint_url)
-            monkeypatch.setenv("DATURE_SECRETS_MANAGER__AWS_ACCESS_KEY_ID", "test")
-            monkeypatch.setenv("DATURE_SECRETS_MANAGER__AWS_SECRET_ACCESS_KEY", "test")
+            monkeypatch.setenv(
+                "DATURE_SECRETS_MANAGER__AWS_ACCESS_KEY_ID",
+                localstack_iam_credentials["aws_access_key_id"],
+            )
+            monkeypatch.setenv(
+                "DATURE_SECRETS_MANAGER__AWS_SECRET_ACCESS_KEY",
+                localstack_iam_credentials["aws_secret_access_key"],
+            )
 
         result = load(AwsSecretsManagerSource(name=SECRET_NAME), schema=_Config)
 

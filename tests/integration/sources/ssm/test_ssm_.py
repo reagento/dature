@@ -57,13 +57,13 @@ def _kv_all_types(ssm_client, all_types_ssm_file: Path):
     )
 
 
-def _make_source(ssm_endpoint_url, ssm_region_name, **kwargs) -> AwsSsmSource:
+def _make_source(ssm_endpoint_url, ssm_region_name, localstack_iam_credentials, **kwargs) -> AwsSsmSource:
     kwargs.setdefault("path", KV_PREFIX)
     return AwsSsmSource(
         endpoint_url=ssm_endpoint_url,
         region_name=ssm_region_name,
-        aws_access_key_id="test",
-        aws_secret_access_key="test",
+        aws_access_key_id=localstack_iam_credentials["aws_access_key_id"],
+        aws_secret_access_key=localstack_iam_credentials["aws_secret_access_key"],
         **kwargs,
     )
 
@@ -71,22 +71,30 @@ def _make_source(ssm_endpoint_url, ssm_region_name, **kwargs) -> AwsSsmSource:
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSsmSourceRecursive:
     @pytest.mark.usefixtures("_kv_tree")
-    def test_load_basic(self, ssm_endpoint_url, ssm_region_name):
-        result = load(_make_source(ssm_endpoint_url, ssm_region_name), schema=_Config)
+    def test_load_basic(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
+        result = load(_make_source(ssm_endpoint_url, ssm_region_name, localstack_iam_credentials), schema=_Config)
 
         assert result == EXPECTED_DATACLASS
 
-    def test_missing_prefix_raises(self, ssm_endpoint_url, ssm_region_name):
+    def test_missing_prefix_raises(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
         with pytest.raises(DatureConfigError) as exc_info:
-            load(_make_source(ssm_endpoint_url, ssm_region_name, path="/does/not/exist"), schema=_Config)
+            load(
+                _make_source(
+                    ssm_endpoint_url,
+                    ssm_region_name,
+                    localstack_iam_credentials,
+                    path="/does/not/exist",
+                ),
+                schema=_Config,
+            )
 
         inner = exc_info.value.exceptions[0]
         assert isinstance(inner, KeyError)
         assert inner.args[0] == f"SSM parameter not found: ssm://{ssm_endpoint_url}/does/not/exist"
 
     @pytest.mark.usefixtures("_kv_tree")
-    def test_resolve_location_renders_real_value(self, ssm_endpoint_url, ssm_region_name):
-        source = apply_source_config_group(_make_source(ssm_endpoint_url, ssm_region_name))
+    def test_resolve_location_renders_real_value(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
+        source = apply_source_config_group(_make_source(ssm_endpoint_url, ssm_region_name, localstack_iam_credentials))
 
         result = source.load_raw()
         locations = source.resolve_location(
@@ -110,9 +118,16 @@ class TestAwsSsmSourceRecursive:
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSsmSourceAllTypes:
     @pytest.mark.usefixtures("_kv_all_types")
-    def test_comprehensive_type_conversion(self, ssm_endpoint_url, ssm_region_name):
+    def test_comprehensive_type_conversion(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
         result = load(
-            _make_source(ssm_endpoint_url, ssm_region_name, path=ALL_TYPES_PREFIX, recursive=False, decode="json"),
+            _make_source(
+                ssm_endpoint_url,
+                ssm_region_name,
+                localstack_iam_credentials,
+                path=ALL_TYPES_PREFIX,
+                recursive=False,
+                decode="json",
+            ),
             schema=AllPythonTypesCompact,
         )
 
@@ -121,9 +136,15 @@ class TestAwsSsmSourceAllTypes:
 
 @pytest.mark.usefixtures("_reset_config", "_kv_json_doc")
 class TestAwsSsmSourceSingleKeyJson:
-    def test_load_json_document_as_root(self, ssm_endpoint_url, ssm_region_name):
+    def test_load_json_document_as_root(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
         result = load(
-            _make_source(ssm_endpoint_url, ssm_region_name, recursive=False, decode="json"),
+            _make_source(
+                ssm_endpoint_url,
+                ssm_region_name,
+                localstack_iam_credentials,
+                recursive=False,
+                decode="json",
+            ),
             schema=_Config,
         )
 
@@ -132,22 +153,29 @@ class TestAwsSsmSourceSingleKeyJson:
 
 @pytest.mark.usefixtures("_reset_config")
 class TestAwsSsmSourceAuth:
-    def test_wrong_credentials_raise_permission_error(self, ssm_endpoint_url, ssm_region_name, ssm_client):
-        ssm_client.put_parameter(Name=f"{KV_PREFIX}/name", Value="myapp", Type="String", Overwrite=True)
-        source = AwsSsmSource(
-            endpoint_url=ssm_endpoint_url,
-            region_name=ssm_region_name,
-            aws_access_key_id="wrong",
-            aws_secret_access_key="wrong",
-            path=KV_PREFIX,
-        )
+    @pytest.mark.usefixtures("_kv_tree")
+    def test_iam_user_credentials_load_config(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
+        source = _make_source(ssm_endpoint_url, ssm_region_name, localstack_iam_credentials)
+
+        result = load(source, schema=_Config)
+
+        assert result == EXPECTED_DATACLASS
+
+    @pytest.mark.usefixtures("_kv_tree")
+    def test_wrong_credentials_raise_config_error(
+        self,
+        ssm_endpoint_url,
+        ssm_region_name,
+        localstack_wrong_account_credentials,
+    ):
+        source = _make_source(ssm_endpoint_url, ssm_region_name, localstack_wrong_account_credentials)
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(source, schema=_Config)
 
         inner = exc_info.value.exceptions[0]
-        assert isinstance(inner, PermissionError)
-        assert inner.args[0] == f"AWS auth failed for ssm://{ssm_endpoint_url}{KV_PREFIX}"
+        assert isinstance(inner, KeyError)
+        assert inner.args[0] == f"SSM parameter not found: ssm://{ssm_endpoint_url}{KV_PREFIX}"
 
 
 @pytest.mark.usefixtures("_reset_config", "_kv_tree")
@@ -159,20 +187,20 @@ class TestAwsSsmSourceGlobalConfigEndToEnd:
             pytest.param("env", id="settings_from_env"),
         ],
     )
-    def test_load_with_settings(self, via, ssm_endpoint_url, ssm_region_name, monkeypatch):
+    def test_load_with_settings(self, via, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials, monkeypatch):
         settings = {
             "region_name": ssm_region_name,
             "endpoint_url": ssm_endpoint_url,
-            "aws_access_key_id": "test",
-            "aws_secret_access_key": "test",
+            "aws_access_key_id": localstack_iam_credentials["aws_access_key_id"],
+            "aws_secret_access_key": localstack_iam_credentials["aws_secret_access_key"],
         }
         if via == "configure":
             configure(ssm=settings)
         else:
             monkeypatch.setenv("DATURE_SSM__REGION_NAME", ssm_region_name)
             monkeypatch.setenv("DATURE_SSM__ENDPOINT_URL", ssm_endpoint_url)
-            monkeypatch.setenv("DATURE_SSM__AWS_ACCESS_KEY_ID", "test")
-            monkeypatch.setenv("DATURE_SSM__AWS_SECRET_ACCESS_KEY", "test")
+            monkeypatch.setenv("DATURE_SSM__AWS_ACCESS_KEY_ID", localstack_iam_credentials["aws_access_key_id"])
+            monkeypatch.setenv("DATURE_SSM__AWS_SECRET_ACCESS_KEY", localstack_iam_credentials["aws_secret_access_key"])
 
         result = load(AwsSsmSource(path=KV_PREFIX), schema=_Config)
 
