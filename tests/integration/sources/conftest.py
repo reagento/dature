@@ -10,7 +10,9 @@ from collections.abc import Generator
 import pytest
 from testcontainers.community.localstack import LocalStackContainer
 
-LOCALSTACK_IMAGE = "localstack/localstack:2026.07.2"  # ``latest`` is a moving target and has broken CI in the past
+# Keep this on a community-compatible image. Calendar-versioned LocalStack images
+# can require LocalStack Cloud auth/license and fail CI before services start.
+LOCALSTACK_IMAGE = "localstack/localstack:3.8.1"
 
 
 @pytest.fixture(scope="session")
