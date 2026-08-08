@@ -140,11 +140,24 @@ class EtcdSource(RemoteSource):
                 found = bool(values)
                 result = self._build_single(self.path, values[0]) if found else {}
         except Etcd3Exception as exc:
-            # etcd3gw has no dedicated permission-denied exception class — an expired or
-            # invalid token surfaces here as a bare Etcd3Exception whose reason/body echo
-            # the HTTP status text (401 "Unauthorized" / 403 "Forbidden").
+            # etcd3gw has no dedicated permission-denied exception class — a missing or
+            # invalid token surfaces here as a bare Etcd3Exception. etcd's gRPC-gateway maps
+            # auth failures to varying HTTP status text/body ("401 Unauthorized", "403
+            # Forbidden", or a "400 Bad Request" whose body says e.g. "authentication failed"
+            # / "user name is empty"), so match on the body text rather than the status alone.
             reason = f"{exc.detail_text} {exc}".lower()
-            if "unauthorized" in reason or "forbidden" in reason or "permission denied" in reason:
+            auth_failure_markers = (
+                "unauthorized",
+                "forbidden",
+                "permission denied",
+                "authentication failed",
+                "authentication is required",
+                "invalid user",
+                "invalid password",
+                "user name is empty",
+                "user name and password required",
+            )
+            if any(marker in reason for marker in auth_failure_markers):
                 msg = f"etcd auth failed for {self.remote_address()}"
                 raise PermissionError(msg) from None
             raise

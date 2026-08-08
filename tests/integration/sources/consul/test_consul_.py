@@ -14,6 +14,7 @@ import pytest
 
 from dature import ConsulSource, configure, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -95,7 +96,9 @@ class TestConsulSourceRecursive:
 
     @pytest.mark.usefixtures("_kv_tree")
     def test_resolve_location_renders_real_value(self, consul_host, consul_port, consul_token):
-        source = ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=consul_token)
+        source = apply_source_config_group(
+            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=consul_token)
+        )
         result = source.load_raw()
         locations = source.resolve_location(
             field_path=["db_password"], nested_conflict=None, loaded_data=result.loaded_data

@@ -17,6 +17,7 @@ from testcontainers.core.container import DockerContainer
 
 from dature import EtcdSource, configure, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.sources.etcd.helpers import (
     etcd_address,
@@ -93,7 +94,7 @@ class TestEtcdSourceRecursive:
     @pytest.mark.usefixtures("_kv_tree")
     def test_resolve_location_renders_real_value(self, etcd_address_no_auth):
         etcd_host, etcd_port = etcd_address_no_auth
-        source = EtcdSource(host=etcd_host, port=etcd_port, path=KV_PREFIX)
+        source = apply_source_config_group(EtcdSource(host=etcd_host, port=etcd_port, path=KV_PREFIX))
 
         result = source.load_raw()
         locations = source.resolve_location(
