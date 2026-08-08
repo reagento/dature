@@ -1,12 +1,13 @@
 import json
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from typing import Annotated, Any, Literal, cast
 
 from adaptix.provider import Provider
 
 from dature._deps import require_dep
 from dature.sources.base import RemoteSource, bytes_value_loaders, string_value_loaders
 from dature.type_aliases import JSONValue
+from dature.validators.v import V
 
 
 @dataclass(kw_only=True, repr=False)
@@ -14,8 +15,13 @@ class ConsulSource(RemoteSource):
     path: str
     """KV key (``recursive=False``) or prefix (``recursive=True``) inside Consul's KV store."""
 
-    host: str = ""
-    port: int | None = None
+    host: Annotated[
+        str,
+        (V.len() >= 1).with_error_message(
+            "host is required (set on instance or via configure(consul={...}) / DATURE_CONSUL__HOST)"
+        ),
+    ] = ""
+    port: Annotated[int | None, (V > 0).with_error_message("port must be a positive integer")] = None
     scheme: Literal["http", "https"] | None = None
     token: str | None = None
     datacenter: str | None = None
@@ -29,26 +35,7 @@ class ConsulSource(RemoteSource):
     config_group: str | None = "consul"
 
     def remote_address(self) -> str:
-        scheme = self.scheme or "http"
-        host = self.host or "localhost"
-        port = self.port if self.port is not None else 8500
-        return f"{scheme}://{host}:{port}/v1/kv/{self.path}"
-
-    def check_invariants(self) -> None:
-        if not self.host:
-            msg = (
-                "ConsulSource: host is required (set on instance or via configure(consul={...}) / DATURE_CONSUL__HOST)"
-            )
-            raise ValueError(msg)
-        if self.scheme is not None and self.scheme not in ("http", "https"):
-            msg = f"ConsulSource: scheme must be 'http' or 'https', got {self.scheme!r}"
-            raise ValueError(msg)
-        if self.decode not in ("utf-8", "json", "raw"):
-            msg = f"ConsulSource: decode must be 'utf-8', 'json' or 'raw', got {self.decode!r}"
-            raise ValueError(msg)
-        if self.port is not None and self.port <= 0:
-            msg = f"ConsulSource: port must be a positive integer, got {self.port!r}"
-            raise ValueError(msg)
+        return f"{self.scheme}://{self.host}:{self.port}/v1/kv/{self.path}"
 
     def format_loaders(self) -> "list[Provider]":
         if self.decode == "raw":
@@ -112,7 +99,7 @@ class ConsulSource(RemoteSource):
         from consul.std import Consul  # noqa: PLC0415
 
         client = Consul(
-            host=self.host or None,
+            host=self.host,
             port=self.port,
             scheme=self.scheme,
             token=self.token,

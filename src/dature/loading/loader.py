@@ -44,6 +44,7 @@ from dature.loading.merge_runtime import (
     resolve_type_loaders,
 )
 from dature.loading.retort import RetortCache
+from dature.loading.source_validation import validate_source
 from dature.masking.detection import build_secret_paths
 from dature.protocols import DataclassInstance
 from dature.report import attach_load_report, load_report
@@ -361,7 +362,7 @@ class Loader[T: DataclassInstance]:
             # where each source's context is already available; for single-mode there are
             # no cross-ref deps, so we can run it with an empty context immediately.
             source = clone_with_interpolation(source, {})
-            source.check_invariants()
+            validate_source(source)
             self._merge_meta.sources = (source,)
             self._source = source
             self._type_loaders = resolve_type_loaders(source, self._type_loaders_arg)

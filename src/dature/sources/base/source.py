@@ -13,7 +13,7 @@ import warnings
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
-from typing import Final, cast
+from typing import Any, ClassVar, Final, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
@@ -53,6 +53,8 @@ from dature.type_aliases import (
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
+from dature.validators.base import _validate_root_validators
+from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
 
@@ -130,7 +132,34 @@ class Source(abc.ABC):
     location_label: str = ""
     config_group: str | None = None
 
+    root_validators: ClassVar[tuple[RootPredicate, ...]] = ()
+    """Cross-field / required-ness checks run by ``validate_source`` after config-group
+    merge and cross-ref interpolation. Built with ``V.root(...)``, e.g.::
+
+        root_validators: ClassVar[tuple[RootPredicate, ...]] = (
+            V.root(lambda s: bool(s.host), error_message="host is required"),
+        )
+
+    Not to be confused with the ``root_validators=`` parameter of :func:`dature.load` /
+    :class:`~dature.loading.loader.Loader`, which validates the *merged schema instance*
+    after loading — this validates the *source* itself, before it is loaded.
+    """
+
     # --8<-- [end:load-metadata]
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
+        super().__init_subclass__(**kwargs)
+        if "check_invariants" in cls.__dict__:
+            warnings.warn(
+                f"{cls.__name__}.check_invariants() is deprecated and is no longer called; "
+                "express invariants declaratively instead — Literal field types, "
+                "Annotated[..., V ...] predicates, or root_validators=(V.root(...), ...). "
+                f"{REMOVAL_NOTICE}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if "root_validators" in cls.__dict__:
+            _validate_root_validators(cls.__dict__["root_validators"])
+
     def __post_init__(self) -> None:
         if self.when is not None and not isinstance(self.when, Condition):
             msg = (
@@ -220,19 +249,6 @@ class Source(abc.ABC):
             )
             return cast("list[Provider]", legacy(self))
         return []
-
-    def check_invariants(self) -> None:
-        """Called after cross-ref interpolation, before the source is loaded.
-
-        Override in subclasses with ``config_group`` to assert post-merge invariants
-        (required fields present, mutually exclusive options, etc.).  By the time
-        this runs all ``None`` init-fields have been populated from
-        ``dature.config.<config_group>`` and any ``${@tag.key}`` refs resolved.
-
-        Raise ``ValueError`` with a descriptive message prefixed by the source class
-        name, e.g. ``"VaultSource: url is required"``.  Default: no-op.
-        """
-        return
 
     @staticmethod
     def _infer_type(value: str) -> JSONValue:

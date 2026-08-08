@@ -12,12 +12,10 @@ class Config:
 
 
 config = dature.load(
-    dature.VaultSource(
-        host=os.environ["VAULT_HOST"],
-        port=int(os.environ["VAULT_PORT"]),
-        scheme=os.environ["VAULT_SCHEME"],
-        token=os.environ["VAULT_TOKEN"],
-        path="myapp/config",
+    dature.EtcdSource(
+        host=os.environ["ETCD_HOST"],
+        port=int(os.environ["ETCD_PORT"]),
+        path="myapp",
     ),
     schema=Config,
 )

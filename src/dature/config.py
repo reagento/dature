@@ -81,7 +81,11 @@ class LoadingConfig:
 # --8<-- [start:vault-config]
 @dataclass(frozen=True, slots=True)
 class VaultConfig:
+    host: str = "localhost"
+    port: int = 8200
+    scheme: Literal["http", "https"] = "http"
     url: str | None = None
+    """Deprecated: set ``host``/``port``/``scheme`` instead."""
     token: str | None = None
     role_id: str | None = None
     secret_id: str | None = None
@@ -108,6 +112,23 @@ class ConsulConfig:
 # --8<-- [end:consul-config]
 
 
+# --8<-- [start:etcd-config]
+@dataclass(frozen=True, slots=True)
+class EtcdConfig:
+    host: str = "localhost"
+    port: int = 2379
+    protocol: Literal["http", "https"] = "http"
+    user: str | None = None
+    password: str | None = None
+    ca_cert: str | None = None
+    cert_cert: str | None = None
+    cert_key: str | None = None
+    timeout: float | None = None
+
+
+# --8<-- [end:etcd-config]
+
+
 @dataclass(frozen=True, slots=True)
 class DatureConfig:
     masking: MaskingConfig = MaskingConfig()
@@ -115,6 +136,7 @@ class DatureConfig:
     loading: LoadingConfig = LoadingConfig()
     vault: VaultConfig = VaultConfig()
     consul: ConsulConfig = ConsulConfig()
+    etcd: EtcdConfig = EtcdConfig()
 
 
 def _load_config() -> DatureConfig:
@@ -167,6 +189,9 @@ class LoadingOptions(TypedDict, total=False):
 
 
 class VaultOptions(TypedDict, total=False):
+    host: str
+    port: int
+    scheme: Literal["http", "https"]
     url: str | None
     token: str | None
     role_id: str | None
@@ -184,6 +209,18 @@ class ConsulOptions(TypedDict, total=False):
     token: str | None
     datacenter: str | None
     verify: bool | str
+
+
+class EtcdOptions(TypedDict, total=False):
+    host: str
+    port: int
+    protocol: Literal["http", "https"]
+    user: str | None
+    password: str | None
+    ca_cert: str | None
+    cert_cert: str | None
+    cert_key: str | None
+    timeout: float | None
 
 
 _config_lock: threading.RLock = threading.RLock()
@@ -238,6 +275,10 @@ class _ConfigProxy:
         return self.ensure_loaded().consul
 
     @property
+    def etcd(self) -> EtcdConfig:
+        return self.ensure_loaded().etcd
+
+    @property
     def type_loaders(self) -> TypeLoaderMap:
         return _ConfigProxy._type_loaders
 
@@ -254,13 +295,14 @@ def _merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | 
 
 
 # --8<-- [start:configure]
-def configure(
+def configure(  # noqa: PLR0913
     *,
     masking: MaskingOptions | None = None,
     error_display: ErrorDisplayOptions | None = None,
     loading: LoadingOptions | None = None,
     vault: VaultOptions | None = None,
     consul: ConsulOptions | None = None,
+    etcd: EtcdOptions | None = None,
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
@@ -272,6 +314,7 @@ def configure(
         merged_loading = _merge_group(current.loading, loading, LoadingConfig)
         merged_vault = _merge_group(current.vault, vault, VaultConfig)
         merged_consul = _merge_group(current.consul, consul, ConsulConfig)
+        merged_etcd = _merge_group(current.etcd, etcd, EtcdConfig)
 
         config.set_instance(
             DatureConfig(
@@ -280,6 +323,7 @@ def configure(
                 loading=merged_loading,
                 vault=merged_vault,
                 consul=merged_consul,
+                etcd=merged_etcd,
             ),
         )
         if type_loaders is not None:

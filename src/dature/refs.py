@@ -4,12 +4,15 @@ Usage (Python 3.14+ only)::
 
     from dature import ref
     JsonSource(file=t"{ref.env.CONFIG_PATH}")
-    VaultSource(url=t"{ref.env.VAULT_ADDR}", token=t"{ref.env.VAULT_TOKEN:}")
+    VaultSource(host=t"{ref.env.VAULT_HOST}", token=t"{ref.env.VAULT_TOKEN:}")
 
 Equivalent to::
 
     JsonSource(file="${@env.CONFIG_PATH}")
-    VaultSource(url="${@env.VAULT_ADDR}", token="${@env.VAULT_TOKEN}")
+    VaultSource(host="${@env.VAULT_HOST}", token="${@env.VAULT_TOKEN}")
+
+(``VaultSource.url=`` also accepts t-strings/cross-refs, but it is deprecated —
+prefer ``host=``/``port=``/``scheme=``.)
 
 ``ref.tag.key`` returns a :class:`_RefProxy` that records the path.
 When dature encounters a t-string in a source init field it reads the proxy's

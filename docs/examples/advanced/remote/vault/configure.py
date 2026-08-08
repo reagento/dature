@@ -13,7 +13,9 @@ class Config:
 
 dature.configure(
     vault={
-        "url": os.environ["VAULT_ADDR"],
+        "host": os.environ["VAULT_HOST"],
+        "port": int(os.environ["VAULT_PORT"]),
+        "scheme": os.environ["VAULT_SCHEME"],
         "token": os.environ["VAULT_TOKEN"],
     },
 )
