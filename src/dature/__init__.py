@@ -15,6 +15,8 @@ from dature.sources.etcd_ import EtcdSource
 from dature.sources.ini_ import IniSource
 from dature.sources.json5_ import Json5Source
 from dature.sources.json_ import JsonSource
+from dature.sources.secrets_manager_ import AwsSecretsManagerSource
+from dature.sources.ssm_ import AwsSsmSource
 from dature.sources.toml_ import Toml10Source, Toml11Source
 from dature.sources.vault_ import VaultSource
 from dature.sources.yaml_ import Yaml11Source, Yaml12Source
@@ -23,6 +25,8 @@ from dature.validators.v import V
 __all__ = [
     "Absolute",
     "ArgparseSource",
+    "AwsSecretsManagerSource",
+    "AwsSsmSource",
     "ConsulSource",
     "DockerSecretsSource",
     "EnvFileSource",
