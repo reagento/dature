@@ -72,7 +72,7 @@ Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/deb
 | Flag | Maps to | Description |
 |------|---------|-------------|
 | `--field PATH` | *CLI-only* | Filters [`field_origins`](../api-reference.md#loadreport-sourceentry-fieldorigin) and `merged_data` by a dotted path (e.g. `db.port`). Origins matching the path or prefixed by it are shown; merged data is narrowed to the value at that path. |
-| `--format {json,text}` | *CLI-only* | Output format. `json` (default) is stable and parseable; `text` is human-readable. |
+| `--format {json,text,table}` | *CLI-only* | Output format. `json` (default) is stable and parseable; `text` is human-readable; `table` is a compact boxed view. |
 
 ### JSON output
 
@@ -87,6 +87,23 @@ Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/deb
     ```json
     --8<-- "docs/examples/basic/cli/cli_inspect_json.stdout"
     ```
+
+### Table output
+
+A compact boxed table showing field origins and their values:
+
+=== "Command"
+
+    ```bash
+    --8<-- "docs/examples/basic/cli/cli_inspect_table.sh"
+    ```
+
+=== "Output"
+
+    ```
+    --8<-- "docs/examples/basic/cli/cli_inspect_table.stdout"
+    ```
+
 
 ### Field filter
 
