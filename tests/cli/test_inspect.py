@@ -24,6 +24,14 @@ SCHEMA_FLAT = textwrap.dedent("""\
         port: int
 """)
 
+SCHEMA_SECRET = textwrap.dedent("""\
+    from dataclasses import dataclass
+    @dataclass
+    class S:
+        host: str
+        password: str
+""")
+
 
 class TestInspectGoldenPath:
     def test_json_format(self, run_cli, write_schema, cfg_file):
@@ -93,6 +101,58 @@ class TestInspectGoldenPath:
             '      "port": 5432\n'
             "    }\n"
             "  }\n"
+        )
+        assert code == 0
+        assert err == ""
+        assert out == expected_out
+
+    def test_table_format(self, run_cli, write_schema, cfg_file):
+        write_schema(SCHEMA_DB)
+        cfg = cfg_file({"db": {"host": "localhost", "port": 5432}})
+
+        code, out, err = run_cli(
+            "inspect",
+            "--schema",
+            "myschema:Settings",
+            "--source",
+            f"type=dature.JsonSource,file={cfg}",
+            "--format",
+            "table",
+        )
+        source = cfg.name
+        expected_out = (
+            f"+---------+{'-' * (len(source) + 2)}+-----------+\n"
+            f"| key     | source{' ' * (len(source) - len('source'))} | value     |\n"
+            f"+---------+{'-' * (len(source) + 2)}+-----------+\n"
+            f"| db.host | {source} | localhost |\n"
+            f"| db.port | {source} | 5432      |\n"
+            f"+---------+{'-' * (len(source) + 2)}+-----------+\n"
+        )
+        assert code == 0
+        assert err == ""
+        assert out == expected_out
+
+    def test_table_format_masks_secrets(self, run_cli, write_schema, cfg_file):
+        write_schema(SCHEMA_SECRET)
+        cfg = cfg_file({"host": "localhost", "password": "super_secret_password_123"})
+
+        code, out, err = run_cli(
+            "inspect",
+            "--schema",
+            "myschema:S",
+            "--source",
+            f"type=dature.JsonSource,file={cfg}",
+            "--format",
+            "table",
+        )
+        source = cfg.name
+        expected_out = (
+            f"+----------+{'-' * (len(source) + 2)}+-----------+\n"
+            f"| key      | source{' ' * (len(source) - len('source'))} | value     |\n"
+            f"+----------+{'-' * (len(source) + 2)}+-----------+\n"
+            f"| host     | {source} | localhost |\n"
+            f"| password | {source} | ****      |\n"
+            f"+----------+{'-' * (len(source) + 2)}+-----------+\n"
         )
         assert code == 0
         assert err == ""

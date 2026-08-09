@@ -1,9 +1,12 @@
 import json
 from dataclasses import asdict
+from pathlib import PurePath, PureWindowsPath
 from typing import Any
 
+from dature.config import config
 from dature.report import LoadReport
 from dature.report_types import FieldOrigin
+from dature.type_aliases import JSONValue
 
 
 def _filter_origins(report: LoadReport, field: str | None) -> tuple[FieldOrigin, ...]:
@@ -74,4 +77,59 @@ def format_text(report: LoadReport, *, field: str | None = None) -> str:
     else:
         lines.append("  " + json.dumps(merged, ensure_ascii=False, default=str))
 
+    return "\n".join(lines)
+
+
+def _table_border(widths: tuple[int, ...]) -> str:
+    return "+" + "+".join("-" * (width + 2) for width in widths) + "+"
+
+
+def _table_row(values: tuple[str, ...], widths: tuple[int, ...]) -> str:
+    return "|" + "|".join(f" {value:<{width}} " for value, width in zip(values, widths, strict=True)) + "|"
+
+
+def _table_source_label(origin: FieldOrigin) -> str:
+    source = origin.source_file or origin.source_loader_type
+    path = PureWindowsPath(source)
+    if path.name != source:
+        return path.name
+    return PurePath(source).name
+
+
+def _table_value_repr(value: JSONValue) -> str:
+    if isinstance(value, str):
+        if value == config.masking.mask:
+            return "****"
+        return value
+    return json.dumps(value, ensure_ascii=False, default=str)
+
+
+def _flatten_table_values(key: str, value: JSONValue) -> tuple[tuple[str, JSONValue], ...]:
+    if not isinstance(value, dict) or not value:
+        return ((key, value),)
+
+    rows: list[tuple[str, JSONValue]] = []
+    for child_key, child_value in sorted(value.items()):
+        rows.extend(_flatten_table_values(f"{key}.{child_key}", child_value))
+    return tuple(rows)
+
+
+def format_table(report: LoadReport, *, field: str | None = None) -> str:
+    headers = ("key", "source", "value")
+    rows: list[tuple[str, str, str]] = []
+    for origin in _filter_origins(report, field):
+        source = _table_source_label(origin)
+        rows.extend(
+            (key, source, _table_value_repr(value)) for key, value in _flatten_table_values(origin.key, origin.value)
+        )
+    widths = tuple(max(len(headers[i]), *(len(row[i]) for row in rows)) for i in range(3))
+
+    border = _table_border(widths)
+    lines = [
+        border,
+        _table_row(headers, widths),
+        border,
+    ]
+    lines.extend(_table_row(row, widths) for row in rows)
+    lines.append(border)
     return "\n".join(lines)
