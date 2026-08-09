@@ -93,7 +93,11 @@ def run_script(
 def resolve_placeholders(template: str, script_path: Path) -> str:
     sources_dir = str(script_path.parent / "sources") + os.sep
     shared_dir = str(script_path.parents[2] / "shared") + os.sep
-    return template.replace("{SOURCES_DIR}", sources_dir).replace("{SHARED_DIR}", shared_dir)
+    return (
+        template.replace("{SOURCES_DIR}", sources_dir)
+        .replace("{SHARED_DIR}", shared_dir)
+        .replace("{SCRIPT_PATH}", str(script_path))
+    )
 
 
 def normalize_output(text: str) -> str:

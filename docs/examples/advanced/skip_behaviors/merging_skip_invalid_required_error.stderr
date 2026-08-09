@@ -1,3 +1,14 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 21, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.Yaml12Source(
+  |         ^^^^^^^^^^^^^^^^^^^^
+  |     ...<7 lines>...
+  |         schema=Config,
+  |         ^^^^^^^^^^^^^^
+  |     )
+  |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [port]  Missing required field (invalid in: yaml1.2 '{SOURCES_DIR}merging_skip_invalid_required_defaults.yaml', yaml1.2 '{SOURCES_DIR}merging_skip_invalid_required_overrides.yaml')

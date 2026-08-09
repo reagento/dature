@@ -689,6 +689,12 @@ forbidden/unauthorized response. See [`VaultConfig`](#vaultconfig) for global de
 
 All exceptions are in `dature.errors`.
 
+`DatureError` and `DatureErrorGroup` hide dature's own internal frames from their
+`__traceback__`, so an unhandled dature error prints a traceback that stops at your own
+call site instead of showing dature's loading internals.
+A `DatureError` raised directly from your own code (rather than by dature) keeps its full
+traceback, since only dature's internal frames are stripped.
+
 ### `DatureError`
 
 Base exception for all dature errors.

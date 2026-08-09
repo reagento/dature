@@ -1,3 +1,14 @@
+Traceback (most recent call last):
+  File "{SCRIPT_PATH}", line 11, in <module>
+    dature.load(
+    ~~~~~~~~~~~^
+        dature.EnvSource(prefix="APP_"),  # resolve to tag = 'env'
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        schema=Config,
+        ^^^^^^^^^^^^^^
+    )
+    ^
 dature.errors.exceptions.DatureError: Tag collision: multiple sources share resolved_tag='env':
   EnvSource(prefix='APP_', expand_env_vars='default', nested_resolve_strategy='flat')
   EnvSource(prefix='DB_', expand_env_vars='default', nested_resolve_strategy='flat')

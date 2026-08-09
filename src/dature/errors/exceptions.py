@@ -1,13 +1,24 @@
 from collections.abc import Sequence
+from types import TracebackType
 from typing import Self
 
 from dature.errors.loc_types import SourceLocation
 from dature.errors.rendering import format_location, format_path
+from dature.errors.traceback_trim import user_frames_only
 from dature.type_aliases import JSONValue
 
 
 class DatureError(Exception):
     """Base dature error."""
+
+    @property
+    def __traceback__(self) -> TracebackType | None:
+        """Traceback with dature's own frames stripped, so only caller frames show."""
+        return user_frames_only(super().__traceback__)
+
+    @__traceback__.setter
+    def __traceback__(self, value: TracebackType | None) -> None:  # pyright: ignore[reportIncompatibleVariableOverride]
+        super().with_traceback(value)
 
 
 class ValidatorTypeError(DatureError):
@@ -106,6 +117,15 @@ class MissingEnvVarError(DatureError):
 
 class DatureErrorGroup(ExceptionGroup[DatureError]):
     """Base for dature exception groups; subclasses add domain-specific context."""
+
+    @property
+    def __traceback__(self) -> TracebackType | None:
+        """Traceback with dature's own frames stripped, so only caller frames show."""
+        return user_frames_only(super().__traceback__)
+
+    @__traceback__.setter
+    def __traceback__(self, value: TracebackType | None) -> None:  # pyright: ignore[reportIncompatibleVariableOverride]
+        super().with_traceback(value)
 
     def derive(self, excs: "Sequence[DatureError]", /) -> "Self":  # type: ignore[override]
         return self.__class__(self.args[0], list(excs))

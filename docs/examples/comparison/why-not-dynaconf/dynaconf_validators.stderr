@@ -1,3 +1,13 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 20, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.Toml11Source(file=SOURCES_DIR / "dynaconf_validators_invalid.toml"),
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |         schema=Config,
+  |         ^^^^^^^^^^^^^^
+  |     )
+  |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than 0
