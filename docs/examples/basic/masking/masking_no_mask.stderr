@@ -1,3 +1,15 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 19, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.Yaml12Source(file=SOURCES_DIR / "masking_per_source.yaml"),
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |         schema=Config,
+  |         ^^^^^^^^^^^^^^
+  |         mask_secrets=False,
+  |         ^^^^^^^^^^^^^^^^^^^
+  |     )
+  |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [api_key]  Value length must be greater than or equal to 20

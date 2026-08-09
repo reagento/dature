@@ -549,7 +549,6 @@ class LoadCtx:
                     message=str(exc),
                     location=location,
                 )
-                exc.__traceback__ = None
                 raise DatureConfigError(self.dataclass_name, [source_error]) from None
             logger.warning(
                 "[%s] Source %d skipped (broken): file=%s",

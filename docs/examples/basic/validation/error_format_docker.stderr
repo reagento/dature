@@ -1,3 +1,13 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 18, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.DockerSecretsSource(dir_=SOURCES_DIR / "error_format_docker"),
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |         schema=Config,
+  |         ^^^^^^^^^^^^^^
+  |     )
+  |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than or equal to 1

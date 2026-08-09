@@ -1,3 +1,14 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 25, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.Yaml12Source(
+  |         ^^^^^^^^^^^^^^^^^^^^
+  |     ...<8 lines>...
+  |         ),
+  |         ^^
+  |     )
+  |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [<root>]  debug=True is not allowed on non-localhost hosts

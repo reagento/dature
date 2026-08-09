@@ -1,3 +1,14 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 24, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.Toml11Source(
+  |         ^^^^^^^^^^^^^^^^^^^^
+  |     ...<8 lines>...
+  |         ),
+  |         ^^
+  |     )
+  |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [<root>]  debug mode should not use port 80

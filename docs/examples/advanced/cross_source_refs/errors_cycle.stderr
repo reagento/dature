@@ -1,3 +1,15 @@
+Traceback (most recent call last):
+  File "{SCRIPT_PATH}", line 11, in <module>
+    dature.load(
+    ~~~~~~~~~~~^
+        dature.EnvSource(prefix="${@json.prefix_key}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        dature.JsonSource(file="${@env.config_path}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        schema=Config,
+        ^^^^^^^^^^^^^^
+    )
+    ^
 dature.errors.exceptions.DatureError: Cross-source reference cycle detected:
   EnvSource(tag='env')  →  references ${@json.prefix_key}
   JsonSource(tag='json')  →  references ${@env.config_path}

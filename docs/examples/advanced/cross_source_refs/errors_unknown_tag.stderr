@@ -1,1 +1,13 @@
+Traceback (most recent call last):
+  File "{SCRIPT_PATH}", line 12, in <module>
+    dature.load(
+    ~~~~~~~~~~~^
+        dature.EnvSource(),
+        ^^^^^^^^^^^^^^^^^^^
+        dature.JsonSource(file="${@vault.config_path}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        schema=Config,
+        ^^^^^^^^^^^^^^
+    )
+    ^
 dature.errors.exceptions.DatureError: JsonSource(tag='json') references unknown tag 'vault'. Known tags: 'env', 'json'. Ensure a source with that tag is listed in the same load() call.

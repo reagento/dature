@@ -1,7 +1,6 @@
 from dature._version import __version__
 from dature.conditions import When
 from dature.config import configure
-from dature.errors import excepthook as _excepthook  # noqa: F401
 from dature.field_path import Absolute, F
 from dature.loading.loader import Loader
 from dature.main import load
