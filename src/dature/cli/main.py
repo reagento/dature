@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect.add_argument(
         "--format",
-        choices=["json", "text"],
+        choices=["json", "text", "table"],
         default=None,
         help="Output format (default: json).",
     )

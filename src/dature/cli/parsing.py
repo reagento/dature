@@ -328,7 +328,7 @@ def derive_cli_schema() -> type:
         [
             *common,
             ("field", str | None, field(default=None)),
-            ("format", Literal["json", "text"] | None, field(default=None)),
+            ("format", Literal["json", "text", "table"] | None, field(default=None)),
         ],
     )
     validate_args = make_dataclass("ValidateArgs", common)
