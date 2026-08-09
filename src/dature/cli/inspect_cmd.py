@@ -1,7 +1,7 @@
 import sys
 
 from dature import load, load_report
-from dature.cli.format import format_json, format_text
+from dature.cli.format import format_json, format_table, format_text
 from dature.cli.parsing import (
     CliInspectArgs,
     build_load_kwargs_from_dataclass,
@@ -39,8 +39,10 @@ def cmd_inspect(args: CliInspectArgs) -> int:
     try:
         if output_format == "json":
             output = format_json(report, field=args.field)
-        else:
+        elif output_format == "text":
             output = format_text(report, field=args.field)
+        else:
+            output = format_table(report, field=args.field)
     except KeyError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
