@@ -6,8 +6,8 @@
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |         schema=Config,
   |         ^^^^^^^^^^^^^^
-  |         mask_secrets=False,
-  |         ^^^^^^^^^^^^^^^^^^^
+  |         masking_mode="none",
+  |         ^^^^^^^^^^^^^^^^^^^^
   |     )
   |     ^
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)

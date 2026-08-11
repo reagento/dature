@@ -38,7 +38,7 @@ produces one validated instance. Crucially, **each source is validated on its ow
 contribution**, so an override only needs to be valid for the fields it actually sets.
 
 1. **Load and validate each source independently.** Every source is read (with `expand_env_vars`
-   substitution and `mask_secrets` / `secret_field_names` masking). If `skip_field_if_invalid`
+   substitution and `masking_mode` / `secret_field_names` masking). If `skip_field_if_invalid`
    is on, invalid values are dropped per source before field validation. Then each source's own
    values are coerced and run through field-level validation — type coercion, `Annotated`
    constraints, source-level `validators=`. A source is judged only on the fields it provides,
@@ -225,6 +225,6 @@ All merge-related parameters are passed directly to `dature.load()` as keyword a
 | `skip_field_if_invalid` | Drop fields with invalid values. See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields) |
 | `expand_env_vars` | ENV variable expansion mode. See [ENV Expansion](../advanced/env-expansion.md) |
 | `secret_field_names` | Extra secret name patterns for masking. See [Masking](masking.md) |
-| `mask_secrets` | Enable/disable secret masking for all sources. See [Masking](masking.md) |
+| `masking_mode` | Masking mode for all sources: `"all"`, `"secrets_only"`, or `"none"`. See [Masking](masking.md) |
 | `nested_resolve_strategy` | Default priority when both JSON and flat keys exist: `"flat"` (default) or `"json"`. Applies to all sources. See [Nested Resolve](../advanced/nested-resolve.md) |
 | `nested_resolve` | Default per-field strategy overrides for all sources. See [Nested Resolve](../advanced/nested-resolve.md#per-field-strategy) |

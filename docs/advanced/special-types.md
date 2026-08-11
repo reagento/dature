@@ -10,7 +10,7 @@ Wraps a string value so it is never exposed in `str()`, `repr()`, or logs:
 --8<-- "docs/examples/advanced/special_types/advanced_special_secret_str.py"
 ```
 
-Works with `mask_secrets=True` — fields of type `SecretStr` are always detected regardless of field name.
+Works with `masking_mode="secrets_only"` — fields of type `SecretStr` are always detected regardless of field name.
 
 ## ByteSize
 

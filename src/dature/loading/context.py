@@ -12,7 +12,7 @@ from dature.field_path import F, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
 from dature.sources.protocol import SourceProtocol
-from dature.type_aliases import JSONValue, NestedConflicts, SkipFieldsInvalid
+from dature.type_aliases import JSONValue, MaskingMode, NestedConflicts, SkipFieldsInvalid
 
 logger = logging.getLogger("dature")
 
@@ -43,14 +43,14 @@ def build_error_ctx(
     dataclass_name: str,
     *,
     secret_paths: frozenset[str] = frozenset(),
-    mask_secrets: bool = False,
+    masking_mode: MaskingMode = "none",
     nested_conflicts: NestedConflicts | None = None,
 ) -> ErrorContext:
     return ErrorContext(
         dataclass_name=dataclass_name,
         source=metadata,
         secret_paths=secret_paths,
-        mask_secrets=mask_secrets,
+        masking_mode=masking_mode,
         nested_conflicts=nested_conflicts,
     )
 

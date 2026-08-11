@@ -1,4 +1,4 @@
-+ Exception Group Traceback (most recent call last):
+  + Exception Group Traceback (most recent call last):
   |   File "{SCRIPT_PATH}", line 30, in <module>
   |     dature.load(
   |     ~~~~~~~~~~~^
@@ -12,10 +12,8 @@
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [endpoint]  Endpoint host must not be empty
     |    ├── endpoint:
-    |    │   ^^^^^^^^^
     |    ├──   host: ""
-    |    │     ^^^^^^^^
-    |    ├──   port: 8080
-    |    │     ^^^^^^^^^^
+    |    ├──   port: <REDACTED>
+    |    │           ^^^^^^^^^^
     |    └── FILE '{SOURCES_DIR}error_format_dataclass.yaml', line 1-3
     +------------------------------------

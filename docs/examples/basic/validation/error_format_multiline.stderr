@@ -1,4 +1,4 @@
-+ Exception Group Traceback (most recent call last):
+  + Exception Group Traceback (most recent call last):
   |   File "{SCRIPT_PATH}", line 18, in <module>
   |     dature.load(
   |     ~~~~~~~~~~~^
@@ -12,9 +12,8 @@
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [tags]  Value must contain unique items
     |    ├── tags:
-    |    │   ^^^^^
-    |    ├──   - web
-    |    │     ^^^^^
+    |    ├── <REDACTED>
+    |    │   ^^^^^^^^^^
     |    ├── ...
     |    └── FILE '{SOURCES_DIR}error_format_multiline.yaml', line 1-4
     +------------------------------------

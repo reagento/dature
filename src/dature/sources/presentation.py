@@ -71,14 +71,14 @@ def find_value_in_line(
 ) -> "CaretSpan | None":
     candidates = build_value_candidates(input_value)
     if field_key is not None:
-        key_marker = f'"{field_key}":'
-        key_pos = line.find(key_marker)
-        if key_pos != -1:
-            after_key = key_pos + len(key_marker)
-            for candidate in candidates:
-                pos = line.find(candidate, after_key)
-                if pos != -1:
-                    return CaretSpan(start=pos, end=pos + len(candidate))
+        for key_marker in (f'"{field_key}":', f"{field_key}:"):
+            key_pos = line.find(key_marker)
+            if key_pos != -1:
+                after_key = key_pos + len(key_marker)
+                for candidate in candidates:
+                    pos = line.find(candidate, after_key)
+                    if pos != -1:
+                        return CaretSpan(start=pos, end=pos + len(candidate))
     for candidate in candidates:
         pos = line.rfind(candidate, search_from)
         if pos != -1:
@@ -105,13 +105,6 @@ def caret_for_key_line(line: str) -> "CaretSpan":
     return nonwhitespace_span(line)
 
 
-def caret_after_equals(line: str) -> "CaretSpan":
-    eq_pos = line.find("=")
-    if eq_pos != -1:
-        return CaretSpan(start=eq_pos + 1, end=len(line))
-    return CaretSpan(start=0, end=len(line))
-
-
 def compute_line_carets(
     content_lines: list[str],
     *,
@@ -128,9 +121,12 @@ def compute_line_carets(
             field_key=field_key,
         )
         return [found if found is not None else CaretSpan(start=0, end=0)]
-    result: list[CaretSpan] = [caret_for_key_line(content_lines[0])]
-    result.extend(nonwhitespace_span(line) for line in content_lines[1:])
-    return result
+    if field_key is not None and input_value is not None:
+        for index, content_line in enumerate(content_lines):
+            found = find_value_in_line(content_line, input_value=input_value, field_key=field_key)
+            if found is not None:
+                return [found if i == index else CaretSpan(start=0, end=0) for i in range(len(content_lines))]
+    return [caret_for_key_line(content_lines[0])] + [CaretSpan(start=0, end=0) for _ in content_lines[1:]]
 
 
 def value_line_carets(

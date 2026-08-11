@@ -88,19 +88,19 @@ class TestInspectGoldenPath:
                     "index": 0,
                     "file_path": str(cfg),
                     "loader_type": "json",
-                    "raw_data": {"db": {"host": "localhost", "port": 5432}},
+                    "raw_data": {"db": {"host": "<REDACTED>", "port": "<REDACTED>"}},
                 },
             ],
             "field_origins": [
                 {
                     "key": "db",
-                    "value": {"host": "localhost", "port": 5432},
+                    "value": {"host": "<REDACTED>", "port": "<REDACTED>"},
                     "source_index": 0,
                     "source_file": str(cfg),
                     "source_loader_type": "json",
                 },
             ],
-            "merged_data": {"db": {"host": "localhost", "port": 5432}},
+            "merged_data": {"db": {"host": "<REDACTED>", "port": "<REDACTED>"}},
         }
 
     def test_text_format(self, run_cli, write_schema, cfg_file):
@@ -123,13 +123,13 @@ class TestInspectGoldenPath:
             f"  [0] json         {cfg}\n"
             "\n"
             "Field origins:\n"
-            f'  db = {{"host": "localhost", "port": 5432}}   <- [0] {cfg}\n'
+            f'  db = {{"host": "<REDACTED>", "port": "<REDACTED>"}}   <- [0] {cfg}\n'
             "\n"
             "Merged data:\n"
             "  {\n"
             '    "db": {\n'
-            '      "host": "localhost",\n'
-            '      "port": 5432\n'
+            '      "host": "<REDACTED>",\n'
+            '      "port": "<REDACTED>"\n'
             "    }\n"
             "  }\n"
         )
@@ -152,12 +152,12 @@ class TestInspectGoldenPath:
         )
         source = str(cfg)
         expected_out = (
-            f"+---------+{'-' * (len(source) + 2)}+-------------+\n"
-            f"| key     | source{' ' * (len(source) - len('source'))} | value       |\n"
-            f"+---------+{'-' * (len(source) + 2)}+-------------+\n"
-            f"| db.host | {source} | 'localhost' |\n"
-            f"| db.port | {source} | 5432        |\n"
-            f"+---------+{'-' * (len(source) + 2)}+-------------+\n"
+            f"+---------+{'-' * (len(source) + 2)}+--------------+\n"
+            f"| key     | source{' ' * (len(source) - len('source'))} | value        |\n"
+            f"+---------+{'-' * (len(source) + 2)}+--------------+\n"
+            f"| db.host | {source} | '<REDACTED>' |\n"
+            f"| db.port | {source} | '<REDACTED>' |\n"
+            f"+---------+{'-' * (len(source) + 2)}+--------------+\n"
         )
         assert code == 0
         assert err == ""
@@ -193,12 +193,12 @@ class TestInspectGoldenPath:
 
         source = str(cfg)
         expected_out = (
-            f"+---------+{'-' * (len(source) + 2)}+-------------+\n"
-            f"| key     | source{' ' * (len(source) - len('source'))} | value       |\n"
-            f"+---------+{'-' * (len(source) + 2)}+-------------+\n"
-            f"| db.host | {source} | 'localhost' |\n"
-            f"| db.port | {source} | 5432        |\n"
-            f"+---------+{'-' * (len(source) + 2)}+-------------+\n"
+            f"+---------+{'-' * (len(source) + 2)}+--------------+\n"
+            f"| key     | source{' ' * (len(source) - len('source'))} | value        |\n"
+            f"+---------+{'-' * (len(source) + 2)}+--------------+\n"
+            f"| db.host | {source} | '<REDACTED>' |\n"
+            f"| db.port | {source} | '<REDACTED>' |\n"
+            f"+---------+{'-' * (len(source) + 2)}+--------------+\n"
         )
 
         assert code == 0
@@ -226,7 +226,7 @@ class TestInspectGoldenPath:
             f"+----------+{'-' * (len(source) + 2)}+--------------+\n"
             f"| key      | source{' ' * (len(source) - len('source'))} | value        |\n"
             f"+----------+{'-' * (len(source) + 2)}+--------------+\n"
-            f"| host     | {source} | 'localhost'  |\n"
+            f"| host     | {source} | '<REDACTED>' |\n"
             f"| password | {source} | '<REDACTED>' |\n"
             f"+----------+{'-' * (len(source) + 2)}+--------------+\n"
         )
@@ -269,9 +269,9 @@ class TestInspectGoldenPath:
         source = str(cfg)
 
         rows = [
-            ("db.host", "'localhost'"),
-            ("db.port", "5432"),
-            ("db.credentials.username", "'admin'"),
+            ("db.host", "'<REDACTED>'"),
+            ("db.port", "'<REDACTED>'"),
+            ("db.credentials.username", "'<REDACTED>'"),
             ("db.credentials.password", "'<REDACTED>'"),
         ]
 
@@ -363,12 +363,12 @@ class TestInspectGoldenPath:
 
         source = str(cfg)
         expected_out = (
-            f"+------+{'-' * (len(source) + 2)}+-------+\n"
-            f"| key  | source{' ' * (len(source) - len('source'))} | value |\n"
-            f"+------+{'-' * (len(source) + 2)}+-------+\n"
-            f"| host | {source} | 'x'   |\n"
-            f"| port | {source} | 1     |\n"
-            f"+------+{'-' * (len(source) + 2)}+-------+\n"
+            f"+------+{'-' * (len(source) + 2)}+--------------+\n"
+            f"| key  | source{' ' * (len(source) - len('source'))} | value        |\n"
+            f"+------+{'-' * (len(source) + 2)}+--------------+\n"
+            f"| host | {source} | '<REDACTED>' |\n"
+            f"| port | {source} | '<REDACTED>' |\n"
+            f"+------+{'-' * (len(source) + 2)}+--------------+\n"
         )
 
         assert code == 0
@@ -400,7 +400,7 @@ class TestInspectGoldenPath:
         )
 
         source = str(cfg)
-        value = '["localhost", "db.example.com"]'
+        value = '["<REDACTED>", "<REDACTED>"]'
 
         expected_out = (
             f"+-------+{'-' * (len(source) + 2)}+{'-' * (len(value) + 2)}+\n"
@@ -454,12 +454,12 @@ class TestInspectGoldenPath:
         )
 
         expected_out = (
-            f"+------+{'-' * (source_width + 2)}+----------------+\n"
-            f"| key  | {'source':<{source_width}} | value          |\n"
-            f"+------+{'-' * (source_width + 2)}+----------------+\n"
-            f"| host | {source_defaults:<{source_width}} | 'default-host' |\n"
-            f"| port | {source_overrides:<{source_width}} | 8080           |\n"
-            f"+------+{'-' * (source_width + 2)}+----------------+\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
+            f"| key  | {'source':<{source_width}} | value        |\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
+            f"| host | {source_defaults:<{source_width}} | '<REDACTED>' |\n"
+            f"| port | {source_overrides:<{source_width}} | '<REDACTED>' |\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
         )
 
         assert code == 0
@@ -494,12 +494,12 @@ class TestInspectGoldenPath:
         source_width = max(len("source"), len(source))
 
         expected_out = (
-            f"+------+{'-' * (source_width + 2)}+----------------+\n"
-            f"| key  | {'source':<{source_width}} | value          |\n"
-            f"+------+{'-' * (source_width + 2)}+----------------+\n"
-            f"| host | {source:<{source_width}} | 'line1\\nline2' |\n"
-            f"| port | {source:<{source_width}} | 1              |\n"
-            f"+------+{'-' * (source_width + 2)}+----------------+\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
+            f"| key  | {'source':<{source_width}} | value        |\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
+            f"| host | {source:<{source_width}} | '<REDACTED>' |\n"
+            f"| port | {source:<{source_width}} | '<REDACTED>' |\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
         )
 
         assert code == 0
@@ -539,11 +539,11 @@ class TestInspectGoldenPath:
         source_width = max(len("source"), len(source))
 
         expected_out = (
-            f"+------+{'-' * (source_width + 2)}+-------+\n"
-            f"| key  | {'source':<{source_width}} | value |\n"
-            f"+------+{'-' * (source_width + 2)}+-------+\n"
-            f"| host | {source:<{source_width}} | null  |\n"
-            f"+------+{'-' * (source_width + 2)}+-------+\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
+            f"| key  | {'source':<{source_width}} | value        |\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
+            f"| host | {source:<{source_width}} | '<REDACTED>' |\n"
+            f"+------+{'-' * (source_width + 2)}+--------------+\n"
         )
 
         assert code == 0
@@ -602,11 +602,11 @@ class TestInspectGoldenPath:
                     "index": 0,
                     "file_path": str(cfg),
                     "loader_type": "json",
-                    "raw_data": {"db": {"host": "localhost", "port": 5432}},
+                    "raw_data": {"db": {"host": "<REDACTED>", "port": "<REDACTED>"}},
                 },
             ],
             "field_origins": [],
-            "merged_data": 5432,
+            "merged_data": "<REDACTED>",
         }
 
     def test_multiple_sources_strategy(self, run_cli, write_schema, cfg_file):
@@ -637,32 +637,32 @@ class TestInspectGoldenPath:
                     "index": 0,
                     "file_path": str(defaults),
                     "loader_type": "json",
-                    "raw_data": {"host": "default-host", "port": 3000},
+                    "raw_data": {"host": "<REDACTED>", "port": "<REDACTED>"},
                 },
                 {
                     "index": 1,
                     "file_path": str(overrides),
                     "loader_type": "json",
-                    "raw_data": {"port": 8080},
+                    "raw_data": {"port": "<REDACTED>"},
                 },
             ],
             "field_origins": [
                 {
                     "key": "host",
-                    "value": "default-host",
+                    "value": "<REDACTED>",
                     "source_index": 0,
                     "source_file": str(defaults),
                     "source_loader_type": "json",
                 },
                 {
                     "key": "port",
-                    "value": 8080,
+                    "value": "<REDACTED>",
                     "source_index": 1,
                     "source_file": str(overrides),
                     "source_loader_type": "json",
                 },
             ],
-            "merged_data": {"host": "default-host", "port": 8080},
+            "merged_data": {"host": "<REDACTED>", "port": "<REDACTED>"},
         }
 
 

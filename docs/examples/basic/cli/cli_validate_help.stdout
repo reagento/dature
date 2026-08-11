@@ -4,7 +4,7 @@ usage: dature validate [-h] --schema MODULE:ATTR --source SPEC
                        [--skip-field-if-invalid]
                        [--expand-env-vars {disabled,default,empty,strict}]
                        [--secret-field-names SECRET_FIELD_NAMES]
-                       [--mask-secrets]
+                       [--masking-mode {all,secrets_only,none}]
 
 options:
   -h, --help            show this help message and exit
@@ -19,4 +19,4 @@ options:
   --skip-field-if-invalid
   --expand-env-vars {disabled,default,empty,strict}
   --secret-field-names SECRET_FIELD_NAMES
-  --mask-secrets
+  --masking-mode {all,secrets_only,none}

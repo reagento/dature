@@ -21,12 +21,12 @@ from dature.errors import DatureConfigError, FieldLoadError
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext
 from dature.loading.context import build_error_ctx
-from dature.loading.mask_config import resolve_mask_secrets
+from dature.loading.mask_config import resolve_masking_mode
 from dature.loading.merge_runtime import resolve_type_loaders
 from dature.loading.retort import RetortCache
 from dature.protocols import DataclassInstance
 from dature.sources.base import IndexedSource
-from dature.type_aliases import JSONValue, TypeLoaderMap
+from dature.type_aliases import JSONValue, MaskingMode, TypeLoaderMap
 
 
 def compute_default_fallback_errors(
@@ -159,7 +159,7 @@ def build_revalidation[T: DataclassInstance](
     retort_cache: RetortCache,
     type_loaders: TypeLoaderMap | None,
     secret_paths: frozenset[str],
-    mask_secrets: bool | None,
+    masking_mode: MaskingMode | None,
 ) -> tuple[Callable[[JSONValue], DataclassInstance], ErrorContext]:
     """Build the decorator-mode replay loader and its error context.
 
@@ -171,7 +171,7 @@ def build_revalidation[T: DataclassInstance](
         indexed.source,
         schema.__name__,
         secret_paths=secret_paths,
-        mask_secrets=resolve_mask_secrets(load_level=mask_secrets),
+        masking_mode=resolve_masking_mode(masking_mode=masking_mode),
     )
     validation_loader = _make_validation_loader(
         retort_cache=retort_cache,

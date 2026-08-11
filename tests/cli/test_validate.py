@@ -64,7 +64,8 @@ class TestValidateSuccess:
             "myschema:S",
             "--source",
             f"type=dature.JsonSource,file={cfg}",
-            "--mask-secrets",
+            "--masking-mode",
+            "secrets_only",
             "--secret-field-names",
             "password",
             "--secret-field-names",
@@ -90,9 +91,9 @@ class TestValidateFailures:
             "  | dature.errors.exceptions.DatureConfigError: Settings loading errors (1)\n"
             "  +-+---------------- 1 ----------------\n"
             "    | dature.errors.exceptions.FieldLoadError:"
-            "   [db.port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '    |    ├── {"db": {"host": "localhost", "port": "not_a_number"}}\n'
-            "    |    │                                         ^^^^^^^^^^^^\n"
+            "   [db.port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '    |    ├── {"db": {"host": "<REDACTED>", "port": "<REDACTED>"}}\n'
+            "    |    │                                          ^^^^^^^^^^\n"
             f"    |    └── FILE '{cfg}', line 1\n"
             "    +------------------------------------\n"
             "\n"

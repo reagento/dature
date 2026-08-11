@@ -86,6 +86,7 @@ class TestLogMergeStep:
                 dataclass_name="Config",
                 strategy_label="last_wins",
                 secret_paths=frozenset({"password"}),
+                masking_mode="secrets_only",
             )
 
         assert _messages(caplog, "Config") == [
@@ -159,6 +160,28 @@ class TestLogFieldOrigins:
 
         assert _messages(caplog, "Config") == []
 
+    @pytest.mark.parametrize(
+        "origin_key",
+        ["secret-key", "secretKey", "SECRET_KEY"],
+        ids=["kebab", "lower-camel", "upper-snake"],
+    )
+    def test_masks_styled_origin_key(self, caplog: pytest.LogCaptureFixture, origin_key: str) -> None:
+        origins = (
+            FieldOrigin(key=origin_key, value="hunter2", source_index=0, source_file=None, source_loader_type="mock"),
+        )
+
+        with caplog.at_level(logging.DEBUG, logger="dature"):
+            log_field_origins(
+                dataclass_name="Config",
+                field_origins=origins,
+                secret_paths=frozenset({"secret_key"}),
+                masking_mode="secrets_only",
+            )
+
+        assert _messages(caplog, "Config") == [
+            f"[Config] Field '{origin_key}' = '<REDACTED>'  <-- source 0 (None)",
+        ]
+
 
 class TestLogSingleSourceLoad:
     def test_emits_loader_and_data_lines(self, caplog: pytest.LogCaptureFixture) -> None:
@@ -183,6 +206,7 @@ class TestLogSingleSourceLoad:
                 file_path=".env",
                 data={"api_key": "top-secret"},
                 secret_paths=frozenset({"api_key"}),
+                masking_mode="secrets_only",
             )
 
         assert _messages(caplog, "Config") == [

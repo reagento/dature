@@ -149,8 +149,8 @@ class TestYaml11Source:
         assert first.field_path == ["count"]
         assert str(first) == (
             f"  [count]  Expected int, got bool\n"
-            f"   ├── count: true\n"
-            f"   │          ^^^^\n"
+            f"   ├── count: <REDACTED>\n"
+            f"   │          ^^^^^^^^^^\n"
             f"   └── FILE '{yaml_file}', line 1"
         )
 
@@ -172,8 +172,8 @@ class TestYaml11Source:
         assert first.field_path == ["flag"]
         assert str(first) == (
             f"  [flag]  Expected bool, got int\n"
-            f"   ├── flag: 1\n"
-            f"   │         ^\n"
+            f"   ├── flag: <REDACTED>\n"
+            f"   │         ^^^^^^^^^^\n"
             f"   └── FILE '{yaml_file}', line 1"
         )  # fmt: skip
 

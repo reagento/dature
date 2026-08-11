@@ -8,13 +8,19 @@ import warnings
 from typing import Any, Final, cast
 
 from dature.field_path import F
-from dature.type_aliases import SkipFieldsInvalid
+from dature.type_aliases import MaskingMode, SkipFieldsInvalid
 
 #: Sentinel for "argument not passed" — distinct from ``None``, which is a valid
 #: value for ``skip_field_if_invalid``/``skip_invalid_fields``.
 UNSET: Final[Any] = object()
 
 REMOVAL_NOTICE = "Support will be removed in dature 1.2."
+REMOVAL_NOTICE_13 = "Support will be removed in dature 1.3."
+
+MASK_SECRETS_DEPRECATION_MESSAGE = (
+    "`mask_secrets` is deprecated; use `masking_mode` instead "
+    f'(`True` -> "secrets_only", `False` -> "none"). {REMOVAL_NOTICE_13}'
+)
 
 
 def resolve_renamed_skip(skip_field_if_invalid: Any, skip_invalid_fields: Any) -> Any:  # noqa: ANN401
@@ -50,3 +56,19 @@ def normalize_skip_bool(value: Any) -> SkipFieldsInvalid:  # noqa: ANN401
         )
         return F.ANY if value else None
     return cast("SkipFieldsInvalid", value)
+
+
+def resolve_deprecated_mask_secrets(
+    masking_mode: MaskingMode | None,
+    mask_secrets: bool | None,  # noqa: FBT001
+) -> MaskingMode | None:
+    """Map the deprecated ``mask_secrets`` flag onto ``masking_mode``.
+
+    An explicit ``masking_mode`` wins; ``mask_secrets`` is then ignored but still warns.
+    """
+    if mask_secrets is None:
+        return masking_mode
+    warnings.warn(MASK_SECRETS_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=3)
+    if masking_mode is not None:
+        return masking_mode
+    return "secrets_only" if mask_secrets else "none"

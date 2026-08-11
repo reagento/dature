@@ -39,7 +39,8 @@ Main entry point. Two calling patterns:
 | `skip_field_if_invalid` | `SkipFieldsInvalid` | `None` | Skip fields that fail validation instead of raising. `F.ANY` skips any invalid field, a sequence of `F[Config].field` skips only those, `None`/`[]` skip nothing. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | Env var expansion mode applied to all sources. Source-level setting takes priority. |
 | `secret_field_names` | `Sequence[str] \| None` | `None` | Extra secret field name patterns for masking. |
-| `mask_secrets` | `bool \| None` | `None` | Enable/disable secret masking globally. |
+| `masking_mode` | `MaskingMode \| None` | `None` | Masking mode for this load: `"all"`, `"secrets_only"`, or `"none"`. See [Masking](basic/masking.md). |
+| `mask_secrets` | `bool \| None` | `None` | Deprecated, use `masking_mode` instead (`True` → `"secrets_only"`, `False` → `"none"`). If both are set, `masking_mode` wins. Removed in dature 1.3. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type loaders mapping types to conversion functions. Merged with source-level and global loaders. |
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Default priority for JSON vs flat keys in `FlatKeySource`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
@@ -293,7 +294,8 @@ Frozen dataclass controlling secret masking behavior.
 | `min_heuristic_length` | `int` | `8` | Minimum string length for heuristic-based detection. |
 | `heuristic_threshold` | `float` | `0.5` | Entropy threshold for heuristic secret detection. |
 | `secret_field_names` | `tuple[str, ...]` | `("password", "passwd", ...)` | Field name patterns that trigger masking. |
-| `mask_secrets` | `bool` | `True` | Global on/off switch for masking. |
+| `mask_secrets` | `bool \| None` | `None` | Deprecated, use `masking_mode` instead. `None` means "not set". Removed in dature 1.3. |
+| `masking_mode` | `MaskingMode \| None` | `None` | Global masking mode: `"all"`, `"secrets_only"`, or `"none"`. `None` resolves to `"all"`. |
 
 ### `ErrorDisplayConfig`
 

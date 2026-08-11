@@ -19,6 +19,6 @@ class Config:
 dature.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_per_source.yaml"),
     schema=Config,
-    mask_secrets=False,
+    masking_mode="none",
 )
 # --8<-- [end:example]

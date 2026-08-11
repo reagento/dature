@@ -19,6 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.cache
 
 # Generated version file (hatch-vcs)
 src/dature/_version.py

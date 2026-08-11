@@ -12,10 +12,10 @@
   | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [port]  Missing required field (invalid in: yaml1.2 '{SOURCES_DIR}merging_skip_invalid_required_defaults.yaml', yaml1.2 '{SOURCES_DIR}merging_skip_invalid_required_overrides.yaml')
-    |    ├── port: "not_a_number"
-    |    │         ^^^^^^^^^^^^^^
+    |    ├── port: "<REDACTED>"
+    |    │         ^^^^^^^^^^^^
     |    ├── FILE '{SOURCES_DIR}merging_skip_invalid_required_defaults.yaml', line 2
-    |    ├── port: "not_a_number_too"
-    |    │         ^^^^^^^^^^^^^^^^^^
+    |    ├── port: "<REDACTED>"
+    |    │         ^^^^^^^^^^^^
     |    └── FILE '{SOURCES_DIR}merging_skip_invalid_required_overrides.yaml', line 2
     +------------------------------------

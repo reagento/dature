@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import JsonSource, Toml11Source, Yaml12Source, load
+from dature import JsonSource, Toml11Source, Yaml12Source, configure, load
 from dature.errors import CaretSpan, DatureConfigError, FieldLoadError, LineRange, SourceLocation
 
 
@@ -294,8 +294,7 @@ class TestMultilineValueDisplay:
             "  [db]  int() argument must be a string, a bytes-like object or a real number, not 'dict'\n"
             '   ├── "db": {\n'
             "   │         ^\n"
-            '   ├──   "host": "localhost",\n'
-            "   │     ^^^^^^^^^^^^^^^^^^^^\n"
+            '   ├──   "host": "<REDACTED>",\n'
             "   ├── ...\n"
             f"   └── FILE '{json_file}', line 2-5"
         )
@@ -320,10 +319,8 @@ class TestMultilineValueDisplay:
             "  [db]  int() argument must be a string, a bytes-like object or a real number, not 'dict'\n"
             "   ├── db:\n"
             "   │   ^^^\n"
-            "   ├──   host: localhost\n"
-            "   │     ^^^^^^^^^^^^^^^\n"
-            "   ├──   port: abc\n"
-            "   │     ^^^^^^^^^\n"
+            "   ├──   host: <REDACTED>\n"
+            "   ├──   port: <REDACTED>\n"
             f"   └── FILE '{yaml_file}', line 1-3"
         )
 
@@ -346,8 +343,7 @@ class TestMultilineValueDisplay:
             "  [tags]  int() argument must be a string, a bytes-like object or a real number, not 'list'\n"
             "   ├── tags = [\n"
             "   │          ^\n"
-            '   ├──   "a",\n'
-            "   │     ^^^^\n"
+            "   ├── <REDACTED>\n"
             "   ├── ...\n"
             f"   └── FILE '{toml_file}', line 1-4"
         )
@@ -371,8 +367,7 @@ class TestMultilineValueDisplay:
             "  [tags]  int() argument must be a string, a bytes-like object or a real number, not 'list'\n"
             '   ├── "tags": [\n'
             "   │           ^\n"
-            '   ├──   "a",\n'
-            "   │     ^^^^\n"
+            "   ├── <REDACTED>\n"
             "   ├── ...\n"
             f"   └── FILE '{json_file}', line 2-5"
         )
@@ -394,10 +389,8 @@ class TestMultilineValueDisplay:
             "  [db]  int() argument must be a string, a bytes-like object or a real number, not 'dict'\n"
             "   ├── db:\n"
             "   │   ^^^\n"
-            "   ├──   host: x\n"
-            "   │     ^^^^^^^\n"
-            "   ├──   port: y\n"
-            "   │     ^^^^^^^\n"
+            "   ├──   host: <REDACTED>\n"
+            "   ├──   port: <REDACTED>\n"
             f"   └── FILE '{yaml_file}', line 1-3"
         )
 
@@ -421,7 +414,11 @@ class TestMultilineValueDisplay:
             ],
         )
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_toml_array_of_tables_error(self, array_of_tables_error_first_toml_file: Path):
+        # This test isn't about masking — disable it so the rendered error message
+        # shows the literal invalid value (the default mode masks every string).
+        configure(masking={"masking_mode": "none"})
 
         @dataclass
         class Product:
@@ -447,7 +444,12 @@ class TestMultilineValueDisplay:
             f"   └── FILE '{array_of_tables_error_first_toml_file}', line 3"
         )
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_toml_array_of_tables_error_last_element(self, array_of_tables_error_last_toml_file: Path):
+        # This test isn't about masking — disable it so the rendered error message
+        # shows the literal invalid value (the default mode masks every string).
+        configure(masking={"masking_mode": "none"})
+
         @dataclass
         class Product:
             name: str

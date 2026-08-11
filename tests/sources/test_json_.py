@@ -132,8 +132,8 @@ class TestJsonSource:
         assert first.field_path == ["count"]
         assert str(first) == (
             f"  [count]  Expected int, got bool\n"
-            f"   ├── {json_file.read_text()}\n"
-            f"   │             ^^^^\n"
+            f'   ├── {{"count": <REDACTED>}}\n'
+            f"   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -155,8 +155,8 @@ class TestJsonSource:
         assert first.field_path == ["flag"]
         assert str(first) == (
             f"  [flag]  Expected bool, got int\n"
-            f"   ├── {json_file.read_text()}\n"
-            f"   │            ^\n"
+            f'   ├── {{"flag": <REDACTED>}}\n'
+            f"   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 

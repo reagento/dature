@@ -33,10 +33,11 @@ except DatureConfigError:
 
     assert report.dataclass_name == "Config"
     assert isinstance(report.strategy, SourceLastWins)
+
     assert report.merged_data == {
-        "host": "localhost",
-        "port": "not_a_number",
-        "tags": ["default"],
+        "host": "<REDACTED>",
+        "port": "<REDACTED>",
+        "tags": ["<REDACTED>"],
     }
 
     assert len(report.sources) == 2
@@ -45,18 +46,18 @@ except DatureConfigError:
     assert report.sources[0].loader_type == "yaml1.2"
     assert "overrides" in str(report.sources[0].file_path)
     assert report.sources[0].raw_data == {
-        "host": "production.example.com",
-        "port": 8080,
-        "tags": ["web", "api"],
+        "host": "<REDACTED>",
+        "port": "<REDACTED>",
+        "tags": ["<REDACTED>", "<REDACTED>"],
     }
 
     assert report.sources[1].index == 1
     assert report.sources[1].loader_type == "yaml1.2"
     assert "advanced_debug_error_defaults" in str(report.sources[1].file_path)
     assert report.sources[1].raw_data == {
-        "host": "localhost",
-        "port": "not_a_number",
-        "tags": ["default"],
+        "host": "<REDACTED>",
+        "port": "<REDACTED>",
+        "tags": ["<REDACTED>"],
     }
 
     assert len(report.field_origins) == 3

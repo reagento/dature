@@ -8,12 +8,12 @@
       "loader_type": "json",
       "raw_data": {
         "db": {
-          "host": "localhost",
-          "port": 5432
+          "host": "<REDACTED>",
+          "port": "<REDACTED>"
         }
       }
     }
   ],
   "field_origins": [],
-  "merged_data": 5432
+  "merged_data": "<REDACTED>"
 }

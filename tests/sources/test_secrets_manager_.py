@@ -249,8 +249,9 @@ class TestAwsSecretsManagerSourceFetch:
 
         assert len(exc_info.value.exceptions) == 1
         assert str(exc_info.value.exceptions[0]) == (
-            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── secretsmanager://us-east-1/myapp/config: port = not_a_number"
+            "  [port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── secretsmanager://us-east-1/myapp/config: port = <REDACTED>\n"
+            "   │                                                   ^^^^^^^^^^"
         )
 
 

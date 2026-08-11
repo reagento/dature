@@ -7,9 +7,9 @@ side-effects beyond logging — they do not mutate any state.
 import logging
 
 from dature.loading.merge_runtime import MergeStepEvent
-from dature.masking.masking import mask_json_value, mask_value
+from dature.masking.masking import is_secret_path, mask_json_value, mask_value
 from dature.report_types import FieldOrigin
-from dature.type_aliases import JSONValue
+from dature.type_aliases import JSONValue, MaskingMode
 
 logger = logging.getLogger("dature")
 
@@ -20,6 +20,7 @@ def log_merge_step(
     dataclass_name: str,
     strategy_label: str,
     secret_paths: frozenset[str],
+    masking_mode: MaskingMode = "none",
 ) -> None:
     if isinstance(event.before, dict) and isinstance(event.source_data, dict):
         added = sorted(set(event.source_data.keys()) - set(event.before.keys()))
@@ -32,7 +33,7 @@ def log_merge_step(
             added,
             overwritten,
         )
-    masked = mask_json_value(event.after, secret_paths=secret_paths) if secret_paths else event.after
+    masked = mask_json_value(event.after, secret_paths=secret_paths, masking_mode=masking_mode)
     logger.debug(
         "[%s] State after step %d: %s",
         dataclass_name,
@@ -46,9 +47,10 @@ def log_field_origins(
     dataclass_name: str,
     field_origins: tuple[FieldOrigin, ...],
     secret_paths: frozenset[str] = frozenset(),
+    masking_mode: MaskingMode = "none",
 ) -> None:
     for origin in field_origins:
-        if origin.key in secret_paths:
+        if is_secret_path(origin.key, secret_paths=secret_paths, masking_mode=masking_mode):
             masked = mask_value(str(origin.value))
             logger.debug(
                 "[%s] Field '%s' = %r  <-- source %d (%s)",
@@ -76,6 +78,7 @@ def log_single_source_load(
     file_path: str,
     data: JSONValue,
     secret_paths: frozenset[str] = frozenset(),
+    masking_mode: MaskingMode = "none",
 ) -> None:
     logger.debug(
         "[%s] Single-source load: loader=%s, file=%s",
@@ -83,8 +86,8 @@ def log_single_source_load(
         loader_type,
         file_path,
     )
-    masked_data = mask_json_value(data, secret_paths=secret_paths) if secret_paths else data
-    logger.debug(
+    masked_data = mask_json_value(data, secret_paths=secret_paths, masking_mode=masking_mode)
+    logger.info(
         "[%s] Loaded data: %s",
         dataclass_name,
         masked_data,

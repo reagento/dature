@@ -16,7 +16,7 @@ from typing import Any
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.type_aliases import JSONValue
+from dature.type_aliases import JSONValue, MaskingMode
 
 logger = logging.getLogger("dature")
 
@@ -55,16 +55,16 @@ def attach_load_report(target: Any, report: LoadReport) -> None:  # noqa: ANN401
     setattr(target, _REPORT_ATTR, report)
 
 
-def _build_single_source_report(
+def build_single_source_report(
     *,
     dataclass_name: str,
     loader_type: str,
     file_path: str | None,
     raw_data: JSONValue,
     secret_paths: frozenset[str] = frozenset(),
+    masking_mode: MaskingMode = "none",
 ) -> LoadReport:
-    if secret_paths:
-        raw_data = mask_json_value(raw_data, secret_paths=secret_paths)
+    raw_data = mask_json_value(raw_data, secret_paths=secret_paths, masking_mode=masking_mode)
 
     source = SourceEntry(
         index=0,
@@ -95,7 +95,7 @@ def _build_single_source_report(
     )
 
 
-def _build_merge_report(
+def build_merge_report(  # noqa: PLR0913
     *,
     dataclass_name: str,
     strategy: SourceMergeStrategy,
@@ -103,11 +103,11 @@ def _build_merge_report(
     field_origins: tuple[FieldOrigin, ...],
     merged_data: JSONValue,
     secret_paths: frozenset[str] = frozenset(),
+    masking_mode: MaskingMode = "none",
 ) -> LoadReport:
-    if secret_paths:
-        source_entries = mask_source_entries(source_entries, secret_paths=secret_paths)
-        field_origins = mask_field_origins(field_origins, secret_paths=secret_paths)
-        merged_data = mask_json_value(merged_data, secret_paths=secret_paths)
+    source_entries = mask_source_entries(source_entries, secret_paths=secret_paths, masking_mode=masking_mode)
+    field_origins = mask_field_origins(field_origins, secret_paths=secret_paths, masking_mode=masking_mode)
+    merged_data = mask_json_value(merged_data, secret_paths=secret_paths, masking_mode=masking_mode)
 
     return LoadReport(
         dataclass_name=dataclass_name,

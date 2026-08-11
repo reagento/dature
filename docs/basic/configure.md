@@ -55,7 +55,8 @@ dature auto-loads its own config from `DATURE_*` environment variables on first 
 | `DATURE_MASKING__VISIBLE_SUFFIX` | [MaskingConfig](#maskingconfig) | `visible_suffix` | Number of characters left visible at the end |
 | `DATURE_MASKING__MIN_HEURISTIC_LENGTH` | [MaskingConfig](#maskingconfig) | `min_heuristic_length` | Minimum field value length for auto-detection of secrets by field name |
 | `DATURE_MASKING__HEURISTIC_THRESHOLD` | [MaskingConfig](#maskingconfig) | `heuristic_threshold` | Uncommon bigram ratio threshold for heuristic secret detection (0.0–1.0) |
-| `DATURE_MASKING__MASK_SECRETS` | [MaskingConfig](#maskingconfig) | `mask_secrets` | Enable or disable secret masking globally |
+| `DATURE_MASKING__MASK_SECRETS` | [MaskingConfig](#maskingconfig) | `mask_secrets` | Deprecated, use `DATURE_MASKING__MASKING_MODE` instead (`true` → `secrets_only`, `false` → `none`). If both are set, `DATURE_MASKING__MASKING_MODE` wins. Removed in dature 1.3 |
+| `DATURE_MASKING__MASKING_MODE` | [MaskingConfig](#maskingconfig) | `masking_mode` | Masking aggressiveness: `all` (default, mask every string value), `secrets_only` (mask only fields matched by name/type/heuristic), or `none` |
 | `DATURE_ERROR_DISPLAY__MAX_VISIBLE_LINES` | [ErrorDisplayConfig](#errordisplayconfig) | `max_visible_lines` | Max lines shown in error messages for source file previews |
 | `DATURE_ERROR_DISPLAY__MAX_LINE_LENGTH` | [ErrorDisplayConfig](#errordisplayconfig) | `max_line_length` | Max character width per line in error messages |
 | `DATURE_LOADING__CACHE` | [LoadingConfig](#loadingconfig) | `cache` | Enable caching. `true`/`false` or a `timedelta` string (e.g. `0:00:30`, `30 seconds`) for TTL. See [Caching](../advanced/caching.md) |

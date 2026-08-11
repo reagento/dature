@@ -354,8 +354,9 @@ class TestAwsSsmSourceFetch:
 
         assert len(exc_info.value.exceptions) == 1
         assert str(exc_info.value.exceptions[0]) == (
-            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── ssm://us-east-1/myapp: port = not_a_number"
+            "  [port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── ssm://us-east-1/myapp: port = <REDACTED>\n"
+            "   │                                 ^^^^^^^^^^"
         )
 
 

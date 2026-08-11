@@ -58,6 +58,7 @@ from dature.type_aliases import (
     FieldGroupTuple,
     FieldMergeMap,
     JSONValue,
+    MaskingMode,
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
@@ -181,7 +182,7 @@ class MergeConfig:
     skip_if_missing: bool = False
     skip_field_if_invalid: SkipFieldsInvalid = None
     secret_field_names: Sequence[str] | None = None
-    mask_secrets: bool | None = None
+    masking_mode: MaskingMode | None = None
     type_loaders: TypeLoaderMap | None = None
     cross_ref_plan: CrossRefPlan | None = field(default=None, init=False)
 
@@ -290,7 +291,7 @@ class LoadCtx:
         retort_cache: RetortCache,
         field_merge_paths: frozenset[str] | None = None,
         secret_paths: frozenset[str] = frozenset(),
-        mask_secrets: bool = False,
+        masking_mode: MaskingMode = "none",
         on_merge_step: Callable[[MergeStepEvent], None] | None = None,
     ) -> None:
         self.dataclass_name = dataclass_name
@@ -300,7 +301,7 @@ class LoadCtx:
         self._schema = schema
         self._retort_cache = retort_cache
         self._secret_paths = secret_paths
-        self._mask_secrets = mask_secrets
+        self._masking_mode: MaskingMode = masking_mode
         self._on_merge_step = on_merge_step
         self._sources: list[SourceProtocol] = list(merge_meta.sources)
 
@@ -472,7 +473,7 @@ class LoadCtx:
                     source_loader_type=entry.loader_type,
                 )
 
-    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:  # noqa: C901, PLR0915
+    def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:
         """Load a source with full pre-processing.
 
         *source_idx* is the position of the source in ``merge_meta.sources``.
@@ -509,7 +510,7 @@ class LoadCtx:
             source,
             self.dataclass_name,
             secret_paths=self._secret_paths,
-            mask_secrets=self._mask_secrets,
+            masking_mode=self._masking_mode,
         )
 
         try:
@@ -575,7 +576,7 @@ class LoadCtx:
             base_error_ctx=error_ctx,
             skip_value=skip_value,
             secret_paths=self._secret_paths,
-            mask_secrets=self._mask_secrets,
+            masking_mode=self._masking_mode,
             log_prefix=f"[{self.dataclass_name}] Source {i}:",
             probe_retort=probe_retort,
         )
@@ -595,10 +596,7 @@ class LoadCtx:
             source.display_name(),
             sorted(raw.keys()) if isinstance(raw, dict) else "<non-dict>",
         )
-        if self._secret_paths:
-            masked_raw = mask_json_value(raw, secret_paths=self._secret_paths)
-        else:
-            masked_raw = raw
+        masked_raw = mask_json_value(raw, secret_paths=self._secret_paths, masking_mode=self._masking_mode)
         logger.debug(
             "[%s] Source %d raw data: %s",
             self.dataclass_name,

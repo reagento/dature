@@ -1,7 +1,8 @@
   | dature.errors.exceptions.DatureConfigError: Settings loading errors (1)
   +-+---------------- 1 ----------------
-    | dature.errors.exceptions.FieldLoadError:   [db.port]  invalid literal for int() with base 10: 'not_a_number'
-    |    ├── {"db": {"host": "localhost", "port": "not_a_number"}}
-    |    │                                         ^^^^^^^^^^^^
+    | dature.errors.exceptions.FieldLoadError:   [db.port]  invalid literal for int() with base 10: '<REDACTED>'
+    |    ├── {"db": {"host": "<REDACTED>", "port": "<REDACTED>"}}
+    |    │                                          ^^^^^^^^^^
     |    └── FILE 'sources/bad.json', line 1
     +------------------------------------
+

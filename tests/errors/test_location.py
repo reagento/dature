@@ -1,3 +1,5 @@
+import pytest
+
 from dature import EnvFileSource, EnvSource, JsonSource, Toml11Source
 from dature.errors import LineRange
 from dature.errors.location import ErrorContext, resolve_source_location
@@ -133,3 +135,20 @@ class TestResolveSourceLocation:
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].line_content == ['{"password": "<REDACTED>", "timeout": "30"}']
+
+    @pytest.mark.parametrize(
+        "raw_key",
+        ["secret-key", "secretKey", "SECRET_KEY"],
+        ids=["kebab", "lower-camel", "upper-snake"],
+    )
+    def test_masks_styled_secret_on_same_line(self, tmp_path, raw_key: str):
+        content = f'{{"{raw_key}": "secret123", "timeout": "30"}}'
+        config_file = tmp_path / "config.json"
+        config_file.write_text(content)
+        ctx = ErrorContext(
+            dataclass_name="Config",
+            source=JsonSource(file=config_file),
+            secret_paths=frozenset({"secret_key"}),
+        )
+        locs = resolve_source_location(["timeout"], ctx, file_content=content)
+        assert locs[0].line_content == [f'{{"{raw_key}": "<REDACTED>", "timeout": "30"}}']

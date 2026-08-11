@@ -1,31 +1,41 @@
 import pytest
 
 from dature.config import DatureConfig, MaskingConfig
-from dature.loading.mask_config import resolve_mask_secrets
+from dature.loading.mask_config import resolve_masking_mode
+from dature.type_aliases import MaskingMode
 
 
 @pytest.mark.parametrize(
-    ("load_level", "config_default", "expected"),
+    ("masking_mode", "config_mask_secrets", "config_masking_mode", "expected"),
     [
-        (True, False, True),
-        (False, True, False),
-        (None, True, True),
-        (None, False, False),
+        ("secrets_only", None, "all", "secrets_only"),
+        ("none", True, "all", "none"),
+        (None, True, "all", "secrets_only"),
+        (None, False, "secrets_only", "none"),
+        (None, None, "secrets_only", "secrets_only"),
+        (None, None, "none", "none"),
     ],
     ids=[
-        "load_true_wins",
-        "load_false_wins",
-        "config_true_default",
-        "config_false_default",
+        "load_level_wins_over_config",
+        "load_level_wins_over_deprecated_mask_secrets",
+        "deprecated_mask_secrets_true_maps_to_secrets_only",
+        "deprecated_mask_secrets_false_maps_to_none",
+        "falls_through_to_masking_mode_when_mask_secrets_unset",
+        "falls_through_to_masking_mode_none",
     ],
 )
-def test_resolve_mask_secrets(
+def test_resolve_masking_mode(
     monkeypatch: pytest.MonkeyPatch,
-    load_level: bool | None,
-    config_default: bool,
-    expected: bool,
+    masking_mode: MaskingMode | None,
+    config_mask_secrets: bool | None,
+    config_masking_mode: MaskingMode,
+    expected: MaskingMode,
 ) -> None:
-    fake_config = DatureConfig(masking=MaskingConfig(mask_secrets=config_default))
+    fake_config = DatureConfig(
+        masking=MaskingConfig(mask_secrets=config_mask_secrets, masking_mode=config_masking_mode),
+    )
+
     monkeypatch.setattr("dature.loading.mask_config.config", fake_config)
-    result = resolve_mask_secrets(load_level=load_level)
+    result = resolve_masking_mode(masking_mode=masking_mode)
+
     assert result == expected

@@ -60,9 +60,9 @@ ALL_SOURCES = [
 ]
 
 EXPECTED_LOAD_ERRORS = [
-    (["port"], "invalid literal for int() with base 10: 'abc'"),
+    (["port"], "invalid literal for int() with base 10: '<REDACTED>'"),
     (["host"], "Missing required field"),
-    (["status"], "Invalid variant: 'unknown'"),
+    (["status"], "Invalid variant: '<REDACTED>'"),
     (["address", "city"], "Value length must be greater than or equal to 2"),
     (["address", "zip_code"], r"Value must match pattern '^\d{5}$'"),
 ]

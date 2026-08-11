@@ -244,8 +244,9 @@ class TestVaultSourceFetch:
 
         assert len(exc_info.value.exceptions) == 1
         assert str(exc_info.value.exceptions[0]) == (
-            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── https://v:8200/v1/secret/data/myapp: port = not_a_number"
+            "  [port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── https://v:8200/v1/secret/data/myapp: port = <REDACTED>\n"
+            "   │                                               ^^^^^^^^^^"
         )
 
     def test_comprehensive_type_conversion(self, monkeypatch, all_types_vault_file: Path):
