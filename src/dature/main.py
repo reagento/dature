@@ -3,7 +3,6 @@ from collections.abc import Callable, Iterable, Sequence
 from datetime import timedelta
 from typing import Any, overload
 
-from dature._deprecations import UNSET, resolve_renamed_skip
 from dature.config import config
 from dature.loading.loader import Loader
 from dature.loading.merge_runtime import SourceMergeStrategy
@@ -41,7 +40,6 @@ def load[T](
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
     skip_field_if_invalid: SkipFieldsInvalid = None,
-    skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
     expand_env_vars: ExpandEnvVarsMode | None = None,
     secret_field_names: Sequence[str] | None = None,
     masking_mode: MaskingMode | None = None,
@@ -66,7 +64,6 @@ def load(
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
     skip_field_if_invalid: SkipFieldsInvalid = None,
-    skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
     expand_env_vars: ExpandEnvVarsMode | None = None,
     secret_field_names: Sequence[str] | None = None,
     masking_mode: MaskingMode | None = None,
@@ -91,7 +88,6 @@ def load(  # noqa: PLR0913
     skip_if_broken: bool = False,
     skip_if_missing: bool = False,
     skip_field_if_invalid: SkipFieldsInvalid = None,
-    skip_invalid_fields: Any = UNSET,
     expand_env_vars: ExpandEnvVarsMode | None = None,
     secret_field_names: Sequence[str] | None = None,
     masking_mode: MaskingMode | None = None,
@@ -101,7 +97,6 @@ def load(  # noqa: PLR0913
     nested_resolve: NestedResolve | None = None,
 ) -> Any:
     # --8<-- [end:load]
-    skip_field_if_invalid = resolve_renamed_skip(skip_field_if_invalid, skip_invalid_fields)
     if cache is None:
         cache = config.loading.cache
     if isinstance(cache, timedelta) and cache < timedelta(0):

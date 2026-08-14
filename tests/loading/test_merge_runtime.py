@@ -75,7 +75,7 @@ class TestApplySourceInitParamsFilePathCache:
 
 @dataclass(kw_only=True, repr=False)
 class _FakeRemote(Source):
-    url: str | None = None
+    host: str | None = None
     kv_version: Literal[1, 2] | None = None
     irrelevant: str | None = None
 
@@ -89,42 +89,42 @@ class _FakeRemote(Source):
 @pytest.mark.usefixtures("_reset_config")
 class TestApplySourceConfigGroup:
     def test_noop_when_config_group_is_none(self):
-        configure(vault={"url": "http://x"})
-        src = _FakeRemote(url=None, config_group=None)
+        configure(vault={"host": "x"})
+        src = _FakeRemote(host=None, config_group=None)
         assert apply_source_config_group(src) is src
 
     def test_returns_same_instance_when_no_overrides(self):
         # Every overlapping field is set on the source, so the (non-None) VaultConfig defaults
         # have nothing to fill in → no overrides → same instance is returned.
-        src = _FakeRemote(url="x", kv_version=1)
+        src = _FakeRemote(host="x", kv_version=1)
         result = apply_source_config_group(src)
         assert result is src
 
     def test_unrelated_config_field_ignored(self):
         # `mount_point` exists on VaultConfig but not on _FakeRemote — must not crash
         # nor add the attribute to the merged source
-        configure(vault={"mount_point": "kv", "url": "http://x"})
+        configure(vault={"mount_point": "kv", "host": "x"})
         merged = apply_source_config_group(_FakeRemote())
-        assert merged.url == "http://x"
+        assert merged.host == "x"
         assert not hasattr(merged, "mount_point")
 
     @pytest.mark.parametrize(
         ("instance_kwargs", "config_kwargs", "field", "expected"),
         [
-            pytest.param({"url": None}, {"url": "http://x"}, "url", "http://x", id="config_fills_none"),
-            pytest.param({"url": ""}, {"url": "http://x"}, "url", "http://x", id="config_fills_empty_string"),
+            pytest.param({"host": None}, {"host": "x"}, "host", "x", id="config_fills_none"),
+            pytest.param({"host": ""}, {"host": "x"}, "host", "x", id="config_fills_empty_string"),
             pytest.param(
-                {"url": "http://instance"},
-                {"url": "http://config"},
-                "url",
-                "http://instance",
+                {"host": "instance"},
+                {"host": "config"},
+                "host",
+                "instance",
                 id="instance_wins_over_config",
             ),
-            pytest.param({}, {"url": "u", "kv_version": 1}, "kv_version", 1, id="kv_version_v1_from_config"),
-            pytest.param({}, {"url": "u", "kv_version": 2}, "kv_version", 2, id="kv_version_v2_from_config"),
+            pytest.param({}, {"host": "h", "kv_version": 1}, "kv_version", 1, id="kv_version_v1_from_config"),
+            pytest.param({}, {"host": "h", "kv_version": 2}, "kv_version", 2, id="kv_version_v2_from_config"),
             pytest.param(
                 {},
-                {"url": "u"},
+                {"host": "h"},
                 "irrelevant",
                 None,
                 id="source_only_field_stays_none_when_config_silent",

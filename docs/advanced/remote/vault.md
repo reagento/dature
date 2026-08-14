@@ -23,8 +23,6 @@ pip install dature[vault,type-stubs]   # runtime + mypy/pyright stubs for hvac
 - `host` — Vault address; default `""` (falls through to `VaultConfig.host`, then `"localhost"`).
 - `port` — Vault HTTPS port; default `None` (falls through to `VaultConfig.port`, then `8200`).
 - `scheme` — `"http"` or `"https"`; default `None` (falls through to `VaultConfig.scheme`, then `"http"`).
-- `url` — **deprecated**, will be removed in dature 1.2. A ready-made `scheme://host:port` address
-  that overrides `host`/`port`/`scheme` entirely when set. Prefer the three fields above.
 - `token` **or** `role_id` + `secret_id` — authentication (mutually exclusive).
 - `mount_point` — secrets engine mount; default `"secret"`.
 - `kv_version` — `1` or `2`; default `2`.

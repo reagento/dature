@@ -26,7 +26,7 @@ from typing import Any, cast
 
 from adaptix import Retort
 
-from dature._deprecations import UNSET, normalize_skip_bool, resolve_deprecated_mask_secrets, resolve_renamed_skip
+from dature._deprecations import resolve_deprecated_mask_secrets
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
@@ -95,7 +95,6 @@ class Loader[T: DataclassInstance]:
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
         skip_field_if_invalid: SkipFieldsInvalid = None,
-        skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: Sequence[str] | None = None,
         masking_mode: MaskingMode | None = None,
@@ -105,9 +104,6 @@ class Loader[T: DataclassInstance]:
         nested_resolve: NestedResolve | None = None,
     ) -> None:
         _validate_sources(sources)
-        skip_field_if_invalid = normalize_skip_bool(
-            resolve_renamed_skip(skip_field_if_invalid, skip_invalid_fields),
-        )
         masking_mode = resolve_deprecated_mask_secrets(masking_mode, mask_secrets)
 
         if cache is None:
@@ -263,7 +259,6 @@ class Loader[T: DataclassInstance]:
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
         skip_field_if_invalid: SkipFieldsInvalid = None,
-        skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: Sequence[str] | None = None,
         masking_mode: MaskingMode | None = None,
@@ -292,7 +287,6 @@ class Loader[T: DataclassInstance]:
                 skip_if_broken=skip_if_broken,
                 skip_if_missing=skip_if_missing,
                 skip_field_if_invalid=skip_field_if_invalid,
-                skip_invalid_fields=skip_invalid_fields,
                 expand_env_vars=expand_env_vars,
                 secret_field_names=secret_field_names,
                 masking_mode=masking_mode,

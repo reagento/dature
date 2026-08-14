@@ -343,7 +343,6 @@ Frozen dataclass with connection defaults for `VaultSource`. Fields left unset o
 | `host` | `str` | `"localhost"` | Vault address. |
 | `port` | `int` | `8200` | Vault port. |
 | `scheme` | `Literal["http", "https"]` | `"http"` | Vault connection scheme. |
-| `url` | `str \| None` | `None` | **Deprecated**, will be removed in dature 1.2. Overrides `host`/`port`/`scheme` when set. |
 | `token` | `str \| None` | `None` | Vault token for authentication. |
 | `role_id` | `str \| None` | `None` | AppRole `role_id`, used with `secret_id` instead of `token`. |
 | `secret_id` | `str \| None` | `None` | AppRole `secret_id`, used with `role_id` instead of `token`. |
@@ -672,7 +671,6 @@ fetched over the network via `_fetch()` rather than read from a local file.
 | `host` | `str` | `""` | Vault address. Falls back to `VaultConfig.host`, then `"localhost"`. |
 | `port` | `int \| None` | `None` | Vault port. Falls back to `VaultConfig.port`, then `8200`. |
 | `scheme` | `Literal["http", "https"] \| None` | `None` | Vault connection scheme. Falls back to `VaultConfig.scheme`, then `"http"`. |
-| `url` | `str \| None` | `None` | **Deprecated**, will be removed in dature 1.2. A ready-made `scheme://host:port` address that overrides `host`/`port`/`scheme` when set. |
 | `mount_point` | `str` | `""` | Secrets engine mount point. Falls back to `VaultConfig.mount_point` when empty. |
 | `kv_version` | `Literal[1, 2] \| None` | `None` | KV engine version. Falls back to `VaultConfig.kv_version`. |
 | `token` | `str \| None` | `None` | Vault token. Mutually exclusive with `role_id`/`secret_id`. |

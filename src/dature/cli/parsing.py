@@ -4,20 +4,17 @@ import json
 import re
 import types
 import typing
-import warnings
 from collections.abc import Sequence
 from dataclasses import field, make_dataclass
 from functools import cache
 from typing import Any, Literal, Protocol, get_args, get_origin, get_type_hints
 
-from dature._deprecations import REMOVAL_NOTICE, resolve_deprecated_mask_secrets
+from dature._deprecations import resolve_deprecated_mask_secrets
 from dature.field_path import F, _FieldAny
 from dature.main import load
 from dature.protocols import DataclassInstance
 from dature.sources.protocol import SourceProtocol
 
-#: Deprecated alias for --skip-field-if-invalid; removed in dature 1.2.
-_LEGACY_SKIP_FLAG = "skip_invalid_fields"
 #: Deprecated alias for --masking-mode; removed in dature 1.3.
 _LEGACY_MASK_FLAG = "mask_secrets"
 
@@ -218,13 +215,6 @@ def add_load_args(parser: argparse.ArgumentParser) -> None:
             msg = f"{name!r} not found in load() signature"
             raise RuntimeError(msg)
         add_typed_arg(parser, name, hints[name])
-    # Deprecated alias for --skip-field-if-invalid, removed in dature 1.2.
-    parser.add_argument(
-        "--skip-invalid-fields",
-        action="store_true",
-        default=None,
-        help=argparse.SUPPRESS,
-    )
     # Deprecated alias for --masking-mode, removed in dature 1.3.
     parser.add_argument(
         "--mask-secrets",
@@ -267,9 +257,6 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
     (e.g. ``skip_field_if_invalid``) are mapped ``True`` → ``F.ANY``, since the
     CLI flag for that arm is a plain ``store_true`` boolean.
 
-    ``--skip-invalid-fields`` is a deprecated alias for ``--skip-field-if-invalid``
-    (removed in dature 1.2): when set, it warns and maps to ``F.ANY``.
-
     ``--mask-secrets`` is a deprecated alias for ``--masking-mode`` (removed in
     dature 1.3): when set, it warns and maps onto ``masking_mode``, which wins if
     also passed explicitly.
@@ -285,17 +272,6 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
         elif isinstance(value, bool) and value and _orig_wants_field_any(hints[name]):
             value = F.ANY
         result[name] = value
-
-    if getattr(args, _LEGACY_SKIP_FLAG, None):
-        warnings.warn(
-            f"`--skip-invalid-fields` is deprecated; use `--skip-field-if-invalid` instead. {REMOVAL_NOTICE}",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if "skip_field_if_invalid" in result:
-            msg = "pass only one of --skip-invalid-fields / --skip-field-if-invalid, not both"
-            raise TypeError(msg)
-        result["skip_field_if_invalid"] = F.ANY
 
     legacy_mask_secrets = getattr(args, _LEGACY_MASK_FLAG, None)
     if legacy_mask_secrets is not None:
@@ -337,8 +313,6 @@ def derive_cli_schema() -> type:
             raise RuntimeError(msg)
         cli_type = _cli_field_type(hints[name])
         common.append((name, cli_type | None, field(default=None)))
-    # Deprecated alias for --skip-field-if-invalid, removed in dature 1.2.
-    common.append((_LEGACY_SKIP_FLAG, bool | None, field(default=None)))
     # Deprecated alias for --masking-mode, removed in dature 1.3.
     common.append((_LEGACY_MASK_FLAG, bool | None, field(default=None)))
 

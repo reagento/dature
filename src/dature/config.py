@@ -93,8 +93,6 @@ class VaultConfig:
     host: str = "localhost"
     port: int = 8200
     scheme: Literal["http", "https"] = "http"
-    url: str | None = None
-    """Deprecated: set ``host``/``port``/``scheme`` instead."""
     token: str | None = None
     role_id: str | None = None
     secret_id: str | None = None
@@ -238,7 +236,6 @@ class VaultOptions(TypedDict, total=False):
     host: str
     port: int
     scheme: Literal["http", "https"]
-    url: str | None
     token: str | None
     role_id: str | None
     secret_id: str | None

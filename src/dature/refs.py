@@ -11,9 +11,6 @@ Equivalent to::
     JsonSource(file="${@env.CONFIG_PATH}")
     VaultSource(host="${@env.VAULT_HOST}", token="${@env.VAULT_TOKEN}")
 
-(``VaultSource.url=`` also accepts t-strings/cross-refs, but it is deprecated —
-prefer ``host=``/``port=``/``scheme=``.)
-
 ``ref.tag.key`` returns a :class:`_RefProxy` that records the path.
 When dature encounters a t-string in a source init field it reads the proxy's
 ``parts`` and converts the interpolation to the equivalent ``${@tag.key}``
