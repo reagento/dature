@@ -1,3 +1,114 @@
+## 1.2.0
+
+### Features
+
+- Added :class:`AwsSecretsManagerSource` — loads configuration from a single named AWS
+  Secrets Manager secret holding a JSON document. Install via ``pip install dature[aws]``;
+  connection settings can be set globally with ``configure(secrets_manager={...})`` or
+  ``DATURE_SECRETS_MANAGER__*`` environment variables. Like :class:`VaultSource`, the
+  secret's JSON payload is read natively as the config root — no path nesting or key
+  splitting. Supports both ``SecretString`` and ``SecretBinary`` payloads, plus
+  ``version_id``/``version_stage`` selection. ([#add_secrets_manager_source](https://github.com/reagento/dature/issues/add_secrets_manager_source))
+- Added :class:`AwsSsmSource` — loads configuration from AWS Systems Manager Parameter Store's
+  hierarchical KV tree. Install via ``pip install dature[aws]``; connection settings can be set
+  globally with ``configure(ssm={...})`` or ``DATURE_SSM__*`` environment variables.
+  Supports recursive prefix reads with automatic ``/``-based nesting, single-key JSON
+  documents as config roots, ``SecureString`` decryption, and ``StringList`` splitting.
+  With ``decode="utf-8"`` (the default), JSON-literal collection values (``[1,2,3]``,
+  ``{"k":"v"}``) are parsed automatically, giving full type-coercion coverage matching the
+  other flat-key sources (ENV, Docker Secrets, ConsulSource, EtcdSource). ([#add_ssm_source](https://github.com/reagento/dature/issues/add_ssm_source))
+- Added a load-level ``masking_mode`` parameter (``load()``, ``Loader``, the ``--masking-mode`` CLI
+  flag, ``MergeConfig``) mirroring ``MaskingConfig.masking_mode``, so masking aggressiveness can be
+  overridden per call, not just globally via ``configure()``.
+
+  Deprecated ``mask_secrets`` (``load()``/``Loader``/``configure(masking={...})``/
+  ``DATURE_MASKING__MASK_SECRETS``/``--mask-secrets``) in favor of ``masking_mode``: ``True`` maps to
+  ``masking_mode="secrets_only"``, ``False`` maps to ``masking_mode="none"``. Using ``mask_secrets`` emits
+  a ``DeprecationWarning`` and will be removed in dature 1.3. If both ``mask_secrets`` and
+  ``masking_mode`` are set at the same time, ``masking_mode`` wins — this is not an error. ([#deprecate_mask_secrets](https://github.com/reagento/dature/issues/deprecate_mask_secrets))
+- Added a masking ``masking_mode`` (``"all"`` / ``"secrets_only"`` / ``"none"``) to ``MaskingConfig``, controlling
+  how aggressively values are redacted in logs, error messages, and ``LoadReport``. The new default
+  is ``masking_mode="all"``: every string value is masked, regardless of field name or type. Set
+  ``configure(masking={"masking_mode": "secrets_only"})`` to restore the previous behavior of masking only fields
+  matched by ``secret_field_names`` or ``SecretStr``/``PaymentCardNumber`` types (plus the random-string
+  heuristic). ``masking_mode="none"`` still disables masking entirely.
+
+  Also extended the default ``secret_field_names`` patterns to catch kebab-case field names
+  (``secret-key``, ``api-token``, ...) and added bare ``key``, ``uri``, and ``url`` as default patterns.
+
+  The result of a completed load (the final merged data for multi-source loads, or the loaded data
+  for single-source loads) is now logged at ``INFO`` instead of ``DEBUG``, so it is visible without
+  enabling debug logging. Per-source raw data, merge steps, and field origins remain at ``DEBUG``. ([#mask_all_default](https://github.com/reagento/dature/issues/mask_all_default))
+- Added ``--format table`` for ``dature inspect`` to render load reports as boxed ASCII tables.
+
+### Bugfixes
+
+- Fixed error messages leaking the raw offending value even when masking was active: coercion
+  failures (e.g. ``int("not_a_number")``, invalid ``timedelta``/``ByteSize``/card-number formats)
+  bake the literal input into the exception text (``invalid literal for int() with base 10:
+  'secret'``), and this text was returned verbatim regardless of ``masking_mode`` — only the
+  displayed source line was masked, not the message itself. The raw value is now redacted from the
+  message too whenever the field is considered secret (``masking_mode="all"``, an explicit secret
+  path, or the random-string heuristic under ``"secrets_only"``). ([#mask_error_message_leak](https://github.com/reagento/dature/issues/mask_error_message_leak))
+- Fixed secret fields not being masked at all when a source's ``name_style`` or ``field_mapping``
+  made its raw key spelling differ from the dataclass field name — e.g. ``secret_key`` in the
+  schema vs. ``secret-key`` under ``name_style="lower_kebab"``. ``secret_paths`` is built from
+  Python field names, but masking previously compared it against raw source keys with exact string
+  equality, so any non-trivial ``name_style`` (camelCase, kebab-case, UPPER variants) or explicit
+  alias silently skipped masking for that field under ``masking_mode="secrets_only"`` — output keys
+  are never renamed by this fix, only the "is this path secret" check is now case/separator
+  insensitive. Explicit ``field_mapping`` aliases for already-secret fields (by type or by name) are
+  now folded into ``secret_paths`` too, which is required for ``SecretStr``/``PaymentCardNumber``
+  fields aliased to an arbitrary name (e.g. ``DATABASE_HOSTNAME``) that canonicalization alone can't
+  recognize. Additionally, under ``masking_mode="secrets_only"``, raw keys outside the schema (e.g.
+  inside a ``dict[str, str]`` field) are now matched directly against ``secret_field_names``
+  patterns. Note: load-level ``secret_field_names=`` extras still only affect schema fields; to
+  cover non-schema raw keys as well, set patterns globally via
+  ``dature.configure(masking={"secret_field_names": (...)})``. ([#mask_name_style_secret_paths](https://github.com/reagento/dature/issues/mask_name_style_secret_paths))
+- Fixed ``mask_json_value`` failing to mask values nested under a matched secret path: only the
+  top-level key was checked against ``secret_paths``, so a ``dict`` or ``list`` value under a secret
+  field (e.g. a nested dataclass named ``auth`` matched by the ``auth`` pattern) recursed with the
+  same ``secret_paths``, and none of its own keys matched — leaking every value inside it in logs,
+  error messages, and ``LoadReport``. Matching a secret path now forces masking of every string leaf
+  in that subtree, regardless of nested key names, while preserving the original ``dict``/``list``
+  structure. ([#mask_nested_leak](https://github.com/reagento/dature/issues/mask_nested_leak))
+- Fixed error location lines for structured values (JSON objects, YAML mappings, JSON5) being
+  replaced entirely with ``<REDACTED>``, discarding all key names. Keys are now preserved in the
+  displayed line and only the individual scalar values are masked: e.g.
+  ``{"host": "localhost", "port": 8080}`` becomes
+  ``{"host": "<REDACTED>", "port": <REDACTED>}`` instead of the previous
+  ``{"host": <REDACTED>``. The caret underline now points at the specific offending field's
+  value rather than the entire remainder of the line. Multi-line blocks (YAML block mappings,
+  TOML arrays) now show exactly one caret row on the line that contains the broken field's value,
+  instead of one row per visible line. Bare/unquoted keys (JSON5 / YAML-in-braces) are also
+  correctly masked. Values inside arrays (``["web", "web"]``) are masked again too — a
+  regression introduced alongside the key-preservation fix above had left list elements
+  untouched. ([#mask_structured_display](https://github.com/reagento/dature/issues/mask_structured_display))
+
+### Refactoring
+
+- Removed the global ``sys.excepthook`` patch installed on ``import dature``. Instead,
+  ``DatureError`` and ``DatureErrorGroup`` hide dature's own internal frames from their
+  ``__traceback__`` directly, so unhandled dature errors now print a traceback that
+  stops at your own call site instead of showing zero frames. This also fixes tracebacks
+  in contexts the old hook never reached — ``logging.exception``, ``traceback.print_exc``,
+  pytest failures — and no longer eats the traceback of a ``DatureError`` raised by your
+  own code outside dature. ([#remove_excepthook](https://github.com/reagento/dature/issues/remove_excepthook))
+
+### Removals
+
+- Removed previously deprecated compatibility shims:
+
+  - ``skip_invalid_fields`` (``load()``/``Loader``/``--skip-invalid-fields``) — use
+    ``skip_field_if_invalid`` instead.
+  - Passing a ``bool`` to ``skip_field_if_invalid`` — pass ``F.ANY`` (or a field-path filter) instead.
+  - ``Source.check_invariants()`` — use ``root_validators`` instead.
+  - ``Source.additional_loaders()`` — use ``format_loaders()`` instead.
+  - ``VaultSource.url`` / ``VaultConfig.url`` — use ``host``/``port``/``scheme`` instead.
+
+  ([#remove_legacy_deprecation_shims](https://github.com/reagento/dature/issues/remove_legacy_deprecation_shims))
+
+
 ## 1.1.1
 
 ### Features
