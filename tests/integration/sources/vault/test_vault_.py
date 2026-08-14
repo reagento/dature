@@ -156,6 +156,7 @@ class TestVaultSourceTokenKv2:
             path=KV_PATH,
             mount_point="secret",
             kv_version=2,
+            expand_env_vars="default",
         )
         result = source.load_raw()
         locations = source.resolve_location(

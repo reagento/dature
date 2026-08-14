@@ -97,7 +97,9 @@ class TestConsulSourceRecursive:
     @pytest.mark.usefixtures("_kv_tree")
     def test_resolve_location_renders_real_value(self, consul_host, consul_port, consul_token):
         source = apply_source_config_group(
-            ConsulSource(host=consul_host, port=consul_port, path=KV_PREFIX, token=consul_token)
+            ConsulSource(
+                host=consul_host, port=consul_port, path=KV_PREFIX, token=consul_token, expand_env_vars="default"
+            )
         )
         result = source.load_raw()
         locations = source.resolve_location(

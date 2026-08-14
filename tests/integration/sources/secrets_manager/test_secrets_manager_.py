@@ -75,7 +75,12 @@ class TestAwsSecretsManagerSourceLoad:
         localstack_iam_credentials,
     ):
         source = apply_source_config_group(
-            _make_source(secrets_manager_endpoint_url, secrets_manager_region_name, localstack_iam_credentials),
+            _make_source(
+                secrets_manager_endpoint_url,
+                secrets_manager_region_name,
+                localstack_iam_credentials,
+                expand_env_vars="default",
+            ),
         )
 
         result = source.load_raw()
