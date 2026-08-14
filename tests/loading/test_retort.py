@@ -169,6 +169,10 @@ class TestGetAdaptixNameStyle:
 
         assert result is None
 
+    def test_unknown_style_raises(self):
+        with pytest.raises(ValueError, match="Unknown name_style: 'bogus'"):
+            get_adaptix_name_style("bogus")
+
 
 class TestGetNameMappingProviders:
     def test_none_none_returns_empty(self):

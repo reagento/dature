@@ -38,11 +38,16 @@ class ConsulSource(RemoteSource):
         return f"{self.scheme}://{self.host}:{self.port}/v1/kv/{self.path}"
 
     def format_loaders(self) -> "list[Provider]":
-        if self.decode == "raw":
-            return bytes_value_loaders()
-        if self.decode == "utf-8":
-            return string_value_loaders()
-        return super().format_loaders()
+        match self.decode:
+            case "raw":
+                return bytes_value_loaders()
+            case "utf-8":
+                return string_value_loaders()
+            case "json":
+                return super().format_loaders()
+            case _ as unknown:
+                msg = f"Unknown decode mode: {unknown!r}"
+                raise ValueError(msg)
 
     def _decode_value(self, raw: "bytes | None") -> JSONValue:
         if raw is None:
@@ -53,11 +58,16 @@ class ConsulSource(RemoteSource):
             # ``none_from_empty_string`` (in string_value_loaders) turn it into None when
             # the target field is Optional/None-typed.
             return "" if self.decode == "utf-8" else None
-        if self.decode == "raw":
-            return cast("JSONValue", raw)
-        if self.decode == "json":
-            return cast("JSONValue", json.loads(raw))
-        return raw.decode("utf-8")
+        match self.decode:
+            case "raw":
+                return cast("JSONValue", raw)
+            case "json":
+                return cast("JSONValue", json.loads(raw))
+            case "utf-8":
+                return raw.decode("utf-8")
+            case _ as unknown:
+                msg = f"Unknown decode mode: {unknown!r}"
+                raise ValueError(msg)
 
     def _build_nested(self, items: "list[dict[str, Any]]") -> JSONValue:
         """Turn a recursive KV listing into a nested dict, splitting each key on ``separator``.

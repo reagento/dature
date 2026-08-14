@@ -19,7 +19,7 @@ class TestEnvFileSource:
 
     def test_prefix_filtering(self, prefixed_env_file: Path):
         """Test prefix filtering with nested structures."""
-        loader = EnvFileSource(file=prefixed_env_file, prefix="APP_")
+        loader = EnvFileSource(file=prefixed_env_file, prefix="APP_", expand_env_vars="default")
         result = loader.load_raw()
 
         assert result.data == {
@@ -33,7 +33,7 @@ class TestEnvFileSource:
 
     def test_custom_split_symbols(self, custom_separator_env_file: Path):
         """Test custom separator for nested keys."""
-        loader = EnvFileSource(file=custom_separator_env_file, prefix="APP_", nested_sep=".")
+        loader = EnvFileSource(file=custom_separator_env_file, prefix="APP_", nested_sep=".", expand_env_vars="default")
         result = loader.load_raw()
 
         assert result.data == {

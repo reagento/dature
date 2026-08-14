@@ -103,6 +103,18 @@ class TestLengthCompareRuntime:
             assert func(b) is False
 
 
+class TestUnknownCompareOp:
+    @pytest.mark.parametrize(
+        "predicate_cls",
+        [ComparePredicate, LengthComparePredicate],
+    )
+    def test_get_validator_func_raises_on_unknown_op(self, predicate_cls: type) -> None:
+        predicate = predicate_cls("between", 1)
+
+        with pytest.raises(ValueError, match="Unknown compare op: 'between'"):
+            predicate.get_validator_func()
+
+
 class TestLengthCompareErrorMessage:
     @pytest.mark.parametrize(
         ("predicate", "expected"),

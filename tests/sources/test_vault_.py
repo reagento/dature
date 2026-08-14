@@ -52,6 +52,12 @@ class TestVaultSourceDisplayProperties:
         )
         assert src.remote_address() == expected
 
+    def test_remote_address_raises_on_unknown_kv_version(self):
+        src = VaultSource(host="v", port=8200, scheme="https", token="x", path="myapp/config", kv_version=3)
+
+        with pytest.raises(ValueError, match="Unknown kv_version: 3"):
+            src.remote_address()
+
 
 @pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceValidation:

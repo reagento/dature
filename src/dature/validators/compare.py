@@ -45,19 +45,23 @@ class ComparePredicate(Predicate):
         return
 
     def get_validator_func(self) -> Callable[[Any], bool]:
-        op = self.op
         value = self.value
-        if op == "gt":
-            return lambda v: v > value
-        if op == "ge":
-            return lambda v: v >= value
-        if op == "lt":
-            return lambda v: v < value
-        if op == "le":
-            return lambda v: v <= value
-        if op == "eq":
-            return lambda v: v == value
-        return lambda v: v != value
+        match self.op:
+            case "gt":
+                return lambda v: v > value
+            case "ge":
+                return lambda v: v >= value
+            case "lt":
+                return lambda v: v < value
+            case "le":
+                return lambda v: v <= value
+            case "eq":
+                return lambda v: v == value
+            case "ne":
+                return lambda v: v != value
+            case _ as unknown:
+                msg = f"Unknown compare op: {unknown!r}"
+                raise ValueError(msg)
 
     def get_error_message(self) -> str:
         if self.error_message is not None:
@@ -83,19 +87,23 @@ class LengthComparePredicate(Predicate):
             raise ValidatorTypeError(field_path=field_path, message=msg)
 
     def get_validator_func(self) -> Callable[[Any], bool]:
-        op = self.op
         value = self.value
-        if op == "gt":
-            return lambda v: len(v) > value
-        if op == "ge":
-            return lambda v: len(v) >= value
-        if op == "lt":
-            return lambda v: len(v) < value
-        if op == "le":
-            return lambda v: len(v) <= value
-        if op == "eq":
-            return lambda v: len(v) == value
-        return lambda v: len(v) != value
+        match self.op:
+            case "gt":
+                return lambda v: len(v) > value
+            case "ge":
+                return lambda v: len(v) >= value
+            case "lt":
+                return lambda v: len(v) < value
+            case "le":
+                return lambda v: len(v) <= value
+            case "eq":
+                return lambda v: len(v) == value
+            case "ne":
+                return lambda v: len(v) != value
+            case _ as unknown:
+                msg = f"Unknown compare op: {unknown!r}"
+                raise ValueError(msg)
 
     def get_error_message(self) -> str:
         if self.error_message is not None:

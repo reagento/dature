@@ -46,6 +46,18 @@ class TestAwsSsmSourceDisplayProperties:
 
         assert loaders == expected
 
+    def test_format_loaders_raises_on_unknown_decode(self):
+        src = AwsSsmSource(path="/myapp/", region_name="us-east-1", decode="xml")
+
+        with pytest.raises(ValueError, match="Unknown decode mode: 'xml'"):
+            src.format_loaders()
+
+    def test_decode_value_raises_on_unknown_decode(self):
+        src = AwsSsmSource(path="/myapp/", region_name="us-east-1", decode="xml")
+
+        with pytest.raises(ValueError, match="Unknown decode mode: 'xml'"):
+            src._decode_value({"Name": "/myapp/x", "Value": "v", "Type": "String"})
+
     @pytest.mark.parametrize(
         ("region_name", "path", "endpoint_url", "expected"),
         [
@@ -193,6 +205,7 @@ class TestAwsSsmSourceFetch:
     def _make_source(self, monkeypatch: pytest.MonkeyPatch, client: FakeSsmClient, **kwargs: object) -> AwsSsmSource:
         monkeypatch.setattr(boto3, "Session", lambda **kw: FakeSession(client))  # noqa: ARG005
         kwargs.setdefault("path", "/myapp")
+        kwargs.setdefault("expand_env_vars", "default")
         return AwsSsmSource(region_name="us-east-1", **kwargs)
 
     def test_recursive_nests_on_separator(self, monkeypatch):

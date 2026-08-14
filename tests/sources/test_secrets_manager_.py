@@ -158,6 +158,7 @@ class TestAwsSecretsManagerSourceFetch:
     ) -> AwsSecretsManagerSource:
         monkeypatch.setattr(boto3, "Session", lambda **kw: FakeSession(client))  # noqa: ARG005
         kwargs.setdefault("name", "myapp/config")
+        kwargs.setdefault("expand_env_vars", "default")
         return AwsSecretsManagerSource(region_name="us-east-1", **kwargs)
 
     def test_secret_string_is_parsed(self, monkeypatch):

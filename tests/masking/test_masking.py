@@ -10,6 +10,7 @@ from dature.errors import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.fields.secret_str import SecretStr
 from dature.masking.masking import (
+    _secret_key_matcher,
     is_secret_path,
     mask_env_line,
     mask_field_origins,
@@ -109,6 +110,24 @@ class TestIsSecretPath:
         expected: bool,
     ) -> None:
         assert is_secret_path(field_path, secret_paths=secret_paths, masking_mode=masking_mode) is expected
+
+
+class TestUnknownMaskingMode:
+    def test_is_secret_path_raises(self) -> None:
+        with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
+            is_secret_path("host", secret_paths=frozenset(), masking_mode="bogus")
+
+    def test_mask_json_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
+            mask_json_value({"host": "x"}, secret_paths=frozenset(), masking_mode="bogus")
+
+    def test_mask_field_origins_raises(self) -> None:
+        with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
+            mask_field_origins((), secret_paths=frozenset(), masking_mode="bogus")
+
+    def test_secret_key_matcher_raises(self) -> None:
+        with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
+            _secret_key_matcher(frozenset(), "bogus")
 
 
 class TestMaskJsonValue:

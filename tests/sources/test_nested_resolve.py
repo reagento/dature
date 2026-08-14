@@ -914,3 +914,23 @@ class TestEmptyNestedResolveDict:
 
         assert result == NestedConfig(var=NestedVar(foo=expected_source, bar=expected_source))
         assert result == NestedConfig(var=NestedVar(foo=expected_source, bar=expected_source))
+
+
+class TestUnknownNestedResolveStrategy:
+    """A conflicting flat/nested key pair with an invalid ``nested_resolve_strategy``."""
+
+    def test_flat_key_seen_first_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MYAPP__VAR", "flat_value")
+        monkeypatch.setenv("MYAPP__VAR__FOO", "10")
+        src = EnvSource(prefix="MYAPP__", nested_resolve_strategy="bogus", expand_env_vars="default")
+
+        with pytest.raises(ValueError, match="Unknown nested resolve strategy: 'bogus'"):
+            src.load_raw()
+
+    def test_nested_key_seen_first_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MYAPP__VAR__FOO", "10")
+        monkeypatch.setenv("MYAPP__VAR", "flat_value")
+        src = EnvSource(prefix="MYAPP__", nested_resolve_strategy="bogus", expand_env_vars="default")
+
+        with pytest.raises(ValueError, match="Unknown nested resolve strategy: 'bogus'"):
+            src.load_raw()

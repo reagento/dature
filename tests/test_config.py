@@ -225,7 +225,13 @@ class TestEnvLoading:
     ) -> None:
         monkeypatch.setenv(env_var, env_value)
         _ConfigProxy.set_instance(None)
-        group = getattr(config, attr_path[0])
+
+        if attr_path[1] == "mask_secrets":
+            with pytest.deprecated_call(match="mask_secrets"):
+                group = getattr(config, attr_path[0])
+        else:
+            group = getattr(config, attr_path[0])
+
         assert getattr(group, attr_path[1]) == expected
 
 

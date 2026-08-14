@@ -105,11 +105,16 @@ class _EnvExpander:
 
 
 def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
-    if mode == "disabled":
-        return text
-
-    if mode == "default":
-        return expand_string_default(text)
+    match mode:
+        case "disabled":
+            return text
+        case "default":
+            return expand_string_default(text)
+        case "empty" | "strict":
+            pass
+        case _ as unknown:
+            msg = f"Unknown expand_env_vars mode: {unknown!r}"
+            raise ValueError(msg)
 
     expander = _EnvExpander(mode=mode, source_text=text)
     result = _VAR_RE.sub(expander, text)
@@ -123,11 +128,16 @@ def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
 
 def _expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, list[MissingEnvVarError]]:
     """Expand string and return (result, errors) without raising."""
-    if mode == "disabled":
-        return text, []
-
-    if mode == "default":
-        return expand_string_default(text), []
+    match mode:
+        case "disabled":
+            return text, []
+        case "default":
+            return expand_string_default(text), []
+        case "empty" | "strict":
+            pass
+        case _ as unknown:
+            msg = f"Unknown expand_env_vars mode: {unknown!r}"
+            raise ValueError(msg)
 
     expander = _EnvExpander(mode=mode, source_text=text)
     result = _VAR_RE.sub(expander, text)
@@ -166,11 +176,16 @@ def expand_file_path(file_path: FilePath, *, mode: ExpandEnvVarsMode) -> str:
 
 
 def expand_env_vars(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
-    if mode == "disabled":
-        return data
-
-    if mode != "strict":
-        return _expand_recursive(data, mode=mode)
+    match mode:
+        case "disabled":
+            return data
+        case "default" | "empty":
+            return _expand_recursive(data, mode=mode)
+        case "strict":
+            pass
+        case _ as unknown:
+            msg = f"Unknown expand_env_vars mode: {unknown!r}"
+            raise ValueError(msg)
 
     all_errors: list[MissingEnvVarError] = []
     result = _expand_recursive_collect(data, mode=mode, path=[], errors=all_errors)

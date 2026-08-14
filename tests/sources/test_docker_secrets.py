@@ -25,7 +25,7 @@ class TestDockerSecretsSource:
         (tmp_path / "db.host").write_text("localhost")
         (tmp_path / "db.port").write_text("5432")
 
-        loader = DockerSecretsSource(dir_=tmp_path, nested_sep=".")
+        loader = DockerSecretsSource(dir_=tmp_path, nested_sep=".", expand_env_vars="default")
         result = loader.load_raw()
 
         assert result.data == {"db": {"host": "localhost", "port": 5432}}

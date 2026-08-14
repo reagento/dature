@@ -3,7 +3,6 @@ from collections.abc import Callable, Iterable, Sequence
 from datetime import timedelta
 from typing import Any, overload
 
-from dature.config import config
 from dature.loading.loader import Loader
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.protocols import DataclassInstance
@@ -97,15 +96,9 @@ def load(  # noqa: PLR0913
     nested_resolve: NestedResolve | None = None,
 ) -> Any:
     # --8<-- [end:load]
-    if cache is None:
-        cache = config.loading.cache
     if isinstance(cache, timedelta) and cache < timedelta(0):
         msg = f"cache timedelta must be non-negative, got {cache!r}"
         raise ValueError(msg)
-    if cache_engine is None:
-        cache_engine = config.loading.cache_engine
-    if debug is None:
-        debug = config.loading.debug
 
     user_set_strategy = strategy is not _DEFAULT_STRATEGY
     if not user_set_strategy:
