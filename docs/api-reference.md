@@ -39,7 +39,8 @@ Main entry point. Two calling patterns:
 | `skip_field_if_invalid` | `SkipFieldsInvalid` | `None` | Skip fields that fail validation instead of raising. `F.ANY` skips any invalid field, a sequence of `F[Config].field` skips only those, `None`/`[]` skip nothing. |
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | Env var expansion mode applied to all sources. Source-level setting takes priority. |
 | `secret_field_names` | `Sequence[str] \| None` | `None` | Extra secret field name patterns for masking. |
-| `mask_secrets` | `bool \| None` | `None` | Enable/disable secret masking globally. |
+| `masking_mode` | `MaskingMode \| None` | `None` | Masking mode for this load: `"all"`, `"secrets_only"`, or `"none"`. See [Masking](basic/masking.md). |
+| `mask_secrets` | `bool \| None` | `None` | Deprecated, use `masking_mode` instead (`True` → `"secrets_only"`, `False` → `"none"`). If both are set, `masking_mode` wins. Removed in dature 1.3. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type loaders mapping types to conversion functions. Merged with source-level and global loaders. |
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Default priority for JSON vs flat keys in `FlatKeySource`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
@@ -293,7 +294,8 @@ Frozen dataclass controlling secret masking behavior.
 | `min_heuristic_length` | `int` | `8` | Minimum string length for heuristic-based detection. |
 | `heuristic_threshold` | `float` | `0.5` | Entropy threshold for heuristic secret detection. |
 | `secret_field_names` | `tuple[str, ...]` | `("password", "passwd", ...)` | Field name patterns that trigger masking. |
-| `mask_secrets` | `bool` | `True` | Global on/off switch for masking. |
+| `mask_secrets` | `bool \| None` | `None` | Deprecated, use `masking_mode` instead. `None` means "not set". Removed in dature 1.3. |
+| `masking_mode` | `MaskingMode \| None` | `None` | Global masking mode: `"all"`, `"secrets_only"`, or `"none"`. `None` resolves to `"all"`. |
 
 ### `ErrorDisplayConfig`
 
@@ -341,7 +343,6 @@ Frozen dataclass with connection defaults for `VaultSource`. Fields left unset o
 | `host` | `str` | `"localhost"` | Vault address. |
 | `port` | `int` | `8200` | Vault port. |
 | `scheme` | `Literal["http", "https"]` | `"http"` | Vault connection scheme. |
-| `url` | `str \| None` | `None` | **Deprecated**, will be removed in dature 1.2. Overrides `host`/`port`/`scheme` when set. |
 | `token` | `str \| None` | `None` | Vault token for authentication. |
 | `role_id` | `str \| None` | `None` | AppRole `role_id`, used with `secret_id` instead of `token`. |
 | `secret_id` | `str \| None` | `None` | AppRole `secret_id`, used with `role_id` instead of `token`. |
@@ -670,7 +671,6 @@ fetched over the network via `_fetch()` rather than read from a local file.
 | `host` | `str` | `""` | Vault address. Falls back to `VaultConfig.host`, then `"localhost"`. |
 | `port` | `int \| None` | `None` | Vault port. Falls back to `VaultConfig.port`, then `8200`. |
 | `scheme` | `Literal["http", "https"] \| None` | `None` | Vault connection scheme. Falls back to `VaultConfig.scheme`, then `"http"`. |
-| `url` | `str \| None` | `None` | **Deprecated**, will be removed in dature 1.2. A ready-made `scheme://host:port` address that overrides `host`/`port`/`scheme` when set. |
 | `mount_point` | `str` | `""` | Secrets engine mount point. Falls back to `VaultConfig.mount_point` when empty. |
 | `kv_version` | `Literal[1, 2] \| None` | `None` | KV engine version. Falls back to `VaultConfig.kv_version`. |
 | `token` | `str \| None` | `None` | Vault token. Mutually exclusive with `role_id`/`secret_id`. |

@@ -24,35 +24,34 @@ from dature.errors.exceptions import (
     MissingEnvVarError,
 )
 from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
-from dature.masking.masking import is_random_string, mask_value
+from dature.masking.masking import is_random_string, is_secret_path, mask_value
 from dature.sources.protocol import FileSourceProtocol
-from dature.type_aliases import JSONValue
+from dature.type_aliases import JSONValue, MaskingMode
 
 
 def _describe_error(exc: BaseException, *, is_secret: bool = False) -> str:
     if isinstance(exc, (ValidationLoadError, ValueLoadError)):
-        return str(exc.msg)
-
-    if isinstance(exc, TypeLoadError):
+        message = str(exc.msg)
+    elif isinstance(exc, TypeLoadError):
         expected = exc.expected_type
         if isinstance(expected, types.UnionType) or getattr(expected, "__origin__", None) is Union:
             names = [arg.__name__ for arg in get_args(expected)]
             expected_name = " | ".join(names)
         else:
             expected_name = expected.__name__
-        return f"Expected {expected_name}, got {type(exc.input_value).__name__}"
-
-    if isinstance(exc, ExtraFieldsLoadError):
+        message = f"Expected {expected_name}, got {type(exc.input_value).__name__}"
+    elif isinstance(exc, ExtraFieldsLoadError):
         field_names = ", ".join(sorted(exc.fields))
-        return f"Unknown field(s): {field_names}"
+        message = f"Unknown field(s): {field_names}"
+    elif isinstance(exc, BadVariantLoadError):
+        message = f"Invalid variant: {exc.input_value!r}"
+    else:
+        message = str(exc)
 
-    if isinstance(exc, BadVariantLoadError):
-        if is_secret:
-            masked = mask_value(str(exc.input_value))
-            return f"Invalid variant: {masked!r}"
-        return f"Invalid variant: {exc.input_value!r}"
-
-    return str(exc)
+    raw_value = str(getattr(exc, "input_value", None))
+    if is_secret and raw_value and raw_value in message:
+        message = message.replace(raw_value, mask_value(raw_value))
+    return message
 
 
 def _walk_exception(
@@ -61,7 +60,7 @@ def _walk_exception(
     result: list[FieldLoadError],
     *,
     secret_paths: frozenset[str] = frozenset(),
-    mask_secrets: bool = False,
+    masking_mode: MaskingMode = "none",
     heuristic_secret_paths: set[str] | None = None,
 ) -> None:
     trail = list(get_trail(exc))
@@ -74,7 +73,7 @@ def _walk_exception(
                 current_path,
                 result,
                 secret_paths=secret_paths,
-                mask_secrets=mask_secrets,
+                masking_mode=masking_mode,
                 heuristic_secret_paths=heuristic_secret_paths,
             )
         return
@@ -90,15 +89,19 @@ def _walk_exception(
         )
         return
 
-    is_secret = ".".join(current_path) in secret_paths
+    is_secret = is_secret_path(current_path, secret_paths=secret_paths, masking_mode=masking_mode)
     input_value = getattr(exc, "input_value", None)
-    if mask_secrets or is_secret:
-        if not is_secret and mask_secrets and isinstance(input_value, str) and is_random_string(input_value):
-            is_secret = True
-            if heuristic_secret_paths is not None:
-                heuristic_secret_paths.add(".".join(current_path))
-        if is_secret and input_value is not None:
-            input_value = mask_value(str(input_value))
+    if (
+        masking_mode == "secrets_only"
+        and not is_secret
+        and isinstance(input_value, str)
+        and is_random_string(input_value)
+    ):
+        is_secret = True
+        if heuristic_secret_paths is not None:
+            heuristic_secret_paths.add(".".join(current_path))
+    if is_secret and input_value is not None:
+        input_value = mask_value(str(input_value))
 
     result.append(
         FieldLoadError(
@@ -113,9 +116,10 @@ def extract_field_errors(
     exc: BaseException,
     *,
     secret_paths: frozenset[str] = frozenset(),
+    masking_mode: MaskingMode = "none",
 ) -> list[FieldLoadError]:
     result: list[FieldLoadError] = []
-    _walk_exception(exc, [], result, secret_paths=secret_paths)
+    _walk_exception(exc, [], result, secret_paths=secret_paths, masking_mode=masking_mode)
     return result
 
 
@@ -152,7 +156,7 @@ def handle_load_errors[T](
             [],
             field_errors,
             secret_paths=ctx.secret_paths,
-            mask_secrets=ctx.mask_secrets,
+            masking_mode=ctx.masking_mode,
             heuristic_secret_paths=heuristic_paths,
         )
         location_ctx = ctx

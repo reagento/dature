@@ -1,4 +1,4 @@
-+ Exception Group Traceback (most recent call last):
+  + Exception Group Traceback (most recent call last):
   |   File "{SCRIPT_PATH}", line 21, in <module>
   |     dature.load(
   |     ~~~~~~~~~~~^
@@ -11,22 +11,22 @@
   | dature.errors.exceptions.DatureConfigError: ServiceConfig loading errors (4)
   +-+---------------- 1 ----------------
     | dature.errors.exceptions.FieldLoadError:   [port]  Value must be greater than or equal to 1
-    |    ├── port: 0,
-    |    │         ^
+    |    ├── port: <REDACTED>
+    |    │         ^^^^^^^^^^
     |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 3
     +---------------- 2 ----------------
     | dature.errors.exceptions.FieldLoadError:   [name]  Value length must be greater than or equal to 3
-    |    ├── name: "ab",
-    |    │          ^^
+    |    ├── name: "<REDACTED>",
+    |    │          ^^^^^^^^^^
     |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 4
     +---------------- 3 ----------------
     | dature.errors.exceptions.FieldLoadError:   [tags]  Value must contain unique items
-    |    ├── tags: ["web", "web"],
-    |    │         ^^^^^^^^^^^^^^
+    |    ├── tags: ["<REDACTED>", "<REDACTED>"],
+    |    │           ^^^^^^^^^^
     |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 5
     +---------------- 4 ----------------
     | dature.errors.exceptions.FieldLoadError:   [workers]  Value must be greater than or equal to 1
-    |    ├── workers: 0,
-    |    │            ^
+    |    ├── workers: <REDACTED>
+    |    │            ^^^^^^^^^^
     |    └── FILE '{SOURCES_DIR}validation_annotated_invalid.json5', line 6
     +------------------------------------

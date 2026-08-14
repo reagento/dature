@@ -1,6 +1,6 @@
 # Masking
 
-dature automatically masks secret values in error messages, debug logs, and `LoadReport` to prevent accidental leakage of sensitive data.
+dature automatically masks values in error messages, debug logs, and `LoadReport` to prevent accidental leakage of sensitive data.
 
 ## Why Masking Matters
 
@@ -24,9 +24,64 @@ Config loading errors (1)
        password: <REDACTED>
 ```
 
-## Detection Methods
+## Modes
 
-dature uses three methods to identify secrets:
+`MaskingConfig.masking_mode` controls how aggressively values are masked:
+
+| Mode | Behavior |
+|------|----------|
+| `all` (default) | Every string value is masked, regardless of field name or type |
+| `secrets_only` | Only fields matched by name, type, or heuristic are masked (see [Detection Methods](#detection-methods) below) |
+| `none` | No masking at all |
+
+The default is `all` — a value never appears in the clear unless you explicitly opt into a narrower
+mode. Each mode below loads the same config, where `host` holds an invalid value and is therefore
+the one shown in the error — watch how its value changes across modes:
+
+```yaml title="masking_mode.yaml"
+--8<-- "docs/examples/basic/masking/sources/masking_mode.yaml"
+```
+
+=== "all (default)"
+
+    Every string value is masked, including `host` — even though its name matches no secret pattern:
+
+    ```python
+    --8<-- "docs/examples/basic/masking/masking_mode_all.py:example"
+    ```
+
+    ```title="Error"
+    --8<-- "docs/examples/basic/masking/masking_mode_all.stderr"
+    ```
+
+=== "secrets_only"
+
+    Only fields matched by name, type, or heuristic are masked. `host` is not one of them, so it
+    appears unmasked:
+
+    ```python
+    --8<-- "docs/examples/basic/masking/masking_mode_secrets_only.py:example"
+    ```
+
+    ```title="Error"
+    --8<-- "docs/examples/basic/masking/masking_mode_secrets_only.stderr"
+    ```
+
+=== "none"
+
+    Masking is disabled entirely — every value, secret or not, appears in the clear:
+
+    ```python
+    --8<-- "docs/examples/basic/masking/masking_mode_none.py:example"
+    ```
+
+    ```title="Error"
+    --8<-- "docs/examples/basic/masking/masking_mode_none.stderr"
+    ```
+
+## Detection Methods (`masking_mode="secrets_only"`)
+
+With `masking_mode="secrets_only"`, dature uses three methods to identify secrets:
 
 | Method | Description | Always active |
 |--------|-------------|---------------|
@@ -36,7 +91,31 @@ dature uses three methods to identify secrets:
 
 ### Default Name Patterns
 
-`password`, `passwd`, `secret`, `token`, `api_key`, `apikey`, `api_secret`, `access_key`, `private_key`, `auth`, `credential`
+`password`, `passwd`, `secret`, `token`, `key`, `auth`, `credential`, `uri`, `url`
+
+Matching is substring-based and case-insensitive, so this also covers common variants like
+`api_key`, `api-key`, `apikey`, `access_key`, `private-key`, `secret-key`, `connection_uri`, and
+`service_url`.
+
+### Name-Style and `field_mapping` Awareness
+
+Secret detection is based on dataclass field names (e.g. `secret_key`), but matching against a
+source's raw keys is case/separator-insensitive, so a source's `name_style` (`lower_kebab`,
+`upperCamel`, etc.) never hides a secret field — `secret_key`, `secret-key`, `secretKey`, and
+`SECRET_KEY` are all recognized as the same field. Keys in error messages, debug logs, and
+`LoadReport` are always shown exactly as they appear in the source — only the *value* is masked,
+never the key spelling.
+
+If a field is secret by type (`SecretStr`, `PaymentCardNumber`) or by name, and you alias it via
+`field_mapping` to a name that doesn't itself look secret (e.g. mapping a `SecretStr` field to
+`DATABASE_HOSTNAME`), the alias is masked too. This is the one case name-style normalization can't
+cover on its own, since the alias is an arbitrary string chosen by you, not a case/separator
+variant of the field name.
+
+`secret_field_names` passed to `dature.load()` extends by-name detection for **schema fields**
+only. To also mask non-schema raw keys (e.g. entries inside a `dict[str, str]` field) that match a
+custom pattern under `masking_mode="secrets_only"`, set the pattern globally instead:
+`dature.configure(masking={"secret_field_names": (...)})`.
 
 ## Examples
 
@@ -111,9 +190,9 @@ Classic `ab*****cd` style:
 
 ### Per-load
 
-`mask_secrets` and `secret_field_names` are passed directly to `dature.load()`. They apply to both single-source and multi-source modes.
+`masking_mode` and `secret_field_names` are passed directly to `dature.load()`. They apply to both single-source and multi-source modes.
 
-=== "mask_secrets=False"
+=== "masking_mode=\"none\""
 
     ```python
     --8<-- "docs/examples/basic/masking/masking_no_mask.py:example"

@@ -29,7 +29,7 @@ Pass `debug=True` to collect a `LoadReport`:
 
 ## Debug Logging
 
-All loading steps are logged at `DEBUG` level under the `"dature"` logger regardless of the `debug` flag. Secret values are automatically masked:
+All loading steps are logged at `DEBUG` level under the `"dature"` logger regardless of the `debug` flag. Values are masked per `masking_mode` (see [Masking](../basic/masking.md)) — by default every string is redacted:
 
 === "Python"
 

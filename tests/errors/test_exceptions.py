@@ -178,12 +178,10 @@ class TestLoadIntegrationErrors:
         assert isinstance(first, FieldLoadError)
         assert first.field_path == ["timeout"]
         assert str(err) == "Config loading errors (1)"
-        content = json_file.read_text()
-        caret_pos = content.rfind("abc")
         assert str(err.exceptions[0]) == (
-            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
-            f"   ├── {content}\n"
-            f"   │   {' ' * caret_pos}^^^\n"
+            "  [timeout]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── {"timeout": "<REDACTED>", "name": "<REDACTED>"}\n'
+            "   │                ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -230,12 +228,10 @@ class TestLoadIntegrationErrors:
         assert str(err) == "Config loading errors (2)"
         timeout_err = next(e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["timeout"])
         name_err = next(e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["name"])
-        content = json_file.read_text()
-        caret_pos = content.rfind("abc")
         assert str(timeout_err) == (
-            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
-            f"   ├── {content}\n"
-            f"   │   {' ' * caret_pos}^^^\n"
+            "  [timeout]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── {"timeout": "<REDACTED>"}\n'
+            "   │                ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(name_err) == (f"  [name]  Missing required field\n   └── FILE '{json_file}'")
@@ -265,9 +261,9 @@ class TestLoadIntegrationErrors:
         assert first.field_path == ["db", "port"]
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [db.port]  invalid literal for int() with base 10: 'abc'\n"
-            '   ├── "port": "abc"\n'
-            "   │            ^^^\n"
+            "  [db.port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── "port": "<REDACTED>"\n'
+            "   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 4"
         )
 
@@ -290,9 +286,9 @@ class TestLoadIntegrationErrors:
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            "  [timeout]  invalid literal for int() with base 10: 'abc'\n"
-            "   ├── APP_TIMEOUT=abc\n"
-            "   │               ^^^\n"
+            "  [timeout]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── APP_TIMEOUT=<REDACTED>\n"
+            "   │               ^^^^^^^^^^\n"
             "   └── ENV 'APP_TIMEOUT'"
         )
 
@@ -318,9 +314,9 @@ class TestLoadIntegrationErrors:
         assert first.locations[0].line_range == LineRange(start=2, end=2)
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
-            '   ├── timeout = "abc"\n'
-            "   │              ^^^\n"
+            "  [timeout]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── timeout = "<REDACTED>"\n'
+            "   │              ^^^^^^^^^^\n"
             f"   └── FILE '{toml_file}', line 2"
         )
 
@@ -345,8 +341,8 @@ class TestLoadIntegrationErrors:
         assert first.locations[0].line_range == LineRange(start=3, end=3)
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [timeout]  invalid literal for int() with base 10: 'abc'\n"
-            '   ├── "timeout": "abc"\n'
-            "   │               ^^^\n"
+            "  [timeout]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── "timeout": "<REDACTED>"\n'
+            "   │               ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 3"
         )

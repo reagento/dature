@@ -9,7 +9,6 @@ rendering helpers live in ``presentation``.
 import abc
 import json
 import logging
-import warnings
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, fields, replace
 from datetime import date, datetime, time
@@ -18,7 +17,6 @@ from typing import Any, ClassVar, Final, cast
 from adaptix import loader
 from adaptix.provider import Provider
 
-from dature._deprecations import REMOVAL_NOTICE, normalize_skip_bool
 from dature.coercion import (
     bool_loader,
     bytearray_from_json_string,
@@ -148,15 +146,6 @@ class Source(abc.ABC):
     # --8<-- [end:load-metadata]
     def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init_subclass__(**kwargs)
-        if "check_invariants" in cls.__dict__:
-            warnings.warn(
-                f"{cls.__name__}.check_invariants() is deprecated and is no longer called; "
-                "express invariants declaratively instead — Literal field types, "
-                "Annotated[..., V ...] predicates, or root_validators=(V.root(...), ...). "
-                f"{REMOVAL_NOTICE}",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         if "root_validators" in cls.__dict__:
             _validate_root_validators(cls.__dict__["root_validators"])
 
@@ -168,7 +157,6 @@ class Source(abc.ABC):
                 'Example: when=When("${APP_ENV}") == "prod"'
             )
             raise TypeError(msg)
-        self.skip_field_if_invalid = normalize_skip_bool(self.skip_field_if_invalid)
 
     def __repr__(self) -> str:
         parts = []
@@ -239,15 +227,6 @@ class Source(abc.ABC):
         return frozenset(keys)
 
     def format_loaders(self) -> "list[Provider]":
-        legacy = getattr(type(self), "additional_loaders", None)
-        if legacy is not None:
-            warnings.warn(
-                f"{type(self).__name__}.additional_loaders() is deprecated; rename it to "
-                f"format_loaders(). {REMOVAL_NOTICE}",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return cast("list[Provider]", legacy(self))
         return []
 
     @staticmethod

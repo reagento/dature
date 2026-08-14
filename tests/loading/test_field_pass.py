@@ -197,7 +197,7 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            mask_secrets=False,
+            masking_mode="none",
         )
 
         assert isinstance(ctx, ErrorContext)
@@ -212,7 +212,7 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            mask_secrets=False,
+            masking_mode="none",
         )
 
         result = loader({"port": 5, "name": "ok"})
@@ -226,7 +226,7 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            mask_secrets=False,
+            masking_mode="none",
         )
 
         with pytest.raises(DatureConfigError, match=r"_ConfigRequired") as exc_info:
@@ -242,7 +242,7 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            mask_secrets=False,
+            masking_mode="none",
         )
 
         with pytest.raises(DatureConfigError, match=r"_ConfigRequired") as exc_info:

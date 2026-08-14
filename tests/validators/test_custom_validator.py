@@ -48,9 +48,9 @@ class TestVCheckAnnotated:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [count]  Value must be divisible by 5\n"
-            f"   ├── {content}\n"
-            f"   │             ^\n"
+            "  [count]  Value must be divisible by 5\n"
+            '   ├── {"count": <REDACTED>}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -72,9 +72,9 @@ class TestVCheckAnnotated:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [count]  Must be a multiple of 3\n"
-            f"   ├── {content}\n"
-            f"   │             ^\n"
+            "  [count]  Must be a multiple of 3\n"
+            '   ├── {"count": <REDACTED>}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -117,9 +117,9 @@ class TestVCheckOnStrings:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [url]  Value must start with 'https://'\n"
-            f"   ├── {content}\n"
-            f"   │            ^^^^^^^^^^^^^^^^^^\n"
+            "  [url]  Value must start with 'https://'\n"
+            '   ├── {"url": "<REDACTED>"}\n'
+            "   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -154,9 +154,9 @@ class TestVCheckWithDecorator:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [port]  Value must be divisible by 10\n"
-            f"   ├── {content}\n"
-            f"   │            ^^^^\n"
+            "  [port]  Value must be divisible by 10\n"
+            '   ├── {"port": <REDACTED>}\n'
+            "   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -177,7 +177,10 @@ class TestVCheckWithDecorator:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [port]  Value must be divisible by 10\n   ├── {content}\n   └── FILE '{json_file}', line 1"
+            "  [port]  Value must be divisible by 10\n"
+            '   ├── {"port": <REDACTED>}\n'
+            "   │            ^^^^^^^^^^\n"
+            f"   └── FILE '{json_file}', line 1"
         )
 
 
@@ -222,14 +225,14 @@ class TestMultipleVCheckPredicates:
         assert len(e.exceptions) == 2
         assert str(e) == "Config loading errors (2)"
         assert str(e.exceptions[0]) == (
-            f"  [count]  Value must be divisible by 5\n"
-            f"   ├── {content}\n"
-            f"   │             ^\n"
+            "  [count]  Value must be divisible by 5\n"
+            '   ├── {"count": <REDACTED>, "url": "<REDACTED>"}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
-            f"  [url]  Value must start with 'https://'\n"
-            f"   ├── {content}\n"
-            f"   │                        ^^^^^^^^^^^^^^^^^^\n"
+            "  [url]  Value must start with 'https://'\n"
+            '   ├── {"count": <REDACTED>, "url": "<REDACTED>"}\n'
+            "   │                                 ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )

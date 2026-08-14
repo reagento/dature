@@ -52,37 +52,6 @@ class TestVaultSourceDisplayProperties:
         )
         assert src.remote_address() == expected
 
-    def test_remote_address_url_overrides_host_port_scheme(self):
-        with pytest.warns(DeprecationWarning, match="host=/port=/scheme="):
-            src = VaultSource(
-                url="https://v",
-                host="ignored",
-                port=1,
-                scheme="http",
-                token="x",
-                path="myapp/config",
-                mount_point="secret",
-            )
-
-        assert src.remote_address() == "https://v/v1/secret/data/myapp/config"
-
-    def test_remote_address_url_trailing_slash_stripped(self):
-        with pytest.warns(DeprecationWarning, match="host=/port=/scheme="):
-            src = VaultSource(url="https://v/", token="x", path="myapp/config", mount_point="secret")
-
-        assert src.remote_address() == "https://v/v1/secret/data/myapp/config"
-
-
-class TestVaultSourceUrlDeprecation:
-    def test_url_emits_deprecation_warning(self):
-        with pytest.warns(DeprecationWarning, match="host=/port=/scheme="):
-            VaultSource(url="https://v", token="x", path="p")
-
-    def test_no_url_emits_no_warning(self, recwarn):
-        VaultSource(host="v", token="x", path="p")
-
-        assert len(recwarn) == 0
-
 
 @pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceValidation:
@@ -244,8 +213,9 @@ class TestVaultSourceFetch:
 
         assert len(exc_info.value.exceptions) == 1
         assert str(exc_info.value.exceptions[0]) == (
-            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── https://v:8200/v1/secret/data/myapp: port = not_a_number"
+            "  [port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── https://v:8200/v1/secret/data/myapp: port = <REDACTED>\n"
+            "   │                                               ^^^^^^^^^^"
         )
 
     def test_comprehensive_type_conversion(self, monkeypatch, all_types_vault_file: Path):

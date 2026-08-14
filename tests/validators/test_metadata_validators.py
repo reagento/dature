@@ -93,8 +93,8 @@ class TestMetadataValidatorsFailure:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [name]  Value length must be greater than or equal to 3\n"
-            f"   ├── {content}\n"
-            "   │             ^^\n"
+            '   ├── {"name": "<REDACTED>"}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -122,8 +122,8 @@ class TestMetadataValidatorsFailure:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [port]  Value must be greater than 0\n"
-            f"   ├── {content}\n"
-            "   │            ^^\n"
+            '   ├── {"port": <REDACTED>}\n'
+            "   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -183,7 +183,7 @@ class TestMetadataValidatorsNested:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [database.host]  Value length must be greater than or equal to 1\n"
-            f"   ├── {content}\n"
+            '   ├── {"database": {"host": "", "port": <REDACTED>}}\n'
             "   │                         ^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
@@ -235,8 +235,8 @@ class TestMetadataValidatorsComplement:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [name]  Value length must be greater than or equal to 5\n"
-            f"   ├── {content}\n"
-            "   │             ^^\n"
+            '   ├── {"name": "<REDACTED>"}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -264,8 +264,8 @@ class TestMetadataValidatorsComplement:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [name]  Value length must be less than or equal to 10\n"
-            f"   ├── {content}\n"
-            "   │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            '   ├── {"name": "<REDACTED>"}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -311,8 +311,8 @@ class TestMetadataValidatorsComplement:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [name]  Value length must be greater than or equal to 5\n"
-            f"   ├── {content}\n"
-            "   │             ^^\n"
+            '   ├── {"name": "<REDACTED>"}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -358,8 +358,8 @@ class TestMetadataValidatorsComplement:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [port]  Value must be greater than or equal to 1024\n"
-            f"   ├── {content}\n"
-            "   │            ^^\n"
+            '   ├── {"port": <REDACTED>}\n'
+            "   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -387,8 +387,8 @@ class TestMetadataValidatorsComplement:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [port]  Value must be less than 65536\n"
-            f"   ├── {content}\n"
-            "   │            ^^^^^\n"
+            '   ├── {"port": <REDACTED>}\n'
+            "   │            ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 

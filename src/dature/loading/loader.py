@@ -26,7 +26,7 @@ from typing import Any, cast
 
 from adaptix import Retort
 
-from dature._deprecations import UNSET, normalize_skip_bool, resolve_renamed_skip
+from dature._deprecations import resolve_deprecated_mask_secrets
 from dature.config import config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
@@ -35,7 +35,7 @@ from dature.loading.cache import _aligned_now, cache_is_fresh
 from dature.loading.context import coerce_flag_fields, merge_fields
 from dature.loading.cross_source import clone_with_interpolation, evaluate_when_eager, when_has_cross_refs
 from dature.loading.field_pass import build_revalidation
-from dature.loading.mask_config import resolve_mask_secrets
+from dature.loading.mask_config import resolve_masking_mode
 from dature.loading.merge import load_and_merge, load_single
 from dature.loading.merge_runtime import (
     MergeConfig,
@@ -55,6 +55,7 @@ from dature.type_aliases import (
     FieldGroupTuple,
     FieldMergeMap,
     JSONValue,
+    MaskingMode,
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
@@ -94,18 +95,16 @@ class Loader[T: DataclassInstance]:
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
         skip_field_if_invalid: SkipFieldsInvalid = None,
-        skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: Sequence[str] | None = None,
+        masking_mode: MaskingMode | None = None,
         mask_secrets: bool | None = None,
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
     ) -> None:
         _validate_sources(sources)
-        skip_field_if_invalid = normalize_skip_bool(
-            resolve_renamed_skip(skip_field_if_invalid, skip_invalid_fields),
-        )
+        masking_mode = resolve_deprecated_mask_secrets(masking_mode, mask_secrets)
 
         if cache is None:
             cache = config.loading.cache
@@ -134,7 +133,7 @@ class Loader[T: DataclassInstance]:
         self._skip_if_missing = skip_if_missing
         self._skip_field_if_invalid = skip_field_if_invalid
         self._secret_field_names = secret_field_names
-        self._mask_secrets_arg = mask_secrets
+        self._masking_mode_arg: MaskingMode | None = masking_mode
         self._type_loaders_arg = type_loaders
         self._source_params = SourceParams(
             expand_env_vars=expand_env_vars,
@@ -157,11 +156,15 @@ class Loader[T: DataclassInstance]:
         )
 
         # Secret paths depend only on schema shape — computed once, env-free.
-        resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
+        resolved_masking_mode = resolve_masking_mode(masking_mode=masking_mode)
         self.secret_paths: frozenset[str] = frozenset()
-        if resolved_mask_secrets:
+        if resolved_masking_mode != "none":
             extra_patterns = tuple(secret_field_names) if secret_field_names else ()
-            self.secret_paths = build_secret_paths(schema, extra_patterns=extra_patterns)
+            self.secret_paths = build_secret_paths(
+                schema,
+                extra_patterns=extra_patterns,
+                field_mappings=tuple(s.field_mapping for s in sources),
+            )
 
         metadata_providers = [create_metadata_validator_providers(source.validators or {}) for source in sources]
         # Build the shared retort cache for this Loader. All retorts are owned here, not
@@ -256,9 +259,9 @@ class Loader[T: DataclassInstance]:
         skip_if_broken: bool = False,
         skip_if_missing: bool = False,
         skip_field_if_invalid: SkipFieldsInvalid = None,
-        skip_invalid_fields: Any = UNSET,  # noqa: ANN401 -- deprecated alias, removed in 1.2
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: Sequence[str] | None = None,
+        masking_mode: MaskingMode | None = None,
         mask_secrets: bool | None = None,
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
@@ -284,9 +287,9 @@ class Loader[T: DataclassInstance]:
                 skip_if_broken=skip_if_broken,
                 skip_if_missing=skip_if_missing,
                 skip_field_if_invalid=skip_field_if_invalid,
-                skip_invalid_fields=skip_invalid_fields,
                 expand_env_vars=expand_env_vars,
                 secret_field_names=secret_field_names,
+                masking_mode=masking_mode,
                 mask_secrets=mask_secrets,
                 type_loaders=type_loaders,
                 nested_resolve_strategy=nested_resolve_strategy,
@@ -352,7 +355,7 @@ class Loader[T: DataclassInstance]:
             skip_if_missing=self._skip_if_missing,
             skip_field_if_invalid=self._skip_field_if_invalid,
             secret_field_names=self._secret_field_names,
-            mask_secrets=self._mask_secrets_arg,
+            masking_mode=self._masking_mode_arg,
             type_loaders=self._type_loaders_arg,
         )
 
@@ -392,7 +395,7 @@ class Loader[T: DataclassInstance]:
             retort_cache=self._retort_cache,
             type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
-            mask_secrets=self._mask_secrets_arg,
+            masking_mode=self._masking_mode_arg,
             probe_retort=self._probe_retort,
             debug=self.debug,
         )
@@ -428,7 +431,7 @@ class Loader[T: DataclassInstance]:
             retort_cache=self._retort_cache,
             type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
-            mask_secrets=self._mask_secrets_arg,
+            masking_mode=self._masking_mode_arg,
         )
         self.validation_loader = validation_loader
         # Single-source set error_ctx eagerly (richer ctx); multi-source takes build_revalidation's.

@@ -275,15 +275,15 @@ class TestFileNotFoundWithLoad:
 
 @dataclass(kw_only=True, repr=False)
 class _ConfigAwareSource(Source):
-    """Single-field source that emits its own ``url`` so we can assert config-merge happened."""
+    """Single-field source that emits its own ``host`` so we can assert config-merge happened."""
 
-    url: str | None = None
+    host: str | None = None
     format_name: str = "_config_aware"
     location_label: str = "TEST"
     config_group: str | None = "vault"
 
     def _load(self) -> JSONValue:
-        return {"url_value": self.url}
+        return {"host_value": self.host}
 
 
 @pytest.mark.usefixtures("_reset_config")
@@ -291,24 +291,24 @@ class TestSingleSourceConfigGroup:
     def test_load_applies_config_group(self) -> None:
         # Regression: single-source load() must call apply_source_config_group so that
         # ``configure(vault={...})`` (and ``DATURE_VAULT__*``) actually reach the source.
-        configure(vault={"url": "http://from-config"})
+        configure(vault={"host": "from-config"})
 
         @dataclass
         class Config:
-            url_value: str | None = None
+            host_value: str | None = None
 
         result = load(_ConfigAwareSource(), schema=Config)
-        assert result.url_value == "http://from-config"
+        assert result.host_value == "from-config"
 
     def test_decorator_applies_config_group(self) -> None:
-        configure(vault={"url": "http://from-config"})
+        configure(vault={"host": "from-config"})
 
         @load(_ConfigAwareSource())
         @dataclass
         class Config:
-            url_value: str | None = None
+            host_value: str | None = None
 
-        assert Config().url_value == "http://from-config"
+        assert Config().host_value == "from-config"
 
     def test_validate_runs_for_single_source(self) -> None:
         # Regression: single-source path used to skip validate(); a misconfigured VaultSource

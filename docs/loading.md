@@ -23,7 +23,7 @@ it failed.
 
 1. **Read the source.** Raw values are pulled from the source. With `expand_env_vars`,
    `${VAR}` placeholders are substituted first; secrets are masked in error/debug output per
-   `mask_secrets` / `secret_field_names`.
+   `masking_mode` / `secret_field_names`.
 2. **Optionally drop invalid values** (`skip_field_if_invalid`). When enabled, each provided
    value is probed against its field's type and rules, and anything that would fail is quietly
    dropped so the field can fall back to its dataclass default instead of failing the whole

@@ -24,7 +24,7 @@ from dature.loading.field_pass import (
     run_source_field_pass,
 )
 from dature.loading.load_logging import log_field_origins, log_merge_step, log_single_source_load
-from dature.loading.mask_config import resolve_mask_secrets
+from dature.loading.mask_config import resolve_masking_mode
 from dature.loading.merge_runtime import LoadCtx, MergeConfig, MergeStepEvent, resolve_type_loaders
 from dature.loading.retort import RetortCache
 from dature.loading.source_loading import enrich_skipped_errors, prepare_loaded_source
@@ -34,11 +34,11 @@ from dature.merging.field_group import validate_all_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
 from dature.nested_dict import collect_field_values, set_nested_value
 from dature.protocols import DataclassInstance
-from dature.report import LoadReport, _build_merge_report, _build_single_source_report, attach_load_report
+from dature.report import LoadReport, attach_load_report, build_merge_report, build_single_source_report
 from dature.sources.base import IndexedSource
 from dature.sources.protocol import FileSourceProtocol
 from dature.strategies.source import resolve_source_strategy
-from dature.type_aliases import NOT_LOADED, JSONValue, TypeLoaderMap
+from dature.type_aliases import NOT_LOADED, JSONValue, MaskingMode, TypeLoaderMap
 
 logger = logging.getLogger("dature")
 
@@ -56,7 +56,7 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
     retort_cache: RetortCache,
     type_loaders: TypeLoaderMap | None,
     secret_paths: frozenset[str],
-    mask_secrets: bool | None,
+    masking_mode: MaskingMode | None,
     probe_retort: Retort | None,
     debug: bool,
 ) -> _SingleData[T]:
@@ -69,8 +69,8 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
     """
     source = indexed.source
     source_type_loaders = resolve_type_loaders(source, type_loaders)
-    resolved_mask_secrets = resolve_mask_secrets(load_level=mask_secrets)
-    error_ctx = build_error_ctx(source, schema.__name__, secret_paths=secret_paths, mask_secrets=resolved_mask_secrets)
+    masking_mode = resolve_masking_mode(masking_mode=masking_mode)
+    error_ctx = build_error_ctx(source, schema.__name__, secret_paths=secret_paths, masking_mode=masking_mode)
 
     load_result = handle_load_errors(func=source.load_raw, ctx=error_ctx)
     prepared = prepare_loaded_source(
@@ -81,7 +81,7 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
         base_error_ctx=error_ctx,
         skip_value=source.skip_field_if_invalid,
         secret_paths=secret_paths,
-        mask_secrets=resolved_mask_secrets,
+        masking_mode=masking_mode,
         log_prefix=f"[{schema.__name__}]",
         probe_retort=probe_retort,
     )
@@ -96,12 +96,13 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
     if debug:
         source_path = source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
         report_file_path = str(source_path) if source_path is not None else source.display_name()
-        report = _build_single_source_report(
+        report = build_single_source_report(
             dataclass_name=schema.__name__,
             loader_type=format_name,
             file_path=report_file_path,
             raw_data=raw_data,
             secret_paths=secret_paths,
+            masking_mode=masking_mode,
         )
 
     log_single_source_load(
@@ -110,6 +111,7 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
         file_path=source.display_name(),
         data=raw_data if isinstance(raw_data, dict) else {},
         secret_paths=secret_paths,
+        masking_mode=masking_mode,
     )
 
     entry = _FieldPassEntry(
@@ -296,7 +298,7 @@ def _finalize_load[T: DataclassInstance](
     return result
 
 
-def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
+def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0915
     *,
     merge_meta: MergeConfig,
     schema: type[T],
@@ -304,12 +306,16 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
     debug: bool = False,
     secret_paths: frozenset[str] | None = None,
 ) -> _MergedData[T]:
-    mask_secrets = resolve_mask_secrets(load_level=merge_meta.mask_secrets)
+    masking_mode: MaskingMode = resolve_masking_mode(masking_mode=merge_meta.masking_mode)
     if secret_paths is None:
         computed: frozenset[str] = frozenset()
-        if mask_secrets:
+        if masking_mode != "none":
             extra_patterns = tuple(merge_meta.secret_field_names) if merge_meta.secret_field_names else ()
-            computed = build_secret_paths(schema, extra_patterns=extra_patterns)
+            computed = build_secret_paths(
+                schema,
+                extra_patterns=extra_patterns,
+                field_mappings=tuple(s.field_mapping for s in merge_meta.sources),
+            )
         secret_paths = computed
 
     strategy = resolve_source_strategy(
@@ -327,6 +333,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
                 dataclass_name=schema.__name__,
                 strategy_label=strategy_label,
                 secret_paths=secret_paths,
+                masking_mode=masking_mode,
             )
 
         on_merge_step = _log_merge_step
@@ -345,7 +352,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         retort_cache=retort_cache,
         field_merge_paths=field_merge_paths,
         secret_paths=secret_paths,
-        mask_secrets=mask_secrets,
+        masking_mode=masking_mode,
         on_merge_step=on_merge_step,
     )
 
@@ -390,10 +397,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         raise DatureConfigError(schema.__name__, [source_error])
     last_loaded = report.last_loaded
 
-    if secret_paths:
-        masked_merged = mask_json_value(merged, secret_paths=secret_paths)
-    else:
-        masked_merged = merged
+    masked_merged = mask_json_value(merged, secret_paths=secret_paths, masking_mode=masking_mode)
     logger.debug(
         "[%s] Merged result (strategy=%s, %d sources): %s",
         schema.__name__,
@@ -409,17 +413,19 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0912, PLR0915
         dataclass_name=schema.__name__,
         field_origins=field_origins,
         secret_paths=secret_paths,
+        masking_mode=masking_mode,
     )
 
     report_obj: LoadReport | None = None
     if debug:
-        report_obj = _build_merge_report(
+        report_obj = build_merge_report(
             dataclass_name=schema.__name__,
             strategy=strategy,
             source_entries=frozen_entries,
             field_origins=field_origins,
             merged_data=merged,
             secret_paths=secret_paths,
+            masking_mode=masking_mode,
         )
 
     last_type_loaders = report.last_type_loaders

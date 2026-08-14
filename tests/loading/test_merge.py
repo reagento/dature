@@ -467,11 +467,11 @@ class TestRaiseOnConflict:
             Config merge conflicts (1)
 
               [host]  Conflicting values in multiple sources
-               ├── "host": "host-a",
-               │           ^^^^^^^^^
+               ├── "host": "<REDACTED>",
+               │           ^^^^^^^^^^^^^
                └── FILE '{a}', line 2
-               ├── "host": "host-b"
-               │           ^^^^^^^^
+               ├── "host": "<REDACTED>"
+               │           ^^^^^^^^^^^^
                └── FILE '{b}', line 2
             """)
 
@@ -547,11 +547,11 @@ class TestRaiseOnConflict:
             Config merge conflicts (1)
 
               [database.host]  Conflicting values in multiple sources
-               ├── "host": "a-host",
-               │           ^^^^^^^^^
+               ├── "host": "<REDACTED>",
+               │           ^^^^^^^^^^^^^
                └── FILE '{a}', line 3
-               ├── "host": "b-host"
-               │           ^^^^^^^^
+               ├── "host": "<REDACTED>"
+               │           ^^^^^^^^^^^^
                └── FILE '{b}', line 3
             """)
 
@@ -578,11 +578,11 @@ class TestRaiseOnConflict:
             Config merge conflicts (1)
 
               [host]  Conflicting values in multiple sources
-               ├── "host": "a-host"
-               │           ^^^^^^^^
+               ├── "host": "<REDACTED>"
+               │           ^^^^^^^^^^^^
                └── FILE '{a}', line 2
-               ├── "host": "b-host"
-               │           ^^^^^^^^
+               ├── "host": "<REDACTED>"
+               │           ^^^^^^^^^^^^
                └── FILE '{b}', line 2
             """)
 
@@ -609,11 +609,11 @@ class TestRaiseOnConflict:
             Config merge conflicts (1)
 
               [host]  Conflicting values in multiple sources
-               ├── "host": "json-host",
-               │           ^^^^^^^^^^^^
+               ├── "host": "<REDACTED>",
+               │           ^^^^^^^^^^^^^
                └── FILE '{a}', line 2
-               ├── APP_HOST=env-host
-               │            ^^^^^^^^
+               ├── APP_HOST=<REDACTED>
+               │            ^^^^^^^^^^
                └── ENV 'APP_HOST'
             """)
 
@@ -642,19 +642,19 @@ class TestRaiseOnConflict:
             Config merge conflicts (2)
 
               [host]  Conflicting values in multiple sources
-               ├── "host": "a-host",
-               │           ^^^^^^^^^
+               ├── "host": "<REDACTED>",
+               │           ^^^^^^^^^^^^^
                └── FILE '{a}', line 2
-               ├── "host": "b-host",
-               │           ^^^^^^^^^
+               ├── "host": "<REDACTED>",
+               │           ^^^^^^^^^^^^^
                └── FILE '{b}', line 2
 
               [port]  Conflicting values in multiple sources
-               ├── "port": 1000
-               │           ^^^^
+               ├── "port": <REDACTED>
+               │           ^^^^^^^^^^
                └── FILE '{a}', line 3
-               ├── "port": 2000
-               │           ^^^^
+               ├── "port": <REDACTED>
+               │           ^^^^^^^^^^
                └── FILE '{b}', line 3
             """)
 
@@ -912,9 +912,9 @@ class TestFirstFound:
         assert len(err.exceptions) == 1
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
-            f"  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            f"   ├── port: not_a_number\n"
-            f"   │         ^^^^^^^^^^^^\n"
+            f"  [port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            f"   ├── port: <REDACTED>\n"
+            f"   │         ^^^^^^^^^^\n"
             f"   └── FILE '{bad_type}', line 2"
         )
 
@@ -943,8 +943,8 @@ class TestFirstFound:
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
             f"  [port]  Value must be greater than or equal to 1\n"
-            f"   ├── port: 0\n"
-            f"   │         ^\n"
+            f"   ├── port: <REDACTED>\n"
+            f"   │         ^^^^^^^^^^\n"
             f"   └── FILE '{first}', line 2"
         )
 
@@ -974,8 +974,8 @@ class TestFirstFound:
         assert str(err) == "Config loading errors (1)"
         assert str(err.exceptions[0]) == (
             f"  [port]  Value must be greater than or equal to 1\n"
-            f"   ├── port: 0\n"
-            f"   │         ^\n"
+            f"   ├── port: <REDACTED>\n"
+            f"   │         ^^^^^^^^^^\n"
             f"   └── FILE '{first}', line 2"
         )
 
@@ -1102,7 +1102,7 @@ class TestFirstFoundWithFieldFeatures:
         assert len(err.exceptions) == 1
         assert str(err.exceptions[0]) == (
             f"  [port]  Value must be greater than or equal to 1\n"
-            f"   ├── port: 0\n"
-            f"   │         ^\n"
+            f"   ├── port: <REDACTED>\n"
+            f"   │         ^^^^^^^^^^\n"
             f"   └── FILE '{first}', line 2"
         )

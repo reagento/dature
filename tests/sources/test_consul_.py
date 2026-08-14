@@ -275,8 +275,9 @@ class TestConsulSourceFetch:
 
         assert len(exc_info.value.exceptions) == 1
         assert str(exc_info.value.exceptions[0]) == (
-            "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
-            "   ├── http://c:8500/v1/kv/myapp: port = not_a_number"
+            "  [port]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── http://c:8500/v1/kv/myapp: port = <REDACTED>\n"
+            "   │                                     ^^^^^^^^^^"
         )
 
     def test_raw_decode_loads_into_bytes_field(self, monkeypatch):

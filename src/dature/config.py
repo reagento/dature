@@ -1,11 +1,19 @@
 import threading
+import warnings
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import timedelta
 from typing import Any, ClassVar, Literal, TypedDict, cast
 
+from dature._deprecations import MASK_SECRETS_DEPRECATION_MESSAGE
 from dature.protocols import DataclassInstance
-from dature.type_aliases import ExpandEnvVarsMode, NestedResolveStrategy, SystemConfigDirsArg, TypeLoaderMap
+from dature.type_aliases import (
+    ExpandEnvVarsMode,
+    MaskingMode,
+    NestedResolveStrategy,
+    SystemConfigDirsArg,
+    TypeLoaderMap,
+)
 
 
 # --8<-- [start:masking-config]
@@ -21,15 +29,16 @@ class MaskingConfig:
         "passwd",
         "secret",
         "token",
-        "api_key",
-        "apikey",
-        "api_secret",
-        "access_key",
-        "private_key",
+        "key",
         "auth",
         "credential",
+        "uri",
+        "url",
     )
-    mask_secrets: bool = True
+    mask_secrets: bool | None = None
+    """Deprecated: use ``masking_mode`` instead. Will be removed in dature 1.3."""
+    masking_mode: MaskingMode | None = None
+    """``None`` means "not set" — resolved to ``"all"`` by :func:`resolve_masking_mode`."""
 
 
 # --8<-- [end:masking-config]
@@ -84,8 +93,6 @@ class VaultConfig:
     host: str = "localhost"
     port: int = 8200
     scheme: Literal["http", "https"] = "http"
-    url: str | None = None
-    """Deprecated: set ``host``/``port``/``scheme`` instead."""
     token: str | None = None
     role_id: str | None = None
     secret_id: str | None = None
@@ -175,7 +182,7 @@ def _load_config() -> DatureConfig:
     from dature.sources.env_ import EnvSource  # noqa: PLC0415
     from dature.validators.v import V  # noqa: PLC0415
 
-    return load(
+    cfg = load(
         EnvSource(
             prefix="DATURE_",
             validators={
@@ -190,6 +197,12 @@ def _load_config() -> DatureConfig:
         schema=DatureConfig,
         cache=False,
     )
+    if cfg.masking.mask_secrets is not None:
+        warnings.warn(MASK_SECRETS_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
+        if cfg.masking.masking_mode is not None:
+            # `masking_mode` was set explicitly alongside the deprecated flag — it wins.
+            cfg = replace(cfg, masking=replace(cfg.masking, mask_secrets=None))
+    return cfg
 
 
 class MaskingOptions(TypedDict, total=False):
@@ -199,7 +212,8 @@ class MaskingOptions(TypedDict, total=False):
     min_heuristic_length: int
     heuristic_threshold: float
     secret_field_names: tuple[str, ...]
-    mask_secrets: bool
+    mask_secrets: bool | None
+    masking_mode: MaskingMode
 
 
 class ErrorDisplayOptions(TypedDict, total=False):
@@ -222,7 +236,6 @@ class VaultOptions(TypedDict, total=False):
     host: str
     port: int
     scheme: Literal["http", "https"]
-    url: str | None
     token: str | None
     role_id: str | None
     secret_id: str | None
@@ -367,7 +380,12 @@ def configure(  # noqa: PLR0913
     with _config_lock:
         current = config.ensure_loaded()
 
+        if masking is not None and "mask_secrets" in masking:
+            warnings.warn(MASK_SECRETS_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
+
         merged_masking = _merge_group(current.masking, masking, MaskingConfig)
+        if masking is not None and "mask_secrets" in masking and "masking_mode" in masking:
+            merged_masking = replace(merged_masking, mask_secrets=None)
         merged_error = _merge_group(current.error_display, error_display, ErrorDisplayConfig)
         merged_loading = _merge_group(current.loading, loading, LoadingConfig)
         merged_vault = _merge_group(current.vault, vault, VaultConfig)

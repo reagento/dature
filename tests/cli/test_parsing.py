@@ -230,11 +230,11 @@ class TestBuildLoadKwargsFromDataclass:
             schema="x:Y",
             source=["type=dature.EnvSource"],
             strategy="last_wins",
-            mask_secrets=True,
+            masking_mode="secrets_only",
         )
         assert build_load_kwargs_from_dataclass(validate_args) == {
             "strategy": "last_wins",
-            "mask_secrets": True,
+            "masking_mode": "secrets_only",
         }
 
     def test_all_none_returns_empty(self):

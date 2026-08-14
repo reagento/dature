@@ -1,0 +1,17 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 20, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.Yaml12Source(file=SOURCES_DIR / "masking_mode.yaml"),
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |         schema=Config,
+  |         ^^^^^^^^^^^^^^
+  |     )
+  |     ^
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [host]  Invalid variant: 'development'
+    |    ├── host: "development"
+    |    │          ^^^^^^^^^^^
+    |    └── FILE '{SOURCES_DIR}masking_mode.yaml', line 1
+    +------------------------------------

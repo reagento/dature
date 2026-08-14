@@ -38,9 +38,12 @@ defaults = str(SHARED_DIR / "common_defaults.yaml")
 overrides = str(SHARED_DIR / "common_overrides.yaml")
 
 keys = "['host', 'port', 'tags']"
-defaults_data = "{'host': 'localhost', 'port': 3000, 'tags': ['default']}"
+defaults_data = (
+    "{'host': '<REDACTED>', 'port': '<REDACTED>', 'tags': ['<REDACTED>']}"
+)
 overrides_data = (
-    "{'host': 'production.example.com', 'port': 8080, 'tags': ['web', 'api']}"
+    "{'host': '<REDACTED>', 'port': '<REDACTED>', "
+    "'tags': ['<REDACTED>', '<REDACTED>']}"
 )
 
 expected_log_lines = [
@@ -62,12 +65,9 @@ expected_log_lines = [
         "[Config] Merged result (strategy=last_wins, 2 sources): "
         f"{overrides_data}"
     ),
-    (
-        f"[Config] Field 'host' = 'production.example.com'"
-        f"  <-- source 1 ({overrides})"
-    ),
-    f"[Config] Field 'port' = 8080  <-- source 1 ({overrides})",
-    f"[Config] Field 'tags' = ['web', 'api']  <-- source 1 ({overrides})",
+    (f"[Config] Field 'host' = '<REDACTED>'  <-- source 1 ({overrides})"),
+    f"[Config] Field 'port' = '<REDACTED>'  <-- source 1 ({overrides})",
+    f"[Config] Field 'tags' = '<REDACTED>'  <-- source 1 ({overrides})",
 ]
 
 diff = difflib.ndiff(expected_log_lines, log_lines)

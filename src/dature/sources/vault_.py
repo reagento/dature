@@ -1,8 +1,6 @@
-import warnings
 from dataclasses import dataclass
 from typing import Annotated, ClassVar, Literal, cast
 
-from dature._deprecations import REMOVAL_NOTICE
 from dature._deps import require_dep
 from dature.sources.base import RemoteSource
 from dature.type_aliases import JSONValue
@@ -22,8 +20,6 @@ class VaultSource(RemoteSource):
     ] = ""
     port: Annotated[int | None, (V > 0).with_error_message("port must be a positive integer")] = None
     scheme: Literal["http", "https"] | None = None
-    url: str | None = None
-    """Deprecated: set ``host``/``port``/``scheme`` instead."""
     mount_point: str = ""
     kv_version: Literal[1, 2] | None = None
     token: str | None = None
@@ -47,18 +43,7 @@ class VaultSource(RemoteSource):
         ),
     )
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if self.url is not None:
-            warnings.warn(
-                f"VaultSource.url= is deprecated; use host=/port=/scheme= instead. {REMOVAL_NOTICE}",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
     def _base_url(self) -> str:
-        if self.url:
-            return self.url.rstrip("/")
         return f"{self.scheme}://{self.host}:{self.port}"
 
     def remote_address(self) -> str:

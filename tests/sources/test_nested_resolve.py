@@ -159,8 +159,8 @@ class TestPartialNestedResolveEnv:
                 False,
                 (
                     "  [var.bar]  Missing required field\n"
-                    '   ├── MYAPP__VAR={"foo": "from_json"}\n'
-                    "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+                    '   ├── MYAPP__VAR={"foo": "<REDACTED>"}\n'
+                    "   │                      ^^^^^^^^^^^^^\n"
                     "   └── ENV 'MYAPP__VAR'"
                 ),
             ),
@@ -169,8 +169,8 @@ class TestPartialNestedResolveEnv:
                 True,
                 (
                     "  [var.bar]  Missing required field\n"
-                    '   ├── MYAPP__VAR={"foo": "from_json"}\n'
-                    "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+                    '   ├── MYAPP__VAR={"foo": "<REDACTED>"}\n'
+                    "   │                      ^^^^^^^^^^^^^\n"
                     "   └── ENV 'MYAPP__VAR'"
                 ),
             ),
@@ -248,8 +248,8 @@ class TestPartialNestedResolveEnvFile:
         assert isinstance(field_err, FieldLoadError)
         assert str(field_err) == (
             "  [var.bar]  Missing required field\n"
-            '   ├── MYAPP__VAR={"foo": "from_json"}\n'
-            "   │              ^^^^^^^^^^^^^^^^^^^^\n"
+            '   ├── MYAPP__VAR={"foo": "<REDACTED>"}\n'
+            "   │                      ^^^^^^^^^^^^^\n"
             f"   └── ENV FILE '{env_file}', line 1"
         )
 
@@ -293,8 +293,8 @@ class TestPartialNestedResolveDockerSecrets:
         assert isinstance(field_err, FieldLoadError)
         assert str(field_err) == (
             "  [var.bar]  Missing required field\n"
-            '   ├── var = {"foo": "from_json"}\n'
-            "   │         ^^^^^^^^^^^^^^^^^^^^\n"
+            '   ├── var = {"foo": "<REDACTED>"}\n'
+            "   │                 ^^^^^^^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / 'var'}'"
         )
 
@@ -331,10 +331,15 @@ class TestInvalidDataNestedResolveEnv:
         field_err = next(
             e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
+        caret = (
+            "   │                       ^^^^^^^^^^\n"
+            if field_name == "foo"
+            else "   │                                            ^^^^^^^^^^\n"
+        )
         assert str(field_err) == (
-            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   ├── MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\n'
-            "   │              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            f"  [var.{field_name}]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── MYAPP__VAR={"foo": "<REDACTED>", "bar": "<REDACTED>"}\n'
+            f"{caret}"
             "   └── ENV 'MYAPP__VAR'"
         )
 
@@ -368,7 +373,7 @@ class TestInvalidDataNestedResolveEnv:
             e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
         assert str(field_err) == (
-            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
+            f"  [var.{field_name}]  invalid literal for int() with base 10: '<REDACTED>'\n"
             f"   └── ENV 'MYAPP__VAR__{field_name.upper()}'"
         )
 
@@ -389,8 +394,8 @@ class TestInvalidDataNestedResolveEnvFile:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    @pytest.mark.parametrize(("field_name", "caret_pos"), [("foo", 20), ("bar", 43)])
-    def test_json_invalid_json_strategy_errors(self, tmp_path: Path, field_name: str, caret_pos: int) -> None:
+    @pytest.mark.parametrize("field_name", ["foo", "bar"])
+    def test_json_invalid_json_strategy_errors(self, tmp_path: Path, field_name: str) -> None:
         env_file = tmp_path / ".env"
         env_file.write_text(
             'MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\nMYAPP__VAR__FOO=10\nMYAPP__VAR__BAR=20',
@@ -407,10 +412,15 @@ class TestInvalidDataNestedResolveEnvFile:
         field_err = next(
             e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
+        caret = (
+            "   │                       ^^^^^^^^^^\n"
+            if field_name == "foo"
+            else "   │                                            ^^^^^^^^^^\n"
+        )
         assert str(field_err) == (
-            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   ├── MYAPP__VAR={"foo": "not_a_number", "bar": "not_a_number"}\n'
-            f"   │   {' ' * caret_pos}^^^^^^^^^^^^\n"
+            f"  [var.{field_name}]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── MYAPP__VAR={"foo": "<REDACTED>", "bar": "<REDACTED>"}\n'
+            f"{caret}"
             f"   └── ENV FILE '{env_file}', line 1"
         )
 
@@ -446,9 +456,9 @@ class TestInvalidDataNestedResolveEnvFile:
             e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
         assert str(field_err) == (
-            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
-            f"   ├── MYAPP__VAR__{field_name.upper()}=not_a_number\n"
-            "   │                   ^^^^^^^^^^^^\n"
+            f"  [var.{field_name}]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            f"   ├── MYAPP__VAR__{field_name.upper()}=<REDACTED>\n"
+            "   │                   ^^^^^^^^^^\n"
             f"   └── ENV FILE '{env_file}', line {line_num}"
         )
 
@@ -468,8 +478,8 @@ class TestInvalidDataNestedResolveDockerSecrets:
 
         assert result == NestedIntConfig(var=NestedIntVar(foo=10, bar=20))
 
-    @pytest.mark.parametrize(("field_name", "caret_pos"), [("foo", 15), ("bar", 38)])
-    def test_json_invalid_json_strategy_errors(self, tmp_path: Path, field_name: str, caret_pos: int) -> None:
+    @pytest.mark.parametrize("field_name", ["foo", "bar"])
+    def test_json_invalid_json_strategy_errors(self, tmp_path: Path, field_name: str) -> None:
         (tmp_path / "var").write_text('{"foo": "not_a_number", "bar": "not_a_number"}')
         (tmp_path / "var__foo").write_text("10")
         (tmp_path / "var__bar").write_text("20")
@@ -485,10 +495,15 @@ class TestInvalidDataNestedResolveDockerSecrets:
         field_err = next(
             e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
+        caret = (
+            "   │                  ^^^^^^^^^^\n"
+            if field_name == "foo"
+            else "   │                                       ^^^^^^^^^^\n"
+        )
         assert str(field_err) == (
-            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   ├── var = {"foo": "not_a_number", "bar": "not_a_number"}\n'
-            f"   │   {' ' * caret_pos}^^^^^^^^^^^^\n"
+            f"  [var.{field_name}]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── var = {"foo": "<REDACTED>", "bar": "<REDACTED>"}\n'
+            f"{caret}"
             f"   └── SECRET FILE '{tmp_path / 'var'}'"
         )
 
@@ -522,9 +537,9 @@ class TestInvalidDataNestedResolveDockerSecrets:
             e for e in err.exceptions if isinstance(e, FieldLoadError) and e.field_path == ["var", field_name]
         )
         assert str(field_err) == (
-            f"  [var.{field_name}]  invalid literal for int() with base 10: 'not_a_number'\n"
-            f"   ├── var__{field_name} = not_a_number\n"
-            "   │              ^^^^^^^^^^^^\n"
+            f"  [var.{field_name}]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            f"   ├── var__{field_name} = <REDACTED>\n"
+            "   │              ^^^^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / f'var__{field_name}'}'"
         )
 
@@ -550,21 +565,19 @@ class TestMultilineJsonNestedResolveEnv:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   ├── MYAPP__VAR={"foo": "not_a_number",\n'
-            "   │              ^^^^^^^^^^^^^^^^^^^^^^^\n"
-            '   ├── "bar": "not_a_number"}\n'
-            "   │   ^^^^^^^^^^^^^^^^^^^^^^\n"
+            "  [var.foo]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── MYAPP__VAR={"foo": "<REDACTED>",\n'
+            "   │                       ^^^^^^^^^^\n"
+            '   ├── "bar": "<REDACTED>"}\n'
             "   └── ENV 'MYAPP__VAR'"
         )
         second = err.exceptions[1]
         assert isinstance(second, FieldLoadError)
         assert str(second) == (
-            "  [var.bar]  invalid literal for int() with base 10: 'not_a_number'\n"
-            '   ├── MYAPP__VAR={"foo": "not_a_number",\n'
-            "   │              ^^^^^^^^^^^^^^^^^^^^^^^\n"
-            '   ├── "bar": "not_a_number"}\n'
-            "   │   ^^^^^^^^^^^^^^^^^^^^^^\n"
+            "  [var.bar]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── MYAPP__VAR={"foo": "<REDACTED>",\n'
+            "   │                       ^^^^^^^^^^\n"
+            '   ├── "bar": "<REDACTED>"}\n'
             "   └── ENV 'MYAPP__VAR'"
         )
 
@@ -686,9 +699,9 @@ class TestCustomSplitSymbolsConflict:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n"
-            '   ├── APP_VAR={"foo": "not_int", "bar": "not_int"}\n'
-            "   │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            "  [var.foo]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── APP_VAR={"foo": "<REDACTED>", "bar": "<REDACTED>"}\n'
+            "   │                    ^^^^^^^^^^\n"
             "   └── ENV 'APP_VAR'"
         )
 
@@ -707,7 +720,7 @@ class TestCustomSplitSymbolsConflict:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n   └── ENV 'APP_VAR_FOO'"
+            "  [var.foo]  invalid literal for int() with base 10: '<REDACTED>'\n   └── ENV 'APP_VAR_FOO'"
         )
 
 
@@ -808,9 +821,9 @@ class TestPrefixDockerSecretsConflict:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n"
-            "   ├── myapp__var__foo = not_int\n"
-            "   │                     ^^^^^^^\n"
+            "  [var.foo]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            "   ├── myapp__var__foo = <REDACTED>\n"
+            "   │                     ^^^^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / 'myapp__var__foo'}'"
         )
 
@@ -830,9 +843,9 @@ class TestPrefixDockerSecretsConflict:
         first = err.exceptions[0]
         assert isinstance(first, FieldLoadError)
         assert str(first) == (
-            "  [var.foo]  invalid literal for int() with base 10: 'not_int'\n"
-            '   ├── myapp__var = {"foo": "not_int", "bar": "not_int"}\n'
-            "   │                         ^^^^^^^\n"
+            "  [var.foo]  invalid literal for int() with base 10: '<REDACTED>'\n"
+            '   ├── myapp__var = {"foo": "<REDACTED>", "bar": "<REDACTED>"}\n'
+            "   │                         ^^^^^^^^^^\n"
             f"   └── SECRET FILE '{tmp_path / 'myapp__var'}'"
         )
 

@@ -8,8 +8,8 @@
       "loader_type": "json",
       "raw_data": {
         "db": {
-          "host": "localhost",
-          "port": 5432
+          "host": "<REDACTED>",
+          "port": "<REDACTED>"
         }
       }
     }
@@ -18,8 +18,8 @@
     {
       "key": "db",
       "value": {
-        "host": "localhost",
-        "port": 5432
+        "host": "<REDACTED>",
+        "port": "<REDACTED>"
       },
       "source_index": 0,
       "source_file": "sources/config.json",
@@ -28,8 +28,8 @@
   ],
   "merged_data": {
     "db": {
-      "host": "localhost",
-      "port": 5432
+      "host": "<REDACTED>",
+      "port": "<REDACTED>"
     }
   }
 }

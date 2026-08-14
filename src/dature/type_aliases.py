@@ -64,6 +64,8 @@ type Base64UrlStr = str
 
 type ExpandEnvVarsMode = Literal["disabled", "default", "empty", "strict"]
 
+type MaskingMode = Literal["all", "secrets_only", "none"]
+
 type SystemConfigDirsEntry = Path | str
 type SystemConfigDirsList = Iterable[SystemConfigDirsEntry]
 type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsList]

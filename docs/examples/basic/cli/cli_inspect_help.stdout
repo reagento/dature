@@ -4,8 +4,8 @@ usage: dature inspect [-h] --schema MODULE:ATTR --source SPEC
                       [--skip-field-if-invalid]
                       [--expand-env-vars {disabled,default,empty,strict}]
                       [--secret-field-names SECRET_FIELD_NAMES]
-                      [--mask-secrets] [--field DOTTED.PATH]
-                      [--format {json,text,table}]
+                      [--masking-mode {all,secrets_only,none}]
+                      [--field DOTTED.PATH] [--format {json,text,table}]
 
 options:
   -h, --help            show this help message and exit
@@ -20,7 +20,7 @@ options:
   --skip-field-if-invalid
   --expand-env-vars {disabled,default,empty,strict}
   --secret-field-names SECRET_FIELD_NAMES
-  --mask-secrets
+  --masking-mode {all,secrets_only,none}
   --field DOTTED.PATH   Filter origins and merged data by a dotted field path.
   --format {json,text,table}
                         Output format (default: json).

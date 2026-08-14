@@ -226,7 +226,7 @@ These flags are **generated from the signature of [`dature.load()`](../api-refer
 | `--skip-field-if-invalid` | [`skip_field_if_invalid`](../api-reference.md#datureload) | See [Skipping Invalid Fields](../advanced/skip-behaviors.md#skipping-invalid-fields). |
 | `--expand-env-vars` | [`expand_env_vars`](../api-reference.md#datureload) | Choices: `disabled`, `default`, `empty`, `strict`. See [ENV Expansion](../advanced/env-expansion.md). |
 | `--secret-field-names` | [`secret_field_names`](../api-reference.md#datureload) | Repeatable. See [Masking](masking.md). |
-| `--mask-secrets` | [`mask_secrets`](../api-reference.md#datureload) | See [Masking](masking.md). Also affects `inspect` output. |
+| `--masking-mode` | [`masking_mode`](../api-reference.md#datureload) | Choices: `all`, `secrets_only`, `none`. See [Masking](masking.md). Also affects `inspect` output. |
 
 Per-source overrides for parameters that exist on both `load()` and the [`Source`](../api-reference.md#source) constructor (e.g. [`expand_env_vars`](../api-reference.md#source)) can be passed inside `--source`, e.g. `--source type=...,expand_env_vars=strict`. The Source-level value takes priority — same precedence rules as in code.
 

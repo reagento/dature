@@ -47,20 +47,20 @@ class TestMultipleFields:
         assert str(e) == "Config loading errors (3)"
         assert str(e.exceptions[0]) == (
             "  [name]  Value length must be greater than or equal to 3\n"
-            f"   ├── {content}\n"
-            "   │             ^^\n"
+            '   ├── {"name": "<REDACTED>", "age": <REDACTED>, "tags": []}\n'
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
             "  [age]  Value must be less than or equal to 150\n"
-            f"   ├── {content}\n"
-            "   │                         ^^^\n"
+            '   ├── {"name": "<REDACTED>", "age": <REDACTED>, "tags": []}\n'
+            "   │                                 ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[2]) == (
             "  [tags]  Value length must be greater than or equal to 1\n"
-            f"   ├── {content}\n"
-            "   │                                      ^^\n"
+            '   ├── {"name": "<REDACTED>", "age": <REDACTED>, "tags": []}\n'
+            "   │                                 ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -115,28 +115,28 @@ class TestNestedDataclass:
         e = exc_info.value
         assert len(e.exceptions) == 4
         assert str(e) == "User loading errors (4)"
+        masked_content = '{"name": "<REDACTED>", "age": <REDACTED>, "address": {"city": "<REDACTED>", "...'
         assert str(e.exceptions[0]) == (
             "  [name]  Value length must be greater than or equal to 3\n"
-            f"   ├── {content}\n"
-            "   │             ^^\n"
+            f"   ├── {masked_content}\n"
+            "   │             ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
             "  [age]  Value must be greater than or equal to 18\n"
-            f"   ├── {content}\n"
-            "   │                         ^^\n"
+            f"   ├── {masked_content}\n"
+            "   │                                 ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[2]) == (
             "  [address.city]  Value length must be greater than or equal to 2\n"
-            f"   ├── {content}\n"
-            "   │                                                  ^\n"
+            f"   ├── {masked_content}\n"
+            "   │                                                                  ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[3]) == (
             "  [address.zip_code]  Value must match pattern '^\\d{5}$'\n"
-            f"   ├── {content}\n"
-            "   │                                                                   ^^^^^\n"
+            f"   ├── {masked_content}\n"
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -160,7 +160,8 @@ class TestCustomErrorMessage:
         assert len(e.exceptions) == 1
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
-            f"  [age]  Age must be 18 or older\n   ├── {content}\n   │           ^^\n   └── FILE '{json_file}', line 1"
+            '  [age]  Age must be 18 or older\n   ├── {"age": <REDACTED>}\n'
+            f"   │           ^^^^^^^^^^\n   └── FILE '{json_file}', line 1"
         )
 
 
@@ -199,8 +200,7 @@ class TestDictListDict:
         assert str(e) == "Config loading errors (1)"
         assert str(e.exceptions[0]) == (
             "  [groups]  Value length must be greater than or equal to 1\n"
-            f"   ├── {content}\n"
-            "   │              ^^\n"
+            '   ├── {"groups": {}}\n'
             f"   └── FILE '{json_file}', line 1"
         )
 
@@ -249,13 +249,13 @@ class TestDictListDict:
         assert str(e) == "Config loading errors (2)"
         assert str(e.exceptions[0]) == (
             "  [teams.backend.0.name]  Value length must be greater than or equal to 2\n"
-            f"   ├── {content}\n"
-            "   │                                    ^\n"
+            '   ├── {"teams": {"backend": [{"name": "<REDACTED>", "role": "<REDACTED>"}]}}\n'
+            "   │                                    ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
         assert str(e.exceptions[1]) == (
             "  [teams.backend.0.role]  Value length must be greater than or equal to 3\n"
-            f"   ├── {content}\n"
-            "   │                                                 ^^\n"
+            '   ├── {"teams": {"backend": [{"name": "<REDACTED>", "role": "<REDACTED>"}]}}\n'
+            "   │                                                          ^^^^^^^^^^\n"
             f"   └── FILE '{json_file}', line 1"
         )
