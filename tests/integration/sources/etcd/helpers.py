@@ -11,7 +11,8 @@ import requests.exceptions
 from etcd3gw.client import Etcd3Client
 from etcd3gw.exceptions import Etcd3Exception
 from testcontainers.core.container import DockerContainer
-from testcontainers.core.waiting_utils import wait_container_is_ready
+
+from tests.integration.waiting import retry_until_ready
 
 ETCD_IMAGE: Final = "gcr.io/etcd-development/etcd:v3.5.17"
 ETCD_ROOT_PASSWORD: Final = "test-root-password"
@@ -31,7 +32,6 @@ def start_etcd_container(internal_port: int) -> Generator[DockerContainer]:
         yield c
 
 
-@wait_container_is_ready(Etcd3Exception, ConnectionError, requests.exceptions.ConnectionError)
 def wait_etcd_ready(client: Etcd3Client) -> None:
     """Block until *client* can perform a real KV write.
 
@@ -39,7 +39,12 @@ def wait_etcd_ready(client: Etcd3Client) -> None:
     connections, so — as with the Consul fixtures — a live write is the only reliable
     readiness signal.
     """
-    client.put("_readiness", "ok")
+    retry_until_ready(
+        lambda: client.put("_readiness", "ok"),
+        Etcd3Exception,
+        ConnectionError,
+        requests.exceptions.ConnectionError,
+    )
 
 
 def etcd_address(container: DockerContainer, internal_port: int) -> tuple[str, int]:

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 
 from dature.sources.base import RemoteSource, clone_source
-from dature.type_aliases import JSONValue
+from dature.type_aliases import ExpandEnvVarsMode, JSONValue
 
 
 @dataclass(kw_only=True, repr=False)
@@ -11,6 +11,7 @@ class _FakeRemote(RemoteSource):
     """Fixed-data remote source — no external service."""
 
     data: JSONValue = None
+    expand_env_vars: ExpandEnvVarsMode | None = "default"
     format_name: str = "_fake_remote"
     location_label: str = "FAKE"
 

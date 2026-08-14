@@ -50,15 +50,22 @@ def get_adaptix_name_style(name_style: NameStyle | None) -> AdaptixNameStyle | N
     if name_style is None:
         return None
 
-    name_style_map = {
-        "lower_snake": AdaptixNameStyle.LOWER_SNAKE,
-        "upper_snake": AdaptixNameStyle.UPPER_SNAKE,
-        "lower_camel": AdaptixNameStyle.CAMEL,
-        "upper_camel": AdaptixNameStyle.PASCAL,
-        "lower_kebab": AdaptixNameStyle.LOWER_KEBAB,
-        "upper_kebab": AdaptixNameStyle.UPPER_KEBAB,
-    }
-    return name_style_map.get(name_style)
+    match name_style:
+        case "lower_snake":
+            return AdaptixNameStyle.LOWER_SNAKE
+        case "upper_snake":
+            return AdaptixNameStyle.UPPER_SNAKE
+        case "lower_camel":
+            return AdaptixNameStyle.CAMEL
+        case "upper_camel":
+            return AdaptixNameStyle.PASCAL
+        case "lower_kebab":
+            return AdaptixNameStyle.LOWER_KEBAB
+        case "upper_kebab":
+            return AdaptixNameStyle.UPPER_KEBAB
+        case _ as unknown:
+            msg = f"Unknown name_style: {unknown!r}"
+            raise ValueError(msg)
 
 
 def get_name_mapping_providers(

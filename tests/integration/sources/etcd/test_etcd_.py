@@ -94,7 +94,9 @@ class TestEtcdSourceRecursive:
     @pytest.mark.usefixtures("_kv_tree")
     def test_resolve_location_renders_real_value(self, etcd_address_no_auth):
         etcd_host, etcd_port = etcd_address_no_auth
-        source = apply_source_config_group(EtcdSource(host=etcd_host, port=etcd_port, path=KV_PREFIX))
+        source = apply_source_config_group(
+            EtcdSource(host=etcd_host, port=etcd_port, path=KV_PREFIX, expand_env_vars="default")
+        )
 
         result = source.load_raw()
         locations = source.resolve_location(

@@ -49,9 +49,14 @@ class AwsSsmSource(RemoteSource):
         return f"ssm://{host}{self.path}"
 
     def format_loaders(self) -> "list[Provider]":
-        if self.decode == "utf-8":
-            return string_value_loaders()
-        return super().format_loaders()
+        match self.decode:
+            case "utf-8":
+                return string_value_loaders()
+            case "json":
+                return super().format_loaders()
+            case _ as unknown:
+                msg = f"Unknown decode mode: {unknown!r}"
+                raise ValueError(msg)
 
     def _build_nested(self, params: "list[dict[str, Any]]") -> JSONValue:
         """Turn a recursive ``get_parameters_by_path`` listing into a nested dict.
@@ -89,11 +94,16 @@ class AwsSsmSource(RemoteSource):
         raw = cast("str", param["Value"])
         if param.get("Type") == "StringList":
             return cast("JSONValue", raw.split(","))
-        if self.decode == "json":
-            import json  # noqa: PLC0415
+        match self.decode:
+            case "json":
+                import json  # noqa: PLC0415
 
-            return cast("JSONValue", json.loads(raw))
-        return raw
+                return cast("JSONValue", json.loads(raw))
+            case "utf-8":
+                return raw
+            case _ as unknown:
+                msg = f"Unknown decode mode: {unknown!r}"
+                raise ValueError(msg)
 
     def _fetch(self) -> JSONValue:
         require_dep("boto3", "aws")

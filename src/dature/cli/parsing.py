@@ -30,7 +30,7 @@ class CliInspectArgs(CliCommonArgs, Protocol):
     """Fields accessed on the ``inspect`` subcommand's args dataclass."""
 
     field: str | None
-    format: str | None
+    format: str
 
 
 class CliArgs(DataclassInstance, Protocol):
@@ -76,13 +76,14 @@ def import_attr(path: str) -> Any:  # noqa: ANN401
 
 def split_escaped(text: str, sep: str, *, maxsplit: int = 0) -> list[str]:
     """Split ``text`` by an unescaped ``sep``; ``\\sep`` is unescaped to ``sep``."""
-    if sep == ",":
-        pattern = _UNESCAPED_COMMA
-    elif sep == "=":
-        pattern = _UNESCAPED_EQUALS
-    else:
-        msg = f"Unsupported separator: {sep!r}"
-        raise ValueError(msg)
+    match sep:
+        case ",":
+            pattern = _UNESCAPED_COMMA
+        case "=":
+            pattern = _UNESCAPED_EQUALS
+        case _:
+            msg = f"Unsupported separator: {sep!r}"
+            raise ValueError(msg)
     parts = pattern.split(text, maxsplit=maxsplit)
     escaped = "\\" + sep
     return [p.replace(escaped, sep) for p in parts]
@@ -321,7 +322,7 @@ def derive_cli_schema() -> type:
         [
             *common,
             ("field", str | None, field(default=None)),
-            ("format", Literal["json", "text", "table"] | None, field(default=None)),
+            ("format", Literal["json", "text", "table"], field(default="json")),
         ],
     )
     validate_args = make_dataclass("ValidateArgs", common)

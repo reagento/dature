@@ -48,6 +48,18 @@ class TestEtcdSourceDisplayProperties:
 
         assert loaders == expected
 
+    def test_format_loaders_raises_on_unknown_decode(self):
+        src = EtcdSource(host="e", path="myapp", decode="xml")
+
+        with pytest.raises(ValueError, match="Unknown decode mode: 'xml'"):
+            src.format_loaders()
+
+    def test_decode_value_raises_on_unknown_decode(self):
+        src = EtcdSource(host="e", path="myapp", decode="xml")
+
+        with pytest.raises(ValueError, match="Unknown decode mode: 'xml'"):
+            src._decode_value(b"data")
+
     @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
         ("protocol", "host", "port", "path", "expected"),
@@ -208,6 +220,7 @@ class TestEtcdSourceFetch:
 
         monkeypatch.setattr(sys.modules["etcd3gw.client"], "Etcd3Client", _fake_client)
         kwargs.setdefault("path", "myapp")
+        kwargs.setdefault("expand_env_vars", "default")
         return EtcdSource(host="e", **kwargs)
 
     def test_recursive_nests_on_separator(self, monkeypatch):

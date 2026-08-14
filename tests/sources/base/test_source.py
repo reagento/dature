@@ -143,7 +143,7 @@ class TestBaseSource:
 
         expected_data = Config(name="TestApp", port=8080, debug=True, default="value")
         data = {"app": {"name": "TestApp", "port": 8080, "debug": True}}
-        loader = MockSource(prefix="app", test_data=data)
+        loader = MockSource(prefix="app", test_data=data, expand_env_vars="default")
 
         load_result = loader.load_raw()
         result = RetortCache(Config).plain(IndexedSource(loader, 0)).load(load_result.data, Config)

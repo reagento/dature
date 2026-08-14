@@ -35,14 +35,19 @@ def cmd_inspect(args: CliInspectArgs) -> int:
         print("error: failed to obtain load report", file=sys.stderr)
         return 1
 
-    output_format = args.format or "json"
+    match args.format:
+        case "json":
+            formatter = format_json
+        case "text":
+            formatter = format_text
+        case "table":
+            formatter = format_table
+        case _ as unknown:
+            msg = f"Unknown output format: {unknown!r}"
+            raise ValueError(msg)
+
     try:
-        if output_format == "json":
-            output = format_json(report, field=args.field)
-        elif output_format == "text":
-            output = format_text(report, field=args.field)
-        else:
-            output = format_table(report, field=args.field)
+        output = formatter(report, field=args.field)
     except KeyError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -181,12 +181,16 @@ class FlatKeySource(Source, abc.ABC):
             if isinstance(existing, str):
                 flat_var = self._build_var_name(self.nested_sep.join(parts))
                 json_var = self._build_var_name(top_field)
-                if strategy == "flat":
-                    result.pop(top_field)
-                    self._set_nested(result, parts, value)
-                    conflicts[top_field] = NestedConflict(flat_var, json_var, existing)
-                elif strategy == "json":
-                    conflicts[top_field] = NestedConflict(json_var, flat_var, existing)
+                match strategy:
+                    case "flat":
+                        result.pop(top_field)
+                        self._set_nested(result, parts, value)
+                        conflicts[top_field] = NestedConflict(flat_var, json_var, existing)
+                    case "json":
+                        conflicts[top_field] = NestedConflict(json_var, flat_var, existing)
+                    case _ as unknown:
+                        msg = f"Unknown nested resolve strategy: {unknown!r}"
+                        raise ValueError(msg)
             else:
                 self._set_nested(result, parts, value)
         else:
@@ -200,10 +204,14 @@ class FlatKeySource(Source, abc.ABC):
             if isinstance(existing, dict):
                 json_var = self._build_var_name(top_field)
                 flat_var = self._build_nested_var_name(top_field, existing)
-                if strategy == "json":
-                    result[top_field] = value
-                    conflicts[top_field] = NestedConflict(json_var, flat_var, value)
-                elif strategy == "flat":
-                    conflicts[top_field] = NestedConflict(flat_var, json_var, value)
+                match strategy:
+                    case "json":
+                        result[top_field] = value
+                        conflicts[top_field] = NestedConflict(json_var, flat_var, value)
+                    case "flat":
+                        conflicts[top_field] = NestedConflict(flat_var, json_var, value)
+                    case _ as unknown:
+                        msg = f"Unknown nested resolve strategy: {unknown!r}"
+                        raise ValueError(msg)
             else:
                 result[top_field] = value

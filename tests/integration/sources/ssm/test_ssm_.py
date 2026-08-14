@@ -94,7 +94,9 @@ class TestAwsSsmSourceRecursive:
 
     @pytest.mark.usefixtures("_kv_tree")
     def test_resolve_location_renders_real_value(self, ssm_endpoint_url, ssm_region_name, localstack_iam_credentials):
-        source = apply_source_config_group(_make_source(ssm_endpoint_url, ssm_region_name, localstack_iam_credentials))
+        source = apply_source_config_group(
+            _make_source(ssm_endpoint_url, ssm_region_name, localstack_iam_credentials, expand_env_vars="default")
+        )
 
         result = source.load_raw()
         locations = source.resolve_location(

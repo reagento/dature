@@ -9,7 +9,8 @@ import pytest
 import requests.exceptions
 from consul.exceptions import ConsulException
 from testcontainers.core.container import DockerContainer
-from testcontainers.core.waiting_utils import wait_container_is_ready
+
+from tests.integration.waiting import retry_until_ready
 
 CONSUL_IMAGE = "hashicorp/consul:1.18"
 CONSUL_MGMT_TOKEN: Final = "test-mgmt-token"
@@ -50,7 +51,6 @@ def consul_token() -> str:
     return CONSUL_MGMT_TOKEN
 
 
-@wait_container_is_ready(ConsulException, ConnectionError, requests.exceptions.ConnectionError)
 def _wait_acl_ready(client: consul.std.Consul) -> None:
     """Block until *client* can perform a real, token-authenticated KV write.
 
@@ -62,7 +62,12 @@ def _wait_acl_ready(client: consul.std.Consul) -> None:
     ``ConnectionError`` (it doesn't subclass it), so both must be listed explicitly — the
     consul client raises the former while the agent is still bringing up its HTTP listener.
     """
-    client.kv.put("_readiness", "ok")
+    retry_until_ready(
+        lambda: client.kv.put("_readiness", "ok"),
+        ConsulException,
+        ConnectionError,
+        requests.exceptions.ConnectionError,
+    )
 
 
 @pytest.fixture(scope="package")

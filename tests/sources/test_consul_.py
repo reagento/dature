@@ -44,6 +44,18 @@ class TestConsulSourceDisplayProperties:
         src = ConsulSource(host="c", path="myapp", decode=decode)
         assert src.format_loaders() == expected
 
+    def test_format_loaders_raises_on_unknown_decode(self):
+        src = ConsulSource(host="c", path="myapp", decode="xml")
+
+        with pytest.raises(ValueError, match="Unknown decode mode: 'xml'"):
+            src.format_loaders()
+
+    def test_decode_value_raises_on_unknown_decode(self):
+        src = ConsulSource(host="c", path="myapp", decode="xml")
+
+        with pytest.raises(ValueError, match="Unknown decode mode: 'xml'"):
+            src._decode_value(b"data")
+
     @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
         ("scheme", "host", "port", "path", "expected"),
@@ -165,6 +177,7 @@ class TestConsulSourceFetch:
             return FakeConsul(data, **kw)
 
         monkeypatch.setattr(consul.std, "Consul", _fake_consul)
+        kwargs.setdefault("expand_env_vars", "default")
         return ConsulSource(host="c", path="myapp", **kwargs)
 
     def test_recursive_nests_on_separator(self, monkeypatch):

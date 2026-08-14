@@ -47,7 +47,14 @@ class VaultSource(RemoteSource):
         return f"{self.scheme}://{self.host}:{self.port}"
 
     def remote_address(self) -> str:
-        infix = "" if self.kv_version == 1 else "data/"
+        match self.kv_version:
+            case 1:
+                infix = ""
+            case 2 | None:
+                infix = "data/"
+            case _ as unknown:
+                msg = f"Unknown kv_version: {unknown!r}"
+                raise ValueError(msg)
         return f"{self._base_url()}/v1/{self.mount_point}/{infix}{self.path}"
 
     def _fetch(self) -> JSONValue:
@@ -62,11 +69,16 @@ class VaultSource(RemoteSource):
             client.auth.approle.login(role_id=self.role_id, secret_id=self.secret_id)
 
         try:
-            if self.kv_version == 1:
-                resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)
-                return cast("JSONValue", resp["data"])
-            resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
-            return cast("JSONValue", resp["data"]["data"])
+            match self.kv_version:
+                case 1:
+                    resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)
+                    return cast("JSONValue", resp["data"])
+                case 2 | None:
+                    resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
+                    return cast("JSONValue", resp["data"]["data"])
+                case _ as unknown:
+                    msg = f"Unknown kv_version: {unknown!r}"
+                    raise ValueError(msg)
         except hvac.exceptions.InvalidPath:
             msg = f"Vault path not found: {self.remote_address()}"
             raise KeyError(msg) from None

@@ -2,8 +2,11 @@
 
 import json
 import textwrap
+from dataclasses import dataclass
 
 import pytest
+
+from dature.cli.inspect_cmd import cmd_inspect
 
 SCHEMA_DB = textwrap.dedent("""\
     from dataclasses import dataclass
@@ -761,3 +764,32 @@ class TestInspectErrors:
         assert code == 1
         assert out == ""
         assert err == "error: \"Field 'db.nonexistent' not found in merged data\"\n"
+
+
+@dataclass
+class _FakeInspectArgs:
+    """Minimal stand-in for the argparse-derived dataclass.
+
+    ``argparse`` restricts ``--format`` to ``choices=["json", "text", "table"]``, so an
+    unknown format can never reach ``cmd_inspect`` through the CLI entrypoint — it's only
+    reachable by calling ``cmd_inspect`` directly with a fabricated args object.
+    """
+
+    schema: str
+    source: list[str]
+    field: str | None = None
+    format: str | None = None
+
+
+class TestInspectUnknownFormat:
+    def test_raises_value_error(self, write_schema, cfg_file):
+        write_schema(SCHEMA_DB)
+        cfg = cfg_file({"db": {"host": "localhost", "port": 5432}})
+        args = _FakeInspectArgs(
+            schema="myschema:Settings",
+            source=[f"type=dature.JsonSource,file={cfg}"],
+            format="bogus",
+        )
+
+        with pytest.raises(ValueError, match="Unknown output format: 'bogus'"):
+            cmd_inspect(args)

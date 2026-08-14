@@ -30,8 +30,14 @@ def is_secret_path(
     secret_paths: frozenset[str],
     masking_mode: MaskingMode,
 ) -> bool:
-    if masking_mode == "all":
-        return True
+    match masking_mode:
+        case "all":
+            return True
+        case "secrets_only" | "none":
+            pass
+        case _ as unknown:
+            msg = f"Unknown masking mode: {unknown!r}"
+            raise ValueError(msg)
     path = field_path if isinstance(field_path, str) else ".".join(field_path)
     if path in secret_paths:
         return True
@@ -48,8 +54,14 @@ def mask_json_value(
     _prefix: str = "",
     _force: bool = False,
 ) -> JSONValue:
-    if masking_mode == "none":
-        return data
+    match masking_mode:
+        case "none":
+            return data
+        case "all" | "secrets_only":
+            pass
+        case _ as unknown:
+            msg = f"Unknown masking mode: {unknown!r}"
+            raise ValueError(msg)
 
     if isinstance(data, dict):
         result: dict[str, JSONValue] = {}
@@ -108,9 +120,14 @@ def _secret_key_matcher(
     masking_mode: MaskingMode,
 ) -> Callable[[str], bool]:
     """Build a predicate for "does this raw key look secret", canonical-name aware."""
-    if masking_mode == "secrets_only":
-        return lambda key: canonical_name(key) in secret_leaf_names or matches_secret_name(key)
-    return lambda key: canonical_name(key) in secret_leaf_names
+    match masking_mode:
+        case "secrets_only":
+            return lambda key: canonical_name(key) in secret_leaf_names or matches_secret_name(key)
+        case "all" | "none":
+            return lambda key: canonical_name(key) in secret_leaf_names
+        case _ as unknown:
+            msg = f"Unknown masking mode: {unknown!r}"
+            raise ValueError(msg)
 
 
 def _consume_quoted_token(
@@ -291,8 +308,14 @@ def mask_field_origins(
     secret_paths: frozenset[str],
     masking_mode: MaskingMode = "secrets_only",
 ) -> tuple[FieldOrigin, ...]:
-    if masking_mode == "none":
-        return origins
+    match masking_mode:
+        case "none":
+            return origins
+        case "all" | "secrets_only":
+            pass
+        case _ as unknown:
+            msg = f"Unknown masking mode: {unknown!r}"
+            raise ValueError(msg)
 
     return tuple(
         replace(origin, value=mask_value(str(origin.value)))

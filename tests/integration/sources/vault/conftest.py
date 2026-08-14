@@ -4,7 +4,7 @@ from collections.abc import Generator
 
 import hvac
 import pytest
-from testcontainers.vault import VaultContainer
+from testcontainers.community.vault import VaultContainer
 
 VAULT_IMAGE = "hashicorp/vault:1.16.1"  # ``latest`` is a moving target and has broken CI in the past
 
