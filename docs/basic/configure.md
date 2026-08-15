@@ -61,6 +61,7 @@ dature auto-loads its own config from `DATURE_*` environment variables on first 
 | `DATURE_ERROR_DISPLAY__MAX_LINE_LENGTH` | [ErrorDisplayConfig](#errordisplayconfig) | `max_line_length` | Max character width per line in error messages |
 | `DATURE_LOADING__CACHE` | [LoadingConfig](#loadingconfig) | `cache` | Enable caching. `true`/`false` or a `timedelta` string (e.g. `0:00:30`, `30 seconds`) for TTL. See [Caching](../advanced/caching.md) |
 | `DATURE_LOADING__CACHE_ENGINE` | [LoadingConfig](#loadingconfig) | `cache_engine` | Retain the compiled engine across loads, independent of `cache`. See [Caching](../advanced/caching.md#cache_engine-retaining-the-compiled-engine) |
+| `DATURE_LOADING__STALE_ON_ERROR` | [LoadingConfig](#loadingconfig) | `stale_on_error` | What to do when a cached reload fails: `keep` (default), `retry`, or `raise`. See [Caching](../advanced/caching.md#stale_on_error-keeping-the-last-good-config) |
 | `DATURE_LOADING__DEBUG` | [LoadingConfig](#loadingconfig) | `debug` | Attach `LoadReport` to every loaded instance |
 | `DATURE_LOADING__NESTED_RESOLVE_STRATEGY` | [LoadingConfig](#loadingconfig) | `nested_resolve_strategy` | Default priority for JSON vs flat keys: `flat` (default) or `json`. See [Nested Resolve](../advanced/nested-resolve.md) |
 | `DATURE_LOADING__EXPAND_ENV_VARS` | [LoadingConfig](#loadingconfig) | `expand_env_vars` | Default env var expansion mode: `default`, `disabled`, `empty`, or `strict`. See [Env Expansion](../advanced/env-expansion.md) |

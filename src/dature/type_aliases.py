@@ -66,6 +66,8 @@ type ExpandEnvVarsMode = Literal["disabled", "default", "empty", "strict"]
 
 type MaskingMode = Literal["all", "secrets_only", "none"]
 
+type StaleOnErrorMode = Literal["keep", "raise", "retry"]
+
 type SystemConfigDirsEntry = Path | str
 type SystemConfigDirsList = Iterable[SystemConfigDirsEntry]
 type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsList]
