@@ -1,0 +1,8 @@
+  + Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 31, in <module>
+  |     RaiseConfig()  # Failed
+  |     ~~~~~~~~~~~^^
+  | dature.errors.exceptions.DatureConfigError: RaiseConfig loading errors (1)
+  +-+---------------- 1 ----------------
+    | json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+    +------------------------------------

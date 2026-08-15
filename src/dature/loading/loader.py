@@ -60,6 +60,7 @@ from dature.type_aliases import (
     NestedResolve,
     NestedResolveStrategy,
     SkipFieldsInvalid,
+    StaleOnErrorMode,
     TypeLoaderMap,
 )
 from dature.validators.base import create_metadata_validator_providers
@@ -81,12 +82,13 @@ def _validate_sources(sources: tuple[SourceProtocol, ...]) -> None:
 class Loader[T: DataclassInstance]:
     """Encapsulates a ``load`` call. ``.load()`` honours the cache."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0915
         self,
         *sources: SourceProtocol,
         schema: type[T],
         cache: bool | timedelta | None = None,
         cache_engine: bool | None = None,
+        stale_on_error: StaleOnErrorMode | None = None,
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
@@ -113,6 +115,8 @@ class Loader[T: DataclassInstance]:
             raise ValueError(msg)
         if cache_engine is None:
             cache_engine = config.loading.cache_engine
+        if stale_on_error is None:
+            stale_on_error = config.loading.stale_on_error
         if debug is None:
             debug = config.loading.debug
 
@@ -123,6 +127,7 @@ class Loader[T: DataclassInstance]:
         self._schema = schema
         self._cache: bool | timedelta = cache
         self._cache_engine: bool = cache_engine
+        self._stale_on_error: StaleOnErrorMode = stale_on_error
         self.debug = debug
 
         # Loader-level parameters stored for deferred MergeConfig construction in _prepare_for_load.
@@ -236,21 +241,60 @@ class Loader[T: DataclassInstance]:
             if self._merge_meta is None:
                 self._prepare_for_load()
             result = self._do_load()
-        except (DatureError, DatureErrorGroup, DatureConfigError):
-            raise
+        except (DatureError, DatureErrorGroup, DatureConfigError) as exc:
+            if not self._should_keep_stale():
+                raise
+            return self._on_stale_fallback(exc)
         except Exception as exc:  # noqa: BLE001
             exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
-            raise DatureConfigError(self._schema.__name__, [exc]) from None  # pyright: ignore[reportArgumentType]
+            if not self._should_keep_stale():
+                raise DatureConfigError(self._schema.__name__, [exc]) from None  # pyright: ignore[reportArgumentType]
+            return self._on_stale_fallback(exc)
         if self._cache is not False:
             self._cached_data = result
             self._cached_at = _aligned_now(self._cache)
         return result
+
+    def _should_keep_stale(self) -> bool:
+        """Whether a reload failure should fall back to the last good config instead of raising.
+
+        There is nothing to fall back to on the very first load — ``_cached_data`` is only ever
+        populated by a prior successful ``.load()``, so this is ``False`` regardless of
+        ``stale_on_error`` until at least one load has succeeded.
+        """
+        if self._cached_data is None:
+            return False
+        match self._stale_on_error:
+            case "raise":
+                return False
+            case "keep" | "retry":
+                return True
+            case _ as unknown:
+                msg = f"Unknown stale_on_error mode: {unknown!r}"
+                raise ValueError(msg) from None
+
+    def _on_stale_fallback(self, exc: Exception) -> T:
+        """Return the previously cached config after a reload failure, per ``stale_on_error``.
+
+        ``"keep"`` restarts the TTL window on the stale value so a persistently broken source
+        isn't retried on every access; ``"retry"`` leaves ``_cached_at`` untouched so the next
+        call attempts a fresh reload again.
+        """
+        logger.warning(
+            "[%s] Config reload failed, keeping the previously loaded config: %s",
+            self._schema.__name__,
+            exc,
+        )
+        if self._stale_on_error == "keep":
+            self._cached_at = _aligned_now(self._cache)
+        return self._cached_data  # type: ignore[return-value]  # guarded by _should_keep_stale
 
     @staticmethod
     def as_decorator[DC: DataclassInstance](  # noqa: PLR0913
         *sources: SourceProtocol,
         cache: bool | timedelta | None = None,
         cache_engine: bool | None = None,
+        stale_on_error: StaleOnErrorMode | None = None,
         debug: bool | None = None,
         strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
         field_merges: FieldMergeMap | None = None,
@@ -279,6 +323,7 @@ class Loader[T: DataclassInstance]:
                 schema=target_cls,
                 cache=cache,
                 cache_engine=cache_engine,
+                stale_on_error=stale_on_error,
                 debug=debug,
                 strategy=strategy,
                 field_merges=field_merges,

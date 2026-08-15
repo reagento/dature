@@ -16,6 +16,7 @@ import dature
 import dature.sources.base
 from dature import EnvFileSource, EnvSource, JsonSource, Loader, V, When, load
 from dature.errors.exceptions import CrossRefExpandError, DatureConfigError, DatureError
+from dature.loading.cache import cache_is_fresh
 from dature.sources.base import Source
 from dature.type_aliases import JSONValue
 
@@ -291,6 +292,120 @@ class TestLoaderCacheEngine:
 
         assert first.host == "h"
         assert first == second  # cache=True still reuses the loaded data
+
+
+class TestLoaderStaleOnError:
+    """``stale_on_error`` controls what happens when a reload (TTL expired) fails while a
+    previously loaded config is cached: ``"keep"`` (default) and ``"retry"`` fall back to it,
+    ``"raise"`` propagates the error (the library's original behavior).
+    """
+
+    @pytest.mark.parametrize(
+        ("mode", "expect_raises"),
+        [
+            ("keep", False),
+            ("retry", False),
+            ("raise", True),
+        ],
+    )
+    def test_reload_failure_after_ttl_expiry(
+        self,
+        tmp_path: Path,
+        time_control: time_machine.Traveller,
+        caplog: pytest.LogCaptureFixture,
+        mode: str,
+        expect_raises: bool,
+    ) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=timedelta(seconds=10), stale_on_error=mode)
+
+        first = loader.load()
+        json_file.write_text("not json")
+        time_control.shift(20.0)
+
+        if expect_raises:
+            with pytest.raises(DatureConfigError):
+                loader.load()
+            return
+
+        with caplog.at_level("WARNING"):
+            second = loader.load()
+
+        assert second is first
+        assert "Config reload failed, keeping the previously loaded config" in caplog.text
+
+    def test_first_load_failure_always_raises(self, tmp_path: Path) -> None:
+        # No previous successful load to fall back to — "keep" cannot help.
+        json_file = tmp_path / "config.json"
+        json_file.write_text("not json")
+
+        with pytest.raises(DatureConfigError):
+            Loader(JsonSource(file=json_file), schema=_Config, stale_on_error="keep").load()
+
+    @pytest.mark.parametrize(
+        ("mode", "expect_fresh"),
+        [
+            ("keep", True),
+            ("retry", False),
+        ],
+    )
+    def test_keep_restarts_ttl_window_retry_does_not(
+        self,
+        tmp_path: Path,
+        time_control: time_machine.Traveller,
+        mode: str,
+        expect_fresh: bool,
+    ) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=timedelta(seconds=10), stale_on_error=mode)
+        loader.load()
+
+        json_file.write_text("not json")
+        time_control.shift(20.0)
+        loader.load()
+
+        # Still inside the failed reload's TTL window: "keep" restarted it (fresh, no re-read
+        # attempted), "retry" left it stale (re-attempts the broken source every call).
+        assert cache_is_fresh(cache=loader._cache, cached_at=loader._cached_at) is expect_fresh
+
+    def test_recovers_once_source_is_fixed(self, tmp_path: Path, time_control: time_machine.Traveller) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=timedelta(seconds=10), stale_on_error="keep")
+        loader.load()
+
+        json_file.write_text("not json")
+        time_control.shift(20.0)
+        stale = loader.load()
+
+        json_file.write_text('{"host": "recovered", "port": 2}')
+        time_control.shift(20.0)
+        recovered = loader.load()
+
+        assert stale.host == "h"
+        assert recovered.host == "recovered"
+
+    def test_stale_on_error_none_falls_back_to_config_default(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+
+        loader = Loader(JsonSource(file=json_file), schema=_Config, stale_on_error=None)
+
+        assert loader._stale_on_error == "keep"
+
+    def test_unknown_mode_raises_value_error(self, tmp_path: Path, time_control: time_machine.Traveller) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+        loader = Loader(JsonSource(file=json_file), schema=_Config, cache=timedelta(seconds=10), stale_on_error="bogus")
+        loader.load()
+
+        json_file.write_text("not json")
+        time_control.shift(20.0)
+
+        with pytest.raises(ValueError, match="Unknown stale_on_error mode"):
+            loader.load()
 
 
 class TestLoaderMulti:

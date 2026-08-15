@@ -60,6 +60,11 @@ class TestConfigure:
                 True,
             ),
             (
+                {"loading": {"stale_on_error": "raise"}},
+                ("loading", "stale_on_error"),
+                "raise",
+            ),
+            (
                 {"loading": {"search_system_paths": False}},
                 ("loading", "search_system_paths"),
                 False,
@@ -72,6 +77,7 @@ class TestConfigure:
             "loading-cache",
             "loading-debug",
             "loading-cache_engine",
+            "loading-stale_on_error",
             "loading-search_system_paths",
         ],
     )
@@ -195,6 +201,12 @@ class TestEnvLoading:
                 True,
             ),
             (
+                "DATURE_LOADING__STALE_ON_ERROR",
+                "retry",
+                ("loading", "stale_on_error"),
+                "retry",
+            ),
+            (
                 "DATURE_MASKING__MASK_SECRETS",
                 "false",
                 ("masking", "mask_secrets"),
@@ -212,6 +224,7 @@ class TestEnvLoading:
             "int-visible_prefix",
             "bool-cache-false",
             "bool-debug-true",
+            "literal-stale_on_error-retry",
             "bool-mask_secrets-false",
             "tuple-secret_field_names",
         ],

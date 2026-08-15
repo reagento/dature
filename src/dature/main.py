@@ -16,6 +16,7 @@ from dature.type_aliases import (
     NestedResolve,
     NestedResolveStrategy,
     SkipFieldsInvalid,
+    StaleOnErrorMode,
     TypeLoaderMap,
 )
 from dature.validators.root import RootPredicate
@@ -31,6 +32,7 @@ def load[T](
     schema: type[T],
     cache: bool | timedelta | None = None,
     cache_engine: bool | None = None,
+    stale_on_error: StaleOnErrorMode | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -55,6 +57,7 @@ def load(
     schema: None = None,
     cache: bool | timedelta | None = None,
     cache_engine: bool | None = None,
+    stale_on_error: StaleOnErrorMode | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = "last_wins",
     field_merges: FieldMergeMap | None = None,
@@ -79,6 +82,7 @@ def load(  # noqa: PLR0913
     schema: type[Any] | None = None,
     cache: bool | timedelta | None = None,
     cache_engine: bool | None = None,
+    stale_on_error: StaleOnErrorMode | None = None,
     debug: bool | None = None,
     strategy: MergeStrategyName | SourceMergeStrategy = _DEFAULT_STRATEGY,
     field_merges: FieldMergeMap | None = None,
@@ -119,6 +123,7 @@ def load(  # noqa: PLR0913
     common_kwargs: dict[str, Any] = {
         "cache": cache,
         "cache_engine": cache_engine,
+        "stale_on_error": stale_on_error,
         "debug": debug,
         "strategy": strategy,
         "field_merges": field_merges,
@@ -139,6 +144,8 @@ def load(  # noqa: PLR0913
     if schema is not None:
         # Function mode — throwaway Loader. No cache carries across calls.
         # To cache, construct ``Loader(...)`` explicitly and reuse it.
+        if stale_on_error is not None and stale_on_error != "raise":
+            logger.warning("stale_on_error has no effect in function mode — keep a Loader instance instead")
         return Loader(*sources, schema=schema, **common_kwargs).load()
 
     # Decorator mode — the Loader persists for the class lifetime.

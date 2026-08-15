@@ -11,6 +11,7 @@ from dature.type_aliases import (
     ExpandEnvVarsMode,
     MaskingMode,
     NestedResolveStrategy,
+    StaleOnErrorMode,
     SystemConfigDirsArg,
     TypeLoaderMap,
 )
@@ -76,6 +77,7 @@ def _default_system_config_dirs() -> dict[str, tuple[str, ...]]:
 class LoadingConfig:
     cache: bool | timedelta = True
     cache_engine: bool = False
+    stale_on_error: StaleOnErrorMode = "keep"
     debug: bool = False
     nested_resolve_strategy: NestedResolveStrategy = "flat"
     expand_env_vars: ExpandEnvVarsMode = "default"
@@ -224,6 +226,7 @@ class ErrorDisplayOptions(TypedDict, total=False):
 class LoadingOptions(TypedDict, total=False):
     cache: bool | timedelta
     cache_engine: bool
+    stale_on_error: StaleOnErrorMode
     debug: bool
     nested_resolve_strategy: NestedResolveStrategy
     expand_env_vars: ExpandEnvVarsMode

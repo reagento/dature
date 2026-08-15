@@ -54,6 +54,60 @@ Example with `cache=timedelta(minutes=15)`:
 
 The first load in a window has an effectively shortened TTL (up to one period less than the full duration). This is the standard cron-style trade-off and matches the intuitive "invalidate every N minutes" mental model.
 
+## `stale_on_error`: keeping the last good config
+
+When a TTL window expires (or `when=` routing changes), the next `.load()` reloads from sources.
+If that reload fails — a `Vault`/`Consul` outage, a YAML file rewritten mid-deploy — `stale_on_error`
+decides what happens to the config that was already loaded successfully:
+
+| Mode | Behavior on reload failure |
+|------|-----------------------------|
+| `"keep"` (default) | Return the previous config and **restart the TTL window** — a persistently broken source is not retried again until the window expires |
+| `"retry"` | Return the previous config but leave the TTL window as-is — the **next** call retries the reload immediately |
+| `"raise"` | Propagate the error (dature's original behavior, before `stale_on_error` existed) |
+
+=== "stale_on_error=\"keep\""
+
+    Reload fails → the previous config is returned and the TTL window restarts, so the broken
+    source is not retried until the new window expires too.
+
+    ```python
+    --8<-- "docs/examples/advanced/caching/advanced_caching_stale_on_error_keep.py"
+    ```
+
+=== "stale_on_error=\"retry\""
+
+    Reload fails → the previous config is returned but the TTL window is left as-is, so the
+    very next call retries the reload immediately.
+
+    ```python
+    --8<-- "docs/examples/advanced/caching/advanced_caching_stale_on_error_retry.py"
+    ```
+
+=== "stale_on_error=\"raise\""
+
+    Reload fails → the error propagates, same as dature's behavior before `stale_on_error` existed.
+
+    ```python
+    --8<-- "docs/examples/advanced/caching/advanced_caching_stale_on_error_raise.py"
+    ```
+
+    ```title="Error"
+    --8<-- "docs/examples/advanced/caching/advanced_caching_stale_on_error_raise.stderr"
+    ```
+
+Notes:
+
+- There is nothing to fall back to on the **first** load — a failure there always raises,
+  regardless of `stale_on_error`.
+- `stale_on_error` has no effect with `cache=False` (there is never a cached value to fall back to).
+- When `when=` routing changes (an env var flips which sources are enabled), the cache is cleared
+  before the reload attempt — a failure in that case always raises, since the stale value belongs
+  to a different set of sources.
+- Falling back to a stale value logs a `logging.WARNING` via the `"dature"` logger.
+- `stale_on_error=None` (the default) falls back to `configure(loading={"stale_on_error": ...})`,
+  same as `cache`/`cache_engine`.
+
 ## Function-mode caching: `Loader`
 
 `dature.load(src, schema=Cls)` is a **thin shortcut** that constructs a throwaway `Loader` and calls `.load()` once. Repeated `load(...)` calls **do not share a cache** — each call is a fresh load.

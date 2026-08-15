@@ -237,6 +237,38 @@ class TestLoadAsFunction:
         assert result.my_var == "from_env"
 
 
+class TestStaleOnErrorFunctionMode:
+    @pytest.mark.parametrize(
+        ("stale_on_error", "expect_warning"),
+        [
+            (None, False),
+            ("raise", False),
+            ("keep", True),
+            ("retry", True),
+        ],
+    )
+    def test_warns_when_effective(
+        self,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+        stale_on_error: str | None,
+        expect_warning: bool,
+    ) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"name": "test"}')
+
+        @dataclass
+        class Config:
+            name: str
+
+        with caplog.at_level("WARNING", logger="dature"):
+            load(JsonSource(file=json_file), schema=Config, stale_on_error=stale_on_error)
+
+        messages = [r.message for r in caplog.records if r.name == "dature"]
+        warning = "stale_on_error has no effect in function mode — keep a Loader instance instead"
+        assert (warning in messages) is expect_warning
+
+
 class TestFileNotFoundWithLoad:
     @pytest.mark.parametrize(
         "source_class",
