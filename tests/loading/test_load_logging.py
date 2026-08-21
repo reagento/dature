@@ -142,11 +142,29 @@ class TestLogFieldOrigins:
                 dataclass_name="Config",
                 field_origins=origins,
                 secret_paths=frozenset({"password"}),
-                masking=_NO_MASKING,
+                masking=_SECRETS_ONLY,
             )
 
         assert _messages(caplog, "Config") == [
             "[Config] Field 'password' = '<REDACTED>'  <-- source 0 (None)",
+        ]
+
+    def test_none_mode_keeps_secret_value_in_log(self, caplog: pytest.LogCaptureFixture) -> None:
+        """masking_mode="none" means no masking at all, even for a declared secret path."""
+        origins = (
+            FieldOrigin(key="password", value="hunter2", source_index=0, source_file=None, source_loader_type="mock"),
+        )
+
+        with caplog.at_level(logging.DEBUG, logger="dature"):
+            log_field_origins(
+                dataclass_name="Config",
+                field_origins=origins,
+                secret_paths=frozenset({"password"}),
+                masking=_NO_MASKING,
+            )
+
+        assert _messages(caplog, "Config") == [
+            "[Config] Field 'password' = 'hunter2'  <-- source 0 (None)",
         ]
 
     def test_non_secret_value_appears_in_log(self, caplog: pytest.LogCaptureFixture) -> None:

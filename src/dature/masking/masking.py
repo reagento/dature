@@ -33,12 +33,15 @@ def is_secret_path(
     """Return True if *field_path* should be treated as a secret.
 
     *masking* supplies the effective ``masking_mode`` and, when it is ``"secrets_only"``,
-    the heuristic secret-field-name patterns.
+    the heuristic secret-field-name patterns. ``"none"`` never treats anything as secret,
+    even an explicitly declared ``secret_paths`` entry.
     """
     match masking.masking_mode:
         case "all":
             return True
-        case "secrets_only" | "none":
+        case "none":
+            return False
+        case "secrets_only":
             pass
         case _ as unknown:
             msg = f"Unknown masking mode: {unknown!r}"
@@ -48,9 +51,7 @@ def is_secret_path(
         return True
     if secret_paths and canonical_name(path) in canonical_secret_paths(secret_paths):
         return True
-    return masking.masking_mode == "secrets_only" and matches_secret_name(
-        path.rpartition(".")[2], masking.secret_field_names
-    )
+    return matches_secret_name(path.rpartition(".")[2], masking.secret_field_names)
 
 
 def mask_json_value(

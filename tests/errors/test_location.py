@@ -6,6 +6,7 @@ from dature.errors import LineRange
 from dature.errors.location import ErrorContext, resolve_source_location
 
 _NO_MASKING = MaskingConfig(masking_mode="none")
+_SECRETS_ONLY = MaskingConfig(masking_mode="secrets_only")
 
 
 class TestResolveSourceLocation:
@@ -46,10 +47,22 @@ class TestResolveSourceLocation:
             dataclass_name="Config",
             source=EnvSource(prefix="APP_"),
             secret_paths=frozenset({"token"}),
-            masking=_NO_MASKING,
+            masking=_SECRETS_ONLY,
         )
         locs = resolve_source_location(["token"], ctx, file_content=None)
         assert locs[0].env_var_value is None
+
+    def test_env_source_none_mode_keeps_secret_value(self, monkeypatch):
+        """masking_mode="none" means no masking at all, even for a declared secret path."""
+        monkeypatch.setenv("APP_TOKEN", "hunter2")
+        ctx = ErrorContext(
+            dataclass_name="Config",
+            source=EnvSource(prefix="APP_"),
+            secret_paths=frozenset({"token"}),
+            masking=_NO_MASKING,
+        )
+        locs = resolve_source_location(["token"], ctx, file_content=None)
+        assert locs[0].env_var_value == "hunter2"
 
     def test_env_source_no_prefix(self):
         ctx = ErrorContext(
@@ -120,7 +133,7 @@ class TestResolveSourceLocation:
             dataclass_name="Config",
             source=JsonSource(file=config_file),
             secret_paths=frozenset({"password"}),
-            masking=_NO_MASKING,
+            masking=_SECRETS_ONLY,
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].line_content == ['"timeout": "30"']
@@ -133,10 +146,24 @@ class TestResolveSourceLocation:
             dataclass_name="Config",
             source=JsonSource(file=config_file),
             secret_paths=frozenset({"password"}),
-            masking=_NO_MASKING,
+            masking=_SECRETS_ONLY,
         )
         locs = resolve_source_location(["password"], ctx, file_content=content)
         assert locs[0].line_content == ['"password": "<REDACTED>",']
+
+    def test_filesource_none_mode_keeps_secret_field(self, tmp_path):
+        """masking_mode="none" means no masking at all, even for a declared secret path."""
+        content = '{\n  "password": "secret123",\n  "timeout": "30"\n}'
+        config_file = tmp_path / "config.json"
+        config_file.write_text(content)
+        ctx = ErrorContext(
+            dataclass_name="Config",
+            source=JsonSource(file=config_file),
+            secret_paths=frozenset({"password"}),
+            masking=_NO_MASKING,
+        )
+        locs = resolve_source_location(["password"], ctx, file_content=content)
+        assert locs[0].line_content == ['"password": "secret123",']
 
     def test_filesource_masks_line_when_secret_on_same_line(self, tmp_path):
         content = '{"password": "secret123", "timeout": "30"}'
@@ -146,7 +173,7 @@ class TestResolveSourceLocation:
             dataclass_name="Config",
             source=JsonSource(file=config_file),
             secret_paths=frozenset({"password"}),
-            masking=_NO_MASKING,
+            masking=_SECRETS_ONLY,
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].line_content == ['{"password": "<REDACTED>", "timeout": "30"}']
@@ -164,7 +191,7 @@ class TestResolveSourceLocation:
             dataclass_name="Config",
             source=JsonSource(file=config_file),
             secret_paths=frozenset({"secret_key"}),
-            masking=_NO_MASKING,
+            masking=_SECRETS_ONLY,
         )
         locs = resolve_source_location(["timeout"], ctx, file_content=content)
         assert locs[0].line_content == [f'{{"{raw_key}": "<REDACTED>", "timeout": "30"}}']

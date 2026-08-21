@@ -87,6 +87,7 @@ class TestIsSecretPath:
             ("api-token", frozenset(), "secrets_only", True),
             ("api-token", frozenset(), "none", False),
             ("host", frozenset(), "all", True),
+            ("db.secret_key", frozenset({"db.secret_key"}), "none", False),
         ],
         ids=[
             "kebab-leaf",
@@ -98,6 +99,7 @@ class TestIsSecretPath:
             "pattern-match-secrets-only",
             "pattern-no-match-mode-none",
             "all-mode-shortcircuits",
+            "explicit-path-mode-none",
         ],
     )
     def test_matching(
