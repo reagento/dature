@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from dature import JsonSource, Yaml11Source, configure, load, load_report
+from dature import Dature, JsonSource, Yaml11Source, configure, load, load_report
+from dature.config import MaskingConfig
 from dature.errors import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.fields.secret_str import SecretStr
@@ -20,6 +21,10 @@ from dature.masking.masking import (
 )
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.type_aliases import MaskingMode, NameStyle
+
+_SECRETS_ONLY = MaskingConfig(masking_mode="secrets_only")
+_NONE_MASKING = MaskingConfig(masking_mode="none")
+_BOGUS_MASKING = MaskingConfig(masking_mode="bogus")
 
 
 class TestMaskValue:
@@ -38,11 +43,10 @@ class TestMaskValue:
         ],
     )
     def test_mask_value(self, input_value, expected):
-        assert mask_value(input_value) == expected
+        assert mask_value(input_value, MaskingConfig()) == expected
 
 
 class TestMaskValueCustomConfig:
-    @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
         ("mask", "visible_prefix", "visible_suffix", "input_value", "expected"),
         [
@@ -66,14 +70,8 @@ class TestMaskValueCustomConfig:
         input_value: str,
         expected: str,
     ):
-        configure(
-            masking={
-                "mask": mask,
-                "visible_prefix": visible_prefix,
-                "visible_suffix": visible_suffix,
-            },
-        )
-        assert mask_value(input_value) == expected
+        masking = MaskingConfig(mask=mask, visible_prefix=visible_prefix, visible_suffix=visible_suffix)
+        assert mask_value(input_value, masking) == expected
 
 
 class TestIsSecretPath:
@@ -89,6 +87,7 @@ class TestIsSecretPath:
             ("api-token", frozenset(), "secrets_only", True),
             ("api-token", frozenset(), "none", False),
             ("host", frozenset(), "all", True),
+            ("db.secret_key", frozenset({"db.secret_key"}), "none", False),
         ],
         ids=[
             "kebab-leaf",
@@ -100,6 +99,7 @@ class TestIsSecretPath:
             "pattern-match-secrets-only",
             "pattern-no-match-mode-none",
             "all-mode-shortcircuits",
+            "explicit-path-mode-none",
         ],
     )
     def test_matching(
@@ -109,114 +109,114 @@ class TestIsSecretPath:
         masking_mode: MaskingMode,
         expected: bool,
     ) -> None:
-        assert is_secret_path(field_path, secret_paths=secret_paths, masking_mode=masking_mode) is expected
+        masking = MaskingConfig(masking_mode=masking_mode)
+        assert is_secret_path(field_path, secret_paths=secret_paths, masking=masking) is expected
 
 
 class TestUnknownMaskingMode:
     def test_is_secret_path_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
-            is_secret_path("host", secret_paths=frozenset(), masking_mode="bogus")
+            is_secret_path("host", secret_paths=frozenset(), masking=_BOGUS_MASKING)
 
     def test_mask_json_value_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
-            mask_json_value({"host": "x"}, secret_paths=frozenset(), masking_mode="bogus")
+            mask_json_value({"host": "x"}, secret_paths=frozenset(), masking=_BOGUS_MASKING)
 
     def test_mask_field_origins_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
-            mask_field_origins((), secret_paths=frozenset(), masking_mode="bogus")
+            mask_field_origins((), secret_paths=frozenset(), masking=_BOGUS_MASKING)
 
     def test_secret_key_matcher_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown masking mode: 'bogus'"):
-            _secret_key_matcher(frozenset(), "bogus")
+            _secret_key_matcher(frozenset(), _BOGUS_MASKING)
 
 
 class TestMaskJsonValue:
-    def test_mask_secret_string(self):
-        data = {"password": "my_secret_123", "host": "production"}
-        secret_paths = frozenset({"password"})
-        result = mask_json_value(data, secret_paths=secret_paths)
-        assert result["password"] == "<REDACTED>"
-        assert result["host"] == "production"
-
-    def test_mask_nested_secret(self):
-        data = {"database": {"password": "secret123", "host": "production"}}
-        secret_paths = frozenset({"database.password"})
-        result = mask_json_value(data, secret_paths=secret_paths)
-        assert result["database"]["password"] == "<REDACTED>"
-        assert result["database"]["host"] == "production"
-
-    def test_mask_non_string_value(self):
-        data = {"token": 123456}
-        secret_paths = frozenset({"token"})
-        result = mask_json_value(data, secret_paths=secret_paths)
-        assert result["token"] == "<REDACTED>"
-
-    def test_list_in_data(self):
-        data = {"hosts": ["a", "b"], "password": "secret"}
-        secret_paths = frozenset({"password"})
-        result = mask_json_value(data, secret_paths=secret_paths)
-        assert result["hosts"] == ["a", "b"]
-        assert result["password"] == "<REDACTED>"
-
-    def test_heuristic_masking(self):
-        data = {"normal_field": "aB3xK9mZ"}
-        secret_paths: frozenset[str] = frozenset()
-        result = mask_json_value(data, secret_paths=secret_paths)
-        assert result["normal_field"] == "<REDACTED>"
-
-    def test_no_masking_without_heuristic(self):
-        with patch("dature.masking.masking._heuristic_detector", None):
-            data = {"field": "some_normal_value"}
-            secret_paths: frozenset[str] = frozenset()
-            result = mask_json_value(data, secret_paths=secret_paths)
-            assert result["field"] == "some_normal_value"
-
-    def test_empty_secret_paths(self):
-        data = {"host": "production", "port": 8080}
-        result = mask_json_value(data, secret_paths=frozenset())
-        assert result == data
-
     @pytest.mark.parametrize(
-        ("data", "expected"),
+        ("data", "secret_paths", "masking", "expected"),
         [
-            ("hello", "hello"),
-            (42, 42),
-            (None, None),
+            (
+                {"password": "my_secret_123", "host": "production"},
+                frozenset({"password"}),
+                _SECRETS_ONLY,
+                {"password": "<REDACTED>", "host": "production"},
+            ),
+            (
+                {"database": {"password": "secret123", "host": "production"}},
+                frozenset({"database.password"}),
+                _SECRETS_ONLY,
+                {"database": {"password": "<REDACTED>", "host": "production"}},
+            ),
+            (
+                {"token": 123456},
+                frozenset({"token"}),
+                _SECRETS_ONLY,
+                {"token": "<REDACTED>"},
+            ),
+            (
+                {"hosts": ["a", "b"], "password": "secret"},
+                frozenset({"password"}),
+                _SECRETS_ONLY,
+                {"hosts": ["a", "b"], "password": "<REDACTED>"},
+            ),
+            (
+                {"normal_field": "aB3xK9mZ"},
+                frozenset(),
+                _SECRETS_ONLY,
+                {"normal_field": "<REDACTED>"},
+            ),
+            (
+                {"host": "production", "port": 8080},
+                frozenset(),
+                _SECRETS_ONLY,
+                {"host": "production", "port": 8080},
+            ),
+            ("hello", frozenset(), _SECRETS_ONLY, "hello"),
+            (42, frozenset(), _SECRETS_ONLY, 42),
+            (None, frozenset(), _SECRETS_ONLY, None),
+            (
+                {"credential": {"a": {"b": "deepleak"}}},
+                frozenset({"credential"}),
+                _SECRETS_ONLY,
+                {"credential": {"a": {"b": "<REDACTED>"}}},
+            ),
+            (
+                {"credential": [{"user": "admin", "value": "topsecretvalue"}]},
+                frozenset({"credential"}),
+                _SECRETS_ONLY,
+                {"credential": [{"user": "<REDACTED>", "value": "<REDACTED>"}]},
+            ),
+            (
+                {"credential": [1, 2]},
+                frozenset({"credential"}),
+                _SECRETS_ONLY,
+                {"credential": ["<REDACTED>", "<REDACTED>"]},
+            ),
+            (
+                {"port": 8080},
+                frozenset(),
+                MaskingConfig(),
+                {"port": "<REDACTED>"},
+            ),
+        ],
+        ids=[
+            "mask-secret-string",
+            "mask-nested-secret",
+            "mask-non-string-value",
+            "list-in-data",
+            "heuristic-masking",
+            "empty-secret-paths-no-match",
+            "non-dict-str",
+            "non-dict-int",
+            "non-dict-none",
+            "secret-path-dict-value-masks-nested-leaves",
+            "secret-path-list-of-dicts-masks-nested-leaves",
+            "secret-path-list-of-numbers-masks-every-element",
+            "masking-mode-all-masks-numbers",
         ],
     )
-    def test_non_dict_data(self, data, expected):
-        assert mask_json_value(data, secret_paths=frozenset()) == expected
-
-    def test_secret_path_dict_value_masks_all_nested_leaves(self):
-        data = {"credential": {"a": {"b": "deepleak"}}}
-        secret_paths = frozenset({"credential"})
-
-        result = mask_json_value(data, secret_paths=secret_paths, masking_mode="secrets_only")
-
-        assert result == {"credential": {"a": {"b": "<REDACTED>"}}}
-
-    def test_secret_path_list_of_dicts_masks_all_nested_leaves(self):
-        data = {"credential": [{"user": "admin", "value": "topsecretvalue"}]}
-        secret_paths = frozenset({"credential"})
-
-        result = mask_json_value(data, secret_paths=secret_paths, masking_mode="secrets_only")
-
-        assert result == {"credential": [{"user": "<REDACTED>", "value": "<REDACTED>"}]}
-
-    def test_secret_path_list_of_numbers_masks_every_element(self):
-        data = {"credential": [1, 2]}
-        secret_paths = frozenset({"credential"})
-
-        result = mask_json_value(data, secret_paths=secret_paths, masking_mode="secrets_only")
-
-        assert result == {"credential": ["<REDACTED>", "<REDACTED>"]}
-
-    def test_masking_mode_all_masks_numbers(self):
-        data = {"port": 8080}
-
-        result = mask_json_value(data, secret_paths=frozenset(), masking_mode="all")
-
-        assert result == {"port": "<REDACTED>"}
+    def test_mask_json_value_cases(self, data, secret_paths, masking, expected):
+        assert mask_json_value(data, secret_paths=secret_paths, masking=masking) == expected
 
     def test_secret_path_nested_leak_end_to_end(self, tmp_path: Path, caplog: pytest.LogCaptureFixture):
         json_file = tmp_path / "config.json"
@@ -238,41 +238,41 @@ class TestMaskJsonValue:
         assert messages == ["[Cfg] Loaded data: {'auth': {'user': '<REDACTED>', 'value': '<REDACTED>'}}"]
 
 
-class TestMaskFieldOrigins:
-    def test_mask_secret_origin(self):
-        origins = (
-            FieldOrigin(
-                key="password",
-                value="secret123",
-                source_index=0,
-                source_file="config.yaml",
-                source_loader_type="yaml",
-            ),
-            FieldOrigin(
-                key="host",
-                value="production",
-                source_index=0,
-                source_file="config.yaml",
-                source_loader_type="yaml",
-            ),
-        )
-        secret_paths = frozenset({"password"})
-        result = mask_field_origins(origins, secret_paths=secret_paths)
-        assert result[0].value == "<REDACTED>"
-        assert result[1].value == "production"
+def _origin(key: str, value: str) -> FieldOrigin:
+    return FieldOrigin(
+        key=key,
+        value=value,
+        source_index=0,
+        source_file="config.yaml",
+        source_loader_type="yaml",
+    )
 
-    def test_no_secret_origins(self):
-        origins = (
-            FieldOrigin(
-                key="host",
-                value="production",
-                source_index=0,
-                source_file="config.yaml",
-                source_loader_type="yaml",
+
+class TestMaskFieldOrigins:
+    @pytest.mark.parametrize(
+        ("origins", "secret_paths", "expected_values"),
+        [
+            (
+                (_origin("password", "secret123"), _origin("host", "production")),
+                frozenset({"password"}),
+                ("<REDACTED>", "production"),
             ),
-        )
-        result = mask_field_origins(origins, secret_paths=frozenset())
-        assert result[0].value == "production"
+            (
+                (_origin("host", "production"),),
+                frozenset(),
+                ("production",),
+            ),
+        ],
+        ids=["mask-secret-origin", "no-secret-origins"],
+    )
+    def test_mask_field_origins(
+        self,
+        origins: tuple[FieldOrigin, ...],
+        secret_paths: frozenset[str],
+        expected_values: tuple[str, ...],
+    ) -> None:
+        result = mask_field_origins(origins, secret_paths=secret_paths, masking=_SECRETS_ONLY)
+        assert tuple(r.value for r in result) == expected_values
 
 
 class TestMaskSourceEntries:
@@ -286,7 +286,7 @@ class TestMaskSourceEntries:
             ),
         )
         secret_paths = frozenset({"password"})
-        result = mask_source_entries(entries, secret_paths=secret_paths)
+        result = mask_source_entries(entries, secret_paths=secret_paths, masking=_SECRETS_ONLY)
         assert result[0].raw_data["password"] == "<REDACTED>"
         assert result[0].raw_data["host"] == "production"
 
@@ -348,19 +348,19 @@ class TestMaskEnvLine:
         ],
     )
     def test_mask_env_line(self, line, expected):
-        assert mask_env_line(line) == expected
+        assert mask_env_line(line, masking=MaskingConfig()) == expected
 
     def test_mask_env_line_secrets_only_masks_named_leaf(self):
         line = '{"password": "secret123", "host": "production"}'
 
-        result = mask_env_line(line, masking_mode="secrets_only", secret_leaf_names=frozenset({"password"}))
+        result = mask_env_line(line, masking=_SECRETS_ONLY, secret_leaf_names=frozenset({"password"}))
 
         assert result == '{"password": "<REDACTED>", "host": "production"}'
 
     def test_mask_env_line_secret_container_masks_nested_leaves(self):
         line = '{"credential": {"user": "admin", "value": "leak"}}'
 
-        result = mask_env_line(line, masking_mode="secrets_only", secret_leaf_names=frozenset({"credential"}))
+        result = mask_env_line(line, masking=_SECRETS_ONLY, secret_leaf_names=frozenset({"credential"}))
 
         assert result == '{"credential": {"user": "<REDACTED>", "value": "<REDACTED>"}}'
 
@@ -372,16 +372,36 @@ class TestMaskEnvLine:
     def test_secrets_only_masks_styled_leaf(self, raw_key: str) -> None:
         line = f'{{"{raw_key}": "s", "host": "production"}}'
 
-        result = mask_env_line(line, masking_mode="secrets_only", secret_leaf_names=frozenset({"secretkey"}))
+        result = mask_env_line(line, masking=_SECRETS_ONLY, secret_leaf_names=frozenset({"secretkey"}))
 
         assert result == f'{{"{raw_key}": "<REDACTED>", "host": "production"}}'
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "PASSWORD=supersecret",
+            "  key: value123",
+            "random_line",
+            '{"password": "secret123", "host": "production"}',
+            'VAR={"foo": "bar", "baz": 42}',
+        ],
+    )
+    def test_mask_env_line_none_mode_leaves_line_unmasked(self, line: str) -> None:
+        assert mask_env_line(line, masking=_NONE_MASKING) == line
+
+    def test_mask_env_line_none_mode_ignores_secret_leaf_names(self) -> None:
+        line = '{"password": "secret123", "host": "production"}'
+
+        result = mask_env_line(line, masking=_NONE_MASKING, secret_leaf_names=frozenset({"password"}))
+
+        assert result == line
 
 
 class TestGracefulDegradation:
     def test_no_masking_without_detector(self):
         with patch("dature.masking.masking._heuristic_detector", None):
             data = {"field": "aB3xK9mZ_looks_random"}
-            result = mask_json_value(data, secret_paths=frozenset())
+            result = mask_json_value(data, secret_paths=frozenset(), masking=_SECRETS_ONLY)
             assert result["field"] == "aB3xK9mZ_looks_random"
 
 
@@ -605,16 +625,16 @@ class TestSecretMaskingIntegration:
 
     @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
-        ("mask_secrets", "expected_password"),
+        ("masking_mode", "expected_password"),
         [
-            (True, _MASKED_SECRET),
-            (False, _SECRET_VALUE),
+            ("secrets_only", _MASKED_SECRET),
+            ("none", _SECRET_VALUE),
         ],
     )
-    def test_function_mode_report_respects_global_mask_secrets(
+    def test_function_mode_report_respects_global_masking_mode(
         self,
         tmp_path: Path,
-        mask_secrets: bool,
+        masking_mode: str,
         expected_password: str,
     ):
         json_file = tmp_path / "config.json"
@@ -625,8 +645,7 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        with pytest.warns(DeprecationWarning, match="mask_secrets"):
-            configure(masking={"mask_secrets": mask_secrets})
+        configure(masking={"masking_mode": masking_mode})
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = load_report(result)
@@ -637,16 +656,16 @@ class TestSecretMaskingIntegration:
 
     @pytest.mark.usefixtures("_reset_config")
     @pytest.mark.parametrize(
-        ("mask_secrets", "expected_password"),
+        ("masking_mode", "expected_password"),
         [
-            (True, _MASKED_SECRET),
-            (False, _SECRET_VALUE),
+            ("secrets_only", _MASKED_SECRET),
+            ("none", _SECRET_VALUE),
         ],
     )
-    def test_function_mode_error_respects_global_mask_secrets(
+    def test_function_mode_error_respects_global_masking_mode(
         self,
         tmp_path: Path,
-        mask_secrets: bool,
+        masking_mode: str,
         expected_password: str,
     ):
         json_file = tmp_path / "config.json"
@@ -657,8 +676,7 @@ class TestSecretMaskingIntegration:
             password: str
             port: int
 
-        with pytest.warns(DeprecationWarning, match="mask_secrets"):
-            configure(masking={"mask_secrets": mask_secrets})
+        configure(masking={"masking_mode": masking_mode})
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(JsonSource(file=json_file), schema=Cfg)
@@ -829,3 +847,62 @@ class TestLoadLevelMaskingParams:
         report = load_report(result)
         assert report is not None
         assert report.merged_data == {"my_token": _MASKED_SECRET, "host": _PUBLIC_VALUE}
+
+
+class TestMaskingConfigLeaksRegression:
+    """Regression tests for the dual masking_mode/masking plumbing bugs.
+
+    Both bugs only surfaced because a real ``masking`` was silently dropped in favour of the
+    process-global config while a bare ``masking_mode`` string kept flowing. They must be
+    reproduced via ``Dature(masking={...})`` rather than ``configure()`` — ``configure()``
+    sets the process-global default, which the buggy code paths read from anyway, so it
+    would pass even with the bug present.
+    """
+
+    def test_multi_source_debug_log_uses_call_level_masking(self, tmp_path: Path, caplog: pytest.LogCaptureFixture):
+        # Bug A: LoadCtx.load() forwarded masking_mode but not the real masking config to
+        # mask_json_value(), so multi-source debug logs fell back to process-global masking.
+        defaults = tmp_path / "defaults.json"
+        defaults.write_text(f'{{"password": "{_SECRET_VALUE}"}}')
+        overrides = tmp_path / "overrides.json"
+        overrides.write_text(f'{{"host": "{_PUBLIC_VALUE}"}}')
+
+        @dataclass
+        class Cfg:
+            password: str
+            host: str
+
+        conf = Dature(masking={"mask": "[MASKED]", "masking_mode": "all"})
+
+        with caplog.at_level("DEBUG", logger="dature"):
+            conf.load(JsonSource(file=defaults), JsonSource(file=overrides), schema=Cfg, debug=True)
+
+        raw_data_lines = [r.getMessage() for r in caplog.records if "raw data" in r.getMessage()]
+        assert raw_data_lines
+        assert all("[MASKED]" in line for line in raw_data_lines)
+
+    def test_decorator_revalidation_error_uses_call_level_masking(self, tmp_path: Path):
+        # Bug B: build_revalidation() accepted `masking` but built its ErrorContext from a
+        # resolved masking_mode string instead, dropping the real config on the floor. This
+        # only shows up in multi-source mode — single-source keeps the load's own eager
+        # error_ctx, so build_revalidation's ctx is only authoritative for >1 source.
+        defaults = tmp_path / "defaults.json"
+        defaults.write_text('{"password": "allowed"}')
+        overrides = tmp_path / "overrides.json"
+        overrides.write_text('{"port": 1}')
+
+        conf = Dature(masking={"mask": "[MASKED]", "masking_mode": "all"})
+
+        @conf.load(JsonSource(file=defaults), JsonSource(file=overrides))
+        @dataclass
+        class Settings:
+            password: Literal["allowed"]
+            port: int
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            Settings(password=_SECRET_VALUE)
+
+        message = str(exc_info.value.exceptions[0])
+        assert "[MASKED]" in message
+        assert "<REDACTED>" not in message
+        assert _SECRET_VALUE not in message

@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from adaptix import Retort
 
+from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.errors.exceptions import DatureConfigError, DatureError, FieldLoadError
 from dature.errors.location import (
     ErrorContext,
@@ -24,7 +25,7 @@ from dature.errors.location import (
 from dature.loading.context import apply_skip_invalid, build_error_ctx
 from dature.protocols import DataclassInstance
 from dature.sources.protocol import FileSourceProtocol, SourceProtocol
-from dature.type_aliases import JSONValue, LoadRawResult, MaskingMode, SkipFieldsInvalid
+from dature.type_aliases import JSONValue, LoadRawResult, SkipFieldsInvalid
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +48,8 @@ def prepare_loaded_source(  # noqa: PLR0913
     base_error_ctx: ErrorContext,
     skip_value: "SkipFieldsInvalid",
     secret_paths: frozenset[str],
-    masking_mode: MaskingMode,
+    masking: MaskingConfig,
+    error_display: ErrorDisplayConfig,
     log_prefix: str,
     probe_retort: Retort | None,
 ) -> PreparedSource:
@@ -56,6 +58,8 @@ def prepare_loaded_source(  # noqa: PLR0913
     Handles: nested_conflicts error_ctx rebuild, file_content read,
     skip_field_if_invalid filtering, and SkippedFieldSource accumulation.
     Broken-source handling, caching, and LoadReport building stay at call sites.
+    *masking* and *error_display* are forwarded to the rebuilt error context when
+    nested_conflicts are present.
     """
     raw = load_result.data
     loaded_data = load_result.loaded_data
@@ -65,8 +69,9 @@ def prepare_loaded_source(  # noqa: PLR0913
             source,
             dataclass_name,
             secret_paths=secret_paths,
-            masking_mode=masking_mode,
             nested_conflicts=load_result.nested_conflicts,
+            masking=masking,
+            error_display=error_display,
         )
     if isinstance(source, FileSourceProtocol):
         file_content = read_file_content(source.file_path_for_errors(), source.encoding)
@@ -130,6 +135,7 @@ def enrich_skipped_errors(
                 message=f"Missing required field (invalid in: {source_reprs})",
                 input_value=exc.input_value,
                 locations=locations,
+                error_display=sources[0].error_ctx.error_display,
             ),
         )
     return DatureConfigError(err.dataclass_name, updated)

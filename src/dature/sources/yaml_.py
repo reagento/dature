@@ -64,7 +64,7 @@ class _BaseYamlSource(FileSource, abc.ABC):
             return cast("JSONValue", yaml.load(file))
 
     def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
-        return _build_yaml_line_map(content, Version(*self._yaml_version()))
+        return build_yaml_line_map(content, Version(*self._yaml_version()))
 
 
 @dataclass(kw_only=True, repr=False)
@@ -99,7 +99,7 @@ class Yaml12Source(_BaseYamlSource):
         ]
 
 
-def _build_yaml_line_map(content: str, yaml_version: Version) -> dict[tuple[str, ...], LineRange]:
+def build_yaml_line_map(content: str, yaml_version: Version) -> dict[tuple[str, ...], LineRange]:
     require_dep("ruamel.yaml", "yaml")
     from ruamel.yaml import YAML  # noqa: PLC0415
 

@@ -100,7 +100,7 @@ def _process_nested_field_path(
         )
 
 
-def _build_alias_map(
+def build_alias_map(
     field_mapping: FieldMapping,
 ) -> dict[type[DataclassInstance] | str, list[AliasMapEntry]]:
     alias_map: dict[type[DataclassInstance] | str, list[AliasMapEntry]] = {}
@@ -170,7 +170,7 @@ def _apply_cross_level_entry(result: dict[str, JSONValue], entry: CrossLevelEntr
             return
 
 
-def _transform_dict(data: JSONValue, entries: list[AliasMapEntry]) -> JSONValue:
+def transform_dict(data: JSONValue, entries: list[AliasMapEntry]) -> JSONValue:
     if not isinstance(data, dict):
         return data
 
@@ -201,7 +201,7 @@ def _get_entries_for_type(
 
 class AliasProvider(Provider):
     def __init__(self, field_mapping: FieldMapping) -> None:
-        self._alias_map = _build_alias_map(field_mapping)
+        self._alias_map = build_alias_map(field_mapping)
 
     def _wrap_handler(
         self,
@@ -222,7 +222,7 @@ class AliasProvider(Provider):
             return next_handler
 
         def aliased_handler(data: JSONValue) -> JSONValue:
-            transformed = _transform_dict(data, entries)
+            transformed = transform_dict(data, entries)
             return next_handler(transformed)
 
         return aliased_handler

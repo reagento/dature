@@ -173,7 +173,7 @@ disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-retur
 
 [[tool.mypy.overrides]]
 module = "docs.examples.*"
-disable_error_code = ["arg-type", "call-overload", "dict-item"]
+disable_error_code = ["arg-type", "call-overload", "dict-item", "call-arg"]
 
 [[tool.mypy.overrides]]
 module = "benchmarks.*"

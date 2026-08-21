@@ -126,7 +126,7 @@ def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
     return result
 
 
-def _expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, list[MissingEnvVarError]]:
+def expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, list[MissingEnvVarError]]:
     """Expand string and return (result, errors) without raising."""
     match mode:
         case "disabled":
@@ -216,7 +216,7 @@ def _expand_recursive_collect(
     errors: list[MissingEnvVarError],
 ) -> JSONValue:
     if isinstance(data, str):
-        result, errs = _expand_string_collect(data, mode=mode)
+        result, errs = expand_string_collect(data, mode=mode)
         for err in errs:
             err.field_path = list(path)
         errors.extend(errs)

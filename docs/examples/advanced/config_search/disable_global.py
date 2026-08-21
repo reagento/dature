@@ -20,14 +20,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
     config_file = tmpdir_path / "config.yaml"
     config_file.write_text((SHARED_DIR / "common_app.yaml").read_text())
 
-    dature.configure(
+    conf = dature.Dature(
         loading={
             "search_system_paths": False,
             "system_config_dirs": (tmpdir_path,),
         },
     )
 
-    dature.load(
+    conf.load(
         dature.Yaml12Source(file="config.yaml"),
         schema=Config,
     )  # Failed

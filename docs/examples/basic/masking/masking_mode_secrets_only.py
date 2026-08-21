@@ -15,9 +15,9 @@ class Config:
     host: Literal["production", "staging"]
 
 
-dature.configure(masking={"masking_mode": "secrets_only"})
+conf = dature.Dature(masking={"masking_mode": "secrets_only"})
 
-dature.load(
+conf.load(
     dature.Yaml12Source(file=SOURCES_DIR / "masking_mode.yaml"),
     schema=Config,
 )

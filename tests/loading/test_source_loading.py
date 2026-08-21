@@ -7,6 +7,7 @@ from textwrap import dedent
 import pytest
 
 from dature import EnvFileSource, IniSource, JsonSource, Toml11Source, Yaml12Source, load
+from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.errors import DatureConfigError, EnvVarExpandError
 from dature.loading.context import build_error_ctx
 from dature.loading.source_loading import prepare_loaded_source
@@ -358,6 +359,7 @@ class TestMergeExpandEnvVars:
 
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
+_DEFAULT_DISPLAY = ErrorDisplayConfig()
 
 
 @dataclass
@@ -461,7 +463,8 @@ class TestPrepareLoadedSource:
             name: str
 
         source = JsonSource(file=json_file)
-        error_ctx = build_error_ctx(source, "Cfg")
+        masking = MaskingConfig(masking_mode="none")
+        error_ctx = build_error_ctx(source, "Cfg", masking=masking, error_display=_DEFAULT_DISPLAY)
         load_result = LoadRawResult(data=raw_data, loaded_data=raw_data)
 
         result = prepare_loaded_source(
@@ -472,7 +475,8 @@ class TestPrepareLoadedSource:
             base_error_ctx=error_ctx,
             skip_value=skip_value,
             secret_paths=frozenset(),
-            masking_mode="none",
+            masking=masking,
+            error_display=_DEFAULT_DISPLAY,
             log_prefix="[Cfg]",
             probe_retort=None,
         )

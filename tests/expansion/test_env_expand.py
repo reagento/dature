@@ -1,7 +1,7 @@
 import pytest
 
 from dature.errors import EnvVarExpandError
-from dature.expansion.env_expand import _expand_string_collect, expand_env_vars, expand_string
+from dature.expansion.env_expand import expand_env_vars, expand_string, expand_string_collect
 from dature.type_aliases import JSONValue
 
 
@@ -340,7 +340,7 @@ class TestUnknownExpandEnvVarsMode:
 
     def test_expand_string_collect_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown expand_env_vars mode: 'bogus'"):
-            _expand_string_collect("$VAR", mode="bogus")
+            expand_string_collect("$VAR", mode="bogus")
 
 
 class TestCrossRefAwareness:

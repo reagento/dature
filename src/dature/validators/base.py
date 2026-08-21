@@ -162,7 +162,7 @@ def create_metadata_validator_providers(
     return providers
 
 
-def _validate_root_validators(root_validators: Iterable[Any]) -> tuple[RootPredicate, ...]:
+def validate_root_validators(root_validators: Iterable[Any]) -> tuple[RootPredicate, ...]:
     """Validate *root_validators* and return it as a typed tuple.
 
     Raises ``TypeError`` with a human-readable message for the common mistakes:
@@ -201,7 +201,7 @@ def create_root_validator_providers(
 ) -> list[Provider]:
     return [
         validator(P[schema], rp.get_validator_func(), rp.get_error_message())
-        for rp in _validate_root_validators(root_validators)
+        for rp in validate_root_validators(root_validators)
     ]
 
 

@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 
 from dature import JsonSource, Toml11Source, Yaml12Source, configure, load
-from dature.errors import CaretSpan, DatureConfigError, FieldLoadError, LineRange, SourceLocation
+from dature.config import ErrorDisplayConfig
+from dature.errors import CaretSpan, DatureConfigError, FieldLoadError, LineRange, MergeConflictError, SourceLocation
+from dature.instance import Dature
 
 
 class TestLineTruncation:
@@ -506,3 +508,144 @@ class TestNoFilePathNoEnvVarLocation:
             "  [port]  invalid literal for int() with base 10: 'not_a_number'\n"
             "   ├── http://c:8500/v1/kv/myapp: port = not_a_number"
         )
+
+
+class TestDefaultErrorDisplayFallback:
+    def test_field_load_error_without_error_display_renders_80_3(self) -> None:
+        """A FieldLoadError built without error_display still falls back to 80/3 (contract, not accident)."""
+        errors = [
+            FieldLoadError(
+                field_path=["timeout"],
+                message="Expected int, got str",
+                input_value="30",
+                locations=[
+                    SourceLocation(
+                        location_label="FILE",
+                        file_path=Path("config.toml"),
+                        line_range=LineRange(start=2, end=2),
+                        line_content=["b" * 81],
+                        env_var_name=None,
+                    ),
+                ],
+            ),
+        ]
+        exc = DatureConfigError("Config", errors)
+        assert str(exc.exceptions[0]) == (
+            f"  [timeout]  Expected int, got str\n   ├── {'b' * 77}...\n   └── FILE 'config.toml', line 2"
+        )
+
+
+class TestPerInstanceErrorDisplay:
+    def test_two_instances_render_same_failure_differently(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text(f'{{"port": "{"x" * 100}"}}')
+
+        @dataclass
+        class Config:
+            port: int
+
+        narrow_conf = Dature(masking={"masking_mode": "none"})
+        wide_conf = Dature(masking={"masking_mode": "none"}, error_display={"max_line_length": 200})
+
+        with pytest.raises(DatureConfigError) as narrow_exc:
+            narrow_conf.load(JsonSource(file=json_file), schema=Config)
+        with pytest.raises(DatureConfigError) as wide_exc:
+            wide_conf.load(JsonSource(file=json_file), schema=Config)
+
+        narrow_line = str(narrow_exc.value.exceptions[0]).splitlines()[1]
+        wide_line = str(wide_exc.value.exceptions[0]).splitlines()[1]
+        assert narrow_line.strip().endswith("...")
+        assert not wide_line.strip().endswith("...")
+
+    def test_max_visible_lines_override(self, tmp_path: Path) -> None:
+        yaml_file = tmp_path / "config.yaml"
+        yaml_file.write_text("db:\n  host: localhost\n  port: abc\n")
+
+        @dataclass
+        class Config:
+            db: int
+
+        conf = Dature(masking={"masking_mode": "none"}, error_display={"max_visible_lines": 1})
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            conf.load(Yaml12Source(file=yaml_file), schema=Config)
+
+        assert str(exc_info.value.exceptions[0]) == (
+            "  [db]  int() argument must be a string, a bytes-like object or a real number, not 'dict'\n"
+            "   ├── ...\n"
+            f"   └── FILE '{yaml_file}', line 1-3"
+        )
+
+    def test_raise_on_conflict_uses_instance_error_display(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.json"
+        a.write_text(f'{{\n  "host": "{"a" * 40}"\n}}')
+
+        b = tmp_path / "b.json"
+        b.write_text(f'{{\n  "host": "{"b" * 40}"\n}}')
+
+        @dataclass
+        class Config:
+            host: str
+
+        conf = Dature(masking={"masking_mode": "none"}, error_display={"max_line_length": 20})
+
+        with pytest.raises(MergeConflictError) as exc_info:
+            conf.load(JsonSource(file=a), JsonSource(file=b), schema=Config, strategy="raise_on_conflict")
+
+        assert str(exc_info.value.exceptions[0]) == (
+            "  [host]  Conflicting values in multiple sources\n"
+            f'   ├── "host": "{"a" * 8}...\n'
+            "   │           ^^^^^^^^^\n"
+            f"   └── FILE '{a}', line 2\n"
+            f'   ├── "host": "{"b" * 8}...\n'
+            "   │           ^^^^^^^^^\n"
+            f"   └── FILE '{b}', line 2"
+        )
+
+    def test_except_star_preserves_leaf_error_display(self, tmp_path: Path) -> None:
+        """derive() rebuilds only the group wrapper — leaves (and their error_display) survive except*."""
+        json_file = tmp_path / "config.json"
+        json_file.write_text(f'{{"port": "{"x" * 100}"}}')
+
+        @dataclass
+        class Config:
+            port: int
+
+        conf = Dature(masking={"masking_mode": "none"}, error_display={"max_line_length": 200})
+
+        matched: ExceptionGroup[FieldLoadError] | None = None
+        try:
+            conf.load(JsonSource(file=json_file), schema=Config)
+        except* FieldLoadError as eg:
+            matched = eg
+
+        assert matched is not None
+        rendered = str(matched.exceptions[0])
+        assert not rendered.splitlines()[1].strip().endswith("...")
+
+
+class TestDegenerateWidths:
+    @pytest.mark.parametrize("max_line_length", [0, 1, 3, 4])
+    def test_truncated_line_never_longer_than_input(self, max_line_length: int) -> None:
+        line = "hello"
+        errors = [
+            FieldLoadError(
+                field_path=["field"],
+                message="bad",
+                input_value=line,
+                locations=[
+                    SourceLocation(
+                        location_label="FILE",
+                        file_path=Path("config.toml"),
+                        line_range=LineRange(start=1, end=1),
+                        line_content=[line],
+                        env_var_name=None,
+                    ),
+                ],
+                error_display=ErrorDisplayConfig(max_line_length=max_line_length),
+            ),
+        ]
+        exc = DatureConfigError("Config", errors)
+        rendered = str(exc.exceptions[0])
+        content_line = rendered.splitlines()[1].split("├── ", 1)[-1]
+        assert len(content_line) <= len(line)

@@ -1,11 +1,12 @@
 import threading
 import warnings
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import dataclass, field, replace
 from datetime import timedelta
-from typing import Any, ClassVar, Literal, TypedDict, cast
+from functools import cache
+from types import MappingProxyType
+from typing import Any, Literal, TypedDict
 
-from dature._deprecations import MASK_SECRETS_DEPRECATION_MESSAGE
 from dature.protocols import DataclassInstance
 from dature.type_aliases import (
     ExpandEnvVarsMode,
@@ -36,10 +37,7 @@ class MaskingConfig:
         "uri",
         "url",
     )
-    mask_secrets: bool | None = None
-    """Deprecated: use ``masking_mode`` instead. Will be removed in dature 1.3."""
-    masking_mode: MaskingMode | None = None
-    """``None`` means "not set" — resolved to ``"all"`` by :func:`resolve_masking_mode`."""
+    masking_mode: MaskingMode = "all"
 
 
 # --8<-- [end:masking-config]
@@ -55,21 +53,25 @@ class ErrorDisplayConfig:
 # --8<-- [end:error-display-config]
 
 
-def _default_system_config_dirs() -> dict[str, tuple[str, ...]]:
-    return {
-        "linux": (
-            "${XDG_CONFIG_HOME:-$HOME/.config}",
-            "/etc",
-            "${XDG_CONFIG_DIRS:-/etc/xdg}",
-        ),
-        "darwin": (
-            "$HOME/Library/Application Support",
-            "${XDG_CONFIG_HOME:-$HOME/.config}",
-            "/etc",
-            "${XDG_CONFIG_DIRS:-/etc/xdg}",
-        ),
-        "win32": ("$APPDATA",),
-    }
+def _default_system_config_dirs() -> Mapping[str, tuple[str, ...]]:
+    # A MappingProxyType, not a plain dict: default_config() caches its result process-wide, so
+    # every Dature() that doesn't override loading shares this exact mapping instance.
+    return MappingProxyType(
+        {
+            "linux": (
+                "${XDG_CONFIG_HOME:-$HOME/.config}",
+                "/etc",
+                "${XDG_CONFIG_DIRS:-/etc/xdg}",
+            ),
+            "darwin": (
+                "$HOME/Library/Application Support",
+                "${XDG_CONFIG_HOME:-$HOME/.config}",
+                "/etc",
+                "${XDG_CONFIG_DIRS:-/etc/xdg}",
+            ),
+            "win32": ("$APPDATA",),
+        }
+    )
 
 
 # --8<-- [start:loading-config]
@@ -178,13 +180,24 @@ class DatureConfig:
     secrets_manager: SecretsManagerConfig = SecretsManagerConfig()
 
 
-def _load_config() -> DatureConfig:
+BOOTSTRAP_CONFIG: DatureConfig = DatureConfig()  # pure defaults, never sourced from env
+
+
+@cache
+def default_config() -> DatureConfig:
+    """Process-wide env-derived defaults. Computed once, immutable, never mutated.
+
+    ``functools.cache`` holds no lock across the call, so under a race this may run twice —
+    that's fine: it is pure with respect to ``os.environ``, returns a frozen dataclass, and
+    nothing in the codebase compares configs by identity. Strictly better than the old
+    ``RLock``, which serialized *every* config read, not just the first one.
+    """
     from dature.field_path import F  # noqa: PLC0415
-    from dature.main import load  # noqa: PLC0415
+    from dature.loading.loader import Loader  # noqa: PLC0415
     from dature.sources.env_ import EnvSource  # noqa: PLC0415
     from dature.validators.v import V  # noqa: PLC0415
 
-    cfg = load(
+    return Loader(
         EnvSource(
             prefix="DATURE_",
             validators={
@@ -198,13 +211,8 @@ def _load_config() -> DatureConfig:
         ),
         schema=DatureConfig,
         cache=False,
-    )
-    if cfg.masking.mask_secrets is not None:
-        warnings.warn(MASK_SECRETS_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
-        if cfg.masking.masking_mode is not None:
-            # `masking_mode` was set explicitly alongside the deprecated flag — it wins.
-            cfg = replace(cfg, masking=replace(cfg.masking, mask_secrets=None))
-    return cfg
+        config=BOOTSTRAP_CONFIG,
+    ).load()
 
 
 class MaskingOptions(TypedDict, total=False):
@@ -214,7 +222,6 @@ class MaskingOptions(TypedDict, total=False):
     min_heuristic_length: int
     heuristic_threshold: float
     secret_field_names: tuple[str, ...]
-    mask_secrets: bool | None
     masking_mode: MaskingMode
 
 
@@ -287,83 +294,70 @@ class SecretsManagerOptions(TypedDict, total=False):
     endpoint_url: str | None
 
 
-_config_lock: threading.RLock = threading.RLock()
+# ---------------------------------------------------------------------------
+# Private legacy state — written by the configure() shim, cleared by tests.
+# The whole _LegacyState class and legacy singleton are removed in dature 1.5.
+# ---------------------------------------------------------------------------
 
 
-class _ConfigProxy:
-    _instance: DatureConfig | None = None
-    _loading: bool = False
-    _type_loaders: ClassVar[TypeLoaderMap] = {}
+@dataclass(slots=True)
+class _LegacyState:
+    """Process-wide state written by the deprecated ``configure()`` shim. Removed in dature 1.5."""
 
-    @staticmethod
-    def ensure_loaded() -> DatureConfig:
-        with _config_lock:
-            if _ConfigProxy._instance is not None:
-                return _ConfigProxy._instance
-            if _ConfigProxy._loading:
-                return DatureConfig()
-            _ConfigProxy._loading = True
-            try:
-                _ConfigProxy._instance = _load_config()
-            finally:
-                _ConfigProxy._loading = False
-            return _ConfigProxy._instance
+    override: DatureConfig | None = None
+    type_loaders: TypeLoaderMap = field(default_factory=dict)
 
-    @staticmethod
-    def set_instance(value: DatureConfig | None) -> None:
-        with _config_lock:
-            _ConfigProxy._instance = value
-
-    @staticmethod
-    def set_type_loaders(value: TypeLoaderMap) -> None:
-        _ConfigProxy._type_loaders = value
-
-    @property
-    def masking(self) -> MaskingConfig:
-        return self.ensure_loaded().masking
-
-    @property
-    def error_display(self) -> ErrorDisplayConfig:
-        return self.ensure_loaded().error_display
-
-    @property
-    def loading(self) -> LoadingConfig:
-        return self.ensure_loaded().loading
-
-    @property
-    def vault(self) -> VaultConfig:
-        return self.ensure_loaded().vault
-
-    @property
-    def consul(self) -> ConsulConfig:
-        return self.ensure_loaded().consul
-
-    @property
-    def etcd(self) -> EtcdConfig:
-        return self.ensure_loaded().etcd
-
-    @property
-    def ssm(self) -> SsmConfig:
-        return self.ensure_loaded().ssm
-
-    @property
-    def secrets_manager(self) -> SecretsManagerConfig:
-        return self.ensure_loaded().secrets_manager
-
-    @property
-    def type_loaders(self) -> TypeLoaderMap:
-        return _ConfigProxy._type_loaders
+    def reset(self) -> None:
+        self.override = None
+        self.type_loaders = {}
 
 
-config: _ConfigProxy = _ConfigProxy()
+legacy = _LegacyState()
+
+# Guards configure()'s read-modify-write of legacy.override/legacy.type_loaders — without it,
+# two concurrent configure() calls can read the same base config and one's merged groups clobber
+# the other's on write. Not used by resolve_config()/resolve_error_display(): those are plain
+# reads of an already-published DatureConfig and need no synchronization. Removed in 1.5 alongside
+# configure() itself.
+_configure_lock = threading.Lock()
 
 
-def _merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | None, cls: type[D]) -> D:
+def resolve_config() -> DatureConfig:
+    """Resolve the config an internal call site should use when none was passed explicitly.
+
+    During the ``configure()`` deprecation period this honours a process-wide override
+    installed via ``configure()``; once that shim is removed in 1.5 this collapses to a
+    direct call to ``default_config()``.
+    """
+    return legacy.override if legacy.override is not None else default_config()
+
+
+def resolve_error_display() -> ErrorDisplayConfig:
+    """Resolve ``ErrorDisplayConfig`` for error rendering, which has no config parameter to thread.
+
+    Falls back to pure defaults while ``default_config()`` has not produced a value yet: the
+    bootstrap load renders its own errors through this path, and re-entering ``default_config()``
+    from inside its own in-flight call would recurse without bound.  An empty cache means either
+    "bootstrap in flight" or "bootstrap failed" — in both cases built-in defaults are the only
+    answer available.
+    """
+    if legacy.override is not None:
+        return legacy.override.error_display
+    if default_config.cache_info().currsize == 0:
+        return BOOTSTRAP_CONFIG.error_display
+    return default_config().error_display
+
+
+def merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | None, cls: type[D]) -> D:
     if options is None:
         return current
     if not options:
         return cls()
-    return cls(**cast("dict[str, Any]", asdict(current) | dict(options)))
+    # Shallow-copy any mapping-valued override (e.g. LoadingOptions.system_config_dirs): otherwise
+    # the built config group would hold the caller's dict by reference, and a mutation the caller
+    # makes afterwards would silently change an already-built, supposedly-frozen config.
+    safe_options = {name: dict(value) if isinstance(value, Mapping) else value for name, value in options.items()}
+    return replace(current, **safe_options)
 
 
 # --8<-- [start:configure]
@@ -380,34 +374,37 @@ def configure(  # noqa: PLR0913
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
-    with _config_lock:
-        current = config.ensure_loaded()
+    """Deprecated. Use ``dature.Dature(...)`` instead.
 
-        if masking is not None and "mask_secrets" in masking:
-            warnings.warn(MASK_SECRETS_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
+    .. deprecated:: 1.3.0
+        ``configure()`` is a backwards-compatibility shim.  It will be removed in dature 1.5.
+        Migrate to ``dature.Dature(...)`` — the same group kwargs are accepted.
+    """
+    from dature._deprecations import CONFIGURE_DEPRECATION_MESSAGE  # noqa: PLC0415
 
-        merged_masking = _merge_group(current.masking, masking, MaskingConfig)
-        if masking is not None and "mask_secrets" in masking and "masking_mode" in masking:
-            merged_masking = replace(merged_masking, mask_secrets=None)
-        merged_error = _merge_group(current.error_display, error_display, ErrorDisplayConfig)
-        merged_loading = _merge_group(current.loading, loading, LoadingConfig)
-        merged_vault = _merge_group(current.vault, vault, VaultConfig)
-        merged_consul = _merge_group(current.consul, consul, ConsulConfig)
-        merged_etcd = _merge_group(current.etcd, etcd, EtcdConfig)
-        merged_ssm = _merge_group(current.ssm, ssm, SsmConfig)
-        merged_secrets_manager = _merge_group(current.secrets_manager, secrets_manager, SecretsManagerConfig)
+    warnings.warn(CONFIGURE_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
 
-        config.set_instance(
-            DatureConfig(
-                masking=merged_masking,
-                error_display=merged_error,
-                loading=merged_loading,
-                vault=merged_vault,
-                consul=merged_consul,
-                etcd=merged_etcd,
-                ssm=merged_ssm,
-                secrets_manager=merged_secrets_manager,
-            ),
+    with _configure_lock:
+        current = resolve_config()
+
+        merged_masking = merge_group(current.masking, masking, MaskingConfig)
+        merged_error = merge_group(current.error_display, error_display, ErrorDisplayConfig)
+        merged_loading = merge_group(current.loading, loading, LoadingConfig)
+        merged_vault = merge_group(current.vault, vault, VaultConfig)
+        merged_consul = merge_group(current.consul, consul, ConsulConfig)
+        merged_etcd = merge_group(current.etcd, etcd, EtcdConfig)
+        merged_ssm = merge_group(current.ssm, ssm, SsmConfig)
+        merged_secrets_manager = merge_group(current.secrets_manager, secrets_manager, SecretsManagerConfig)
+
+        legacy.override = DatureConfig(
+            masking=merged_masking,
+            error_display=merged_error,
+            loading=merged_loading,
+            vault=merged_vault,
+            consul=merged_consul,
+            etcd=merged_etcd,
+            ssm=merged_ssm,
+            secrets_manager=merged_secrets_manager,
         )
         if type_loaders is not None:
-            config.set_type_loaders(type_loaders)
+            legacy.type_loaders = type_loaders

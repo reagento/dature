@@ -181,21 +181,21 @@ re-loading over their pre-built object.
 |------|------:|---:|-------:|---:|
 | dature — decorator, hot, `cache=True` (default) | 1.0 µs | baseline | 1.0 KiB | baseline |
 | dature — decorator, hot, `cache=timedelta(...)` (TTL) | 1.1 µs | 1.1× | 1.1 KiB | baseline |
-| dature — `Loader` reuse, `cache_engine=True` | 56.0 µs | 55.3× | 10.2 KiB | 10.0× |
-| dature — decorator, hot, `cache_engine=True` | 57.8 µs | 57.1× | 10.6 KiB | 10.3× |
-| pydantic-settings — reuse | 119.7 µs | 118.1× | 20.6 KiB | 20.1× |
-| dature — decorator, hot, `cache_engine=False` | 889 µs | 876.9× | 424.5 KiB | 413.5× |
-| dature — function mode, fixed schema, no reuse | 920 µs | 907.7× | 424.7 KiB | 413.8× |
+| dature — `Loader` reuse, `cache_engine=True` | 68 µs | 62× | 10.4 KiB | 10.1× |
+| dature — decorator, hot, `cache_engine=True` | 75 µs | 69× | 10.8 KiB | 10.5× |
+| pydantic-settings — reuse | 124 µs | 113× | 24.5 KiB | 23.9× |
+| dature — decorator, hot, `cache_engine=False` | 889 µs | 813× | 424.7 KiB | 413.7× |
+| dature — function mode, fixed schema, no reuse | 1.1 ms | 1007× | 425.5 KiB | 414.5× |
 
 In steady state, opting into `cache_engine=True` **flips** the ranking versus build+load: dature
-(`Loader` reuse) is **faster** than pydantic-settings reused (~56 µs vs ~120 µs) and about half
-the memory (10.2 vs 20.6 KiB). Caching (`cache=True`/`cache=timedelta`) drops dature to ~1 µs /
+(`Loader` reuse) is **faster** than pydantic-settings reused (~68 µs vs ~124 µs) and about half
+the memory (10.4 vs 24.5 KiB). Caching (`cache=True`/`cache=timedelta`) drops dature to ~1 µs /
 ~1 KiB — over 100× faster than either. `cache=timedelta` adds automatic TTL expiry a plain
 `@lru_cache` wrapper can't do.
 
 The last two rows are the honest counter-example: with `cache_engine` left at its **default**
 (`False`), nothing about the compiled engine survives a call, so both the decorator (with
-`cache=False`) and function mode pay full recompilation every time — ~889–920 µs and ~425 KiB of
+`cache=False`) and function mode pay full recompilation every time — ~889 µs–1.1 ms and ~425 KiB of
 transient churn per call. That's the trade-off `cache_engine` makes explicit: the default keeps
 the decorator's *retained* footprint low (section 2) at the cost of the hot path; set
 `cache_engine=True` (or leave the default `cache=True`, which caches the *result* and never needs
@@ -207,16 +207,16 @@ to recompile after the first call) to get the fast path back.
 
 **Split the cost and dature looks very different from a native "full-cycle" number.** The three
 pieces are independent: import (~162 ms, once per process), fresh build+load (~1.1–2.8 ms, only
-in function mode), and warm reuse (~57 µs with `cache_engine=True`, ~1 µs cached).
+in function mode), and warm reuse (~68 µs with `cache_engine=True`, ~1 µs cached).
 
 **Import is reasonable — comparable to pydantic-settings, lighter on RAM.** ~162 ms vs ~114 ms,
 and 11.5 MiB vs 12.1 MiB. (A native measurement inside a fat venv reports ~2× higher for everyone —
 `site-packages` size inflates import time; always measure imports in a clean venv.)
 
 **Don't use function mode in a hot path.** Building and compiling the adaptix loader on every
-call costs ~1.1–2.8 ms. Even with a fixed schema, a throwaway `Loader` per call costs ~920 µs
+call costs ~1.1–2.8 ms. Even with a fixed schema, a throwaway `Loader` per call costs ~1.1 ms
 because each fresh loader discards its setup — build the loader once *and* opt into
-`cache_engine=True` (decorator or `Loader` reuse) and it drops to ~56–58 µs; cache the result
+`cache_engine=True` (decorator or `Loader` reuse) and it drops to ~68–75 µs; cache the result
 (`cache=True`, the default) and it's ~1 µs. Function mode is for scripts and one-shot tools, not
 per-request loading.
 
@@ -237,6 +237,6 @@ pydantic's Rust core, which is why we report RSS (see Methodology).
 
 **pydantic-settings leads on cold build speed, but dature wins the steady state.** On a cold
 build pydantic is faster (Rust codegen vs Python); memory is comparable-to-better. Reused with
-`cache_engine=True`, dature is faster (~56 µs vs ~120 µs) and about half the memory, and cached
+`cache_engine=True`, dature is faster (~68 µs vs ~124 µs) and about half the memory, and cached
 it's over 100× faster than either. For a long-running service — build once, load many — that
 steady state is what matters.

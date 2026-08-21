@@ -4,7 +4,7 @@ import sys
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 
-from dature.expansion.env_expand import _expand_string_collect
+from dature.expansion.env_expand import expand_string_collect
 from dature.type_aliases import SystemConfigDirsArg
 
 logger = logging.getLogger("dature")
@@ -24,7 +24,7 @@ def _expand_entry(entry: Path | str) -> Iterator[Path]:
         yield entry.expanduser()
         return
 
-    expanded, errors = _expand_string_collect(entry, mode="strict")
+    expanded, errors = expand_string_collect(entry, mode="strict")
     if errors:
         for err in errors:
             logger.warning(

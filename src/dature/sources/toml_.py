@@ -52,7 +52,7 @@ class _BaseTomlSource(FileSource, abc.ABC):
             return cast("JSONValue", toml_rs.loads(file.read(), toml_version=self._toml_version()))
 
     def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
-        return _build_toml_line_map(content, self._toml_version())
+        return build_toml_line_map(content, self._toml_version())
 
     def format_loaders(self) -> list[Provider]:
         return [
@@ -82,7 +82,7 @@ class Toml11Source(_BaseTomlSource):
         return "1.1.0"
 
 
-def _build_toml_line_map(content: str, toml_version: _TomlVersionStr) -> dict[tuple[str, ...], LineRange]:
+def build_toml_line_map(content: str, toml_version: _TomlVersionStr) -> dict[tuple[str, ...], LineRange]:
     require_dep("toml_rs", "toml")
     import toml_rs  # noqa: PLC0415
 

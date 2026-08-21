@@ -7,12 +7,13 @@ from typing import Any
 
 from adaptix import Retort
 
+from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.errors.location import ErrorContext
 from dature.field_path import F, extract_field_path
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import FilterResult, filter_invalid_fields
 from dature.sources.protocol import SourceProtocol
-from dature.type_aliases import JSONValue, MaskingMode, NestedConflicts, SkipFieldsInvalid
+from dature.type_aliases import JSONValue, NestedConflicts, SkipFieldsInvalid
 
 logger = logging.getLogger("dature")
 
@@ -42,16 +43,18 @@ def build_error_ctx(
     metadata: SourceProtocol,
     dataclass_name: str,
     *,
+    masking: MaskingConfig,
+    error_display: ErrorDisplayConfig,
     secret_paths: frozenset[str] = frozenset(),
-    masking_mode: MaskingMode = "none",
     nested_conflicts: NestedConflicts | None = None,
 ) -> ErrorContext:
     return ErrorContext(
         dataclass_name=dataclass_name,
         source=metadata,
         secret_paths=secret_paths,
-        masking_mode=masking_mode,
         nested_conflicts=nested_conflicts,
+        masking=masking,
+        error_display=error_display,
     )
 
 

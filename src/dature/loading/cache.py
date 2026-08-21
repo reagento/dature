@@ -2,7 +2,7 @@
 
 The cache itself lives on the ``Loader`` (see ``dature.loading.loader``).
 This module holds only the time helpers — ``cache_now`` (monotonic),
-``cache_is_fresh`` (predicate), and ``_aligned_now`` (bucket-aligned timestamp
+``cache_is_fresh`` (predicate), and ``aligned_now`` (bucket-aligned timestamp
 for TTL caches so that all entries sharing the same TTL invalidate at the same
 instant).
 """
@@ -23,7 +23,7 @@ def cache_is_fresh(*, cache: bool | timedelta, cached_at: float | None) -> bool:
     return (cache_now() - cached_at) < cache.total_seconds()
 
 
-def _aligned_now(cache: bool | timedelta) -> float:  # noqa: FBT001
+def aligned_now(cache: bool | timedelta) -> float:  # noqa: FBT001
     """Return a monotonic timestamp aligned to the TTL window for cron-style invalidation.
 
     For ``cache=timedelta(N)``, the returned value is the start of the current

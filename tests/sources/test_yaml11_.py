@@ -8,7 +8,7 @@ from ruamel.yaml.docinfo import Version
 
 from dature import Yaml11Source, load
 from dature.errors import DatureConfigError, FieldLoadError, LineRange
-from dature.sources.yaml_ import _build_yaml_line_map
+from dature.sources.yaml_ import build_yaml_line_map
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -179,7 +179,7 @@ class TestYaml11Source:
 
 
 def _yaml11(content: str) -> dict[tuple[str, ...], LineRange]:
-    return _build_yaml_line_map(content, Version(1, 1))
+    return build_yaml_line_map(content, Version(1, 1))
 
 
 class TestYaml11FindLineRange:

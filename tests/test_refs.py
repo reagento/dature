@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from dature.refs import _RefProxy, ref, template_to_str
+from dature.refs import RefProxy, ref, template_to_str
 
 
 class TestRefProxy:
@@ -15,8 +15,8 @@ class TestRefProxy:
         ],
         ids=["single-level", "two-levels", "three-levels"],
     )
-    def test_parts(self, proxy: _RefProxy, expected_parts: tuple[str, ...]) -> None:
-        assert isinstance(proxy, _RefProxy)
+    def test_parts(self, proxy: RefProxy, expected_parts: tuple[str, ...]) -> None:
+        assert isinstance(proxy, RefProxy)
         assert proxy.parts == expected_parts
 
     @pytest.mark.parametrize(
@@ -27,7 +27,7 @@ class TestRefProxy:
         ],
         ids=["two-levels", "three-levels"],
     )
-    def test_repr(self, proxy: _RefProxy, expected_repr: str) -> None:
+    def test_repr(self, proxy: RefProxy, expected_repr: str) -> None:
         assert repr(proxy) == expected_repr
 
 
@@ -41,7 +41,7 @@ class TestRefProxyToCrossRef:
         ],
         ids=["simple", "nested", "deeply-nested"],
     )
-    def test_to_cross_ref_no_default(self, proxy: _RefProxy, expected: str) -> None:
+    def test_to_cross_ref_no_default(self, proxy: RefProxy, expected: str) -> None:
         assert proxy.to_cross_ref() == expected
 
     @pytest.mark.parametrize(
@@ -53,11 +53,11 @@ class TestRefProxyToCrossRef:
         ],
         ids=["simple-default", "port-default", "empty-default"],
     )
-    def test_to_cross_ref_with_default(self, proxy: _RefProxy, default: str, expected: str) -> None:
+    def test_to_cross_ref_with_default(self, proxy: RefProxy, default: str, expected: str) -> None:
         assert proxy.to_cross_ref(default=default) == expected
 
     def test_too_few_parts_raises(self) -> None:
-        proxy = _RefProxy(("cli",))
+        proxy = RefProxy(("cli",))
         with pytest.raises(ValueError, match=r"at least tag\.key"):
             proxy.to_cross_ref()
 
@@ -88,7 +88,7 @@ class TestTemplateToStr:
     def test_template(
         self,
         strings: tuple[str, ...],
-        interps: list[tuple[_RefProxy, str, str]],
+        interps: list[tuple[RefProxy, str, str]],
         expected: str,
     ) -> None:
         from string.templatelib import Interpolation, Template  # type: ignore[import-not-found]  # noqa: PLC0415

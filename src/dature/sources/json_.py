@@ -49,10 +49,10 @@ class JsonSource(FileSource):
             return cast("JSONValue", json.load(file))
 
     def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
-        return _build_json_line_map(content)
+        return build_json_line_map(content)
 
 
-def _build_json_line_map(content: str) -> dict[tuple[str, ...], LineRange]:
+def build_json_line_map(content: str) -> dict[tuple[str, ...], LineRange]:
     line_map: dict[tuple[str, ...], LineRange] = {}
     path_stack: list[str] = []
 

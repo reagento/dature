@@ -98,7 +98,7 @@ def extract_field_path(predicate: Any, schema: type[DataclassInstance] | None = 
 
 
 @final
-class _FieldAny:
+class FieldAny:
     """Sentinel ``F.ANY`` — skip every invalid field (see ``skip_field_if_invalid``)."""
 
     __slots__ = ()
@@ -107,7 +107,7 @@ class _FieldAny:
         return "F.ANY"
 
 
-_ANY = _FieldAny()
+_ANY = FieldAny()
 
 
 # --8<-- [start:field-path-factory]
@@ -125,7 +125,7 @@ class _FieldPathFactory:
         return FieldPath(owner=owner)
 
     @property
-    def ANY(self) -> _FieldAny:  # noqa: N802 -- constant-style name, mirrors adaptix's P.ANY
+    def ANY(self) -> FieldAny:  # noqa: N802 -- constant-style name, mirrors adaptix's P.ANY
         """Sentinel meaning "skip every invalid field" for ``skip_field_if_invalid``."""
         return _ANY
 

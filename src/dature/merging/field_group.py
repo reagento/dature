@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from dature.errors import FieldGroupError, FieldGroupViolationError
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.merging.predicate import ResolvedFieldGroup
-from dature.nested_dict import _ABSENT, collect_leaf_paths, get_nested_value
+from dature.nested_dict import ABSENT, collect_leaf_paths, get_nested_value
 from dature.type_aliases import JSONValue
 
 
@@ -33,7 +33,7 @@ def validate_field_groups(
 
         for path in group.paths:
             source_val = get_nested_value(source, path)
-            if source_val is _ABSENT:
+            if source_val is ABSENT:
                 unchanged.append(path)
                 origin_idx = ctx.field_origins.get(path)
                 if origin_idx is not None:

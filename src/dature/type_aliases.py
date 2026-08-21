@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated, Any, Final, Literal, Self
 from urllib.parse import ParseResult
 
-from dature.field_path import FieldPath, _FieldAny
+from dature.field_path import FieldAny, FieldPath
 
 type JSONValue = dict[str, JSONValue] | list[JSONValue] | str | int | float | bool | None
 
@@ -78,7 +78,7 @@ type NestedResolveStrategy = Literal["flat", "json"]
 type _NestedResolveValue = Sequence[FieldPath | Any]
 type NestedResolve = dict[NestedResolveStrategy, _NestedResolveValue]
 
-type SkipFieldsInvalid = _FieldAny | Sequence[FieldPath | Any] | None
+type SkipFieldsInvalid = FieldAny | Sequence[FieldPath | Any] | None
 
 type MergeStrategyName = Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]
 type FieldMergeStrategyName = Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]

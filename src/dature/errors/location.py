@@ -1,20 +1,24 @@
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.errors.loc_types import CaretSpan, LineRange, SourceLocation
 from dature.masking.detection import canonical_name, canonical_secret_leaf_names
 from dature.masking.masking import is_secret_path, mask_env_line
 from dature.sources.protocol import FileSourceProtocol, SourceProtocol
-from dature.type_aliases import JSONValue, MaskingMode, NestedConflict, NestedConflicts
+from dature.type_aliases import JSONValue, NestedConflict, NestedConflicts
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ErrorContext:
     dataclass_name: str
     source: SourceProtocol
+    masking: MaskingConfig
+    """Explicit ``MaskingConfig`` for the effective ``masking_mode``, mask string, prefix/suffix,
+    and heuristic thresholds."""
+    error_display: ErrorDisplayConfig = field(default_factory=ErrorDisplayConfig)
     secret_paths: frozenset[str] = frozenset()
-    masking_mode: MaskingMode = "none"
     nested_conflicts: NestedConflicts | None = None
 
 
@@ -120,8 +124,8 @@ def _apply_masking(
                 [
                     mask_env_line(
                         line,
-                        masking_mode=ctx.masking_mode,
                         secret_leaf_names=secret_leaf_names,
+                        masking=ctx.masking,
                     )
                     for line in location.line_content
                 ]
@@ -159,7 +163,7 @@ def resolve_source_location(
     input_value: JSONValue = None,
     loaded_data: "JSONValue | None" = None,
 ) -> list[SourceLocation]:
-    is_secret = is_secret_path(field_path, secret_paths=ctx.secret_paths, masking_mode=ctx.masking_mode)
+    is_secret = is_secret_path(field_path, secret_paths=ctx.secret_paths, masking=ctx.masking)
     conflict = _resolve_conflict(field_path, ctx)
 
     locations = ctx.source.resolve_location(

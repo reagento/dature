@@ -3,6 +3,7 @@ from typing import Annotated
 
 import pytest
 
+from dature.config import MaskingConfig
 from dature.field_path import Absolute, F
 from dature.fields.payment_card import PaymentCardNumber
 from dature.fields.secret_str import SecretStr
@@ -78,6 +79,9 @@ class _ExtraPatternCfg:
     host: str
 
 
+_DEFAULT_PATTERNS = MaskingConfig().secret_field_names
+
+
 class TestBuildSecretPaths:
     @pytest.mark.parametrize(
         ("schema", "extra_patterns", "field_mappings", "expected"),
@@ -144,19 +148,27 @@ class TestBuildSecretPaths:
         field_mappings: tuple[dict[object, str], ...],
         expected: frozenset[str],
     ) -> None:
-        assert build_secret_paths(schema, extra_patterns=extra_patterns, field_mappings=field_mappings) == expected
+        assert (
+            build_secret_paths(
+                schema,
+                base_patterns=_DEFAULT_PATTERNS,
+                extra_patterns=extra_patterns,
+                field_mappings=field_mappings,
+            )
+            == expected
+        )
 
     def test_caching(self):
         @dataclass
         class Cfg:
             password: str
 
-        paths1 = build_secret_paths(Cfg)
-        paths2 = build_secret_paths(Cfg)
+        paths1 = build_secret_paths(Cfg, base_patterns=_DEFAULT_PATTERNS)
+        paths2 = build_secret_paths(Cfg, base_patterns=_DEFAULT_PATTERNS)
         assert paths1 is paths2
 
     def test_non_dataclass_returns_empty(self):
-        result = build_secret_paths(str)
+        result = build_secret_paths(str, base_patterns=_DEFAULT_PATTERNS)
 
         assert result == frozenset()
 
@@ -165,8 +177,8 @@ class TestBuildSecretPaths:
         class Cfg2:
             my_field: str
 
-        paths_without = build_secret_paths(Cfg2)
-        paths_with = build_secret_paths(Cfg2, extra_patterns=("my_field",))
+        paths_without = build_secret_paths(Cfg2, base_patterns=_DEFAULT_PATTERNS)
+        paths_with = build_secret_paths(Cfg2, base_patterns=_DEFAULT_PATTERNS, extra_patterns=("my_field",))
 
         assert paths_without == frozenset()
         assert paths_with == frozenset({"my_field"})
@@ -260,4 +272,4 @@ class TestMatchesSecretName:
         ids=["secret-key", "apiToken", "AUTH_HEADER", "db-url", "host", "port", "timeout"],
     )
     def test_matches(self, name: str, expected: bool):
-        assert matches_secret_name(name) is expected
+        assert matches_secret_name(name, MaskingConfig().secret_field_names) is expected
