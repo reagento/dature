@@ -9,12 +9,14 @@ conf = dature.Dature(vault={"host": "vault.internal"})
 # Function mode
 result = conf.load(dature.VaultSource(path="secrets"), schema=Settings)
 
+
 # Decorator mode (config binds at decoration/import time)
 @conf.load(dature.VaultSource(path="secrets"))
 @dataclass
 class Settings:
     host: str
     port: int
+
 
 # Build a reusable Loader with caching
 loader = conf.loader(dature.VaultSource(path="secrets"), schema=Settings)
