@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 import time_machine
 
-from dature.config import _ConfigProxy
+from dature.config import default_config, legacy
 
 
 @pytest.fixture
@@ -259,6 +259,8 @@ def block_import(_clean_dature_modules: None) -> Callable[[str], AbstractContext
 
 @pytest.fixture
 def _reset_config() -> Generator[None]:
-    _ConfigProxy.set_instance(None)
+    legacy.reset()
+    default_config.cache_clear()
     yield
-    _ConfigProxy.set_instance(None)
+    legacy.reset()
+    default_config.cache_clear()

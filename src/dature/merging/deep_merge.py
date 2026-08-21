@@ -91,6 +91,8 @@ def raise_on_conflict(
     if not conflicts:
         return
 
+    error_display = source_ctxs[0].error_ctx.error_display
+
     conflict_errors: list[MergeConflictFieldError] = []
     for field_path, sources in conflicts:
         locations: list[SourceLocation] = []
@@ -105,6 +107,7 @@ def raise_on_conflict(
                 field_path=field_path,
                 message="Conflicting values in multiple sources",
                 locations=locations,
+                error_display=error_display,
             ),
         )
 

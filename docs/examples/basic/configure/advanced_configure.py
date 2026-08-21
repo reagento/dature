@@ -23,20 +23,18 @@ config = dature.load(
 report = dature.load_report(config)
 assert report is None
 
-# 2. Enable debug globally via runtime configuration
-dature.configure(loading={"debug": True})
-
-config = dature.load(
+# 2. Enable debug via a Dature instance
+conf = dature.Dature(loading={"debug": True})
+config = conf.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
 report = dature.load_report(config)
 assert report is not None
 
-# 3. Reset to defaults
-dature.configure(loading={})
-
-config = dature.load(
+# 3. Different instance resets to defaults
+conf2 = dature.Dature()
+config = conf2.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )

@@ -26,16 +26,15 @@ from typing import Any, cast
 
 from adaptix import Retort
 
-from dature._deprecations import resolve_deprecated_mask_secrets
-from dature.config import config
+from dature.config import DatureConfig, legacy, resolve_config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext
-from dature.loading.cache import _aligned_now, cache_is_fresh
+from dature.loading.cache import aligned_now, cache_is_fresh
 from dature.loading.context import coerce_flag_fields, merge_fields
 from dature.loading.cross_source import clone_with_interpolation, evaluate_when_eager, when_has_cross_refs
 from dature.loading.field_pass import build_revalidation
-from dature.loading.mask_config import resolve_masking_mode
+from dature.loading.mask_config import apply_masking_mode
 from dature.loading.merge import load_and_merge, load_single
 from dature.loading.merge_runtime import (
     MergeConfig,
@@ -82,7 +81,7 @@ def _validate_sources(sources: tuple[SourceProtocol, ...]) -> None:
 class Loader[T: DataclassInstance]:
     """Encapsulates a ``load`` call. ``.load()`` honours the cache."""
 
-    def __init__(  # noqa: PLR0913, PLR0915
+    def __init__(  # noqa: PLR0913
         self,
         *sources: SourceProtocol,
         schema: type[T],
@@ -100,25 +99,28 @@ class Loader[T: DataclassInstance]:
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: Sequence[str] | None = None,
         masking_mode: MaskingMode | None = None,
-        mask_secrets: bool | None = None,
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        config: DatureConfig | None = None,
     ) -> None:
         _validate_sources(sources)
-        masking_mode = resolve_deprecated_mask_secrets(masking_mode, mask_secrets)
+
+        self._config: DatureConfig = apply_masking_mode(
+            config if config is not None else resolve_config(), masking_mode=masking_mode
+        )
 
         if cache is None:
-            cache = config.loading.cache
+            cache = self._config.loading.cache
         if isinstance(cache, timedelta) and cache < timedelta(0):
             msg = f"cache timedelta must be non-negative, got {cache!r}"
             raise ValueError(msg)
         if cache_engine is None:
-            cache_engine = config.loading.cache_engine
+            cache_engine = self._config.loading.cache_engine
         if stale_on_error is None:
-            stale_on_error = config.loading.stale_on_error
+            stale_on_error = self._config.loading.stale_on_error
         if debug is None:
-            debug = config.loading.debug
+            debug = self._config.loading.debug
 
         # All raw sources as passed — eager when= filter runs at .load() time so that
         # env state is read at invocation time, not at import/construction time.
@@ -138,8 +140,16 @@ class Loader[T: DataclassInstance]:
         self._skip_if_missing = skip_if_missing
         self._skip_field_if_invalid = skip_field_if_invalid
         self._secret_field_names = secret_field_names
-        self._masking_mode_arg: MaskingMode | None = masking_mode
-        self._type_loaders_arg = type_loaders
+        # A Dature instance always passes its own resolved *config* through, so `config is None`
+        # here means this Loader isn't backed by one — either the deprecated free-function
+        # dature.load()/@dature.load(...) API, or a bare Loader(...)/Loader.as_decorator(...)
+        # construction. Both have no instance-level storage of their own, so the deprecated
+        # configure(type_loaders=...) global shim is the only way to reach them.
+        # Priority: legacy < load-level < source. Removed in 1.5 alongside configure() itself.
+        legacy_type_loaders = legacy.type_loaders if config is None else {}
+        self._type_loaders_arg: TypeLoaderMap | None = (
+            {**legacy_type_loaders, **(type_loaders or {})} if legacy_type_loaders else type_loaders
+        )
         self._source_params = SourceParams(
             expand_env_vars=expand_env_vars,
             nested_resolve_strategy=nested_resolve_strategy,
@@ -161,12 +171,12 @@ class Loader[T: DataclassInstance]:
         )
 
         # Secret paths depend only on schema shape — computed once, env-free.
-        resolved_masking_mode = resolve_masking_mode(masking_mode=masking_mode)
         self.secret_paths: frozenset[str] = frozenset()
-        if resolved_masking_mode != "none":
+        if self._config.masking.masking_mode != "none":
             extra_patterns = tuple(secret_field_names) if secret_field_names else ()
             self.secret_paths = build_secret_paths(
                 schema,
+                base_patterns=self._config.masking.secret_field_names,
                 extra_patterns=extra_patterns,
                 field_mappings=tuple(s.field_mapping for s in sources),
             )
@@ -252,7 +262,7 @@ class Loader[T: DataclassInstance]:
             return self._on_stale_fallback(exc)
         if self._cache is not False:
             self._cached_data = result
-            self._cached_at = _aligned_now(self._cache)
+            self._cached_at = aligned_now(self._cache)
         return result
 
     def _should_keep_stale(self) -> bool:
@@ -286,7 +296,7 @@ class Loader[T: DataclassInstance]:
             exc,
         )
         if self._stale_on_error == "keep":
-            self._cached_at = _aligned_now(self._cache)
+            self._cached_at = aligned_now(self._cache)
         return self._cached_data  # type: ignore[return-value]  # guarded by _should_keep_stale
 
     @staticmethod
@@ -306,10 +316,10 @@ class Loader[T: DataclassInstance]:
         expand_env_vars: ExpandEnvVarsMode | None = None,
         secret_field_names: Sequence[str] | None = None,
         masking_mode: MaskingMode | None = None,
-        mask_secrets: bool | None = None,
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        config: DatureConfig | None = None,
     ) -> Callable[[type[DC]], type[DC]]:
         """Return a decorator that creates a loading subclass for the target dataclass."""
 
@@ -335,10 +345,10 @@ class Loader[T: DataclassInstance]:
                 expand_env_vars=expand_env_vars,
                 secret_field_names=secret_field_names,
                 masking_mode=masking_mode,
-                mask_secrets=mask_secrets,
                 type_loaders=type_loaders,
                 nested_resolve_strategy=nested_resolve_strategy,
                 nested_resolve=nested_resolve,
+                config=config,
             )
             return loader._make_loader_subclass(target_cls)
 
@@ -400,8 +410,8 @@ class Loader[T: DataclassInstance]:
             skip_if_missing=self._skip_if_missing,
             skip_field_if_invalid=self._skip_field_if_invalid,
             secret_field_names=self._secret_field_names,
-            masking_mode=self._masking_mode_arg,
             type_loaders=self._type_loaders_arg,
+            config=self._config,
         )
 
         if self._is_single:
@@ -440,9 +450,10 @@ class Loader[T: DataclassInstance]:
             retort_cache=self._retort_cache,
             type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
-            masking_mode=self._masking_mode_arg,
             probe_retort=self._probe_retort,
             debug=self.debug,
+            masking=self._config.masking,
+            error_display=self._config.error_display,
         )
         # Single-source uses the load's own error_ctx (it may carry nested-conflict detail that a
         # freshly built ctx would lack); the validation_loader itself is built lazily on demand.
@@ -476,7 +487,8 @@ class Loader[T: DataclassInstance]:
             retort_cache=self._retort_cache,
             type_loaders=self._type_loaders_arg,
             secret_paths=self.secret_paths,
-            masking_mode=self._masking_mode_arg,
+            masking=self._config.masking,
+            error_display=self._config.error_display,
         )
         self.validation_loader = validation_loader
         # Single-source set error_ctx eagerly (richer ctx); multi-source takes build_revalidation's.

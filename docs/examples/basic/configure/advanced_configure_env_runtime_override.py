@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import dature
 
-# Env var affects initial behavior
+# Env var enables debug by default
 os.environ["DATURE_LOADING__DEBUG"] = "true"
 
 
@@ -27,20 +27,18 @@ config = dature.load(
 report = dature.load_report(config)
 assert report is not None
 
-# 2. Runtime override disables debug (ignores env)
-dature.configure(loading={"debug": False})
-
-config = dature.load(
+# 2. A Dature instance can override the env — disabling debug explicitly
+no_debug = dature.Dature(loading={"debug": False})
+config = no_debug.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )
 report = dature.load_report(config)
 assert report is None
 
-# 3. Reset to start behavior
-dature.configure(loading={"debug": True})
-
-config = dature.load(
+# 3. A second instance re-enables it (or rely on the env-derived default)
+with_debug = dature.Dature(loading={"debug": True})
+config = with_debug.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_app.yaml"),
     schema=Config,
 )

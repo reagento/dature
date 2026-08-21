@@ -13,10 +13,11 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 
+from dature.config import MaskingConfig
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.type_aliases import JSONValue, MaskingMode
+from dature.type_aliases import JSONValue
 
 logger = logging.getLogger("dature")
 
@@ -61,10 +62,10 @@ def build_single_source_report(
     loader_type: str,
     file_path: str | None,
     raw_data: JSONValue,
+    masking: MaskingConfig,
     secret_paths: frozenset[str] = frozenset(),
-    masking_mode: MaskingMode = "none",
 ) -> LoadReport:
-    raw_data = mask_json_value(raw_data, secret_paths=secret_paths, masking_mode=masking_mode)
+    raw_data = mask_json_value(raw_data, secret_paths=secret_paths, masking=masking)
 
     source = SourceEntry(
         index=0,
@@ -102,12 +103,12 @@ def build_merge_report(  # noqa: PLR0913
     source_entries: tuple[SourceEntry, ...],
     field_origins: tuple[FieldOrigin, ...],
     merged_data: JSONValue,
+    masking: MaskingConfig,
     secret_paths: frozenset[str] = frozenset(),
-    masking_mode: MaskingMode = "none",
 ) -> LoadReport:
-    source_entries = mask_source_entries(source_entries, secret_paths=secret_paths, masking_mode=masking_mode)
-    field_origins = mask_field_origins(field_origins, secret_paths=secret_paths, masking_mode=masking_mode)
-    merged_data = mask_json_value(merged_data, secret_paths=secret_paths, masking_mode=masking_mode)
+    source_entries = mask_source_entries(source_entries, secret_paths=secret_paths, masking=masking)
+    field_origins = mask_field_origins(field_origins, secret_paths=secret_paths, masking=masking)
+    merged_data = mask_json_value(merged_data, secret_paths=secret_paths, masking=masking)
 
     return LoadReport(
         dataclass_name=dataclass_name,

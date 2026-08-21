@@ -31,7 +31,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
 from typing import Protocol, runtime_checkable
 
-from dature.config import config
+from dature.config import BOOTSTRAP_CONFIG, DatureConfig, LoadingConfig, resolve_config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import SkippedFieldSource, SourceContext
@@ -58,7 +58,6 @@ from dature.type_aliases import (
     FieldGroupTuple,
     FieldMergeMap,
     JSONValue,
-    MaskingMode,
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
@@ -84,13 +83,19 @@ class SourceParams:
     encoding: str | None = None
 
 
-def apply_source_init_params[T: SourceProtocol](source: T, params: SourceParams) -> T:
+def apply_source_init_params[T: SourceProtocol](
+    source: T,
+    params: SourceParams,
+    loading: LoadingConfig | None = None,
+) -> T:
     """Inject load-level params into source fields (source > load > config).
 
     Iterates SourceParams fields by name and matches them against the source's
     dataclass fields. For each matching field currently None: applies
-    load-level value, or falls back to config.loading.<same_name> if available.
+    load-level value, or falls back to *loading*.<same_name> if available.
+    *loading* defaults to the process-wide config.loading when omitted.
     """
+    effective_loading = loading if loading is not None else resolve_config().loading
     source_field_names = {f.name for f in fields(source) if f.init}
     overrides: dict[str, object] = {}
 
@@ -101,7 +106,7 @@ def apply_source_init_params[T: SourceProtocol](source: T, params: SourceParams)
         if getattr(source, name, None) is not None:
             continue  # source-level takes priority
         load_val = getattr(params, name)
-        config_val = getattr(config.loading, name, None)
+        config_val = getattr(effective_loading, name, None)
         effective = load_val if load_val is not None else config_val
         if effective is not None:
             overrides[name] = effective
@@ -121,8 +126,8 @@ def _is_unset(value: object) -> bool:
     return value is None or value == ""
 
 
-def apply_source_config_group[T: SourceProtocol](source: T) -> T:
-    """Fill unset source fields from ``dature.config.<source.config_group>``.
+def apply_source_config_group[T: SourceProtocol](source: T, cfg: DatureConfig | None = None) -> T:
+    """Fill unset source fields from ``<cfg>.<source.config_group>``.
 
     Sources whose connection/credential params are typically configured globally
     (e.g. ``VaultSource`` → ``config.vault``) opt in via the ``config_group``
@@ -131,12 +136,15 @@ def apply_source_config_group[T: SourceProtocol](source: T) -> T:
     Sources without a ``config_group`` are returned as-is.
     Order: instance > load-level (apply_source_init_params) > config group (this).
 
+    *cfg* defaults to the process-wide config when omitted.
+
     Note: ``validate_source()`` is NOT called here — it runs lazily inside
     ``LoadCtx.load`` after cross-ref interpolation has been applied so that
     string fields contain real values before invariants are checked.
     """
+    effective_cfg = cfg if cfg is not None else resolve_config()
     group_name: str | None = source.config_group
-    cfg_group = getattr(config, group_name, None) if group_name is not None else None
+    cfg_group = getattr(effective_cfg, group_name, None) if group_name is not None else None
 
     if cfg_group is None:
         return source
@@ -162,13 +170,15 @@ def apply_source_config_group[T: SourceProtocol](source: T) -> T:
 def prepare_sources(
     sources: tuple[SourceProtocol, ...],
     params: SourceParams,
+    cfg: DatureConfig | None = None,
 ) -> tuple[SourceProtocol, ...]:
     """Run the two-step eager source preparation pipeline.
 
     apply_source_init_params → apply_source_config_group
     """
-    after_params = tuple(apply_source_init_params(s, params) for s in sources)
-    return tuple(apply_source_config_group(s) for s in after_params)
+    loading = cfg.loading if cfg is not None else None
+    after_params = tuple(apply_source_init_params(s, params, loading) for s in sources)
+    return tuple(apply_source_config_group(s, cfg) for s in after_params)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -182,12 +192,16 @@ class MergeConfig:
     skip_if_missing: bool = False
     skip_field_if_invalid: SkipFieldsInvalid = None
     secret_field_names: Sequence[str] | None = None
-    masking_mode: MaskingMode | None = None
     type_loaders: TypeLoaderMap | None = None
+    config: DatureConfig = field(default=BOOTSTRAP_CONFIG)
+    """Effective ``DatureConfig`` for this merge, including the effective ``masking.masking_mode``
+    after any per-call override. Passed explicitly by ``Loader._prepare_for_load``; defaults to
+    ``BOOTSTRAP_CONFIG`` (pure defaults, no env) so that ``MergeConfig`` constructed outside
+    ``Loader`` (e.g. directly in tests) behaves deterministically."""
     cross_ref_plan: CrossRefPlan | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
-        self.sources = prepare_sources(self.sources, self.source_params)
+        self.sources = prepare_sources(self.sources, self.source_params, self.config)
         self.cross_ref_plan = build_cross_ref_plan(self.sources)
 
 
@@ -195,7 +209,13 @@ def resolve_type_loaders(
     source: SourceProtocol,
     load_type_loaders: TypeLoaderMap | None,
 ) -> TypeLoaderMap | None:
-    merged = {**config.type_loaders, **(load_type_loaders or {}), **(source.type_loaders or {})}
+    """Merge load-level and source-level type loaders.
+
+    Instance-level type loaders (from ``configure()`` / ``Dature``) are pre-merged into
+    *load_type_loaders* at the ``Loader.__init__`` boundary, so they do not need to be
+    read from the global here.  Priority: instance < load-level < source.
+    """
+    merged = {**(load_type_loaders or {}), **(source.type_loaders or {})}
     return merged or None
 
 
@@ -291,7 +311,6 @@ class LoadCtx:
         retort_cache: RetortCache,
         field_merge_paths: frozenset[str] | None = None,
         secret_paths: frozenset[str] = frozenset(),
-        masking_mode: MaskingMode = "none",
         on_merge_step: Callable[[MergeStepEvent], None] | None = None,
     ) -> None:
         self.dataclass_name = dataclass_name
@@ -301,7 +320,8 @@ class LoadCtx:
         self._schema = schema
         self._retort_cache = retort_cache
         self._secret_paths = secret_paths
-        self._masking_mode: MaskingMode = masking_mode
+        self._masking = merge_meta.config.masking  # explicit MaskingConfig from the effective DatureConfig
+        self._error_display = merge_meta.config.error_display
         self._on_merge_step = on_merge_step
         self._sources: list[SourceProtocol] = list(merge_meta.sources)
 
@@ -510,7 +530,8 @@ class LoadCtx:
             source,
             self.dataclass_name,
             secret_paths=self._secret_paths,
-            masking_mode=self._masking_mode,
+            masking=self._masking,
+            error_display=self._error_display,
         )
 
         try:
@@ -576,9 +597,10 @@ class LoadCtx:
             base_error_ctx=error_ctx,
             skip_value=skip_value,
             secret_paths=self._secret_paths,
-            masking_mode=self._masking_mode,
             log_prefix=f"[{self.dataclass_name}] Source {i}:",
             probe_retort=probe_retort,
+            masking=self._masking,
+            error_display=self._error_display,
         )
         raw = prepared.raw_data
         error_ctx = prepared.error_ctx
@@ -596,7 +618,7 @@ class LoadCtx:
             source.display_name(),
             sorted(raw.keys()) if isinstance(raw, dict) else "<non-dict>",
         )
-        masked_raw = mask_json_value(raw, secret_paths=self._secret_paths, masking_mode=self._masking_mode)
+        masked_raw = mask_json_value(raw, secret_paths=self._secret_paths, masking=self._masking)
         logger.debug(
             "[%s] Source %d raw data: %s",
             self.dataclass_name,

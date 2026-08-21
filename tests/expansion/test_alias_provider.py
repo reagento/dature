@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 
 from dature import EnvSource, load
-from dature.expansion.alias_provider import AliasEntry, _build_alias_map, _transform_dict
+from dature.expansion.alias_provider import AliasEntry, build_alias_map, transform_dict
 from dature.field_path import F, FieldPath
 
 
@@ -14,7 +14,7 @@ class TestBuildAliasMap:
             name: str
 
         mapping = {F[Config].name: "fullName"}
-        result = _build_alias_map(mapping)
+        result = build_alias_map(mapping)
 
         assert Config in result
         assert len(result[Config]) == 1
@@ -22,7 +22,7 @@ class TestBuildAliasMap:
 
     def test_flat_string_owner(self):
         mapping = {F["Config"].name: "fullName"}
-        result = _build_alias_map(mapping)
+        result = build_alias_map(mapping)
 
         assert "Config" in result
         assert result["Config"][0] == AliasEntry(field_name="name", aliases=("fullName",))
@@ -33,7 +33,7 @@ class TestBuildAliasMap:
             name: str
 
         mapping = {F[Config].name: ("fullName", "userName")}
-        result = _build_alias_map(mapping)
+        result = build_alias_map(mapping)
 
         assert result[Config][0] == AliasEntry(
             field_name="name",
@@ -50,7 +50,7 @@ class TestBuildAliasMap:
             address: Address
 
         mapping = {F[User].address.city: "cityName"}
-        result = _build_alias_map(mapping)
+        result = build_alias_map(mapping)
 
         assert Address in result
         assert result[Address][0] == AliasEntry(field_name="city", aliases=("cityName",))
@@ -59,7 +59,7 @@ class TestBuildAliasMap:
         mapping = {FieldPath(owner="User", parts=("address", "city")): "cityName"}
 
         with pytest.raises(TypeError) as exc_info:
-            _build_alias_map(mapping)
+            build_alias_map(mapping)
 
         assert str(exc_info.value) == (
             "Nested FieldPath with string owner 'User' is not supported — cannot resolve intermediate types"
@@ -69,7 +69,7 @@ class TestBuildAliasMap:
         mapping = {FieldPath(owner="Config"): "fullName"}
 
         with pytest.raises(ValueError, match="FieldPath must contain at least one field name") as exc_info:
-            _build_alias_map(mapping)
+            build_alias_map(mapping)
 
         assert str(exc_info.value) == "FieldPath must contain at least one field name"
 
@@ -83,7 +83,7 @@ class TestBuildAliasMap:
             F[Config].name: "fullName",
             F[Config].age: "userAge",
         }
-        result = _build_alias_map(mapping)
+        result = build_alias_map(mapping)
 
         assert len(result[Config]) == 2
         field_names = {e.field_name for e in result[Config]}
@@ -95,7 +95,7 @@ class TestTransformDict:
         entries = [AliasEntry(field_name="name", aliases=("fullName",))]
         data = {"fullName": "Alice"}
 
-        result = _transform_dict(data, entries)
+        result = transform_dict(data, entries)
 
         assert result == {"name": "Alice"}
 
@@ -103,7 +103,7 @@ class TestTransformDict:
         entries = [AliasEntry(field_name="name", aliases=("fullName", "userName"))]
         data = {"fullName": "Alice", "userName": "Bob"}
 
-        result = _transform_dict(data, entries)
+        result = transform_dict(data, entries)
 
         assert result == {"name": "Alice", "userName": "Bob"}
 
@@ -111,7 +111,7 @@ class TestTransformDict:
         entries = [AliasEntry(field_name="name", aliases=("fullName",))]
         data = {"name": "Direct", "fullName": "Alias"}
 
-        result = _transform_dict(data, entries)
+        result = transform_dict(data, entries)
 
         assert result == {"name": "Direct", "fullName": "Alias"}
 
@@ -119,7 +119,7 @@ class TestTransformDict:
         entries = [AliasEntry(field_name="name", aliases=("fullName",))]
         data = {"other": "value"}
 
-        result = _transform_dict(data, entries)
+        result = transform_dict(data, entries)
 
         assert result == {"other": "value"}
 
@@ -134,13 +134,13 @@ class TestTransformDict:
     def test_non_dict_returns_as_is(self, input_value, expected):
         entries = [AliasEntry(field_name="name", aliases=("fullName",))]
 
-        assert _transform_dict(input_value, entries) == expected
+        assert transform_dict(input_value, entries) == expected
 
     def test_fallback_to_second_alias(self):
         entries = [AliasEntry(field_name="name", aliases=("fullName", "userName"))]
         data = {"userName": "Bob"}
 
-        result = _transform_dict(data, entries)
+        result = transform_dict(data, entries)
 
         assert result == {"name": "Bob"}
 
@@ -168,6 +168,6 @@ class TestAliasProviderIntegration:
         mapping = {FieldPath(owner=Config, parts=("name", "sub")): "alias"}
 
         with pytest.raises(TypeError) as exc_info:
-            _build_alias_map(mapping)
+            build_alias_map(mapping)
 
         assert str(exc_info.value) == "Intermediate field 'name' of type '<class 'str'>' is not a dataclass"

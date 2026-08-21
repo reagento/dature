@@ -16,6 +16,7 @@ from adaptix.load_error import (
 )
 from adaptix.struct_trail import get_trail
 
+from dature.config import MaskingConfig
 from dature.errors.exceptions import (
     ConfigEnvVarExpandError,
     DatureConfigError,
@@ -26,10 +27,10 @@ from dature.errors.exceptions import (
 from dature.errors.location import ErrorContext, read_file_content, resolve_source_location
 from dature.masking.masking import is_random_string, is_secret_path, mask_value
 from dature.sources.protocol import FileSourceProtocol
-from dature.type_aliases import JSONValue, MaskingMode
+from dature.type_aliases import JSONValue
 
 
-def _describe_error(exc: BaseException, *, is_secret: bool = False) -> str:
+def _describe_error(exc: BaseException, *, masking: MaskingConfig, is_secret: bool = False) -> str:
     if isinstance(exc, (ValidationLoadError, ValueLoadError)):
         message = str(exc.msg)
     elif isinstance(exc, TypeLoadError):
@@ -50,7 +51,7 @@ def _describe_error(exc: BaseException, *, is_secret: bool = False) -> str:
 
     raw_value = str(getattr(exc, "input_value", None))
     if is_secret and raw_value and raw_value in message:
-        message = message.replace(raw_value, mask_value(raw_value))
+        message = message.replace(raw_value, mask_value(raw_value, masking))
     return message
 
 
@@ -59,8 +60,8 @@ def _walk_exception(
     parent_path: list[str],
     result: list[FieldLoadError],
     *,
+    masking: MaskingConfig,
     secret_paths: frozenset[str] = frozenset(),
-    masking_mode: MaskingMode = "none",
     heuristic_secret_paths: set[str] | None = None,
 ) -> None:
     trail = list(get_trail(exc))
@@ -73,8 +74,8 @@ def _walk_exception(
                 current_path,
                 result,
                 secret_paths=secret_paths,
-                masking_mode=masking_mode,
                 heuristic_secret_paths=heuristic_secret_paths,
+                masking=masking,
             )
         return
 
@@ -89,24 +90,24 @@ def _walk_exception(
         )
         return
 
-    is_secret = is_secret_path(current_path, secret_paths=secret_paths, masking_mode=masking_mode)
+    is_secret = is_secret_path(current_path, secret_paths=secret_paths, masking=masking)
     input_value = getattr(exc, "input_value", None)
     if (
-        masking_mode == "secrets_only"
+        masking.masking_mode == "secrets_only"
         and not is_secret
         and isinstance(input_value, str)
-        and is_random_string(input_value)
+        and is_random_string(input_value, masking)
     ):
         is_secret = True
         if heuristic_secret_paths is not None:
             heuristic_secret_paths.add(".".join(current_path))
     if is_secret and input_value is not None:
-        input_value = mask_value(str(input_value))
+        input_value = mask_value(str(input_value), masking)
 
     result.append(
         FieldLoadError(
             field_path=current_path,
-            message=_describe_error(exc, is_secret=is_secret),
+            message=_describe_error(exc, is_secret=is_secret, masking=masking),
             input_value=input_value,
         ),
     )
@@ -115,11 +116,11 @@ def _walk_exception(
 def extract_field_errors(
     exc: BaseException,
     *,
+    masking: MaskingConfig,
     secret_paths: frozenset[str] = frozenset(),
-    masking_mode: MaskingMode = "none",
 ) -> list[FieldLoadError]:
     result: list[FieldLoadError] = []
-    _walk_exception(exc, [], result, secret_paths=secret_paths, masking_mode=masking_mode)
+    _walk_exception(exc, [], result, secret_paths=secret_paths, masking=masking)
     return result
 
 
@@ -142,6 +143,7 @@ def handle_load_errors[T](
                 continue
             locations = resolve_source_location(e.field_path, ctx, file_content, loaded_data=loaded_data)
             e.location = locations[0] if locations else None
+            e.error_display = ctx.error_display
             enriched_env.append(e)
         raise ConfigEnvVarExpandError(ctx.dataclass_name, enriched_env) from exc
     except (AggregateLoadError, LoadError) as exc:
@@ -156,8 +158,8 @@ def handle_load_errors[T](
             [],
             field_errors,
             secret_paths=ctx.secret_paths,
-            masking_mode=ctx.masking_mode,
             heuristic_secret_paths=heuristic_paths,
+            masking=ctx.masking,
         )
         location_ctx = ctx
         if heuristic_paths:
@@ -173,6 +175,7 @@ def handle_load_errors[T](
                     message=fe.message,
                     input_value=fe.input_value,
                     locations=locations,
+                    error_display=ctx.error_display,
                 ),
             )
         raise DatureConfigError(ctx.dataclass_name, enriched) from None

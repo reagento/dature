@@ -3,7 +3,10 @@ from dataclasses import dataclass
 from adaptix import Retort
 from adaptix.load_error import AggregateLoadError, LoadError
 
+from dature.config import MaskingConfig
 from dature.errors.extraction import extract_field_errors
+
+_NO_MASKING = MaskingConfig(masking_mode="none")
 
 
 class TestExtractFieldErrors:
@@ -16,7 +19,7 @@ class TestExtractFieldErrors:
         try:
             r.load({"timeout": "abc"}, Config)
         except (AggregateLoadError, LoadError) as exc:
-            errors = extract_field_errors(exc)
+            errors = extract_field_errors(exc, masking=_NO_MASKING)
             assert len(errors) == 1
             assert errors[0].field_path == ["timeout"]
             assert errors[0].message == "Expected int, got str"
@@ -31,7 +34,7 @@ class TestExtractFieldErrors:
         try:
             r.load({"timeout": 123}, Config)
         except (AggregateLoadError, LoadError) as exc:
-            errors = extract_field_errors(exc)
+            errors = extract_field_errors(exc, masking=_NO_MASKING)
             assert len(errors) == 1
             assert errors[0].field_path == ["name"]
             assert errors[0].message == "Missing required field"
@@ -51,7 +54,7 @@ class TestExtractFieldErrors:
         try:
             r.load({"timeout": "abc", "db": {"host": "ok", "port": "xyz"}}, Config)
         except (AggregateLoadError, LoadError) as exc:
-            errors = extract_field_errors(exc)
+            errors = extract_field_errors(exc, masking=_NO_MASKING)
             assert len(errors) == 2
             paths = sorted(e.field_path for e in errors)
             assert paths == [["db", "port"], ["timeout"]]
@@ -67,7 +70,7 @@ class TestExtractFieldErrors:
         try:
             r.load({}, Config)
         except (AggregateLoadError, LoadError) as exc:
-            errors = extract_field_errors(exc)
+            errors = extract_field_errors(exc, masking=_NO_MASKING)
             assert len(errors) == 3
             paths = sorted([e.field_path[0] for e in errors])
             assert paths == ["a", "b", "c"]

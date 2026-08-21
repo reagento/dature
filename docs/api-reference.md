@@ -28,10 +28,10 @@ Main entry point. Two calling patterns:
 |-----------|------|---------|-------------|
 | `*sources` | `Source` | — | One or more source descriptors (e.g. `JsonSource(file=...)`, `EnvSource()`). Multiple sources → merge mode. |
 | `schema` | `type[T] \| None` | `None` | Target dataclass. If provided → function mode. If `None` → decorator mode. |
-| `cache` | `bool \| timedelta \| None` | `None` | Enable caching. `True`/`False` toggle, `timedelta` sets TTL. Default from `configure()`. **Effective in decorator mode only** — function mode `load(...)` creates a throwaway loader each call. For function-mode caching, use `dature.Loader` explicitly; see [Caching](advanced/caching.md). |
-| `cache_engine` | `bool \| None` | `None` | Retain the compiled engine across loads (independent of `cache`, which caches the *result*). Default from `configure()`, itself defaulting to `False`. See [Caching](advanced/caching.md#cache_engine-retaining-the-compiled-engine). |
-| `stale_on_error` | `StaleOnErrorMode \| None` | `None` | What to do when a cached reload fails: `"keep"` (default, return the stale value and restart the TTL window), `"retry"` (return the stale value without restarting the window), or `"raise"` (propagate the error). Default from `configure()`. **Effective in decorator mode only** — see [Caching](advanced/caching.md#stale_on_error-keeping-the-last-good-config). |
-| `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `configure()`. Retrieve with `load_report()`. |
+| `cache` | `bool \| timedelta \| None` | `None` | Enable caching. `True`/`False` toggle, `timedelta` sets TTL. Default from `Dature` instance or `DATURE_*` env. **Effective in decorator mode only** — function mode `load(...)` creates a throwaway loader each call. For function-mode caching, use `dature.Loader` explicitly; see [Caching](advanced/caching.md). |
+| `cache_engine` | `bool \| None` | `None` | Retain the compiled engine across loads (independent of `cache`, which caches the *result*). Default from `Dature` instance or `DATURE_*` env, itself defaulting to `False`. See [Caching](advanced/caching.md#cache_engine-retaining-the-compiled-engine). |
+| `stale_on_error` | `StaleOnErrorMode \| None` | `None` | What to do when a cached reload fails: `"keep"` (default, return the stale value and restart the TTL window), `"retry"` (return the stale value without restarting the window), or `"raise"` (propagate the error). Default from `Dature` instance or `DATURE_*` env. **Effective in decorator mode only** — see [Caching](advanced/caching.md#stale_on_error-keeping-the-last-good-config). |
+| `debug` | `bool \| None` | `None` | Collect `LoadReport` on the result instance. Default from `Dature` instance or `DATURE_*` env. Retrieve with `load_report()`. |
 | `strategy` | `MergeStrategyName \| SourceMergeStrategy` | `"last_wins"` | Merge strategy: a built-in name or a custom object implementing `SourceMergeStrategy`. Only used with multiple sources. See [Merge Strategies](#merge-strategies). |
 | `field_merges` | `FieldMergeMap \| None` | `None` | Per-field merge strategy overrides. Maps `F[Config].field` to a strategy name, callable, or any object implementing `FieldMergeStrategy`. See [Field Merge Strategies](#field-merge-strategies). |
 | `field_groups` | `Sequence[FieldGroupTuple]` | `()` | Groups of fields that must change together. Each group is a sequence of `F[Config].field` references. |
@@ -41,7 +41,6 @@ Main entry point. Two calling patterns:
 | `expand_env_vars` | `ExpandEnvVarsMode \| None` | `None` | Env var expansion mode applied to all sources. Source-level setting takes priority. |
 | `secret_field_names` | `Sequence[str] \| None` | `None` | Extra secret field name patterns for masking. |
 | `masking_mode` | `MaskingMode \| None` | `None` | Masking mode for this load: `"all"`, `"secrets_only"`, or `"none"`. See [Masking](basic/masking.md). |
-| `mask_secrets` | `bool \| None` | `None` | Deprecated, use `masking_mode` instead (`True` → `"secrets_only"`, `False` → `"none"`). If both are set, `masking_mode` wins. Removed in dature 1.3. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Custom type loaders mapping types to conversion functions. Merged with source-level and global loaders. |
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Default priority for JSON vs flat keys in `FlatKeySource`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
@@ -136,7 +135,7 @@ Base class for flat key=value sources (`EnvSource`, `EnvFileSource`, `DockerSecr
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nested_sep` | `str` | `"__"` | Separator for nested key splitting. `APP__DB__HOST` → `{"db": {"host": ...}}` |
-| `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Priority when both flat and JSON keys exist: `"flat"` or `"json"`. Falls back to `configure()`'s `LoadingConfig.nested_resolve_strategy` (default `"flat"`). See [Nested Resolve](advanced/nested-resolve.md). |
+| `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Priority when both flat and JSON keys exist: `"flat"` or `"json"`. Falls back to the `Dature` instance's `LoadingConfig.nested_resolve_strategy` (default `"flat"`). See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
 
 **Behavior:** All values are strings. Automatic parsing of `str`, `float`, `date`, `datetime`, `time`, `bytearray`, `bool`, `None`, `str | None`. Nested JSON in values (`[...]`, `{...}`) is inferred. `load_raw()` returns `LoadRawResult` with `nested_conflicts` populated when both flat and JSON keys exist for the same field.
@@ -261,23 +260,29 @@ Frozen dataclass with full load diagnostics.
 
 ## Configuration
 
-### `configure()`
+### `Dature`
 
 ```python
---8<-- "src/dature/config.py:configure"
+--8<-- "src/dature/instance.py:dature-init"
 ```
 
-Set global configuration. Pass dicts to override specific options: `masking={"mask": "***"}`, `loading={"debug": True}`. `None` parameters keep their current values. Empty dict `{}` resets the group to defaults.
-
-Global config is also loaded from `DATURE_*` environment variables on first access.
+Explicit, immutable configuration instance. All parameters merge on top of `DATURE_*` environment defaults.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `masking` | `MaskingOptions \| None` | `None` | Secret masking options. |
-| `error_display` | `ErrorDisplayOptions \| None` | `None` | Error formatting options. |
+| `error_display` | `ErrorDisplayOptions \| None` | `None` | Error-rendering options. |
 | `loading` | `LoadingOptions \| None` | `None` | Loading behavior options. |
 | `vault` | `VaultOptions \| None` | `None` | Vault connection defaults, used by `VaultSource` when its own fields are unset. |
-| `type_loaders` | `TypeLoaderMap \| None` | `None` | Global custom type loaders `{type: callable}`. Merged with source-level loaders (source takes priority). |
+| `consul` | `ConsulOptions \| None` | `None` | Consul connection defaults. |
+| `etcd` | `EtcdOptions \| None` | `None` | Etcd connection defaults. |
+| `ssm` | `SsmOptions \| None` | `None` | AWS SSM connection defaults. |
+| `secrets_manager` | `SecretsManagerOptions \| None` | `None` | AWS Secrets Manager connection defaults. |
+| `type_loaders` | `TypeLoaderMap \| None` | `None` | Instance-level custom type loaders `{type: callable}`. Merged with load-level and source-level loaders (source takes priority). |
+
+!!! warning "configure() is deprecated"
+    `dature.configure()` is deprecated since **1.3** and will be removed in **1.5**.
+    Migrate to `dature.Dature(...)` — the same option groups are accepted.
 
 ### `MaskingConfig`
 
@@ -295,8 +300,7 @@ Frozen dataclass controlling secret masking behavior.
 | `min_heuristic_length` | `int` | `8` | Minimum string length for heuristic-based detection. |
 | `heuristic_threshold` | `float` | `0.5` | Entropy threshold for heuristic secret detection. |
 | `secret_field_names` | `tuple[str, ...]` | `("password", "passwd", ...)` | Field name patterns that trigger masking. |
-| `mask_secrets` | `bool \| None` | `None` | Deprecated, use `masking_mode` instead. `None` means "not set". Removed in dature 1.3. |
-| `masking_mode` | `MaskingMode \| None` | `None` | Global masking mode: `"all"`, `"secrets_only"`, or `"none"`. `None` resolves to `"all"`. |
+| `masking_mode` | `MaskingMode` | `"all"` | Global masking mode: `"all"`, `"secrets_only"`, or `"none"`. Overridden per call via `load(masking_mode=...)`. |
 
 ### `ErrorDisplayConfig`
 
@@ -304,7 +308,10 @@ Frozen dataclass controlling secret masking behavior.
 --8<-- "src/dature/config.py:error-display-config"
 ```
 
-Frozen dataclass controlling error message formatting.
+Frozen dataclass controlling error message formatting. Overridable per instance via
+`Dature(error_display={...})`; env (`DATURE_ERROR_DISPLAY__*`) sets the default that instances
+inherit unless they override it. Values of `max_line_length` at or below 3 degrade gracefully
+(truncate to that many characters with no `"..."` marker) rather than raising.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

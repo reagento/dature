@@ -9,14 +9,10 @@ from dataclasses import field, make_dataclass
 from functools import cache
 from typing import Any, Literal, Protocol, get_args, get_origin, get_type_hints
 
-from dature._deprecations import resolve_deprecated_mask_secrets
-from dature.field_path import F, _FieldAny
+from dature.field_path import F, FieldAny
 from dature.main import load
 from dature.protocols import DataclassInstance
 from dature.sources.protocol import SourceProtocol
-
-#: Deprecated alias for --masking-mode; removed in dature 1.3.
-_LEGACY_MASK_FLAG = "mask_secrets"
 
 
 class CliCommonArgs(DataclassInstance, Protocol):
@@ -160,7 +156,7 @@ def _cli_field_type(annotation: Any) -> Any:  # noqa: ANN401
     """
     for raw_cand in _non_none_args(annotation):
         cand = _resolve_alias(raw_cand)
-        if cand is bool or cand is _FieldAny:
+        if cand is bool or cand is FieldAny:
             return bool
         origin = get_origin(cand)
         if origin is Literal:
@@ -184,7 +180,7 @@ def add_typed_arg(parser: argparse.ArgumentParser, name: str, annotation: Any) -
     flag = f"--{name.replace('_', '-')}"
     for raw_cand in _non_none_args(annotation):
         cand = _resolve_alias(raw_cand)
-        if cand is bool or cand is _FieldAny:
+        if cand is bool or cand is FieldAny:
             parser.add_argument(flag, action="store_true", default=None)
             return
         origin = get_origin(cand)
@@ -216,13 +212,6 @@ def add_load_args(parser: argparse.ArgumentParser) -> None:
             msg = f"{name!r} not found in load() signature"
             raise RuntimeError(msg)
         add_typed_arg(parser, name, hints[name])
-    # Deprecated alias for --masking-mode, removed in dature 1.3.
-    parser.add_argument(
-        "--mask-secrets",
-        action="store_true",
-        default=None,
-        help=argparse.SUPPRESS,
-    )
 
 
 def add_common_args(parser: argparse.ArgumentParser) -> None:
@@ -257,10 +246,6 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
     Booleans on params whose annotation carries the ``F.ANY`` sentinel arm
     (e.g. ``skip_field_if_invalid``) are mapped ``True`` → ``F.ANY``, since the
     CLI flag for that arm is a plain ``store_true`` boolean.
-
-    ``--mask-secrets`` is a deprecated alias for ``--masking-mode`` (removed in
-    dature 1.3): when set, it warns and maps onto ``masking_mode``, which wins if
-    also passed explicitly.
     """
     hints = _load_type_hints()
     result: dict[str, Any] = {}
@@ -274,10 +259,6 @@ def build_load_kwargs_from_dataclass(args: DataclassInstance) -> dict[str, Any]:
             value = F.ANY
         result[name] = value
 
-    legacy_mask_secrets = getattr(args, _LEGACY_MASK_FLAG, None)
-    if legacy_mask_secrets is not None:
-        result["masking_mode"] = resolve_deprecated_mask_secrets(result.get("masking_mode"), legacy_mask_secrets)
-
     return result
 
 
@@ -288,7 +269,7 @@ def _orig_wants_tuple(annotation: Any) -> bool:  # noqa: ANN401
 
 def _orig_wants_field_any(annotation: Any) -> bool:  # noqa: ANN401
     """Return True if any non-None arm of ``annotation`` is the ``F.ANY`` sentinel type."""
-    return any(_resolve_alias(cand) is _FieldAny for cand in _non_none_args(annotation))
+    return any(_resolve_alias(cand) is FieldAny for cand in _non_none_args(annotation))
 
 
 @cache
@@ -314,8 +295,6 @@ def derive_cli_schema() -> type:
             raise RuntimeError(msg)
         cli_type = _cli_field_type(hints[name])
         common.append((name, cli_type | None, field(default=None)))
-    # Deprecated alias for --masking-mode, removed in dature 1.3.
-    common.append((_LEGACY_MASK_FLAG, bool | None, field(default=None)))
 
     inspect_args = make_dataclass(
         "InspectArgs",

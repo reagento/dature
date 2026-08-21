@@ -5,7 +5,7 @@ from datetime import timedelta
 import pytest
 import time_machine
 
-from dature.loading.cache import _aligned_now, cache_is_fresh, cache_now
+from dature.loading.cache import aligned_now, cache_is_fresh, cache_now
 
 
 class TestCacheIsFresh:
@@ -52,23 +52,23 @@ class TestCacheIsFresh:
 class TestAlignedNow:
     def test_true_returns_current_monotonic(self) -> None:
         now_before = cache_now()
-        aligned = _aligned_now(cache=True)
+        aligned = aligned_now(cache=True)
         assert aligned == now_before
 
     def test_false_returns_current_monotonic(self) -> None:
-        aligned = _aligned_now(cache=False)
+        aligned = aligned_now(cache=False)
         assert aligned == cache_now()
 
     def test_zero_timedelta_returns_current_monotonic(self) -> None:
-        aligned = _aligned_now(timedelta(0))
+        aligned = aligned_now(timedelta(0))
         assert aligned == cache_now()
 
     def test_positive_timedelta_snaps_to_bucket_start(self, time_control: time_machine.Traveller) -> None:
         period = timedelta(seconds=30)
 
-        aligned_a = _aligned_now(period)
+        aligned_a = aligned_now(period)
         remaining = period.total_seconds() - (cache_now() % period.total_seconds())
         time_control.shift(remaining / 2)
-        aligned_b = _aligned_now(period)
+        aligned_b = aligned_now(period)
 
         assert aligned_a == aligned_b

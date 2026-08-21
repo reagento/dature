@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 
+from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.field_path import FieldPath
 from dature.loading.context import (
     apply_skip_invalid,
@@ -104,6 +105,7 @@ class FlagConfig:
 
 
 _PERMS: frozenset[str] = frozenset({"perms"})
+_DEFAULT_DISPLAY = ErrorDisplayConfig()
 
 
 class TestCoerceFlagFields:
@@ -153,7 +155,7 @@ class TestBuildErrorCtx:
         json_file.write_text("{}")
         source = JsonSource(file=json_file, prefix="app")
 
-        ctx = build_error_ctx(source, "MyConfig")
+        ctx = build_error_ctx(source, "MyConfig", masking=MaskingConfig(), error_display=_DEFAULT_DISPLAY)
 
         assert ctx.dataclass_name == "MyConfig"
         assert ctx.source is source
@@ -161,7 +163,7 @@ class TestBuildErrorCtx:
     def test_flat_key_source(self):
         source = EnvSource(prefix="APP", nested_sep="__")
 
-        ctx = build_error_ctx(source, "MyConfig")
+        ctx = build_error_ctx(source, "MyConfig", masking=MaskingConfig(), error_display=_DEFAULT_DISPLAY)
 
         assert ctx.source is source
 

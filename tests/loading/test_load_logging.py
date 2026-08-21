@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import pytest
 
+from dature.config import MaskingConfig
 from dature.loading.load_logging import (
     log_field_origins,
     log_merge_step,
@@ -14,6 +15,9 @@ from dature.loading.merge_runtime import MergeStepEvent
 from dature.report_types import FieldOrigin
 from dature.sources.base import Source
 from dature.type_aliases import JSONValue
+
+_NO_MASKING = MaskingConfig(masking_mode="none")
+_SECRETS_ONLY = MaskingConfig(masking_mode="secrets_only")
 
 
 @dataclass(kw_only=True)
@@ -67,6 +71,7 @@ class TestLogMergeStep:
                 dataclass_name="Config",
                 strategy_label="last_wins",
                 secret_paths=frozenset(),
+                masking=_NO_MASKING,
             )
 
         assert _messages(caplog, "Config") == [
@@ -86,7 +91,7 @@ class TestLogMergeStep:
                 dataclass_name="Config",
                 strategy_label="last_wins",
                 secret_paths=frozenset({"password"}),
-                masking_mode="secrets_only",
+                masking=_SECRETS_ONLY,
             )
 
         assert _messages(caplog, "Config") == [
@@ -103,6 +108,7 @@ class TestLogMergeStep:
                 dataclass_name="Config",
                 strategy_label="last_wins",
                 secret_paths=frozenset(),
+                masking=_NO_MASKING,
             )
 
         assert _messages(caplog, "Config") == [
@@ -119,7 +125,7 @@ class TestLogFieldOrigins:
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
-            log_field_origins(dataclass_name="Config", field_origins=origins)
+            log_field_origins(dataclass_name="Config", field_origins=origins, masking=_NO_MASKING)
 
         assert _messages(caplog, "Config") == [
             "[Config] Field 'host' = 'localhost'  <-- source 0 (None)",
@@ -136,6 +142,7 @@ class TestLogFieldOrigins:
                 dataclass_name="Config",
                 field_origins=origins,
                 secret_paths=frozenset({"password"}),
+                masking=_NO_MASKING,
             )
 
         assert _messages(caplog, "Config") == [
@@ -148,7 +155,7 @@ class TestLogFieldOrigins:
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
-            log_field_origins(dataclass_name="Config", field_origins=origins)
+            log_field_origins(dataclass_name="Config", field_origins=origins, masking=_NO_MASKING)
 
         assert _messages(caplog, "Config") == [
             "[Config] Field 'host' = 'myserver'  <-- source 0 (None)",
@@ -156,7 +163,7 @@ class TestLogFieldOrigins:
 
     def test_empty_origins_emits_nothing(self, caplog: pytest.LogCaptureFixture) -> None:
         with caplog.at_level(logging.DEBUG, logger="dature"):
-            log_field_origins(dataclass_name="Config", field_origins=())
+            log_field_origins(dataclass_name="Config", field_origins=(), masking=_NO_MASKING)
 
         assert _messages(caplog, "Config") == []
 
@@ -175,7 +182,7 @@ class TestLogFieldOrigins:
                 dataclass_name="Config",
                 field_origins=origins,
                 secret_paths=frozenset({"secret_key"}),
-                masking_mode="secrets_only",
+                masking=_SECRETS_ONLY,
             )
 
         assert _messages(caplog, "Config") == [
@@ -191,6 +198,7 @@ class TestLogSingleSourceLoad:
                 loader_type="yaml",
                 file_path="/etc/config.yaml",
                 data={"host": "localhost"},
+                masking=_NO_MASKING,
             )
 
         assert _messages(caplog, "Config") == [
@@ -206,7 +214,7 @@ class TestLogSingleSourceLoad:
                 file_path=".env",
                 data={"api_key": "top-secret"},
                 secret_paths=frozenset({"api_key"}),
-                masking_mode="secrets_only",
+                masking=_SECRETS_ONLY,
             )
 
         assert _messages(caplog, "Config") == [
@@ -221,6 +229,7 @@ class TestLogSingleSourceLoad:
                 loader_type="json",
                 file_path="config.json",
                 data={"host": "public-server"},
+                masking=_NO_MASKING,
             )
 
         assert _messages(caplog, "Config") == [

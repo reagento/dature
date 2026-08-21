@@ -1,41 +1,56 @@
+from dataclasses import replace
+
 import pytest
 
 from dature.config import DatureConfig, MaskingConfig
-from dature.loading.mask_config import resolve_masking_mode
+from dature.loading.mask_config import apply_masking_mode
 from dature.type_aliases import MaskingMode
 
 
 @pytest.mark.parametrize(
-    ("masking_mode", "config_mask_secrets", "config_masking_mode", "expected"),
+    ("masking_mode", "config_masking_mode", "expected"),
     [
-        ("secrets_only", None, "all", "secrets_only"),
-        ("none", True, "all", "none"),
-        (None, True, "all", "secrets_only"),
-        (None, False, "secrets_only", "none"),
-        (None, None, "secrets_only", "secrets_only"),
-        (None, None, "none", "none"),
+        ("secrets_only", "all", "secrets_only"),
+        (None, "secrets_only", "secrets_only"),
+        (None, "none", "none"),
     ],
     ids=[
-        "load_level_wins_over_config",
-        "load_level_wins_over_deprecated_mask_secrets",
-        "deprecated_mask_secrets_true_maps_to_secrets_only",
-        "deprecated_mask_secrets_false_maps_to_none",
-        "falls_through_to_masking_mode_when_mask_secrets_unset",
-        "falls_through_to_masking_mode_none",
+        "override_wins_over_config",
+        "no_override_keeps_secrets_only",
+        "no_override_keeps_none",
     ],
 )
-def test_resolve_masking_mode(
-    monkeypatch: pytest.MonkeyPatch,
+def test_apply_masking_mode_resolves_effective_mode(
     masking_mode: MaskingMode | None,
-    config_mask_secrets: bool | None,
     config_masking_mode: MaskingMode,
     expected: MaskingMode,
 ) -> None:
-    fake_config = DatureConfig(
-        masking=MaskingConfig(mask_secrets=config_mask_secrets, masking_mode=config_masking_mode),
-    )
+    config = DatureConfig(masking=MaskingConfig(masking_mode=config_masking_mode))
 
-    monkeypatch.setattr("dature.loading.mask_config.config", fake_config)
-    result = resolve_masking_mode(masking_mode=masking_mode)
+    result = apply_masking_mode(config, masking_mode)
 
-    assert result == expected
+    assert result.masking.masking_mode == expected
+
+
+@pytest.mark.parametrize(
+    "masking_mode",
+    [None, "all"],
+    ids=["override_is_none", "override_matches_current_mode"],
+)
+def test_apply_masking_mode_returns_same_config_when_nothing_to_override(masking_mode: MaskingMode | None) -> None:
+    config = DatureConfig(masking=MaskingConfig(masking_mode="all"))
+
+    result = apply_masking_mode(config, masking_mode)
+
+    assert result is config
+
+
+def test_apply_masking_mode_does_not_mutate_the_original_config() -> None:
+    config = DatureConfig(masking=MaskingConfig(masking_mode="all"))
+
+    result = apply_masking_mode(config, "secrets_only")
+
+    assert result is not config
+    assert result.masking is not config.masking
+    assert config.masking.masking_mode == "all"
+    assert result == replace(config, masking=replace(config.masking, masking_mode="secrets_only"))

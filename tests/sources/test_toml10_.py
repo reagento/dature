@@ -7,7 +7,7 @@ import pytest
 
 from dature import Toml10Source, load
 from dature.errors import DatureConfigError, FieldLoadError, LineRange
-from dature.sources.toml_ import _build_toml_line_map
+from dature.sources.toml_ import build_toml_line_map
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -167,7 +167,7 @@ class TestToml10Source:
 
 
 def _toml10(content: str) -> dict[tuple[str, ...], LineRange]:
-    return _build_toml_line_map(content, "1.0.0")
+    return build_toml_line_map(content, "1.0.0")
 
 
 class TestToml10FindLineRange:

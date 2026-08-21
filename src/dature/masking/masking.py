@@ -2,10 +2,10 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 
-from dature.config import config
+from dature.config import MaskingConfig
 from dature.masking.detection import canonical_name, canonical_secret_paths, matches_secret_name
 from dature.report_types import FieldOrigin, SourceEntry
-from dature.type_aliases import JSONValue, MaskingMode
+from dature.type_aliases import JSONValue
 
 try:
     from random_string_detector import RandomStringDetector  # type: ignore[import-untyped]
@@ -15,22 +15,27 @@ except ImportError:
     _heuristic_detector = None
 
 
-def mask_value(value: str) -> str:
-    cfg = config.masking
-    if cfg.visible_prefix + cfg.visible_suffix >= len(value):
+def mask_value(value: str, masking: MaskingConfig) -> str:
+    """Mask *value*, honouring the visible prefix/suffix and mask string from *masking*."""
+    if masking.visible_prefix + masking.visible_suffix >= len(value):
         return value
-    prefix = value[: cfg.visible_prefix] if cfg.visible_prefix > 0 else ""
-    suffix = value[-cfg.visible_suffix :] if cfg.visible_suffix > 0 else ""
-    return prefix + cfg.mask + suffix
+    prefix = value[: masking.visible_prefix] if masking.visible_prefix > 0 else ""
+    suffix = value[-masking.visible_suffix :] if masking.visible_suffix > 0 else ""
+    return prefix + masking.mask + suffix
 
 
 def is_secret_path(
     field_path: str | Sequence[str],
     *,
     secret_paths: frozenset[str],
-    masking_mode: MaskingMode,
+    masking: MaskingConfig,
 ) -> bool:
-    match masking_mode:
+    """Return True if *field_path* should be treated as a secret.
+
+    *masking* supplies the effective ``masking_mode`` and, when it is ``"secrets_only"``,
+    the heuristic secret-field-name patterns.
+    """
+    match masking.masking_mode:
         case "all":
             return True
         case "secrets_only" | "none":
@@ -43,18 +48,25 @@ def is_secret_path(
         return True
     if secret_paths and canonical_name(path) in canonical_secret_paths(secret_paths):
         return True
-    return masking_mode == "secrets_only" and matches_secret_name(path.rpartition(".")[2])
+    return masking.masking_mode == "secrets_only" and matches_secret_name(
+        path.rpartition(".")[2], masking.secret_field_names
+    )
 
 
 def mask_json_value(
     data: JSONValue,
     *,
     secret_paths: frozenset[str],
-    masking_mode: MaskingMode = "secrets_only",
+    masking: MaskingConfig,
     _prefix: str = "",
     _force: bool = False,
 ) -> JSONValue:
-    match masking_mode:
+    """Recursively mask secret values in *data*.
+
+    *masking* controls the effective ``masking_mode``, mask string, visible prefix/suffix,
+    and heuristic thresholds.
+    """
+    match masking.masking_mode:
         case "none":
             return data
         case "all" | "secrets_only":
@@ -67,11 +79,11 @@ def mask_json_value(
         result: dict[str, JSONValue] = {}
         for key, value in data.items():
             child_path = f"{_prefix}.{key}" if _prefix else key
-            forced = _force or is_secret_path(child_path, secret_paths=secret_paths, masking_mode=masking_mode)
+            forced = _force or is_secret_path(child_path, secret_paths=secret_paths, masking=masking)
             result[key] = mask_json_value(
                 value,
                 secret_paths=secret_paths,
-                masking_mode=masking_mode,
+                masking=masking,
                 _prefix=child_path,
                 _force=forced,
             )
@@ -79,15 +91,21 @@ def mask_json_value(
 
     if isinstance(data, list):
         return [
-            mask_json_value(item, secret_paths=secret_paths, masking_mode=masking_mode, _prefix=_prefix, _force=_force)
+            mask_json_value(
+                item,
+                secret_paths=secret_paths,
+                masking=masking,
+                _prefix=_prefix,
+                _force=_force,
+            )
             for item in data
         ]
 
-    if _force or masking_mode == "all":
-        return mask_value(data if isinstance(data, str) else str(data))
+    if _force or masking.masking_mode == "all":
+        return mask_value(data if isinstance(data, str) else str(data), masking)
 
-    if isinstance(data, str) and is_random_string(data):
-        return mask_value(data)
+    if isinstance(data, str) and is_random_string(data, masking):
+        return mask_value(data, masking)
 
     return data
 
@@ -97,15 +115,15 @@ _BARE_KEY_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*")
 _SCALAR_RE = re.compile(r"[^,{}\[\]\"'\s]+")
 
 
-def _mask_scalar_token(token: str) -> str:
+def _mask_scalar_token(token: str, masking: MaskingConfig) -> str:
     """Mask *token*, preserving a leading quote pair and any unquoted suffix after it."""
     match = _QUOTED_RE.match(token)
     if match is not None:
         quote = token[0]
         inner = match.group()[1:-1]
         suffix = token[match.end() :]
-        return f"{quote}{mask_value(inner)}{quote}{suffix}"
-    return mask_value(token)
+        return f"{quote}{mask_value(inner, masking)}{quote}{suffix}"
+    return mask_value(token, masking)
 
 
 def _key_end(line: str, after: int, n: int) -> int | None:
@@ -117,12 +135,14 @@ def _key_end(line: str, after: int, n: int) -> int | None:
 
 def _secret_key_matcher(
     secret_leaf_names: frozenset[str],
-    masking_mode: MaskingMode,
+    masking: MaskingConfig,
 ) -> Callable[[str], bool]:
     """Build a predicate for "does this raw key look secret", canonical-name aware."""
-    match masking_mode:
+    match masking.masking_mode:
         case "secrets_only":
-            return lambda key: canonical_name(key) in secret_leaf_names or matches_secret_name(key)
+            return lambda key: (
+                canonical_name(key) in secret_leaf_names or matches_secret_name(key, masking.secret_field_names)
+            )
         case "all" | "none":
             return lambda key: canonical_name(key) in secret_leaf_names
         case _ as unknown:
@@ -137,6 +157,7 @@ def _consume_quoted_token(
     *,
     is_secret_key: Callable[[str], bool],
     should_mask: bool,
+    masking: MaskingConfig,
 ) -> tuple[str, int, bool | None]:
     """Consume a quoted token at *i*.
 
@@ -153,7 +174,7 @@ def _consume_quoted_token(
     if key_end is not None:
         return (line[i:key_end], key_end, is_secret_key(token[1:-1]))
 
-    text = _mask_scalar_token(token) if should_mask else token
+    text = _mask_scalar_token(token, masking) if should_mask else token
     return (text, match.end(), None)
 
 
@@ -209,16 +230,16 @@ class _ScanState:
 def _mask_structured_line(
     line: str,
     *,
-    masking_mode: MaskingMode,
     secret_leaf_names: frozenset[str],
     forced: bool,
+    masking: MaskingConfig,
 ) -> str:
     """Mask every secret-eligible value in a `{...}`/`[...]`-bearing line, preserving keys and structure."""
     out: list[str] = []
     i = 0
     n = len(line)
-    state = _ScanState(active_forced=forced or masking_mode == "all")
-    is_secret_key = _secret_key_matcher(secret_leaf_names, masking_mode)
+    state = _ScanState(active_forced=forced or masking.masking_mode == "all")
+    is_secret_key = _secret_key_matcher(secret_leaf_names, masking)
 
     while i < n:
         char = line[i]
@@ -253,6 +274,7 @@ def _mask_structured_line(
                 n,
                 is_secret_key=is_secret_key,
                 should_mask=state.should_mask_value,
+                masking=masking,
             )
             out.append(text)
             state.bare_key_ok = False
@@ -268,7 +290,7 @@ def _mask_structured_line(
 
         match = _SCALAR_RE.match(line, i)
         if match is not None:
-            out.append(_mask_scalar_token(match.group()) if state.should_mask_value else match.group())
+            out.append(_mask_scalar_token(match.group(), masking) if state.should_mask_value else match.group())
             i = match.end()
             state.bare_key_ok = False
             state.pending_secret = False
@@ -283,32 +305,40 @@ def _mask_structured_line(
 def mask_env_line(
     line: str,
     *,
-    masking_mode: MaskingMode = "all",
     secret_leaf_names: frozenset[str] = frozenset(),
+    masking: MaskingConfig,
 ) -> str:
+    match masking.masking_mode:
+        case "none":
+            return line
+        case "all" | "secrets_only":
+            pass
+        case _ as unknown:
+            msg = f"Unknown masking mode: {unknown!r}"
+            raise ValueError(msg)
     if "{" in line or "[" in line:
         return _mask_structured_line(
             line,
-            masking_mode=masking_mode,
             secret_leaf_names=secret_leaf_names,
             forced=False,
+            masking=masking,
         )
     for sep in ("=", ":"):
         if sep in line:
             key, raw_value = line.split(sep, 1)
             stripped = raw_value.lstrip(" ")
             leading = raw_value[: len(raw_value) - len(stripped)]
-            return f"{key}{sep}{leading}{_mask_scalar_token(stripped)}"
-    return mask_value(line)
+            return f"{key}{sep}{leading}{_mask_scalar_token(stripped, masking)}"
+    return mask_value(line, masking)
 
 
 def mask_field_origins(
     origins: tuple[FieldOrigin, ...],
     *,
     secret_paths: frozenset[str],
-    masking_mode: MaskingMode = "secrets_only",
+    masking: MaskingConfig,
 ) -> tuple[FieldOrigin, ...]:
-    match masking_mode:
+    match masking.masking_mode:
         case "none":
             return origins
         case "all" | "secrets_only":
@@ -318,8 +348,8 @@ def mask_field_origins(
             raise ValueError(msg)
 
     return tuple(
-        replace(origin, value=mask_value(str(origin.value)))
-        if is_secret_path(origin.key, secret_paths=secret_paths, masking_mode=masking_mode)
+        replace(origin, value=mask_value(str(origin.value), masking))
+        if is_secret_path(origin.key, secret_paths=secret_paths, masking=masking)
         else origin
         for origin in origins
     )
@@ -329,20 +359,23 @@ def mask_source_entries(
     entries: tuple[SourceEntry, ...],
     *,
     secret_paths: frozenset[str],
-    masking_mode: MaskingMode = "secrets_only",
+    masking: MaskingConfig,
 ) -> tuple[SourceEntry, ...]:
     return tuple(
         replace(
             entry,
-            raw_data=mask_json_value(entry.raw_data, secret_paths=secret_paths, masking_mode=masking_mode),
+            raw_data=mask_json_value(entry.raw_data, secret_paths=secret_paths, masking=masking),
         )
         for entry in entries
     )
 
 
-def is_random_string(value: str) -> bool:
-    cfg = config.masking
-    if len(value) < cfg.min_heuristic_length:
+def is_random_string(value: str, masking: MaskingConfig) -> bool:
+    """Return True when *value* looks like a random/high-entropy string.
+
+    *masking* controls the heuristic thresholds.
+    """
+    if len(value) < masking.min_heuristic_length:
         return False
 
     if _heuristic_detector is None:
@@ -356,4 +389,4 @@ def is_random_string(value: str) -> bool:
     uncommon = sum(
         1 for b in bigrams if _heuristic_detector.bigrams.get(b, 0) <= _heuristic_detector.common_bigrams_threshold
     )
-    return uncommon / len(bigrams) > cfg.heuristic_threshold
+    return uncommon / len(bigrams) > masking.heuristic_threshold

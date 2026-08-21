@@ -3,29 +3,14 @@
 Keep this module private (``_``-prefixed) — it is not part of the public API.
 """
 
-import warnings
+REMOVAL_NOTICE_15 = "Support will be removed in dature 1.5."
 
-from dature.type_aliases import MaskingMode
-
-REMOVAL_NOTICE_13 = "Support will be removed in dature 1.3."
-
-MASK_SECRETS_DEPRECATION_MESSAGE = (
-    "`mask_secrets` is deprecated; use `masking_mode` instead "
-    f'(`True` -> "secrets_only", `False` -> "none"). {REMOVAL_NOTICE_13}'
+CONFIGURE_DEPRECATION_MESSAGE = (
+    "dature.configure() is deprecated and will be removed in dature 1.5. "
+    "Use dature.Dature(...) instead:\n\n"
+    "  Before: dature.configure(vault={'host': 'x'})\n"
+    "          result = dature.load(VaultSource(...), schema=Settings)\n\n"
+    "  After:  conf = dature.Dature(vault={'host': 'x'})\n"
+    "          result = conf.load(VaultSource(...), schema=Settings)\n\n"
+    f"{REMOVAL_NOTICE_15}"
 )
-
-
-def resolve_deprecated_mask_secrets(
-    masking_mode: MaskingMode | None,
-    mask_secrets: bool | None,  # noqa: FBT001
-) -> MaskingMode | None:
-    """Map the deprecated ``mask_secrets`` flag onto ``masking_mode``.
-
-    An explicit ``masking_mode`` wins; ``mask_secrets`` is then ignored but still warns.
-    """
-    if mask_secrets is None:
-        return masking_mode
-    warnings.warn(MASK_SECRETS_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=3)
-    if masking_mode is not None:
-        return masking_mode
-    return "secrets_only" if mask_secrets else "none"

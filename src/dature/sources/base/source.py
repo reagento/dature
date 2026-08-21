@@ -51,7 +51,7 @@ from dature.type_aliases import (
     TypeLoaderMap,
 )
 from dature.validators.aliases import FieldValidators
-from dature.validators.base import _validate_root_validators
+from dature.validators.base import validate_root_validators
 from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
@@ -147,7 +147,7 @@ class Source(abc.ABC):
     def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init_subclass__(**kwargs)
         if "root_validators" in cls.__dict__:
-            _validate_root_validators(cls.__dict__["root_validators"])
+            validate_root_validators(cls.__dict__["root_validators"])
 
     def __post_init__(self) -> None:
         if self.when is not None and not isinstance(self.when, Condition):

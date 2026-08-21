@@ -11,13 +11,13 @@ class Config:
     name: str
 
 
-dature.configure(
+conf = dature.Dature(
     etcd={
         "host": os.environ["ETCD_HOST"],
         "port": int(os.environ["ETCD_PORT"]),
     },
 )
 
-config = dature.load(dature.EtcdSource(path="myapp"), schema=Config)
+config = conf.load(dature.EtcdSource(path="myapp"), schema=Config)
 
 assert config == Config(db_password="s3cret", port=5432, name="myapp")  # noqa: S106

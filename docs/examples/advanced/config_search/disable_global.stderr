@@ -1,7 +1,7 @@
 + Exception Group Traceback (most recent call last):
   |   File "{SCRIPT_PATH}", line 30, in <module>
-  |     dature.load(
-  |     ~~~~~~~~~~~^
+  |     conf.load(
+  |     ~~~~~~~~~^
   |         dature.Yaml12Source(file="config.yaml"),
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |         schema=Config,

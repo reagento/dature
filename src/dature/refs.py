@@ -11,7 +11,7 @@ Equivalent to::
     JsonSource(file="${@env.CONFIG_PATH}")
     VaultSource(host="${@env.VAULT_HOST}", token="${@env.VAULT_TOKEN}")
 
-``ref.tag.key`` returns a :class:`_RefProxy` that records the path.
+``ref.tag.key`` returns a :class:`RefProxy` that records the path.
 When dature encounters a t-string in a source init field it reads the proxy's
 ``parts`` and converts the interpolation to the equivalent ``${@tag.key}``
 string, which is then resolved via the normal cross-source pass.
@@ -43,7 +43,7 @@ except ImportError:
     TEMPLATE_SUPPORTED = False
 
 
-class _RefProxy:
+class RefProxy:
     """Proxy that records a dot-separated path for ${@tag.key} resolution."""
 
     __slots__ = ("_parts",)
@@ -51,8 +51,8 @@ class _RefProxy:
     def __init__(self, parts: tuple[str, ...]) -> None:
         self._parts = parts
 
-    def __getattr__(self, name: str) -> "_RefProxy":
-        return _RefProxy((*self._parts, name))
+    def __getattr__(self, name: str) -> "RefProxy":
+        return RefProxy((*self._parts, name))
 
     @property
     def parts(self) -> tuple[str, ...]:
@@ -76,8 +76,8 @@ class _RefProxy:
 class _Ref:
     """Singleton that acts as the entry-point for t-string cross-source refs."""
 
-    def __getattr__(self, name: str) -> _RefProxy:
-        return _RefProxy((name,))
+    def __getattr__(self, name: str) -> RefProxy:
+        return RefProxy((name,))
 
     def __repr__(self) -> str:
         return "ref"
@@ -92,7 +92,7 @@ def template_to_str(template: "Template") -> str:
     Raises:
         ImportError: if ``string.templatelib`` is unavailable (Python < 3.14).
         TypeError: if *template* is not a ``Template`` instance.
-        ValueError: if an interpolation value is not a :class:`_RefProxy`.
+        ValueError: if an interpolation value is not a :class:`RefProxy`.
     """
     if not TEMPLATE_SUPPORTED:
         msg = 't-string syntax requires Python 3.14+; use "${@tag.key}" syntax instead'
@@ -108,7 +108,7 @@ def template_to_str(template: "Template") -> str:
         if i < len(template.interpolations):
             interp = template.interpolations[i]
             value = interp.value
-            if not isinstance(value, _RefProxy):
+            if not isinstance(value, RefProxy):
                 parts.append(str(value))
                 continue
             format_spec: str = interp.format_spec or ""

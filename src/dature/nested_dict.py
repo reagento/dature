@@ -14,7 +14,7 @@ from dature.type_aliases import NOT_LOADED, JSONValue, ProbeDict
 
 # Private sentinel used by `get_nested_value` to distinguish "key absent" from ``None``
 # values stored under a key.
-_ABSENT = object()
+ABSENT = object()
 
 
 def collect_leaf_paths(data: JSONValue, prefix: str = "") -> list[str]:
@@ -54,22 +54,22 @@ def flatten_dict(data: JSONValue, *, prefix: str = "") -> list[tuple[str, JSONVa
 
 
 def get_nested_value(data: JSONValue, dot_path: str) -> Any:  # noqa: ANN401
-    """Return the value at *dot_path* inside *data*, or the private ``_ABSENT`` sentinel.
+    """Return the value at *dot_path* inside *data*, or the private ``ABSENT`` sentinel.
 
     Callers that only need a boolean "present / absent" check should compare against
-    ``nested_dict._ABSENT``; callers that need the value should guard with that sentinel
+    ``nested_dict.ABSENT``; callers that need the value should guard with that sentinel
     before using the return value.
 
-    Returns ``_ABSENT`` when *data* is not a dict, when any intermediate key is missing,
+    Returns ``ABSENT`` when *data* is not a dict, when any intermediate key is missing,
     or when any intermediate value is not a dict.
     """
     if not isinstance(data, dict):
-        return _ABSENT
+        return ABSENT
     parts = dot_path.split(".")
     current: JSONValue = data
     for part in parts:
         if not isinstance(current, dict) or part not in current:
-            return _ABSENT
+            return ABSENT
         current = current[part]
     return current
 

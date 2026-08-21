@@ -11,7 +11,7 @@ class Config:
     name: str
 
 
-dature.configure(
+conf = dature.Dature(
     consul={
         "host": os.environ["CONSUL_HOST"],
         "port": int(os.environ["CONSUL_PORT"]),
@@ -19,6 +19,6 @@ dature.configure(
     },
 )
 
-config = dature.load(dature.ConsulSource(path="myapp"), schema=Config)
+config = conf.load(dature.ConsulSource(path="myapp"), schema=Config)
 
 assert config == Config(db_password="s3cret", port=5432, name="myapp")  # noqa: S106

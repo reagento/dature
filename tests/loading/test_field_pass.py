@@ -6,6 +6,7 @@ from typing import Annotated, cast
 import pytest
 
 from dature import V
+from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.errors import DatureConfigError, FieldLoadError
 from dature.errors.location import ErrorContext
 from dature.loading.context import build_error_ctx
@@ -34,6 +35,10 @@ class _MockSource(Source):
 
     def _load(self) -> JSONValue:
         return self.test_data
+
+
+_NO_MASKING = MaskingConfig(masking_mode="none")
+_DEFAULT_DISPLAY = ErrorDisplayConfig()
 
 
 def _make_field_error(path: list[str]) -> FieldLoadError:
@@ -134,7 +139,7 @@ class TestRunSourceFieldPass:
         source = _MockSource()
         indexed = IndexedSource(source, 0)
         cache = RetortCache(_ConfigWithValidator)
-        ctx = build_error_ctx(source, "Config")
+        ctx = build_error_ctx(source, "Config", masking=_NO_MASKING, error_display=_DEFAULT_DISPLAY)
         return indexed, cache, ctx
 
     def test_valid_raw_returns_dict_and_empty_errors(self):
@@ -197,7 +202,8 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            masking_mode="none",
+            masking=_NO_MASKING,
+            error_display=_DEFAULT_DISPLAY,
         )
 
         assert isinstance(ctx, ErrorContext)
@@ -212,7 +218,8 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            masking_mode="none",
+            masking=_NO_MASKING,
+            error_display=_DEFAULT_DISPLAY,
         )
 
         result = loader({"port": 5, "name": "ok"})
@@ -226,7 +233,8 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            masking_mode="none",
+            masking=_NO_MASKING,
+            error_display=_DEFAULT_DISPLAY,
         )
 
         with pytest.raises(DatureConfigError, match=r"_ConfigRequired") as exc_info:
@@ -242,7 +250,8 @@ class TestBuildRevalidation:
             retort_cache=cache,
             type_loaders=None,
             secret_paths=frozenset(),
-            masking_mode="none",
+            masking=_NO_MASKING,
+            error_display=_DEFAULT_DISPLAY,
         )
 
         with pytest.raises(DatureConfigError, match=r"_ConfigRequired") as exc_info:

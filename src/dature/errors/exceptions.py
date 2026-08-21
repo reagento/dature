@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from types import TracebackType
 from typing import Self
 
+from dature.config import ErrorDisplayConfig, resolve_error_display
 from dature.errors.loc_types import SourceLocation
 from dature.errors.rendering import format_location, format_path
 from dature.errors.traceback_trim import user_frames_only
@@ -48,18 +49,20 @@ class FieldLoadError(DatureError):
         message: str,
         input_value: JSONValue = None,
         locations: list[SourceLocation] | None = None,
+        error_display: ErrorDisplayConfig | None = None,
     ) -> None:
         self.field_path = field_path
         self.message = message
         self.input_value = input_value
         self.locations = locations or []
+        self.error_display = error_display if error_display is not None else resolve_error_display()
         super().__init__(self._format())
 
     def _format(self) -> str:
         lines = [f"  [{format_path(self.field_path)}]  {self.message}"]
         last_idx = len(self.locations) - 1
         for i, loc in enumerate(self.locations):
-            lines.extend(format_location(loc, last=i == last_idx))
+            lines.extend(format_location(loc, error_display=self.error_display, last=i == last_idx))
         return "\n".join(lines)
 
 
@@ -70,16 +73,18 @@ class MergeConflictFieldError(DatureError):
         field_path: list[str],
         message: str,
         locations: list[SourceLocation],
+        error_display: ErrorDisplayConfig | None = None,
     ) -> None:
         self.field_path = field_path
         self.message = message
         self.locations = locations
+        self.error_display = error_display if error_display is not None else resolve_error_display()
         super().__init__(self._format())
 
     def _format(self) -> str:
         lines = [f"  [{format_path(self.field_path)}]  {self.message}"]
         for loc in self.locations:
-            lines.extend(format_location(loc))
+            lines.extend(format_location(loc, error_display=self.error_display))
         return "\n".join(lines)
 
 
@@ -104,12 +109,14 @@ class MissingEnvVarError(DatureError):
         source_text: str,
         field_path: list[str] | None = None,
         location: SourceLocation | None = None,
+        error_display: ErrorDisplayConfig | None = None,
     ) -> None:
         self.var_name = var_name
         self.position = position
         self.source_text = source_text
         self.field_path = field_path or []
         self.location = location
+        self.error_display = error_display if error_display is not None else resolve_error_display()
         super().__init__(
             f"Environment variable '{var_name}' is not set (position {position} in '{source_text}')",
         )
@@ -162,7 +169,7 @@ class EnvVarExpandError(DatureErrorGroup):
                 continue
             lines.append(f"  [{format_path(err.field_path)}]  Missing environment variable '{err.var_name}'")
             if err.location is not None:
-                lines.extend(format_location(err.location))
+                lines.extend(format_location(err.location, error_display=err.error_display))
             lines.append("")
         return "\n".join(lines)
 

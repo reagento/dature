@@ -3,7 +3,7 @@
 import pytest
 
 from dature.nested_dict import (
-    _ABSENT,
+    ABSENT,
     collect_field_values,
     collect_leaf_paths,
     collect_not_loaded_paths,
@@ -73,7 +73,7 @@ class TestGetNestedValue:
         assert get_nested_value(data, path) == expected
 
     def test_stored_none_returns_none_not_absent(self):
-        # None stored under a key must come back as None, not the _ABSENT sentinel.
+        # None stored under a key must come back as None, not the ABSENT sentinel.
         result = get_nested_value({"a": None}, "a")
 
         assert result is None
@@ -91,7 +91,7 @@ class TestGetNestedValue:
         ],
     )
     def test_returns_absent(self, data, path):
-        assert get_nested_value(data, path) is _ABSENT
+        assert get_nested_value(data, path) is ABSENT
 
 
 class TestCollectFieldValues:

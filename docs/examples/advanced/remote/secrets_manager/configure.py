@@ -11,7 +11,7 @@ class Config:
     name: str
 
 
-dature.configure(
+conf = dature.Dature(
     secrets_manager={
         "region_name": os.environ["SECRETS_MANAGER_REGION_NAME"],
         "endpoint_url": os.environ["SECRETS_MANAGER_ENDPOINT_URL"],
@@ -19,6 +19,6 @@ dature.configure(
 )
 
 source = dature.AwsSecretsManagerSource(name="myapp/config")
-config = dature.load(source, schema=Config)
+config = conf.load(source, schema=Config)
 
 assert config == Config(db_password="s3cret", port=5432, name="myapp")  # noqa: S106
