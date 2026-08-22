@@ -1,0 +1,1 @@
+Added static type assertions (`typing.assert_type`) for the public API — `load()` overloads, `Loader`/decorator mode, `V` validators, `F`/`Absolute` field paths — and a regression test for the mypy plugin's `call-overload` behavior. Fixed a `README.md` Quick Start example that passed `schema` positionally, which mypy rejects since `schema` is keyword-only.

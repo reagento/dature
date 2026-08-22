@@ -20,32 +20,57 @@ _DECORATED_SRC = textwrap.dedent("""\
     Config()  # all args optional when plugin is active
 """)
 
+_POSITIONAL_SCHEMA_SRC = textwrap.dedent("""\
+    from dataclasses import dataclass
+    from dature import load
+    from dature.sources.env_ import EnvSource
+
+    @dataclass
+    class Config:
+        host: str
+        port: int
+
+    load(EnvSource(), Config)  # schema is keyword-only, must be load(..., schema=Config)
+""")
+
 _MYPY_BASE_CFG = "[mypy]\nignore_missing_imports = True\n"
 _MYPY_PLUGIN_CFG = _MYPY_BASE_CFG + "plugins = dature.mypy_plugin\n"
 
 
-@pytest.fixture
-def cfg_file(tmp_path: Path) -> Path:
-    p = tmp_path / "cfg.py"
-    p.write_text(_DECORATED_SRC)
-    return p
-
-
-def _run_mypy(src: Path, mypy_cfg: str) -> tuple[str, int]:
-    ini = src.parent / "mypy.ini"
+def _run_mypy(tmp_path: Path, src: str, mypy_cfg: str) -> tuple[str, int]:
+    py_file = tmp_path / "cfg.py"
+    py_file.write_text(src)
+    ini = tmp_path / "mypy.ini"
     ini.write_text(mypy_cfg)
-    stdout, _, rc = mypy.api.run([str(src), "--no-error-summary", f"--config-file={ini}"])
+    stdout, _, rc = mypy.api.run([str(py_file), "--no-error-summary", f"--config-file={ini}"])
     return stdout, rc
 
 
-def test_plugin_allows_no_arg_instantiation(cfg_file: Path) -> None:
-    stdout, rc = _run_mypy(cfg_file, _MYPY_PLUGIN_CFG)
+@pytest.mark.parametrize(
+    ("src", "mypy_cfg", "expect_rc_zero", "expected_error_code"),
+    [
+        (_DECORATED_SRC, _MYPY_PLUGIN_CFG, True, None),
+        (_DECORATED_SRC, _MYPY_BASE_CFG, False, "call-arg"),
+        (_POSITIONAL_SCHEMA_SRC, _MYPY_BASE_CFG, False, "call-overload"),
+    ],
+    ids=[
+        "plugin_allows_no_arg_instantiation",
+        "without_plugin_reports_missing_args",
+        "positional_schema_reports_call_overload",
+    ],
+)
+def test_mypy_check(
+    tmp_path: Path,
+    src: str,
+    mypy_cfg: str,
+    expect_rc_zero: bool,
+    expected_error_code: str | None,
+) -> None:
+    stdout, rc = _run_mypy(tmp_path, src, mypy_cfg)
 
-    assert rc == 0, f"Unexpected mypy errors with plugin:\n{stdout}"
-
-
-def test_without_plugin_reports_missing_args(cfg_file: Path) -> None:
-    stdout, rc = _run_mypy(cfg_file, _MYPY_BASE_CFG)
-
-    assert rc != 0, "Expected mypy to report missing args without plugin"
-    assert "call-arg" in stdout
+    if expect_rc_zero:
+        assert rc == 0, f"Unexpected mypy errors:\n{stdout}"
+    else:
+        assert rc != 0, f"Expected mypy to report an error, got none:\n{stdout}"
+        assert expected_error_code is not None
+        assert expected_error_code in stdout

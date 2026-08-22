@@ -60,7 +60,7 @@ class Config:
     debug: bool = False
 
 
-config = dature.load(dature.Yaml12Source(file="config.yaml"), Config)
+config = dature.load(dature.Yaml12Source(file="config.yaml"), schema=Config)
 ```
 
 ## Key Features

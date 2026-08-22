@@ -1,5 +1,7 @@
 """Unit tests for ``ComparePredicate`` / ``LengthComparePredicate`` — construction and runtime."""
 
+from typing import assert_type
+
 import pytest
 
 from dature import V
@@ -43,6 +45,16 @@ class TestCompareRuntime:
             assert func(g) is True
         for b in bad:
             assert func(b) is False
+
+
+class TestStaticTyping:
+    """Static-only assertions — the checked behavior is verified by mypy/pyright, not at runtime."""
+
+    def test_compare_op_returns_compare_predicate(self) -> None:
+        assert_type(V >= 1, ComparePredicate)
+
+    def test_len_op_returns_length_compare_predicate(self) -> None:
+        assert_type(V.len() >= 3, LengthComparePredicate)
 
 
 class TestCompareErrorMessage:

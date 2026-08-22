@@ -1,8 +1,10 @@
 """Tests for main.py — public load() API."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
+from typing import assert_type
 
 import pytest
 import time_machine
@@ -22,6 +24,7 @@ from dature import (
     load,
 )
 from dature.errors import DatureConfigError
+from dature.protocols import DataclassInstance
 from dature.sources.base import Source
 from dature.type_aliases import JSONValue
 
@@ -235,6 +238,36 @@ class TestLoadAsFunction:
         result = load(EnvSource(), schema=Config)
 
         assert result.my_var == "from_env"
+
+
+class TestStaticTyping:
+    """Static-only assertions — the checked behavior is verified by mypy/pyright, not at runtime."""
+
+    def test_load_with_schema_returns_schema_type(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"name": "x"}')
+
+        @dataclass
+        class Config:
+            name: str
+
+        result = load(JsonSource(file=json_file), schema=Config)
+        assert_type(result, Config)
+
+    def test_load_without_schema_returns_decorator(self) -> None:
+        decorator = load(EnvSource())
+        assert_type(decorator, Callable[[type[DataclassInstance]], type[DataclassInstance]])
+
+    def test_load_accepts_multiple_sources(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"name": "x"}')
+
+        @dataclass
+        class Config:
+            name: str
+
+        result = load(EnvSource(), JsonSource(file=json_file), schema=Config)
+        assert_type(result, Config)
 
 
 class TestStaleOnErrorFunctionMode:
