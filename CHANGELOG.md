@@ -1,3 +1,99 @@
+## 1.3.0
+
+### Features
+
+- Add `stale_on_error: Literal["keep", "raise", "retry"]` to `Loader`/`dature.load()` (function-mode
+  only via `configure()`/`Loader`) and to `configure(loading={...})`/`DATURE_LOADING__STALE_ON_ERROR`,
+  controlling what happens when a cached config's TTL expires and the reload fails: `"keep"` returns
+  the previously loaded config and restarts the TTL window, `"retry"` returns it without restarting
+  the window so the next call retries the reload, and `"raise"` propagates the error as before.
+
+  **Breaking change:** the default is now `"keep"` — a reload failure after a live TTL cache used to
+  always raise; it now silently falls back to the last successfully loaded config (with a
+  `logging.WARNING`) unless `stale_on_error="raise"` is set explicitly or globally via `configure()`.
+- Added `dature.Dature` — an explicit, immutable configuration instance that replaces the global `configure()` call.
+
+  `Dature(masking={...}, error_display={...}, vault={...}, ...)` accepts all `DatureConfig` groups and merges them on top of the process-wide `DATURE_*`-derived defaults.
+  Each instance is fully independent: multiple instances with different settings coexist without affecting each other or the process-wide defaults.
+
+  ```python
+  conf = dature.Dature(vault={"host": "vault.internal"})
+
+  # Function mode
+  result = conf.load(dature.VaultSource(path="secrets"), schema=Settings)
+
+
+  # Decorator mode (config binds at decoration/import time)
+  @conf.load(dature.VaultSource(path="secrets"))
+  @dataclass
+  class Settings:
+      host: str
+      port: int
+
+
+  # Build a reusable Loader with caching
+  loader = conf.loader(dature.VaultSource(path="secrets"), schema=Settings)
+  ```
+
+  `dature.load(...)` is unchanged and continues to work as the default entry point.
+
+  `Dature.replace(**groups)` creates a new instance with individual groups overridden, inheriting all other groups from the current instance.
+
+  `error_display` (`max_visible_lines`, `max_line_length`) is overridable per instance the same way every other config group is, closing the last env-only group:
+
+  ```python
+  narrow = dature.Dature(error_display={"max_line_length": 40})
+  wide = dature.Dature(error_display={"max_line_length": 200})
+  ```
+
+  Two instances loading the same broken config now render the same failure differently, and the override survives across `except*`-caught exception groups (the underlying `FieldLoadError`/`MergeConflictFieldError`/`MissingEnvVarError` leaves each carry their own `ErrorDisplayConfig`). `error_display` is now visible in `repr(Dature(...))` alongside the other groups. Omitting `error_display` inherits the process-wide `DATURE_ERROR_DISPLAY__*`-derived default, unchanged from before.
+
+  `dature.configure()` is now deprecated and will be removed in **dature 1.5**. Migrate to `dature.Dature(...)`, which accepts the same option groups and merges them on top of the `DATURE_*` environment defaults:
+
+  ```python
+  # Before
+  dature.configure(vault={"host": "vault.internal"})
+  result = dature.load(VaultSource(path="secrets"), schema=Settings)
+
+  # After
+  conf = dature.Dature(vault={"host": "vault.internal"})
+  result = conf.load(VaultSource(path="secrets"), schema=Settings)
+  ```
+
+  Calling `configure()` emits a `DeprecationWarning` with migration instructions. The `dature.load()` free function is unchanged.
+
+### Bugfixes
+
+- Bugs in already-released code, surfaced by the config-deglobalization refactor (`changes/+config-deglobalization.refactor.md`):
+
+  - Fixed `error_display.max_line_length` values of 3 or less producing a rendered line *longer* than the original — `line[: max_length - 3] + "..."` underflowed into a negative slice (e.g. `max_line_length=1` turned `"hello"` into `"hel..."`, 6 characters instead of 5). Widths of 3 or less now truncate to `max_length` characters with no `"..."` marker instead of slicing negative.
+  - Fixed `build_secret_paths()`'s internal cache key: it was keyed only on `(dataclass_type, extra_patterns)` while also reading `secret_field_names` from the ambient config inside the cached function body, so changing `secret_field_names` after the first load for a given dataclass silently kept returning stale secret paths. The full pattern set is now part of the cache key.
+  - `Loader` unconditionally merged the deprecated `configure(type_loaders=...)` global into every load, so an independent `Dature()` instance incorrectly inherited type loaders installed via `configure()`. Legacy type loaders are now merged only for the free-function `dature.load(...)` API (`dispatch()` in `main.py`), never for `Dature.load()`/`Dature.loader()`.
+  - `configure()`'s read-modify-write of the process-wide override (`resolve_config()` → merge groups → write `legacy.override`/`legacy.type_loaders`) had no synchronization, so two concurrent `configure()` calls updating different groups could clobber each other. Restored a lock around that critical section.
+  - `Dature(type_loaders=...)` and `replace(type_loaders=...)` stored the caller's dict by reference, so mutating it after construction silently changed the instance's behavior despite `Dature` being documented as immutable. `type_loaders` is now copied on construction.
+  - `LoadingConfig.system_config_dirs`'s shared default was a plain, mutable dict cached process-wide by `default_config()`, so mutating it through one `Dature()` instance leaked into every other instance. The default is now a frozen `MappingProxyType`, and `merge_group()` defensively copies any mapping-valued override so a caller-supplied dict can't be mutated out from under an already-built config.
+  - `mask_env_line()` ignored `masking_mode="none"`, still masking plain `key=value` lines and secret-named keys in structured lines. It now short-circuits and returns the line unmodified in `"none"` mode, matching `mask_json_value()` and `mask_field_origins()`. `is_secret_path()` had the same gap: it still returned `True` for an explicitly declared `secret_paths` entry in `"none"` mode, so error locations kept dropping `env_var_value` and debug logs kept masking secret fields even with masking fully disabled. `"none"` now short-circuits to `False` there too.
+
+### Refactoring
+
+- Internal refactor removing ambient process-global config reads throughout the loading and masking pipeline, in preparation for per-instance `Dature(...)` overrides:
+
+  - The effective `DatureConfig` is now threaded explicitly from `Loader` down through the entire loading and masking pipeline (`MergeConfig`, `LoadCtx`, `ErrorContext`, `build_error_ctx`, `load_single`, `build_revalidation`, `mask_json_value`, `mask_value`, `is_random_string`, `is_secret_path`, `matches_secret_name`, `mask_env_line`, `mask_field_origins`, `mask_source_entries`, `build_single_source_report`, `build_merge_report`, `log_merge_step`, `log_field_origins`, `log_single_source_load`), eliminating per-call reads of the `RLock`-guarded `_ConfigProxy` singleton on the hot masking path. Call sites that omit the new optional `masking=` parameter fall back to the process-wide config, preserving full backwards compatibility.
+  - Collapsed the dual `masking_mode: MaskingMode` + `masking: MaskingConfig | None` parameter pair, threaded through roughly twenty internal function signatures, into a single required `masking: MaskingConfig` whose `.masking_mode` field carries the effective, already-resolved mode. `MaskingConfig.masking_mode` is no longer `MaskingMode | None = None` but `MaskingMode = "all"` — same default behavior, but the field is no longer optional and downstream code no longer needs to resolve a `None` sentinel. The public API is unchanged: `dature.load(masking_mode=...)`, `Dature.load`, `Loader.__init__`, `Loader.as_decorator`, and the `--masking-mode` CLI flag keep their `MaskingMode | None = None` per-call override, resolved once in `Loader.__init__` via the new `apply_masking_mode()` (replacing `resolve_masking_mode()`). Making `masking` required everywhere below that resolution point turns a forgotten argument into a type error instead of a silent fallback to the process-global config. Breaking change for direct users of `MaskingConfig`: `MaskingConfig(masking_mode=None)` is no longer valid — pass `"all"`, `"secrets_only"`, or `"none"` explicitly (omit the field entirely to get the `"all"` default).
+  - `build_secret_paths()` (`dature.masking.detection`) now requires `base_patterns` — the previous fallback to the process-global config was unreachable from every production call site (`Loader` and the merge path always pass it explicitly), and reading the global there meant a forgotten argument would silently fall back to the wrong config instead of erroring. This is an internal helper, not part of the public API.
+  - `dature.load()`'s public signature no longer exposes `config` — it was an internal seam used only by `Dature.load()` to thread its instance config through, undocumented, yet rendered verbatim on the API reference page. The implementation moved to a `dispatch()` helper (still module-level, imported by `instance.py`) that keeps accepting `config`; `default_config()`'s bootstrap now builds a `Loader` directly instead of going through the public `load()`.
+  - Removed all `global` statements from `config.py`: `_bootstrapping` is replaced by reading `default_config.cache_info().currsize` in the new `resolve_error_display()` helper, and `_legacy_override`/`_legacy_type_loaders` are consolidated into a single `_LegacyState` dataclass whose attributes are mutated in place. `resolve_error_display()` falls back to `BOOTSTRAP_CONFIG.error_display` while `default_config()` has not yet produced a value, instead of calling `default_config()` itself — this keeps a broken `DATURE_*` environment variable surfacing as a `DatureConfigError`, not a `RecursionError`, and as a side effect error rendering after a failed bootstrap load now safely returns built-in defaults instead of re-triggering the bootstrap.
+  - `Dature.load()` and `Dature.loader()` no longer duplicate the instance/load-level `type_loaders` merge logic — both now call a shared `_merge_type_loaders()` helper. `Dature.__repr__()` diffs config groups against `_CONFIG_GROUP_NAMES` (derived from `dataclasses.fields(DatureConfig)`) instead of seven hardcoded `if` branches, so it can't drift out of sync with `DatureConfig`. `Dature.load()` calls `dature.main.dispatch()`, imported at module level — it never had a circular-import dependency on `dature.instance`.
+- Replace literal `if/elif`-style dispatch on `Literal`-typed values (compare ops, decode modes, `kv_version`, `NestedResolveStrategy`, `ExpandEnvVarsMode`, masking mode, adaptix `NameStyle`, CLI output format, `split_escaped` separator) with exhaustive `match`/`case`, each ending in a terminal `case _ as unknown: raise ValueError(...)` arm instead of silently falling through; calling `load_raw()`/`_fetch()` directly on a bare `Source` now requires `expand_env_vars` to already be resolved to a concrete mode (not `None`) — go through `load()`/`Loader` to get the `config.loading.expand_env_vars` default, or pass it explicitly.
+
+### Removals
+
+- Remove the deprecated `mask_secrets` flag (promised for removal in 1.3) from `load()`, `Loader`,
+  the `@load(...)` decorator, `configure(masking={...})`, and the `--mask-secrets` CLI flag. Use
+  `masking_mode` (`"all"` / `"secrets_only"` / `"none"`) instead — `mask_secrets=True` maps to
+  `masking_mode="secrets_only"`, `mask_secrets=False` maps to `masking_mode="none"`.
+
+
 ## 1.2.0
 
 ### Features
