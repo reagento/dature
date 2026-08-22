@@ -1,10 +1,11 @@
 """Tests for FieldPath lazy field path builder."""
 
 from dataclasses import dataclass
+from typing import assert_type
 
 import pytest
 
-from dature.field_path import Absolute, F, FieldPath, extract_field_path, validate_field_path_owner
+from dature.field_path import Absolute, F, FieldAny, FieldPath, extract_field_path, validate_field_path_owner
 
 
 @dataclass
@@ -113,6 +114,19 @@ class TestExtractFieldPath:
 
     def test_passes_with_correct_string_owner(self):
         assert extract_field_path(F["_Cfg"].host, schema=_Cfg) == "host"
+
+
+class TestStaticTyping:
+    """Static-only assertions — the checked behavior is verified by mypy/pyright, not at runtime."""
+
+    def test_class_owner_resolves_to_field_type(self):
+        assert_type(F[_Cfg].host, str)
+
+    def test_string_owner_resolves_to_field_path(self):
+        assert_type(F["Config"].host, FieldPath)
+
+    def test_any_is_field_any(self):
+        assert_type(F.ANY, FieldAny)
 
 
 class TestAbsolute:

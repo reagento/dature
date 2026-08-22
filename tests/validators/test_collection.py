@@ -1,9 +1,18 @@
 """Unit tests for collection predicates: ``V.in_``, ``V.unique_items``, ``V.each``."""
 
+from typing import assert_type
+
 import pytest
 
 from dature import V
 from dature.validators.collection import EachPredicate, InPredicate
+
+
+class TestStaticTyping:
+    """Static-only assertions — the checked behavior is verified by mypy/pyright, not at runtime."""
+
+    def test_in_returns_in_predicate(self) -> None:
+        assert_type(V.in_(("a", "b", "c")), InPredicate)
 
 
 class TestIn:

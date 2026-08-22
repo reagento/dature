@@ -1,6 +1,16 @@
 """Unit tests for ``MatchesPredicate``."""
 
+from typing import assert_type
+
 from dature import V
+from dature.validators.text import MatchesPredicate
+
+
+class TestStaticTyping:
+    """Static-only assertions — the checked behavior is verified by mypy/pyright, not at runtime."""
+
+    def test_matches_returns_matches_predicate(self) -> None:
+        assert_type(V.matches(r"^[a-z]+$"), MatchesPredicate)
 
 
 class TestMatchesRuntime:

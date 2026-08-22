@@ -6,7 +6,7 @@ from datetime import timedelta
 from enum import Flag
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, assert_type
 from unittest.mock import patch
 
 import pytest
@@ -96,6 +96,21 @@ class TestLoaderLoad:
 
         assert result.host == "nested"
         assert result.port == 1
+
+
+class TestStaticTyping:
+    """Static-only assertions — the checked behavior is verified by mypy/pyright, not at runtime."""
+
+    def test_load_returns_schema_type(self, tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 3000}')
+
+        result = Loader(JsonSource(file=json_file), schema=_Config).load()
+        assert_type(result, _Config)
+
+    def test_as_decorator_returns_decorator(self) -> None:
+        decorated = Loader.as_decorator(EnvSource())(_Config)
+        assert_type(decorated, type[_Config])
 
 
 class TestLoaderCache:
