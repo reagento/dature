@@ -23,7 +23,7 @@
 
 **[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/en/latest/changelog/)**
 
-Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker secrets, CLI arguments, and HashiCorp Vault — with automatic type conversion, validation, and human-readable error messages.
+Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker secrets, CLI arguments, HashiCorp Vault, Consul, etcd, AWS SSM, and AWS Secrets Manager — with automatic type conversion, validation, and human-readable error messages.
 
 ## Installation
 
@@ -38,6 +38,9 @@ pip install dature[yaml]       # YAML (ruamel.yaml)
 pip install dature[json5]      # JSON5
 pip install dature[toml]       # TOML (toml_rs)
 pip install dature[vault]      # HashiCorp Vault (hvac)
+pip install dature[consul]     # Consul (py-consul)
+pip install dature[etcd]       # etcd (etcd3gw)
+pip install dature[aws]        # AWS SSM & Secrets Manager (boto3)
 pip install dature[secure]     # Secret detection heuristics
 pip install dature[type-stubs] # Type stubs for the integrations above (mypy/pyright users)
 ```
@@ -62,7 +65,7 @@ config = dature.load(dature.Yaml12Source(file="config.yaml"), Config)
 
 ## Key Features
 
-- **Multiple sources** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets, CLI args (`argparse`), HashiCorp Vault
+- **Multiple sources** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets, CLI args (`argparse` or your own), HashiCorp Vault, Consul, etcd, AWS SSM, AWS Secrets Manager
 - **Merging** — combine multiple sources with configurable strategies (`"last_wins"`, `"first_wins"`, `"raise_on_conflict"`)
 - **Validation** — `Annotated` field validators, root validators, `__post_init__` support
 - **Naming** — automatic field name mapping (`snake_case` ↔ `camelCase` ↔ `UPPER_SNAKE` etc.)
@@ -71,6 +74,9 @@ config = dature.load(dature.Yaml12Source(file="config.yaml"), Config)
 - **Special types** — `SecretStr`, `ByteSize`, `PaymentCardNumber`, `URL`, `Base64UrlStr`
 - **Debug report** — `debug=True` shows which source provided each field value
 - **Decorator mode** — `@dature.load(meta)` auto-loads config on dataclass instantiation with caching
+- **CLI** — `dature validate` and `dature inspect` console commands for CI and debugging
+- **Cross-source refs & conditional sources** — reference values across sources, activate sources based on environment
+- **Extensible** — plug in custom sources, type loaders, and remote backends via `SourceProtocol`
 
 See the **[documentation](https://dature.readthedocs.io/)** for detailed guides and API reference.
 
