@@ -107,6 +107,16 @@ class TestConfigure:
                 ("secrets_manager", "region_name"),
                 "eu-west-1",
             ),
+            (
+                {"azure_app_config": {"endpoint": "https://x.azconfig.io"}},
+                ("azure_app_config", "endpoint"),
+                "https://x.azconfig.io",
+            ),
+            (
+                {"azure_key_vault": {"vault_url": "https://x.vault.azure.net"}},
+                ("azure_key_vault", "vault_url"),
+                "https://x.vault.azure.net",
+            ),
         ],
         ids=[
             "masking-mask",
@@ -122,6 +132,8 @@ class TestConfigure:
             "etcd-user",
             "ssm-region_name",
             "secrets_manager-region_name",
+            "azure_app_config-endpoint",
+            "azure_key_vault-vault_url",
         ],
     )
     def test_configure_overrides(
@@ -337,6 +349,18 @@ class TestEnvLoading:
                 ("secrets_manager", "region_name"),
                 "eu-west-1",
             ),
+            (
+                "DATURE_AZURE_APP_CONFIG__ENDPOINT",
+                "https://x.azconfig.io",
+                ("azure_app_config", "endpoint"),
+                "https://x.azconfig.io",
+            ),
+            (
+                "DATURE_AZURE_KEY_VAULT__VAULT_URL",
+                "https://x.vault.azure.net",
+                ("azure_key_vault", "vault_url"),
+                "https://x.vault.azure.net",
+            ),
         ],
         ids=[
             "str-mask",
@@ -351,6 +375,8 @@ class TestEnvLoading:
             "str-etcd-user",
             "str-ssm-region_name",
             "str-secrets_manager-region_name",
+            "str-azure_app_config-endpoint",
+            "str-azure_key_vault-vault_url",
         ],
     )
     def test_env_loading(
@@ -414,6 +440,16 @@ class TestDatureInstance:
                 ("secrets_manager", "region_name"),
                 "eu-west-1",
             ),
+            (
+                {"azure_app_config": {"endpoint": "https://x.azconfig.io"}},
+                ("azure_app_config", "endpoint"),
+                "https://x.azconfig.io",
+            ),
+            (
+                {"azure_key_vault": {"vault_url": "https://x.vault.azure.net"}},
+                ("azure_key_vault", "vault_url"),
+                "https://x.vault.azure.net",
+            ),
         ],
         ids=[
             "masking-mask",
@@ -424,6 +460,8 @@ class TestDatureInstance:
             "etcd-user",
             "ssm-region_name",
             "secrets_manager-region_name",
+            "azure_app_config-endpoint",
+            "azure_key_vault-vault_url",
         ],
     )
     def test_dature_instance_group_overrides(
@@ -600,6 +638,18 @@ class TestDatureInstance:
                 {"aws_secret_access_key": "sm-aws-secret"},
                 "sm-aws-secret",
                 id="secrets_manager_aws_secret_access_key",
+            ),
+            pytest.param(
+                "azure_app_config",
+                {"connection_string": "Endpoint=https://x.azconfig.io;Id=abc;Secret=azure-app-config-secret"},
+                "azure-app-config-secret",
+                id="azure_app_config_connection_string",
+            ),
+            pytest.param(
+                "azure_key_vault",
+                {"client_secret": "azure-key-vault-client-secret"},
+                "azure-key-vault-client-secret",
+                id="azure_key_vault_client_secret",
             ),
         ],
     )

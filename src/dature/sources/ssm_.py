@@ -58,28 +58,6 @@ class AwsSsmSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _build_nested(self, params: "list[dict[str, Any]]") -> JSONValue:
-        """Turn a recursive ``get_parameters_by_path`` listing into a nested dict.
-
-        The prefix (``self.path``) is stripped from every parameter name first. A name
-        that matches the prefix exactly has no remainder and is dropped — it has no leaf
-        name to store a value under.
-        """
-        root: dict[str, JSONValue] = {}
-        for param in params:
-            name = cast("str", param["Name"])
-            remainder = name.removeprefix(self.path)
-            if self.separator:
-                remainder = remainder.lstrip(self.separator)
-            if not remainder:
-                continue
-            parts = remainder.split(self.separator) if self.separator else [remainder]
-            node = root
-            for part in parts[:-1]:
-                node = cast("dict[str, JSONValue]", node.setdefault(part, {}))
-            node[parts[-1]] = self._decode_value(param)
-        return root
-
     def _build_single(self, param: "dict[str, Any]") -> JSONValue:
         value = self._decode_value(param)
         if self.decode == "json":
@@ -127,7 +105,17 @@ class AwsSsmSource(RemoteSource):
                 for page in paginator.paginate(Path=self.path, Recursive=True, WithDecryption=self.decrypt):
                     params.extend(cast("list[dict[str, Any]]", page["Parameters"]))
                 found = bool(params)
-                result = self._build_nested(params) if found else {}
+                result: JSONValue = (
+                    self._nest_flat_keys(
+                        params,
+                        key_fn=lambda p: cast("str", p["Name"]),
+                        value_fn=self._decode_value,
+                        prefix=self.path,
+                        separator=self.separator,
+                    )
+                    if found
+                    else {}
+                )
             else:
                 resp = client.get_parameter(Name=self.path, WithDecryption=self.decrypt)
                 found = True
@@ -146,6 +134,7 @@ class AwsSsmSource(RemoteSource):
             msg = f"SSM parameter not found: {self.remote_address()}"
             raise KeyError(msg) from None
 
-        if self.decode == "utf-8":
-            return self._parse_string_values(result)
         return result
+
+    def _decodes_to_strings(self) -> bool:
+        return self.decode == "utf-8"

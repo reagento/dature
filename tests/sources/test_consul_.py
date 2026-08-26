@@ -5,6 +5,7 @@ Container-based integration tests live in ``tests/integration/sources/consul/``.
 
 import json
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 import consul.exceptions
@@ -188,7 +189,7 @@ class TestConsulSourceFetch:
         ]
         src = self._make_source(monkeypatch, data)
         assert src.load_raw().loaded_data == {
-            "db": {"host": "localhost", "port": 5432},
+            "db": {"host": "localhost", "port": "5432"},
             "name": "svc",
         }
 
@@ -270,6 +271,22 @@ class TestConsulSourceFetch:
 
         assert_all_types_equal(result, EXPECTED_ALL_TYPES)
 
+    def test_prefix_below_path_keeps_scalar_precision(self, monkeypatch):
+        # Regression: when the schema root sits below the fetched path (via `prefix`), scalar
+        # inference must not run on that subtree before it — a Decimal-typed field must keep
+        # full precision instead of being silently narrowed to a lossy float.
+        value = "3.14159265358979323846264338327950288"
+        data = [{"Key": "myapp/all_types/decimal_value", "Value": value.encode("utf-8")}]
+        src = self._make_source(monkeypatch, data, prefix="all_types")
+
+        @dataclass
+        class Config:
+            decimal_value: Decimal
+
+        result = load(src, schema=Config)
+
+        assert result == Config(decimal_value=Decimal(value))
+
     def test_missing_key_error_message_includes_path(self, monkeypatch):
         self._make_source(monkeypatch, None)
 
@@ -306,7 +323,7 @@ class TestConsulSourceFetch:
 
     def test_raw_decode_none_value_raises(self, monkeypatch):
         # A key with Value=None (e.g. a directory marker) reaching a bytes-typed field must
-        # raise, not silently produce None. In the recursive case _build_nested drops keys
+        # raise, not silently produce None. In the recursive case _nest_flat_keys drops keys
         # equal to the prefix itself, but a single-key fetch has no such filter.
         item = {"Key": "myapp/blob", "Value": None}
         self._make_source(monkeypatch, item, recursive=False, decode="raw")

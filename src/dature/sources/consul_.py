@@ -69,28 +69,6 @@ class ConsulSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _build_nested(self, items: "list[dict[str, Any]]") -> JSONValue:
-        """Turn a recursive KV listing into a nested dict, splitting each key on ``separator``.
-
-        The prefix (``self.path``) is stripped from every key first. A key that matches the
-        prefix exactly (the "directory" marker Consul writes for a prefix) has no remainder
-        and is dropped — it has no leaf name to store a value under.
-        """
-        root: dict[str, JSONValue] = {}
-        for item in items:
-            key = cast("str", item["Key"])
-            remainder = key.removeprefix(self.path)
-            if self.separator:
-                remainder = remainder.lstrip(self.separator)
-            if not remainder:
-                continue
-            parts = remainder.split(self.separator) if self.separator else [remainder]
-            node = root
-            for part in parts[:-1]:
-                node = cast("dict[str, JSONValue]", node.setdefault(part, {}))
-            node[parts[-1]] = self._decode_value(item.get("Value"))
-        return root
-
     def _build_single(self, item: "dict[str, Any]") -> JSONValue:
         value = self._decode_value(item.get("Value"))
         if self.decode == "json":
@@ -128,10 +106,17 @@ class ConsulSource(RemoteSource):
             raise KeyError(msg) from None
 
         if self.recursive:
-            result = self._build_nested(cast("list[dict[str, Any]]", data))
+            result: JSONValue = self._nest_flat_keys(
+                cast("list[dict[str, Any]]", data),
+                key_fn=lambda i: cast("str", i["Key"]),
+                value_fn=lambda i: self._decode_value(i.get("Value")),
+                prefix=self.path,
+                separator=self.separator,
+            )
         else:
             result = self._build_single(cast("dict[str, Any]", data))
 
-        if self.decode == "utf-8":
-            return self._parse_string_values(result)
         return result
+
+    def _decodes_to_strings(self) -> bool:
+        return self.decode == "utf-8"

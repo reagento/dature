@@ -1,0 +1,1 @@
+Extracted the flat-key nesting logic duplicated across `AwsSsmSource`, `ConsulSource`, and `EtcdSource` into `RemoteSource._nest_flat_keys`, and migrated all three onto it, removing their private `_build_nested` methods. `AzureAppConfigSource` and `AzureKeyVaultSource` use the same helper.

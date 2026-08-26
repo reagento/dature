@@ -23,7 +23,7 @@
 
 **[Documentation](https://dature.readthedocs.io/)** | **[Changelog](https://dature.readthedocs.io/en/latest/changelog/)**
 
-Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker secrets, CLI arguments, HashiCorp Vault, Consul, etcd, AWS SSM, and AWS Secrets Manager — with automatic type conversion, validation, and human-readable error messages.
+Type-safe configuration loader for Python dataclasses. Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker secrets, CLI arguments, HashiCorp Vault, Consul, etcd, AWS SSM, AWS Secrets Manager, Azure App Configuration, and Azure Key Vault — with automatic type conversion, validation, and human-readable error messages.
 
 ## Installation
 
@@ -41,6 +41,8 @@ pip install dature[vault]      # HashiCorp Vault (hvac)
 pip install dature[consul]     # Consul (py-consul)
 pip install dature[etcd]       # etcd (etcd3gw)
 pip install dature[aws]        # AWS SSM & Secrets Manager (boto3)
+pip install dature[azure-appconfig] # Azure App Configuration
+pip install dature[azure-keyvault]  # Azure Key Vault
 pip install dature[secure]     # Secret detection heuristics
 pip install dature[type-stubs] # Type stubs for the integrations above (mypy/pyright users)
 ```
@@ -65,7 +67,7 @@ config = dature.load(dature.Yaml12Source(file="config.yaml"), schema=Config)
 
 ## Key Features
 
-- **Multiple sources** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets, CLI args (`argparse` or your own), HashiCorp Vault, Consul, etcd, AWS SSM, AWS Secrets Manager
+- **Multiple sources** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets, CLI args (`argparse` or your own), HashiCorp Vault, Consul, etcd, AWS SSM, AWS Secrets Manager, Azure App Configuration, Azure Key Vault
 - **Merging** — combine multiple sources with configurable strategies (`"last_wins"`, `"first_wins"`, `"raise_on_conflict"`)
 - **Validation** — `Annotated` field validators, root validators, `__post_init__` support
 - **Naming** — automatic field name mapping (`snake_case` ↔ `camelCase` ↔ `UPPER_SNAKE` etc.)

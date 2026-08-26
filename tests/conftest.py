@@ -196,6 +196,12 @@ def all_types_ssm_file(examples_dir: Path) -> Path:
 
 
 @pytest.fixture
+def all_types_ssm_kv_file(examples_dir: Path) -> Path:
+    """Path to all_types_ssm_kv.json file."""
+    return examples_dir / "sources" / "all_types_ssm_kv.json"
+
+
+@pytest.fixture
 def all_types_secrets_manager_file(examples_dir: Path) -> Path:
     """Path to all_types_secrets_manager.json file."""
     return examples_dir / "sources" / "all_types_secrets_manager.json"
@@ -213,6 +219,20 @@ def all_types_consul_kv_file(examples_dir: Path) -> Path:
 def all_types_etcd_kv_file(examples_dir: Path) -> Path:
     """Path to all_types_etcd_kv.json file."""
     return examples_dir / "sources" / "all_types_etcd_kv.json"
+
+
+# Azure App Configuration fixtures
+@pytest.fixture
+def all_types_azure_app_config_file(examples_dir: Path) -> Path:
+    """Path to all_types_azure_app_config.json file."""
+    return examples_dir / "sources" / "all_types_azure_app_config.json"
+
+
+# Azure Key Vault fixtures
+@pytest.fixture
+def all_types_azure_key_vault_file(examples_dir: Path) -> Path:
+    """Path to all_types_azure_key_vault.json file."""
+    return examples_dir / "sources" / "all_types_azure_key_vault.json"
 
 
 @pytest.fixture
