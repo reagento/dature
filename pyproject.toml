@@ -130,6 +130,10 @@ ignore = [
     "S310",    # URL open audit (hardcoded https)
     "BLE001",  # blind exception (graceful fallback)
 ]
+".github/scripts/*.py" = [
+    "INP001",  # implicit namespace package
+    "S310",    # URL open audit (hardcoded https, PyPI JSON API)
+]
 "benchmarks/**/*.py" = [
     "INP001",  # implicit namespace package
     "T201",    # print (benchmark output goes to stdout)
@@ -244,11 +248,21 @@ markers = [
     "examples: tests that execute the docs example scripts as subprocesses",
 ]
 
-[tool.dature.ci]
-# Libs whose major versions are parametrized across the integration-tests matrix in CI.
-# Each entry maps the PyPI package name to the extras section in this file where its
-# version constraint lives. See .github/workflows/ci.yml::get-integration-lib-versions.
-integration-test-libs = {hvac = "vault", py-consul = "consul", etcd3gw = "etcd"}
+[tool.dature.ci.integration-jobs]
+# One CI job per entry. ``dirs`` are subdirectories of tests/integration/sources/.
+# ``extras`` names a [project.optional-dependencies] section; the job is parametrized
+# across major versions of its first dependency (the primary client lib — a shared
+# second dependency like azure-identity is not version-matrixed).
+# Every directory under tests/integration/sources/ must appear in exactly one entry —
+# .github/workflows/ci.yml::get-integration-jobs fails the build otherwise.
+vault            = {dirs = ["vault"], extras = "vault"}
+consul           = {dirs = ["consul"], extras = "consul"}
+etcd             = {dirs = ["etcd"], extras = "etcd"}
+# ssm + secrets_manager share one session-scoped LocalStack container
+# (tests/integration/sources/conftest.py) — keep them in a single job.
+aws              = {dirs = ["ssm", "secrets_manager"], extras = "aws"}
+azure_app_config = {dirs = ["azure_app_config"], extras = "azure-appconfig"}
+azure_key_vault  = {dirs = ["azure_key_vault"], extras = "azure-keyvault"}
 
 [tool.towncrier]
 package = "dature"

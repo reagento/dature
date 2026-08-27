@@ -33,6 +33,10 @@ Use the following checklist. Ask me for the format name before starting, then ex
    - Mirror structure of existing `tests/sources/test_yaml12_.py` or similar
    - Test EXPECTED_ALL_TYPES/AllPythonTypesCompact unit and integration
 
-6. **Changelog fragment** — create `changes/+add-<format>-source.feature.md`
+6. **Integration tests** (if the source talks to an external service) — create `tests/integration/sources/<source>/`
+   - Mirror the layout of an existing source dir (`conftest.py` with a `testcontainers Docker fixture, `test_<source>_.py`, optionally `test_examples.py`/`helpers.py`)
+   - Add a matching entry to `[tool.dature.ci.integration-jobs]` in `pyproject.toml` — `.github/scripts/get_integration_jobs.py` fails the CI build if the new directory isn't declared. Set `extras` to the `[project.optional-dependencies]` section name only if the client library needs cross-major-version testing.
+
+7. **Changelog fragment** — create `changes/+add-<format>-source.feature.md`
 
 After completing all steps, run `/done` to verify everything passes.

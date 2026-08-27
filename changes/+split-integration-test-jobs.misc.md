@@ -1,0 +1,1 @@
+Split the single `integration-tests` CI job into one job per integration (Vault, Consul, etcd, AWS, Azure App Config, Azure Key Vault), declared in `[tool.dature.ci.integration-jobs]` in `pyproject.toml`. A new integration must add a matching entry there; CI fails loudly if a `tests/integration/sources/` directory isn't declared.
