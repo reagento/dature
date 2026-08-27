@@ -42,33 +42,32 @@ class _Config:
 EXPECTED_DATACLASS: Final = _Config(db_password="s3cret", port=5432, name="myapp")
 
 
+def _hmac_connection_string(endpoint: str, *, secret: str = HMAC_ACCESS_KEY_SECRET) -> str:
+    return f"Endpoint={endpoint};Id={HMAC_ACCESS_KEY_ID};Secret={secret}"
+
+
 @pytest.fixture
 def azure_app_config_client(azure_app_config_endpoint: str) -> AzureAppConfigurationClient:
-    return AzureAppConfigurationClient(base_url=azure_app_config_endpoint, credential=NoopCredential())
+    return AzureAppConfigurationClient.from_connection_string(_hmac_connection_string(azure_app_config_endpoint))
 
 
 @pytest.fixture
 def _kv_tree(azure_app_config_client: AzureAppConfigurationClient):
     for key, value in EXPECTED_SECRET.items():
-        azure_app_config_client.set_configuration_setting(
-            ConfigurationSetting(key=f"{KV_PREFIX}:{key}", value=value), enforce_https=False
-        )
+        azure_app_config_client.set_configuration_setting(ConfigurationSetting(key=f"{KV_PREFIX}:{key}", value=value))
 
 
 @pytest.fixture
 def _kv_all_types(azure_app_config_client: AzureAppConfigurationClient, all_types_azure_app_config_file: Path):
     kv_map = json.loads(all_types_azure_app_config_file.read_text())
     for key, value in kv_map.items():
-        azure_app_config_client.set_configuration_setting(
-            ConfigurationSetting(key=key, value=value), enforce_https=False
-        )
+        azure_app_config_client.set_configuration_setting(ConfigurationSetting(key=key, value=value))
 
 
 def _make_source(azure_app_config_endpoint: str, **kwargs: object) -> AzureAppConfigSource:
     kwargs.setdefault("key_filter", f"{KV_PREFIX}:*")
     kwargs.setdefault("prefix", KV_PREFIX)
-    kwargs.setdefault("request_options", {"enforce_https": False})
-    return AzureAppConfigSource(endpoint=azure_app_config_endpoint, credential=NoopCredential(), **kwargs)
+    return AzureAppConfigSource(connection_string=_hmac_connection_string(azure_app_config_endpoint), **kwargs)
 
 
 @pytest.mark.usefixtures("_reset_config")
@@ -104,23 +103,19 @@ class TestAzureAppConfigSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="endpoint_from_configure"),
-            pytest.param("env", id="endpoint_from_env"),
+            pytest.param("configure", id="connection_string_from_configure"),
+            pytest.param("env", id="connection_string_from_env"),
         ],
     )
     def test_load_with_settings(self, via: str, azure_app_config_endpoint: str, monkeypatch: pytest.MonkeyPatch):
+        connection_string = _hmac_connection_string(azure_app_config_endpoint)
         if via == "configure":
-            configure(azure_app_config={"endpoint": azure_app_config_endpoint})
+            configure(azure_app_config={"connection_string": connection_string})
         else:
-            monkeypatch.setenv("DATURE_AZURE_APP_CONFIG__ENDPOINT", azure_app_config_endpoint)
+            monkeypatch.setenv("DATURE_AZURE_APP_CONFIG__CONNECTION_STRING", connection_string)
 
         result = load(
-            AzureAppConfigSource(
-                credential=NoopCredential(),
-                key_filter=f"{KV_PREFIX}:*",
-                prefix=KV_PREFIX,
-                request_options={"enforce_https": False},
-            ),
+            AzureAppConfigSource(key_filter=f"{KV_PREFIX}:*", prefix=KV_PREFIX),
             schema=_Config,
         )
 
@@ -138,10 +133,6 @@ def azure_app_config_auth_container() -> Generator[DockerContainer]:
 @pytest.fixture(scope="class")
 def azure_app_config_auth_endpoint(azure_app_config_auth_container: DockerContainer) -> str:
     return app_config_endpoint(azure_app_config_auth_container, APP_CONFIG_INTERNAL_PORT)
-
-
-def _hmac_connection_string(endpoint: str, *, secret: str = HMAC_ACCESS_KEY_SECRET) -> str:
-    return f"Endpoint={endpoint};Id={HMAC_ACCESS_KEY_ID};Secret={secret}"
 
 
 @pytest.mark.usefixtures("_reset_config")
