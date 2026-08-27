@@ -23,6 +23,8 @@ Integrate additional config sources or build your own.
 | [ArgparseSource](cli/argparse.md) | Load argparse CLI arguments as a config source |
 | [Custom CLI Source](cli/custom.md) | Plug in click, typer, or your own CLI parser |
 | [VaultSource](remote/vault.md) | Fetch secrets from HashiCorp Vault |
+| [AzureAppConfigSource](remote/azure_app_config.md) | Fetch configuration from Azure App Configuration |
+| [AzureKeyVaultSource](remote/azure_key_vault.md) | Fetch secrets from Azure Key Vault |
 | [Custom Remote Source](remote/custom.md) | Implement your own remote backend (AWS, Azure, Consul …) |
 | [Custom Types](custom_types.md) | Add support for new Python types via `type_loaders` |
 | [Custom Sources](custom_sources.md) | Implement your own source class or use the `SourceProtocol` interface directly |

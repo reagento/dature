@@ -220,7 +220,7 @@ class TestAwsSsmSourceFetch:
         result = src.load_raw()
 
         assert result.loaded_data == {
-            "db": {"host": "localhost", "port": 5432},
+            "db": {"host": "localhost", "port": "5432"},
             "name": "svc",
         }
 
@@ -333,9 +333,9 @@ class TestAwsSsmSourceFetch:
         with pytest.raises(ClientError):
             src.load_raw()
 
-    def test_comprehensive_type_conversion(self, monkeypatch, all_types_etcd_kv_file: Path):
+    def test_comprehensive_type_conversion(self, monkeypatch, all_types_ssm_kv_file: Path):
         """Test loading a recursive SSM parameter tree (decode='utf-8') with full type coercion."""
-        kv_map = json.loads(all_types_etcd_kv_file.read_text())
+        kv_map = json.loads(all_types_ssm_kv_file.read_text())
         params = [
             {"Name": "/" + key.replace("all_types", "myapp", 1), "Value": value, "Type": "String"}
             for key, value in kv_map.items()

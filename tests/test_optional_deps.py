@@ -17,6 +17,8 @@ from dature._deps import require_dep
         "toml_rs",
         "random_string_detector",
         "hvac",
+        "azure.appconfiguration",
+        "azure.keyvault.secrets",
     ],
 )
 def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -37,6 +39,8 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
     assert dature.Toml10Source.format_name == "toml1.0"
     assert dature.Toml11Source.format_name == "toml1.1"
     assert dature.VaultSource.format_name == "vault"
+    assert dature.AzureAppConfigSource.format_name == "azure-app-config"
+    assert dature.AzureKeyVaultSource.format_name == "azure-key-vault"
 
 
 @pytest.mark.parametrize(
@@ -46,6 +50,8 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
         ("toml_rs", "toml"),
         ("json5", "json5"),
         ("hvac", "vault"),
+        ("azure.appconfiguration", "azure-appconfig"),
+        ("azure.keyvault.secrets", "azure-keyvault"),
     ],
 )
 def test_missing_dep_error_mentions_install_command(package: str, extra: str, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -72,28 +72,6 @@ class EtcdSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _build_nested(self, items: "list[tuple[bytes, dict[str, object]]]") -> JSONValue:
-        """Turn a recursive prefix listing into a nested dict, splitting each key on ``separator``.
-
-        The prefix (``self.path``) is stripped from every key first. A key that matches the
-        prefix exactly has no remainder and is dropped — it has no leaf name to store a value
-        under.
-        """
-        root: dict[str, JSONValue] = {}
-        for value, metadata in items:
-            key = cast("bytes", metadata["key"]).decode("utf-8")
-            remainder = key.removeprefix(self.path)
-            if self.separator:
-                remainder = remainder.lstrip(self.separator)
-            if not remainder:
-                continue
-            parts = remainder.split(self.separator) if self.separator else [remainder]
-            node = root
-            for part in parts[:-1]:
-                node = cast("dict[str, JSONValue]", node.setdefault(part, {}))
-            node[parts[-1]] = self._decode_value(value)
-        return root
-
     def _build_single(self, key: str, value: bytes) -> JSONValue:
         decoded = self._decode_value(value)
         if self.decode == "json":
@@ -143,7 +121,13 @@ class EtcdSource(RemoteSource):
             self._authenticate(client)
             if self.recursive:
                 items = cast("list[tuple[bytes, dict[str, object]]]", client.get_prefix(self.path))
-                result = self._build_nested(items)
+                result: JSONValue = self._nest_flat_keys(
+                    items,
+                    key_fn=lambda item: cast("bytes", item[1]["key"]).decode("utf-8"),
+                    value_fn=lambda item: self._decode_value(item[0]),
+                    prefix=self.path,
+                    separator=self.separator,
+                )
                 found = bool(items)
             else:
                 values = client.get(self.path)
@@ -176,6 +160,7 @@ class EtcdSource(RemoteSource):
             msg = f"etcd key not found: {self.remote_address()}"
             raise KeyError(msg) from None
 
-        if self.decode == "utf-8":
-            return self._parse_string_values(result)
         return result
+
+    def _decodes_to_strings(self) -> bool:
+        return self.decode == "utf-8"

@@ -278,6 +278,8 @@ Explicit, immutable configuration instance. All parameters merge on top of `DATU
 | `etcd` | `EtcdOptions \| None` | `None` | Etcd connection defaults. |
 | `ssm` | `SsmOptions \| None` | `None` | AWS SSM connection defaults. |
 | `secrets_manager` | `SecretsManagerOptions \| None` | `None` | AWS Secrets Manager connection defaults. |
+| `azure_app_config` | `AzureAppConfigOptions \| None` | `None` | Azure App Configuration connection defaults, used by `AzureAppConfigSource` when its own fields are unset. |
+| `azure_key_vault` | `AzureKeyVaultOptions \| None` | `None` | Azure Key Vault connection defaults, used by `AzureKeyVaultSource` when its own fields are unset. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Instance-level custom type loaders `{type: callable}`. Merged with load-level and source-level loaders (source takes priority). |
 
 !!! warning "configure() is deprecated"
@@ -690,6 +692,57 @@ fetched over the network via `_fetch()` rather than read from a local file.
 Requires either `token` or `role_id`+`secret_id` (raises at construction if neither or
 both are given). Raises `KeyError` on an invalid path, `PermissionError` on a
 forbidden/unauthorized response. See [`VaultConfig`](#vaultconfig) for global defaults.
+
+#### `AzureAppConfigSource(RemoteSource)`
+
+| | |
+|---|---|
+| **Format** | Azure App Configuration key-value store |
+| **Module** | `dature.sources.azure_app_config_` |
+| **Dependencies** | `azure-appconfiguration`, `azure-identity` |
+| **Error label** | `AZURE_APP_CONFIG` |
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `endpoint` | `str \| None` | `None` | App Configuration store endpoint. Mutually exclusive with `connection_string`; exactly one required. |
+| `connection_string` | `str \| None` | `None` | Connection string carrying its own auth. Mutually exclusive with `endpoint`, `credential`, and the tenant/client fields. |
+| `key_filter` | `str \| None` | `None` | Glob passed to the SDK, e.g. `"myapp:*"`. `None` fetches every key. |
+| `label_filter` | `str \| None` | `None` | Label glob. |
+| `tenant_id` / `client_id` / `client_secret` | `str \| None` | `None` | Service principal credentials. Must be set together. |
+| `credential` | `object \| None` | `None` | Pre-built `azure.core.credentials.TokenCredential`. Takes precedence over the tenant/client fields and `DefaultAzureCredential`. |
+| `client_options` | `Mapping[str, Any] \| None` | `None` | Extra kwargs forwarded to the SDK client constructor. |
+| `request_options` | `dict[str, Any]` | `{}` | Extra kwargs forwarded to the SDK's `list_configuration_settings` call. |
+| `separator` | `str \| None` | `":"` | Key segment separator for nesting. |
+| `decode` | `Literal["utf-8", "json"]` | `"utf-8"` | Value decoding mode. |
+
+`key_filter` is a glob and is never stripped from key names — use [`Source.prefix`](#source)
+to denest. Raises `KeyError` when no keys match, `PermissionError` on auth failure. See
+[AzureAppConfigSource](advanced/remote/azure_app_config.md) for details.
+
+#### `AzureKeyVaultSource(RemoteSource)`
+
+| | |
+|---|---|
+| **Format** | Azure Key Vault secrets |
+| **Module** | `dature.sources.azure_key_vault_` |
+| **Dependencies** | `azure-keyvault-secrets`, `azure-identity` |
+| **Error label** | `AZURE_KEY_VAULT` |
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `vault_url` | `str` | `""` | Vault URL. Required. |
+| `name` | `str` | `"*"` | Single secret name holding the whole document. `"*"` lists and fetches every secret (N+1 round trip). |
+| `version` | `str \| None` | `None` | Secret version. `None` reads the latest. |
+| `tenant_id` / `client_id` / `client_secret` | `str \| None` | `None` | Service principal credentials. Must be set together. |
+| `credential` | `object \| None` | `None` | Pre-built `azure.core.credentials.TokenCredential`. Takes precedence over the tenant/client fields and `DefaultAzureCredential`. |
+| `client_options` | `Mapping[str, Any] \| None` | `None` | Extra kwargs forwarded to `SecretClient`. |
+| `separator` | `str \| None` | `"--"` | Secret name segment separator for nesting. |
+| `decode` | `Literal["utf-8", "json"]` | `"utf-8"` | Value decoding mode. |
+
+Does not resolve Key Vault references embedded in Azure App Configuration settings — merge
+with [`AzureAppConfigSource`](#azureappconfigsourceremotesource) instead. Raises `KeyError` on a
+missing secret or an empty vault, `PermissionError` on auth failure. See
+[AzureKeyVaultSource](advanced/remote/azure_key_vault.md) for details.
 
 ---
 

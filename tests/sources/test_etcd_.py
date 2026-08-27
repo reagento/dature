@@ -234,7 +234,7 @@ class TestEtcdSourceFetch:
         result = src.load_raw()
 
         assert result.loaded_data == {
-            "db": {"host": "localhost", "port": 5432},
+            "db": {"host": "localhost", "port": "5432"},
             "name": "svc",
         }
 

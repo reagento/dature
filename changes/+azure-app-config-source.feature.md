@@ -1,0 +1,1 @@
+Added `AzureAppConfigSource` (`dature[azure-appconfig]`) to load configuration from Azure App Configuration key-value stores, with support for `key_filter`/`label_filter` scoping, service principal or custom `credential` authentication, JSON content-type detection, and a `request_options` field for forwarding extra kwargs (e.g. `enforce_https`) to the SDK's list call.

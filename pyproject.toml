@@ -61,6 +61,8 @@ vault = ["hvac>=2.0"]
 consul = ["py-consul>=1.7"]
 etcd = ["etcd3gw>=2.7"]
 aws = ["boto3>=1.34"]
+azure-appconfig = ["azure-appconfiguration>=1.5", "azure-identity>=1.16"]
+azure-keyvault = ["azure-keyvault-secrets>=4.11", "azure-identity>=1.16"]
 # Type stubs for the optional integrations above — only needed by users running
 # a static type checker (mypy/pyright). Add ``[<lib>,type-stubs]`` to opt in.
 type-stubs = ["types-hvac", "boto3-stubs[secretsmanager,ssm]"]
@@ -238,7 +240,7 @@ pythonpath = [
     "src",
 ]
 markers = [
-    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd, LocalStack)",
+    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd, LocalStack, Azure emulators)",
     "examples: tests that execute the docs example scripts as subprocesses",
 ]
 
@@ -300,8 +302,7 @@ dev = [
     "pyright>=1.1.411",
 ]
 integration-tests = [
-    "testcontainers[vault]>=4.0",
-    "testcontainers[localstack]>=4.0",
+    "testcontainers[vault,localstack]>=4.0",
 ]
 docs = [
     "mkdocs>=1.6,<2",

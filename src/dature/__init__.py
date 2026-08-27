@@ -8,6 +8,8 @@ from dature.main import load
 from dature.refs import ref
 from dature.report import load_report
 from dature.sources.argparse_ import ArgparseSource
+from dature.sources.azure_app_config_ import AzureAppConfigSource
+from dature.sources.azure_key_vault_ import AzureKeyVaultSource
 from dature.sources.consul_ import ConsulSource
 from dature.sources.docker_secrets import DockerSecretsSource
 from dature.sources.env_ import EnvFileSource, EnvSource
@@ -27,6 +29,8 @@ __all__ = [
     "ArgparseSource",
     "AwsSecretsManagerSource",
     "AwsSsmSource",
+    "AzureAppConfigSource",
+    "AzureKeyVaultSource",
     "ConsulSource",
     "Dature",
     "DockerSecretsSource",

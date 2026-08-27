@@ -36,6 +36,7 @@ class MaskingConfig:
         "credential",
         "uri",
         "url",
+        "connection_string",
     )
     masking_mode: MaskingMode = "all"
 
@@ -168,6 +169,31 @@ class SecretsManagerConfig:
 # --8<-- [end:secrets-manager-config]
 
 
+# --8<-- [start:azure-app-config-config]
+@dataclass(frozen=True, slots=True)
+class AzureAppConfigConfig:
+    endpoint: str | None = None
+    connection_string: str | None = None
+    tenant_id: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
+
+
+# --8<-- [end:azure-app-config-config]
+
+
+# --8<-- [start:azure-key-vault-config]
+@dataclass(frozen=True, slots=True)
+class AzureKeyVaultConfig:
+    vault_url: str = ""
+    tenant_id: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
+
+
+# --8<-- [end:azure-key-vault-config]
+
+
 @dataclass(frozen=True, slots=True)
 class DatureConfig:
     masking: MaskingConfig = MaskingConfig()
@@ -178,6 +204,8 @@ class DatureConfig:
     etcd: EtcdConfig = EtcdConfig()
     ssm: SsmConfig = SsmConfig()
     secrets_manager: SecretsManagerConfig = SecretsManagerConfig()
+    azure_app_config: AzureAppConfigConfig = AzureAppConfigConfig()
+    azure_key_vault: AzureKeyVaultConfig = AzureKeyVaultConfig()
 
 
 BOOTSTRAP_CONFIG: DatureConfig = DatureConfig()  # pure defaults, never sourced from env
@@ -294,6 +322,21 @@ class SecretsManagerOptions(TypedDict, total=False):
     endpoint_url: str | None
 
 
+class AzureAppConfigOptions(TypedDict, total=False):
+    endpoint: str | None
+    connection_string: str | None
+    tenant_id: str | None
+    client_id: str | None
+    client_secret: str | None
+
+
+class AzureKeyVaultOptions(TypedDict, total=False):
+    vault_url: str
+    tenant_id: str | None
+    client_id: str | None
+    client_secret: str | None
+
+
 # ---------------------------------------------------------------------------
 # Private legacy state — written by the configure() shim, cleared by tests.
 # The whole _LegacyState class and legacy singleton are removed in dature 1.5.
@@ -371,6 +414,8 @@ def configure(  # noqa: PLR0913
     etcd: EtcdOptions | None = None,
     ssm: SsmOptions | None = None,
     secrets_manager: SecretsManagerOptions | None = None,
+    azure_app_config: AzureAppConfigOptions | None = None,
+    azure_key_vault: AzureKeyVaultOptions | None = None,
     type_loaders: TypeLoaderMap | None = None,
 ) -> None:
     # --8<-- [end:configure]
@@ -395,6 +440,8 @@ def configure(  # noqa: PLR0913
         merged_etcd = merge_group(current.etcd, etcd, EtcdConfig)
         merged_ssm = merge_group(current.ssm, ssm, SsmConfig)
         merged_secrets_manager = merge_group(current.secrets_manager, secrets_manager, SecretsManagerConfig)
+        merged_azure_app_config = merge_group(current.azure_app_config, azure_app_config, AzureAppConfigConfig)
+        merged_azure_key_vault = merge_group(current.azure_key_vault, azure_key_vault, AzureKeyVaultConfig)
 
         legacy.override = DatureConfig(
             masking=merged_masking,
@@ -405,6 +452,8 @@ def configure(  # noqa: PLR0913
             etcd=merged_etcd,
             ssm=merged_ssm,
             secrets_manager=merged_secrets_manager,
+            azure_app_config=merged_azure_app_config,
+            azure_key_vault=merged_azure_key_vault,
         )
         if type_loaders is not None:
             legacy.type_loaders = type_loaders

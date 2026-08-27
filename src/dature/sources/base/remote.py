@@ -2,15 +2,17 @@
 
 import abc
 import json
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Final
 
 from adaptix.provider import Provider
 
 from dature.errors import SourceLocation
+from dature.expansion.env_expand import expand_env_vars
 from dature.sources.base.source import Source, remote_value_loaders
 from dature.sources.presentation import build_search_path
-from dature.type_aliases import JSONValue, NestedConflict
+from dature.type_aliases import ExpandEnvVarsMode, JSONValue, NestedConflict
 
 _NOT_FOUND: Final[object] = object()
 
@@ -34,11 +36,65 @@ class RemoteSource(Source, abc.ABC):
     def _load(self) -> JSONValue:
         return self._fetch()
 
+    def _decodes_to_strings(self) -> bool:
+        """Whether ``_fetch`` yields raw strings that still need scalar inference.
+
+        Overridden by subclasses whose ``decode`` option can select a string decode mode.
+        """
+        return False
+
+    def _pre_processing(
+        self,
+        data: JSONValue,
+        *,
+        resolved_expand: ExpandEnvVarsMode,
+    ) -> JSONValue:
+        # Parsing must happen after _apply_prefix, not inside _fetch(): _parse_string_values
+        # infers scalars aggressively below the top level (see its docstring), and the schema
+        # root only reaches depth 0 once the prefix subtree has been navigated into. Doing it
+        # before prefix navigation corrupts typed values (e.g. Decimal, long numeric strings)
+        # whenever the schema root sits below the document root.
+        prefixed = self._apply_prefix(data)
+        expanded = expand_env_vars(prefixed, mode=resolved_expand)
+        return self._parse_string_values(expanded) if self._decodes_to_strings() else expanded
+
     def __repr__(self) -> str:
         return f"{self.format_name} '{self.remote_address()}'"
 
     def display_name(self) -> str:
         return self.remote_address()
+
+    @staticmethod
+    def _nest_flat_keys[T](
+        items: Iterable[T],
+        *,
+        key_fn: Callable[[T], str],
+        value_fn: Callable[[T], JSONValue],
+        prefix: str = "",
+        separator: str | None = None,
+    ) -> "dict[str, JSONValue]":
+        """Turn a flat listing of key/value items into a nested dict, splitting on *separator*.
+
+        *prefix* is stripped from every key first. A key that matches the prefix exactly (no
+        remainder) has no leaf name to store a value under and is dropped.
+        """
+        root: dict[str, JSONValue] = {}
+        for item in items:
+            remainder = key_fn(item).removeprefix(prefix)
+            if separator:
+                remainder = remainder.lstrip(separator)
+            if not remainder:
+                continue
+            parts = remainder.split(separator) if separator else [remainder]
+            node = root
+            for part in parts[:-1]:
+                child = node.setdefault(part, {})
+                if not isinstance(child, dict):
+                    child = {}
+                    node[part] = child
+                node = child
+            node[parts[-1]] = value_fn(item)
+        return root
 
     @staticmethod
     def _lookup_loaded(field_path: list[str], data: JSONValue) -> "JSONValue | object":
