@@ -45,6 +45,10 @@ field, as shown above.
 - `client_options` — extra kwargs forwarded to the SDK client constructor (`api_version`,
   `transport`, `connection_verify`, ...). Useful for pinning an API version behind a corporate
   proxy, or targeting a test double.
+- `request_options` — extra kwargs forwarded to the SDK's `list_configuration_settings` call
+  (`fields`, `tags_filter`, `accept_datetime`, `enforce_https`, ...). Needed for HTTP-only test
+  doubles like the App Configuration emulator, which requires `enforce_https=False` with a
+  bearer credential.
 - `separator` — key segment separator for nesting; default `":"`.
 - `decode` — how to decode each setting: `"utf-8"` (default) or `"json"`.
 

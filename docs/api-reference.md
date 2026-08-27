@@ -711,6 +711,7 @@ forbidden/unauthorized response. See [`VaultConfig`](#vaultconfig) for global de
 | `tenant_id` / `client_id` / `client_secret` | `str \| None` | `None` | Service principal credentials. Must be set together. |
 | `credential` | `object \| None` | `None` | Pre-built `azure.core.credentials.TokenCredential`. Takes precedence over the tenant/client fields and `DefaultAzureCredential`. |
 | `client_options` | `Mapping[str, Any] \| None` | `None` | Extra kwargs forwarded to the SDK client constructor. |
+| `request_options` | `dict[str, Any]` | `{}` | Extra kwargs forwarded to the SDK's `list_configuration_settings` call. |
 | `separator` | `str \| None` | `":"` | Key segment separator for nesting. |
 | `decode` | `Literal["utf-8", "json"]` | `"utf-8"` | Value decoding mode. |
 

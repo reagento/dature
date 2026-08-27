@@ -1,6 +1,6 @@
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Literal, cast
 
 from adaptix.provider import Provider
@@ -36,6 +36,11 @@ class AzureAppConfigSource(RemoteSource):
     client_options: Mapping[str, Any] | None = None
     """Extra kwargs forwarded to the SDK client constructor (``api_version``, ``transport``,
     a custom ``connection_verify``, ...)."""
+
+    request_options: dict[str, Any] = field(default_factory=dict)
+    """Extra kwargs forwarded to the SDK ``list_configuration_settings`` call (``fields``,
+    ``tags_filter``, ``accept_datetime``, ``enforce_https``, ...). Distinct from
+    ``client_options``, which reaches the client constructor."""
 
     separator: str | None = ":"
     decode: Literal["utf-8", "json"] = "utf-8"
@@ -132,7 +137,9 @@ class AzureAppConfigSource(RemoteSource):
 
         try:
             settings = list(
-                client.list_configuration_settings(key_filter=self.key_filter, label_filter=self.label_filter)
+                client.list_configuration_settings(
+                    key_filter=self.key_filter, label_filter=self.label_filter, **self.request_options
+                )
             )
         except ResourceNotFoundError:
             msg = f"Azure App Configuration key(s) not found: {self.remote_address()}"

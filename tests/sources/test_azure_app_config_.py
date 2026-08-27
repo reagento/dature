@@ -266,6 +266,14 @@ class TestAzureAppConfigSourceFetch:
 
         assert client.init_kwargs["api_version"] == "2023-11-01"
 
+    def test_request_options_forwarded(self, monkeypatch):
+        client = FakeAppConfigClient(settings=[FakeSetting("a", "1")])
+        src = self._make_source(monkeypatch, client, request_options={"enforce_https": False})
+
+        src.load_raw()
+
+        assert client.list_kwargs["enforce_https"] is False
+
     def test_empty_result_raises_key_error(self, monkeypatch):
         client = FakeAppConfigClient(settings=[])
         src = self._make_source(monkeypatch, client)

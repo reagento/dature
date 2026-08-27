@@ -6,6 +6,12 @@ subscription or real credentials required. This sandbox has no Docker access, so
 anonymous-auth handshake (``NoopCredential`` accepted as-is vs. requiring some other shape
 of token) is unconfirmed locally; if CI shows a different approach is needed, adjust
 ``NoopCredential``/how it's passed to ``AzureAppConfigurationClient`` in the test module.
+
+The emulator only serves plain HTTP, but azure-core's ``BearerTokenCredentialPolicy`` refuses
+non-HTTPS URLs by default. Every ``NoopCredential``-backed call (seeding via
+``set_configuration_setting`` and reads via ``AzureAppConfigSource.request_options``) must pass
+``enforce_https=False`` explicitly; the HMAC/connection-string path is unaffected since it uses a
+different authentication policy.
 """
 
 from collections.abc import Generator

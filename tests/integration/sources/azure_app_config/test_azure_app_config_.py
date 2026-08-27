@@ -50,19 +50,24 @@ def azure_app_config_client(azure_app_config_endpoint: str) -> AzureAppConfigura
 @pytest.fixture
 def _kv_tree(azure_app_config_client: AzureAppConfigurationClient):
     for key, value in EXPECTED_SECRET.items():
-        azure_app_config_client.set_configuration_setting(ConfigurationSetting(key=f"{KV_PREFIX}:{key}", value=value))
+        azure_app_config_client.set_configuration_setting(
+            ConfigurationSetting(key=f"{KV_PREFIX}:{key}", value=value), enforce_https=False
+        )
 
 
 @pytest.fixture
 def _kv_all_types(azure_app_config_client: AzureAppConfigurationClient, all_types_azure_app_config_file: Path):
     kv_map = json.loads(all_types_azure_app_config_file.read_text())
     for key, value in kv_map.items():
-        azure_app_config_client.set_configuration_setting(ConfigurationSetting(key=key, value=value))
+        azure_app_config_client.set_configuration_setting(
+            ConfigurationSetting(key=key, value=value), enforce_https=False
+        )
 
 
 def _make_source(azure_app_config_endpoint: str, **kwargs: object) -> AzureAppConfigSource:
     kwargs.setdefault("key_filter", f"{KV_PREFIX}:*")
     kwargs.setdefault("prefix", KV_PREFIX)
+    kwargs.setdefault("request_options", {"enforce_https": False})
     return AzureAppConfigSource(endpoint=azure_app_config_endpoint, credential=NoopCredential(), **kwargs)
 
 
@@ -110,7 +115,12 @@ class TestAzureAppConfigSourceGlobalConfigEndToEnd:
             monkeypatch.setenv("DATURE_AZURE_APP_CONFIG__ENDPOINT", azure_app_config_endpoint)
 
         result = load(
-            AzureAppConfigSource(credential=NoopCredential(), key_filter=f"{KV_PREFIX}:*", prefix=KV_PREFIX),
+            AzureAppConfigSource(
+                credential=NoopCredential(),
+                key_filter=f"{KV_PREFIX}:*",
+                prefix=KV_PREFIX,
+                request_options={"enforce_https": False},
+            ),
             schema=_Config,
         )
 
@@ -176,6 +186,7 @@ class TestAzureAppConfigSourceAuth:
                 credential=NoopCredential(),
                 key_filter=f"{KV_PREFIX}:*",
                 prefix=KV_PREFIX,
+                request_options={"enforce_https": False},
             )
 
         with pytest.raises(DatureConfigError) as exc_info:
