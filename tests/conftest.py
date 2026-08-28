@@ -235,6 +235,13 @@ def all_types_azure_key_vault_file(examples_dir: Path) -> Path:
     return examples_dir / "sources" / "all_types_azure_key_vault.json"
 
 
+# GCP Secret Manager fixtures
+@pytest.fixture
+def all_types_gcp_secret_manager_file(examples_dir: Path) -> Path:
+    """Path to all_types_gcp_secret_manager.json file."""
+    return examples_dir / "sources" / "all_types_gcp_secret_manager.json"
+
+
 @pytest.fixture
 def _clean_dature_modules() -> Generator[None]:
     removed: dict[str, object] = {}

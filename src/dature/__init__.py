@@ -14,6 +14,7 @@ from dature.sources.consul_ import ConsulSource
 from dature.sources.docker_secrets import DockerSecretsSource
 from dature.sources.env_ import EnvFileSource, EnvSource
 from dature.sources.etcd_ import EtcdSource
+from dature.sources.gcp_secret_manager_ import GcpSecretManagerSource
 from dature.sources.ini_ import IniSource
 from dature.sources.json5_ import Json5Source
 from dature.sources.json_ import JsonSource
@@ -38,6 +39,7 @@ __all__ = [
     "EnvSource",
     "EtcdSource",
     "F",
+    "GcpSecretManagerSource",
     "IniSource",
     "Json5Source",
     "JsonSource",

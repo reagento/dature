@@ -1,8 +1,6 @@
 # VaultSource
 
-`VaultSource` loads configuration from [HashiCorp Vault](https://www.vaultproject.io/)
-KV secrets engines. It is the shipped implementation of the abstract
-[`RemoteSource`](custom.md) base class.
+`VaultSource` loads configuration from [HashiCorp Vault](https://www.vaultproject.io/) KV secrets engines. It is the shipped implementation of the abstract [`RemoteSource`](custom.md) base class.
 
 ## Quickstart
 
@@ -31,26 +29,18 @@ pip install dature[vault,type-stubs]   # runtime + mypy/pyright stubs for hvac
 
 ## Supported types
 
-Vault KV v2 secret data is native JSON, so `VaultSource` follows the same
-coercion rules as the JSON source — see [Supported Types](../../supported_types.md)
-for the full matrix.
+Vault KV v2 secret data is native JSON, so `VaultSource` follows the same coercion rules as the JSON source — see [Supported Types](../../supported_types.md) for the full matrix.
 
 ## Global configuration via configure()
 
-Connection settings rarely change per-call, so they can be set once via
-`dature.configure(vault={...})` (or the matching `DATURE_VAULT__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.configure(vault={...})` (or the matching `DATURE_VAULT__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/vault/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_VAULT__*`
-env. `None` on the instance means "fall through to the next layer". See
-[Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `configure()` → `DATURE_VAULT__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 ## Combining with other sources
 
-`VaultSource` composes with file/env/CLI sources via `load()` like any other
-source. A common pattern is JSON/YAML for non-sensitive defaults, Vault for
-secrets, env or CLI for last-mile overrides — order in `load()` controls
-precedence (default `last_wins`). See [Merging](../../basic/merging.md).
+`VaultSource` composes with file/env/CLI sources via `load()` like any other source. A common pattern is JSON/YAML for non-sensitive defaults, Vault for secrets, env or CLI for last-mile overrides — order in `load()` controls precedence (default `last_wins`). See [Merging](../../basic/merging.md).

@@ -45,6 +45,8 @@ from dature.config import (
     ErrorDisplayOptions,
     EtcdConfig,
     EtcdOptions,
+    GcpSecretManagerConfig,
+    GcpSecretManagerOptions,
     LoadingConfig,
     LoadingOptions,
     MaskingConfig,
@@ -103,6 +105,7 @@ class Dature:
         secrets_manager: AWS Secrets Manager connection overrides.
         azure_app_config: Azure App Configuration connection overrides.
         azure_key_vault: Azure Key Vault connection overrides.
+        gcp_secret_manager: GCP Secret Manager connection overrides.
         type_loaders: Extra type loaders merged with load-level and source-level
             ones.  Priority: ``Dature`` < load-level < source.
     """
@@ -120,6 +123,7 @@ class Dature:
         secrets_manager: SecretsManagerOptions | None = None,
         azure_app_config: AzureAppConfigOptions | None = None,
         azure_key_vault: AzureKeyVaultOptions | None = None,
+        gcp_secret_manager: GcpSecretManagerOptions | None = None,
         type_loaders: TypeLoaderMap | None = None,
     ) -> None:
         base = default_config()
@@ -134,6 +138,7 @@ class Dature:
             secrets_manager=merge_group(base.secrets_manager, secrets_manager, SecretsManagerConfig),
             azure_app_config=merge_group(base.azure_app_config, azure_app_config, AzureAppConfigConfig),
             azure_key_vault=merge_group(base.azure_key_vault, azure_key_vault, AzureKeyVaultConfig),
+            gcp_secret_manager=merge_group(base.gcp_secret_manager, gcp_secret_manager, GcpSecretManagerConfig),
         )
         self._type_loaders: TypeLoaderMap | None = dict(type_loaders) if type_loaders is not None else None
 
