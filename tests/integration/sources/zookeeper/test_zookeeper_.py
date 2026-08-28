@@ -228,7 +228,11 @@ def _zk_auth_admin_client(
 class TestZookeeperSourceAuth:
     @pytest.fixture(autouse=True)
     def _seed_secret(self, _zk_auth_admin_client: KazooClient, zk_digest_user: str, zk_digest_password: str):
-        acl = [make_digest_acl(zk_digest_user, zk_digest_password, read=True, write=True, admin=True)]
+        acl = [
+            make_digest_acl(
+                zk_digest_user, zk_digest_password, read=True, write=True, create=True, delete=True, admin=True
+            )
+        ]
         values = {
             f"/{KV_PREFIX}": b"",
             **{f"/{KV_PREFIX}/{key}": value.encode("utf-8") for key, value in EXPECTED_SECRET.items()},
