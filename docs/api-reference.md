@@ -280,6 +280,7 @@ Explicit, immutable configuration instance. All parameters merge on top of `DATU
 | `secrets_manager` | `SecretsManagerOptions \| None` | `None` | AWS Secrets Manager connection defaults. |
 | `azure_app_config` | `AzureAppConfigOptions \| None` | `None` | Azure App Configuration connection defaults, used by `AzureAppConfigSource` when its own fields are unset. |
 | `azure_key_vault` | `AzureKeyVaultOptions \| None` | `None` | Azure Key Vault connection defaults, used by `AzureKeyVaultSource` when its own fields are unset. |
+| `gcp_secret_manager` | `GcpSecretManagerOptions \| None` | `None` | GCP Secret Manager connection defaults, used by `GcpSecretManagerSource` when its own fields are unset. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Instance-level custom type loaders `{type: callable}`. Merged with load-level and source-level loaders (source takes priority). |
 
 !!! warning "configure() is deprecated"
@@ -743,6 +744,34 @@ Does not resolve Key Vault references embedded in Azure App Configuration settin
 with [`AzureAppConfigSource`](#azureappconfigsourceremotesource) instead. Raises `KeyError` on a
 missing secret or an empty vault, `PermissionError` on auth failure. See
 [AzureKeyVaultSource](advanced/remote/azure_key_vault.md) for details.
+
+#### `GcpSecretManagerSource(RemoteSource)`
+
+| | |
+|---|---|
+| **Format** | GCP Secret Manager secrets |
+| **Module** | `dature.sources.gcp_secret_manager_` |
+| **Dependencies** | `google-cloud-secret-manager` |
+| **Error label** | `GCP_SECRET_MANAGER` |
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `project_id` | `str` | `""` | GCP project id. Required. |
+| `name` | `str` | `"*"` | Single secret id holding the whole document. `"*"` lists and fetches every matching secret (N+1 round trip). |
+| `version` | `str` | `"latest"` | Secret version selector. |
+| `name_prefix` | `str \| None` | `None` | List mode only: server-side filter on secret id prefix. |
+| `labels` | `Mapping[str, str] \| None` | `None` | List mode only: server-side filter on secret labels. |
+| `credentials` | `object \| None` | `None` | Pre-built `google.auth.credentials.Credentials`. Mutually exclusive with `credentials_file`. |
+| `credentials_file` | `str \| None` | `None` | Path to a service-account JSON key file. |
+| `transport` | `object \| None` | `None` | Pre-built transport. Mutually exclusive with `credentials`/`credentials_file`. |
+| `client_options` | `Mapping[str, Any] \| None` | `None` | Extra kwargs forwarded to `SecretManagerServiceClient`. |
+| `separator` | `str \| None` | `"--"` | Secret id segment separator for nesting. |
+| `decode` | `Literal["utf-8", "json"]` | `"utf-8"` | Value decoding mode. |
+
+`name_prefix` and `labels` are translated into Secret Manager's server-side `filter` query
+(`AND`-composed when both are set); setting either outside list mode raises `ValueError`.
+Raises `KeyError` on a missing secret or an empty result, `PermissionError` on auth failure.
+See [GcpSecretManagerSource](advanced/remote/gcp_secret_manager.md) for details.
 
 ---
 

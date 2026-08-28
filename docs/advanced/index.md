@@ -25,6 +25,7 @@ Integrate additional config sources or build your own.
 | [VaultSource](remote/vault.md) | Fetch secrets from HashiCorp Vault |
 | [AzureAppConfigSource](remote/azure_app_config.md) | Fetch configuration from Azure App Configuration |
 | [AzureKeyVaultSource](remote/azure_key_vault.md) | Fetch secrets from Azure Key Vault |
+| [GcpSecretManagerSource](remote/gcp_secret_manager.md) | Fetch secrets from Google Cloud Secret Manager |
 | [Custom Remote Source](remote/custom.md) | Implement your own remote backend (AWS, Azure, Consul …) |
 | [Custom Types](custom_types.md) | Add support for new Python types via `type_loaders` |
 | [Custom Sources](custom_sources.md) | Implement your own source class or use the `SourceProtocol` interface directly |

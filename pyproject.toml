@@ -63,6 +63,7 @@ etcd = ["etcd3gw>=2.7"]
 aws = ["boto3>=1.34"]
 azure-appconfig = ["azure-appconfiguration>=1.5", "azure-identity>=1.16"]
 azure-keyvault = ["azure-keyvault-secrets>=4.11", "azure-identity>=1.16"]
+gcp = ["google-cloud-secret-manager>=2.20"]
 # Type stubs for the optional integrations above — only needed by users running
 # a static type checker (mypy/pyright). Add ``[<lib>,type-stubs]`` to opt in.
 type-stubs = ["types-hvac", "boto3-stubs[secretsmanager,ssm]"]
@@ -197,6 +198,14 @@ follow_untyped_imports = true
 module = "consul.*"
 follow_untyped_imports = true
 
+[[tool.mypy.overrides]]
+module = "grpc.*"
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = "google.iam.*"
+follow_untyped_imports = true
+
 [tool.pyright]
 typeCheckingMode = "standard"
 pythonVersion = "3.12"
@@ -263,6 +272,7 @@ etcd             = {dirs = ["etcd"], extras = "etcd"}
 aws              = {dirs = ["ssm", "secrets_manager"], extras = "aws"}
 azure_app_config = {dirs = ["azure_app_config"], extras = "azure-appconfig"}
 azure_key_vault  = {dirs = ["azure_key_vault"], extras = "azure-keyvault"}
+gcp_secret_manager = {dirs = ["gcp_secret_manager"], extras = "gcp"}
 
 [tool.towncrier]
 package = "dature"

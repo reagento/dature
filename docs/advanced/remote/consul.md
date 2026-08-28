@@ -1,8 +1,6 @@
 # ConsulSource
 
-`ConsulSource` loads configuration from [HashiCorp Consul](https://www.consul.io/)
-KV store. It is a concrete implementation of the abstract
-[`RemoteSource`](custom.md) base class and ships with the `dature[consul]` optional extra.
+`ConsulSource` loads configuration from [HashiCorp Consul](https://www.consul.io/) KV store. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[consul]` optional extra.
 
 ## Quickstart
 
@@ -16,11 +14,7 @@ pip install dature[consul]
 --8<-- "docs/examples/advanced/remote/consul/quickstart.py"
 ```
 
-By default `ConsulSource` reads recursively (`recursive=True`) and splits keys on `/`,
-nesting them into a dict hierarchy. With the KV tree
-`myapp/db_password = s3cret`, `myapp/port = 5432`, `myapp/name = myapp`
-and `path="myapp"` the loaded dict is `{"db_password": "s3cret", "port": "5432", "name": "myapp"}`,
-which maps directly to a flat dataclass.
+By default `ConsulSource` reads recursively (`recursive=True`) and splits keys on `/`, nesting them into a dict hierarchy. With the KV tree `myapp/db_password = s3cret`, `myapp/port = 5432`, `myapp/name = myapp` and `path="myapp"` the loaded dict is `{"db_password": "s3cret", "port": "5432", "name": "myapp"}`, which maps directly to a flat dataclass.
 
 ## ConsulSource fields
 
@@ -28,8 +22,7 @@ which maps directly to a flat dataclass.
 - `host` — Consul address; default `""` (falls through to `ConsulConfig.host`, then `"localhost"`).
 - `port` — Consul HTTP port; default `None` (falls through to `ConsulConfig.port`, then `8500`).
 - `scheme` — `"http"` or `"https"`; default `None` (falls through to `ConsulConfig.scheme`, then `"http"`).
-- `token` — ACL token; default `None`. Required whenever the Consul agent has ACLs enabled
-  with `default_policy = "deny"` — without a valid token, `load()` raises `PermissionError`.
+- `token` — ACL token; default `None`. Required whenever the Consul agent has ACLs enabled with `default_policy = "deny"` — without a valid token, `load()` raises `PermissionError`.
 - `datacenter` — Consul datacenter; default `None` (uses the agent's datacenter).
 - `verify` — TLS verification: `True`, a CA bundle path, or `False`; default `None`.
 - `recursive` — read the prefix tree recursively; default `True`.
@@ -38,36 +31,21 @@ which maps directly to a flat dataclass.
 
 ## Supported types
 
-With `decode="utf-8"` (the default) every value is a string and collections are
-JSON literals — the same dialect as ENV, with `/` nesting instead of `__`.
-`decode="json"` behaves like [`VaultSource`](vault.md) (native JSON). `decode="raw"`
-yields raw `bytes` and sits outside the type-coercion matrix. See
-[Supported Types](../../supported_types.md) for the full matrix.
+With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `/` nesting instead of `__`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON). `decode="raw"` yields raw `bytes` and sits outside the type-coercion matrix. See [Supported Types](../../supported_types.md) for the full matrix.
 
 ## Global configuration via configure()
 
-Connection settings rarely change per-call, so they can be set once via
-`dature.configure(consul={...})` (or the matching `DATURE_CONSUL__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.configure(consul={...})` (or the matching `DATURE_CONSUL__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/consul/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_CONSUL__*` env.
-`None` or `""` on the instance means "fall through to the next layer". See
-[Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `configure()` → `DATURE_CONSUL__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "py-consul and CONSUL_HTTP_ADDR"
-    `py-consul` falls back to the `CONSUL_HTTP_ADDR` environment variable only when
-    both `host` and `port` are `None` (i.e. not set at the `Consul()` constructor level).
-    With `ConsulSource`, `host` and `port` always flow through from `ConsulConfig`
-    defaults (`"localhost"`, `8500`) — so `CONSUL_HTTP_ADDR` is never consulted.
-    Use `configure(consul={"host": ..., "port": ...})` or `DATURE_CONSUL__HOST` /
-    `DATURE_CONSUL__PORT` instead.
+    `py-consul` falls back to the `CONSUL_HTTP_ADDR` environment variable only when both `host` and `port` are `None` (i.e. not set at the `Consul()` constructor level). With `ConsulSource`, `host` and `port` always flow through from `ConsulConfig` defaults (`"localhost"`, `8500`) — so `CONSUL_HTTP_ADDR` is never consulted. Use `configure(consul={"host": ..., "port": ...})` or `DATURE_CONSUL__HOST` / `DATURE_CONSUL__PORT` instead.
 
 ## Combining with other sources
 
-`ConsulSource` composes with file/env/CLI sources via `load()` like any other
-source. A common pattern is JSON/YAML for non-sensitive defaults, Consul for
-secrets, env or CLI for last-mile overrides — order in `load()` controls
-precedence (default `last_wins`). See [Merging](../../basic/merging.md).
+`ConsulSource` composes with file/env/CLI sources via `load()` like any other source. A common pattern is JSON/YAML for non-sensitive defaults, Consul for secrets, env or CLI for last-mile overrides — order in `load()` controls precedence (default `last_wins`). See [Merging](../../basic/merging.md).

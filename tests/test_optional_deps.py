@@ -19,6 +19,7 @@ from dature._deps import require_dep
         "hvac",
         "azure.appconfiguration",
         "azure.keyvault.secrets",
+        "google.cloud.secretmanager",
     ],
 )
 def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -41,6 +42,7 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
     assert dature.VaultSource.format_name == "vault"
     assert dature.AzureAppConfigSource.format_name == "azure-app-config"
     assert dature.AzureKeyVaultSource.format_name == "azure-key-vault"
+    assert dature.GcpSecretManagerSource.format_name == "gcp-secret-manager"
 
 
 @pytest.mark.parametrize(
@@ -52,6 +54,7 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
         ("hvac", "vault"),
         ("azure.appconfiguration", "azure-appconfig"),
         ("azure.keyvault.secrets", "azure-keyvault"),
+        ("google.cloud.secretmanager", "gcp"),
     ],
 )
 def test_missing_dep_error_mentions_install_command(package: str, extra: str, monkeypatch: pytest.MonkeyPatch) -> None:

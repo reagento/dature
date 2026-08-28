@@ -117,6 +117,11 @@ class TestConfigure:
                 ("azure_key_vault", "vault_url"),
                 "https://x.vault.azure.net",
             ),
+            (
+                {"gcp_secret_manager": {"project_id": "my-proj"}},
+                ("gcp_secret_manager", "project_id"),
+                "my-proj",
+            ),
         ],
         ids=[
             "masking-mask",
@@ -134,6 +139,7 @@ class TestConfigure:
             "secrets_manager-region_name",
             "azure_app_config-endpoint",
             "azure_key_vault-vault_url",
+            "gcp_secret_manager-project_id",
         ],
     )
     def test_configure_overrides(
@@ -361,6 +367,12 @@ class TestEnvLoading:
                 ("azure_key_vault", "vault_url"),
                 "https://x.vault.azure.net",
             ),
+            (
+                "DATURE_GCP_SECRET_MANAGER__PROJECT_ID",
+                "my-proj",
+                ("gcp_secret_manager", "project_id"),
+                "my-proj",
+            ),
         ],
         ids=[
             "str-mask",
@@ -377,6 +389,7 @@ class TestEnvLoading:
             "str-secrets_manager-region_name",
             "str-azure_app_config-endpoint",
             "str-azure_key_vault-vault_url",
+            "str-gcp_secret_manager-project_id",
         ],
     )
     def test_env_loading(
@@ -450,6 +463,11 @@ class TestDatureInstance:
                 ("azure_key_vault", "vault_url"),
                 "https://x.vault.azure.net",
             ),
+            (
+                {"gcp_secret_manager": {"project_id": "my-proj"}},
+                ("gcp_secret_manager", "project_id"),
+                "my-proj",
+            ),
         ],
         ids=[
             "masking-mask",
@@ -462,6 +480,7 @@ class TestDatureInstance:
             "secrets_manager-region_name",
             "azure_app_config-endpoint",
             "azure_key_vault-vault_url",
+            "gcp_secret_manager-project_id",
         ],
     )
     def test_dature_instance_group_overrides(
