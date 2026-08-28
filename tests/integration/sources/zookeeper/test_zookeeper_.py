@@ -21,7 +21,9 @@ from dature.errors import DatureConfigError, SourceLocation
 from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.sources.zookeeper.helpers import (
+    drop_znodes,
     make_zk_client,
+    seed_znodes,
     start_zookeeper_container,
     zk_address,
 )
@@ -50,28 +52,28 @@ def zk_address_no_auth(zk_container, zk_internal_port) -> tuple[str, int]:
 @pytest.fixture
 def _kv_tree(zk_client: KazooClient) -> Generator[None]:
     """Write the canonical secret as a leaf znode per field, nested under KV_PREFIX."""
-    for key, value in EXPECTED_SECRET.items():
-        zk_client.create(f"/{KV_PREFIX}/{key}", value.encode("utf-8"), makepath=True)
+    values = {f"/{KV_PREFIX}/{key}": value.encode("utf-8") for key, value in EXPECTED_SECRET.items()}
+    seed_znodes(zk_client, f"/{KV_PREFIX}", values)
     yield
-    zk_client.delete(f"/{KV_PREFIX}", recursive=True)
+    drop_znodes(zk_client, f"/{KV_PREFIX}")
 
 
 @pytest.fixture
 def _kv_json_doc(zk_client: KazooClient) -> Generator[None]:
     """Write the canonical secret as a single JSON document at KV_PREFIX."""
-    zk_client.create(f"/{KV_PREFIX}", json.dumps(EXPECTED_SECRET).encode("utf-8"), makepath=True)
+    seed_znodes(zk_client, f"/{KV_PREFIX}", {f"/{KV_PREFIX}": json.dumps(EXPECTED_SECRET).encode("utf-8")})
     yield
-    zk_client.delete(f"/{KV_PREFIX}", recursive=True)
+    drop_znodes(zk_client, f"/{KV_PREFIX}")
 
 
 @pytest.fixture
 def _kv_all_types(zk_client: KazooClient, all_types_zookeeper_kv_file: Path) -> Generator[None]:
     """Write every key of the all-types KV tree individually as znodes."""
     kv_map = json.loads(all_types_zookeeper_kv_file.read_text())
-    for key, value in kv_map.items():
-        zk_client.create(f"/{key}", value.encode("utf-8"), makepath=True)
+    values = {f"/{key}": value.encode("utf-8") for key, value in kv_map.items()}
+    seed_znodes(zk_client, f"/{ALL_TYPES_PREFIX}", values)
     yield
-    zk_client.delete(f"/{ALL_TYPES_PREFIX}", recursive=True)
+    drop_znodes(zk_client, f"/{ALL_TYPES_PREFIX}")
 
 
 @pytest.mark.usefixtures("_reset_config")
@@ -180,7 +182,7 @@ class TestZookeeperSourceSingleNodeJson:
 class TestZookeeperSourceRawDecode:
     def test_raw_decode_yields_bytes(self, zk_client: KazooClient, zk_address_no_auth):
         zk_host, zk_port = zk_address_no_auth
-        zk_client.create(f"/{KV_PREFIX}/blob", b"\x00\x01raw", makepath=True)
+        seed_znodes(zk_client, f"/{KV_PREFIX}", {f"/{KV_PREFIX}/blob": b"\x00\x01raw"})
 
         @dataclass
         class Config:
@@ -194,7 +196,7 @@ class TestZookeeperSourceRawDecode:
 
             assert result == Config(blob=b"\x00\x01raw")
         finally:
-            zk_client.delete(f"/{KV_PREFIX}", recursive=True)
+            drop_znodes(zk_client, f"/{KV_PREFIX}")
 
 
 @pytest.fixture(scope="class")
@@ -227,11 +229,13 @@ class TestZookeeperSourceAuth:
     @pytest.fixture(autouse=True)
     def _seed_secret(self, _zk_auth_admin_client: KazooClient, zk_digest_user: str, zk_digest_password: str):
         acl = [make_digest_acl(zk_digest_user, zk_digest_password, read=True, write=True, admin=True)]
-        _zk_auth_admin_client.create(f"/{KV_PREFIX}", makepath=True, acl=acl)
-        for key, value in EXPECTED_SECRET.items():
-            _zk_auth_admin_client.create(f"/{KV_PREFIX}/{key}", value.encode("utf-8"), acl=acl)
+        values = {
+            f"/{KV_PREFIX}": b"",
+            **{f"/{KV_PREFIX}/{key}": value.encode("utf-8") for key, value in EXPECTED_SECRET.items()},
+        }
+        seed_znodes(_zk_auth_admin_client, f"/{KV_PREFIX}", values, acl=acl)
         yield
-        _zk_auth_admin_client.delete(f"/{KV_PREFIX}", recursive=True)
+        drop_znodes(_zk_auth_admin_client, f"/{KV_PREFIX}")
 
     def test_correct_creds_load(self, zk_address_auth, zk_digest_user, zk_digest_password):
         zk_auth_host, zk_auth_port = zk_address_auth

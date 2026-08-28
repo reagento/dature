@@ -5,28 +5,32 @@ CI common jobs pass ``--ignore=tests/integration`` to skip them. To run these te
 ``uv sync --all-extras --group integration-tests --dev`` then ``pytest tests/integration``.
 """
 
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 from kazoo.client import KazooClient
 
 from tests.example_helpers import DOCS_EXAMPLES_DIR, run_script
-from tests.integration.sources.zookeeper.helpers import zk_address
+from tests.integration.sources.zookeeper.helpers import drop_znodes, seed_znodes, zk_address
 
 ZOOKEEPER_EXAMPLES_DIR = DOCS_EXAMPLES_DIR / "advanced" / "remote" / "zookeeper"
 
 
 @pytest.fixture(scope="module")
-def zk_examples_env(zk_container, zk_client: KazooClient, zk_internal_port) -> dict[str, str]:
+def zk_examples_env(zk_container, zk_client: KazooClient, zk_internal_port) -> Generator[dict[str, str]]:
     """Write the secret used by the examples and yield the matching env var."""
-    zk_client.create("/myapp/db_password", b"s3cret", makepath=True)
-    zk_client.create("/myapp/port", b"5432")
-    zk_client.create("/myapp/name", b"myapp")
+    seed_znodes(
+        zk_client,
+        "/myapp",
+        {"/myapp/db_password": b"s3cret", "/myapp/port": b"5432", "/myapp/name": b"myapp"},
+    )
 
     host, port = zk_address(zk_container, zk_internal_port)
-    return {
+    yield {
         "ZK_HOST": f"{host}:{port}",
     }
+    drop_znodes(zk_client, "/myapp")
 
 
 @pytest.mark.parametrize(
