@@ -743,6 +743,34 @@ class TestMergeGroup:
 
         assert merged.system_config_dirs["linux"] == ("before",)
 
+    @staticmethod
+    def test_list_valued_option_is_copied_from_caller_list() -> None:
+        """Same rationale as the mapping case, but for list-valued overrides (e.g.
+        ``ZookeeperOptions.hosts``): the built config group must not hold the caller's list
+        by reference, or a mutation the caller makes afterwards would silently change an
+        already-built, supposedly-frozen config."""
+
+        @dataclass(frozen=True)
+        class GroupWithList:
+            hosts: list[str] = field(default_factory=list)
+
+        caller_list = ["zk1:2181"]
+        merged = merge_group(GroupWithList(), {"hosts": caller_list}, GroupWithList)
+        caller_list.append("zk2:2181")
+
+        assert merged.hosts == ["zk1:2181"]
+
+    @staticmethod
+    def test_list_valued_option_copy_is_independent_of_result() -> None:
+        @dataclass(frozen=True)
+        class GroupWithList:
+            hosts: list[str] = field(default_factory=list)
+
+        caller_list = ["zk1:2181"]
+        merged = merge_group(GroupWithList(), {"hosts": caller_list}, GroupWithList)
+
+        assert merged.hosts is not caller_list
+
 
 @pytest.mark.usefixtures("_reset_config")
 class TestValidation:

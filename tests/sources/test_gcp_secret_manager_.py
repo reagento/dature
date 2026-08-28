@@ -297,7 +297,7 @@ class TestGcpSecretManagerSourceFetch:
             src.load_raw()
 
     def test_not_found_raises_key_error(self, monkeypatch):
-        client = FakeSecretManagerClient(get_error=NotFound("nope"))  # type: ignore[no-untyped-call]
+        client = FakeSecretManagerClient(get_error=NotFound("nope"))
         src = self._make_source(monkeypatch, client, name="missing")
 
         with pytest.raises(KeyError, match="GCP Secret Manager secret not found"):
@@ -306,10 +306,10 @@ class TestGcpSecretManagerSourceFetch:
     @pytest.mark.parametrize(
         "error",
         [
-            pytest.param(PermissionDenied("nope"), id="permission_denied"),  # type: ignore[no-untyped-call]
-            pytest.param(Unauthenticated("nope"), id="unauthenticated"),  # type: ignore[no-untyped-call]
+            pytest.param(PermissionDenied("nope"), id="permission_denied"),
+            pytest.param(Unauthenticated("nope"), id="unauthenticated"),
             pytest.param(
-                DefaultCredentialsError("nope"),  # type: ignore[no-untyped-call]
+                DefaultCredentialsError("nope"),
                 id="default_credentials_error",
             ),
         ],
@@ -322,7 +322,7 @@ class TestGcpSecretManagerSourceFetch:
             src.load_raw()
 
     def test_other_error_propagates(self, monkeypatch):
-        client = FakeSecretManagerClient(list_error=ServiceUnavailable("boom"))  # type: ignore[no-untyped-call]
+        client = FakeSecretManagerClient(list_error=ServiceUnavailable("boom"))
         src = self._make_source(monkeypatch, client)
 
         with pytest.raises(ServiceUnavailable):
@@ -359,9 +359,9 @@ def test_missing_google_cloud_secretmanager_raises_on_load(monkeypatch):
     """`import dature` works without google-cloud-secret-manager; only _fetch() requires it.
 
     ``sys.modules[name] = None`` is the reliable way to simulate a missing dependency for a
-    dotted package name — unlike ``block_import`` (which patches ``builtins.__import__``), it
-    also blocks ``importlib.import_module`` used by ``require_dep``, since Python's import
-    system raises ``ImportError`` immediately whenever a ``sys.modules`` entry is ``None``.
+    dotted package name — unlike ``block_import`` (which patches ``importlib.import_module``
+    only), it blocks *any* import mechanism, since Python's import system raises
+    ``ImportError`` immediately whenever a ``sys.modules`` entry is ``None``.
     """
     monkeypatch.setenv("DATURE_GCP_SECRET_MANAGER__PROJECT_ID", "my-proj")
     monkeypatch.setitem(sys.modules, "google.cloud.secretmanager", None)

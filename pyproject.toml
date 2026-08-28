@@ -60,6 +60,7 @@ secure = ["random-string-detector>=1.1.1"]
 vault = ["hvac>=2.0"]
 consul = ["py-consul>=1.7"]
 etcd = ["etcd3gw>=2.7"]
+zookeeper = ["kazoo>=2.11"]
 aws = ["boto3>=1.34"]
 azure-appconfig = ["azure-appconfiguration>=1.5", "azure-identity>=1.16"]
 azure-keyvault = ["azure-keyvault-secrets>=4.11", "azure-identity>=1.16"]
@@ -176,7 +177,7 @@ plugins = ["dature.mypy_plugin"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
-disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-returns-value", "call-arg", "attr-defined", "index"]
+disable_error_code = ["no-untyped-def", "arg-type", "call-overload", "func-returns-value", "call-arg", "attr-defined", "index", "no-untyped-call"]
 
 [[tool.mypy.overrides]]
 module = "docs.examples.*"
@@ -196,6 +197,10 @@ follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "consul.*"
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = "kazoo.*"
 follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
@@ -253,7 +258,7 @@ pythonpath = [
     "src",
 ]
 markers = [
-    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd, LocalStack, Azure emulators)",
+    "integration: tests that require external services via testcontainers (e.g. Vault, Consul, etcd, ZooKeeper, LocalStack, Azure emulators)",
     "examples: tests that execute the docs example scripts as subprocesses",
 ]
 
@@ -267,6 +272,7 @@ markers = [
 vault            = {dirs = ["vault"], extras = "vault"}
 consul           = {dirs = ["consul"], extras = "consul"}
 etcd             = {dirs = ["etcd"], extras = "etcd"}
+zookeeper        = {dirs = ["zookeeper"], extras = "zookeeper"}
 # ssm + secrets_manager share one session-scoped LocalStack container
 # (tests/integration/sources/conftest.py) — keep them in a single job.
 aws              = {dirs = ["ssm", "secrets_manager"], extras = "aws"}

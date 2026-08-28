@@ -346,9 +346,9 @@ def test_missing_azure_appconfiguration_raises_on_load(monkeypatch):
     """`import dature` works without azure-appconfiguration; only _fetch() requires it.
 
     ``sys.modules[name] = None`` is the reliable way to simulate a missing dependency for a
-    dotted package name — unlike ``block_import`` (which patches ``builtins.__import__``), it
-    also blocks ``importlib.import_module`` used by ``require_dep``, since Python's import
-    system raises ``ImportError`` immediately whenever a ``sys.modules`` entry is ``None``.
+    dotted package name — unlike ``block_import`` (which patches ``importlib.import_module``
+    only), it blocks *any* import mechanism, since Python's import system raises
+    ``ImportError`` immediately whenever a ``sys.modules`` entry is ``None``.
     """
     monkeypatch.setenv("DATURE_AZURE_APP_CONFIG__ENDPOINT", "https://x.azconfig.io")
     monkeypatch.setitem(sys.modules, "azure.appconfiguration", None)

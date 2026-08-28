@@ -141,6 +141,20 @@ class EtcdConfig:
 # --8<-- [end:etcd-config]
 
 
+# --8<-- [start:zookeeper-config]
+@dataclass(frozen=True, slots=True)
+class ZookeeperConfig:
+    hosts: "str | list[str]" = "localhost:2181"
+    user: str | None = None
+    password: str | None = None
+    sasl_options: "dict[str, str] | None" = None
+    timeout: float | None = None
+    connection_timeout: float | None = None
+
+
+# --8<-- [end:zookeeper-config]
+
+
 # --8<-- [start:ssm-config]
 @dataclass(frozen=True, slots=True)
 class SsmConfig:
@@ -212,6 +226,7 @@ class DatureConfig:
     vault: VaultConfig = VaultConfig()
     consul: ConsulConfig = ConsulConfig()
     etcd: EtcdConfig = EtcdConfig()
+    zookeeper: ZookeeperConfig = ZookeeperConfig()
     ssm: SsmConfig = SsmConfig()
     secrets_manager: SecretsManagerConfig = SecretsManagerConfig()
     azure_app_config: AzureAppConfigConfig = AzureAppConfigConfig()
@@ -315,6 +330,15 @@ class EtcdOptions(TypedDict, total=False):
     timeout: float | None
 
 
+class ZookeeperOptions(TypedDict, total=False):
+    hosts: "str | list[str]"
+    user: str | None
+    password: str | None
+    sasl_options: "dict[str, str] | None"
+    timeout: float | None
+    connection_timeout: float | None
+
+
 class SsmOptions(TypedDict, total=False):
     region_name: str
     profile_name: str | None
@@ -412,10 +436,14 @@ def merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | N
         return current
     if not options:
         return cls()
-    # Shallow-copy any mapping-valued override (e.g. LoadingOptions.system_config_dirs): otherwise
-    # the built config group would hold the caller's dict by reference, and a mutation the caller
-    # makes afterwards would silently change an already-built, supposedly-frozen config.
-    safe_options = {name: dict(value) if isinstance(value, Mapping) else value for name, value in options.items()}
+    # Shallow-copy any mapping- or list-valued override (e.g. LoadingOptions.system_config_dirs,
+    # ZookeeperOptions.hosts): otherwise the built config group would hold the caller's
+    # container by reference, and a mutation the caller makes afterwards would silently change
+    # an already-built, supposedly-frozen config.
+    safe_options = {
+        name: dict(value) if isinstance(value, Mapping) else list(value) if isinstance(value, list) else value
+        for name, value in options.items()
+    }
     return replace(current, **safe_options)
 
 
@@ -428,6 +456,7 @@ def configure(  # noqa: PLR0913
     vault: VaultOptions | None = None,
     consul: ConsulOptions | None = None,
     etcd: EtcdOptions | None = None,
+    zookeeper: ZookeeperOptions | None = None,
     ssm: SsmOptions | None = None,
     secrets_manager: SecretsManagerOptions | None = None,
     azure_app_config: AzureAppConfigOptions | None = None,
@@ -455,6 +484,7 @@ def configure(  # noqa: PLR0913
         merged_vault = merge_group(current.vault, vault, VaultConfig)
         merged_consul = merge_group(current.consul, consul, ConsulConfig)
         merged_etcd = merge_group(current.etcd, etcd, EtcdConfig)
+        merged_zookeeper = merge_group(current.zookeeper, zookeeper, ZookeeperConfig)
         merged_ssm = merge_group(current.ssm, ssm, SsmConfig)
         merged_secrets_manager = merge_group(current.secrets_manager, secrets_manager, SecretsManagerConfig)
         merged_azure_app_config = merge_group(current.azure_app_config, azure_app_config, AzureAppConfigConfig)
@@ -468,6 +498,7 @@ def configure(  # noqa: PLR0913
             vault=merged_vault,
             consul=merged_consul,
             etcd=merged_etcd,
+            zookeeper=merged_zookeeper,
             ssm=merged_ssm,
             secrets_manager=merged_secrets_manager,
             azure_app_config=merged_azure_app_config,

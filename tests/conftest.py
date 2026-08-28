@@ -1,6 +1,6 @@
 """Pytest configuration and shared fixtures."""
 
-import builtins
+import importlib
 import sys
 import time
 from collections.abc import Callable, Generator
@@ -221,6 +221,13 @@ def all_types_etcd_kv_file(examples_dir: Path) -> Path:
     return examples_dir / "sources" / "all_types_etcd_kv.json"
 
 
+# ZooKeeper fixtures
+@pytest.fixture
+def all_types_zookeeper_kv_file(examples_dir: Path) -> Path:
+    """Path to all_types_zookeeper_kv.json file."""
+    return examples_dir / "sources" / "all_types_zookeeper_kv.json"
+
+
 # Azure App Configuration fixtures
 @pytest.fixture
 def all_types_azure_app_config_file(examples_dir: Path) -> Path:
@@ -254,26 +261,31 @@ def _clean_dature_modules() -> Generator[None]:
 
 @pytest.fixture
 def block_import(_clean_dature_modules: None) -> Callable[[str], AbstractContextManager[None]]:
-    real_import = builtins.__import__
+    real_import_module = importlib.import_module
 
     def _block(module_name: str) -> AbstractContextManager[None]:
         @contextmanager
         def _ctx() -> Generator[None]:
-            # Drop any cached entry so ``import <module_name>`` actually goes through __import__
-            # — otherwise a previously-imported module short-circuits the block.
+            # Drop any cached entry so require_dep's import_module() actually goes through the
+            # patch below — otherwise a previously-imported module short-circuits the block.
             removed = {
                 key: sys.modules.pop(key)
                 for key in list(sys.modules)
                 if key == module_name or key.startswith(module_name + ".")
             }
 
-            def _blocker(name: str, *args: object, **kwargs: object) -> object:
+            # ``require_dep`` resolves the dependency via ``importlib.import_module``, which
+            # never calls ``builtins.__import__`` for the top-level name — patching only the
+            # builtin would miss it (confirmed: it "worked" for etcd3gw only by accident,
+            # because etcd3gw's own __init__.py does *absolute* internal imports that happen
+            # to route through __import__; kazoo's relative internal import doesn't).
+            def _blocker_import_module(name: str, *args: object, **kwargs: object) -> object:
                 if name == module_name or name.startswith(module_name + "."):
                     msg = f"No module named '{module_name}'"
                     raise ImportError(msg)
-                return real_import(name, *args, **kwargs)
+                return real_import_module(name, *args, **kwargs)
 
-            with patch("builtins.__import__", side_effect=_blocker):
+            with patch("importlib.import_module", side_effect=_blocker_import_module):
                 try:
                     yield
                 finally:

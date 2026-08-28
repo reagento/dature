@@ -77,8 +77,8 @@ def grant_secret_manager_admin(iam_host_port: int, project_id: str, principal: s
     """
     from google.iam.v1 import iam_policy_pb2, iam_policy_pb2_grpc, policy_pb2  # noqa: PLC0415
 
-    channel = grpc.insecure_channel(f"localhost:{iam_host_port}")  # type: ignore[no-untyped-call]
-    stub = iam_policy_pb2_grpc.IAMPolicyStub(channel)  # type: ignore[no-untyped-call]
+    channel = grpc.insecure_channel(f"localhost:{iam_host_port}")
+    stub = iam_policy_pb2_grpc.IAMPolicyStub(channel)
     request = iam_policy_pb2.SetIamPolicyRequest(
         resource=f"projects/{project_id}",
         policy=policy_pb2.Policy(
@@ -133,14 +133,14 @@ def secret_manager_grpc_transport(grpc_port: int, *, principal: str | None = Non
         SecretManagerServiceGrpcTransport,
     )
 
-    channel = grpc.insecure_channel(f"localhost:{grpc_port}")  # type: ignore[no-untyped-call]
+    channel = grpc.insecure_channel(f"localhost:{grpc_port}")
 
     def _check_ready() -> None:
-        grpc.channel_ready_future(channel).result(timeout=5)  # type: ignore[no-untyped-call]
+        grpc.channel_ready_future(channel).result(timeout=5)
 
     retry_until_ready(_check_ready, grpc.FutureTimeoutError)
 
     if principal is not None:
-        channel = grpc.intercept_channel(channel, _PrincipalInterceptor(principal))  # type: ignore[no-untyped-call]
+        channel = grpc.intercept_channel(channel, _PrincipalInterceptor(principal))
 
     return SecretManagerServiceGrpcTransport(channel=channel)

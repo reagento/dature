@@ -86,6 +86,20 @@ class _FakeRemote(Source):
         return {}
 
 
+@dataclass(kw_only=True, repr=False)
+class _FakeListField(Source):
+    """A fake source with a ``str | list[str]`` field, mirroring ``ZookeeperSource.hosts`` —
+    used to prove ``_is_unset`` treats an empty list (its default) as unset."""
+
+    hosts: "str | list[str]" = ""
+
+    format_name: str = "_fake_list_field"
+    config_group: str | None = "zookeeper"
+
+    def _load(self) -> JSONValue:
+        return {}
+
+
 @pytest.mark.usefixtures("_reset_config")
 class TestApplySourceConfigGroup:
     def test_noop_when_config_group_is_none(self):
@@ -135,6 +149,22 @@ class TestApplySourceConfigGroup:
         configure(vault=config_kwargs)
         merged = apply_source_config_group(_FakeRemote(**instance_kwargs))
         assert getattr(merged, field) == expected
+
+
+@pytest.mark.usefixtures("_reset_config")
+class TestApplySourceConfigGroupEmptyList:
+    """``str | list[str]`` fields (e.g. ``ZookeeperSource.hosts``) default to ``""``, but a
+    caller can also pass an explicit empty list — both must fall through to the config group."""
+
+    def test_empty_list_falls_through_to_config(self):
+        configure(zookeeper={"hosts": "from-config:2181"})
+        merged = apply_source_config_group(_FakeListField(hosts=[]))
+        assert merged.hosts == "from-config:2181"
+
+    def test_non_empty_list_instance_wins(self):
+        configure(zookeeper={"hosts": "from-config:2181"})
+        merged = apply_source_config_group(_FakeListField(hosts=["instance:2181"]))
+        assert merged.hosts == ["instance:2181"]
 
 
 class TestShouldSkipBroken:
