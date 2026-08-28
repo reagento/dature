@@ -23,6 +23,7 @@ from dature.sources.ssm_ import AwsSsmSource
 from dature.sources.toml_ import Toml10Source, Toml11Source
 from dature.sources.vault_ import VaultSource
 from dature.sources.yaml_ import Yaml11Source, Yaml12Source
+from dature.sources.zookeeper_ import ZookeeperSource
 from dature.validators.v import V
 
 __all__ = [
@@ -51,6 +52,7 @@ __all__ = [
     "When",
     "Yaml11Source",
     "Yaml12Source",
+    "ZookeeperSource",
     "__version__",
     "configure",
     "load",

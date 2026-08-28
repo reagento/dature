@@ -57,6 +57,8 @@ from dature.config import (
     SsmOptions,
     VaultConfig,
     VaultOptions,
+    ZookeeperConfig,
+    ZookeeperOptions,
     default_config,
     merge_group,
 )
@@ -101,6 +103,7 @@ class Dature:
         vault: Vault connection overrides.
         consul: Consul connection overrides.
         etcd: Etcd connection overrides.
+        zookeeper: ZooKeeper connection overrides.
         ssm: AWS SSM connection overrides.
         secrets_manager: AWS Secrets Manager connection overrides.
         azure_app_config: Azure App Configuration connection overrides.
@@ -119,6 +122,7 @@ class Dature:
         vault: VaultOptions | None = None,
         consul: ConsulOptions | None = None,
         etcd: EtcdOptions | None = None,
+        zookeeper: ZookeeperOptions | None = None,
         ssm: SsmOptions | None = None,
         secrets_manager: SecretsManagerOptions | None = None,
         azure_app_config: AzureAppConfigOptions | None = None,
@@ -134,6 +138,7 @@ class Dature:
             vault=merge_group(base.vault, vault, VaultConfig),
             consul=merge_group(base.consul, consul, ConsulConfig),
             etcd=merge_group(base.etcd, etcd, EtcdConfig),
+            zookeeper=merge_group(base.zookeeper, zookeeper, ZookeeperConfig),
             ssm=merge_group(base.ssm, ssm, SsmConfig),
             secrets_manager=merge_group(base.secrets_manager, secrets_manager, SecretsManagerConfig),
             azure_app_config=merge_group(base.azure_app_config, azure_app_config, AzureAppConfigConfig),

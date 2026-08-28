@@ -307,9 +307,9 @@ def test_missing_azure_keyvault_secrets_raises_on_load(monkeypatch):
     """`import dature` works without azure-keyvault-secrets; only _fetch() requires it.
 
     ``sys.modules[name] = None`` is the reliable way to simulate a missing dependency for a
-    dotted package name — unlike ``block_import`` (which patches ``builtins.__import__``), it
-    also blocks ``importlib.import_module`` used by ``require_dep``, since Python's import
-    system raises ``ImportError`` immediately whenever a ``sys.modules`` entry is ``None``.
+    dotted package name — unlike ``block_import`` (which patches ``importlib.import_module``
+    only), it blocks *any* import mechanism, since Python's import system raises
+    ``ImportError`` immediately whenever a ``sys.modules`` entry is ``None``.
     """
     monkeypatch.setenv("DATURE_AZURE_KEY_VAULT__VAULT_URL", "https://x.vault.azure.net")
     monkeypatch.setitem(sys.modules, "azure.keyvault.secrets", None)

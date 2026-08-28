@@ -1,0 +1,1 @@
+Added `ZookeeperSource` (`dature[zookeeper]`) to load configuration from Apache ZooKeeper znodes, with recursive tree reads, ensemble `hosts` given as a string or a list, digest/SASL auth, session and connection timeouts, and `utf-8` / `json` / `raw` value decoding.

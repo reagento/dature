@@ -122,8 +122,10 @@ def _is_unset(value: object) -> bool:
 
     ``None`` is the usual sentinel. ``""`` covers non-optional ``str`` fields
     (e.g. ``VaultSource.mount_point``) that cannot express "unset" via ``None``.
+    An empty ``list`` covers ``str | list[str]`` fields (e.g. ``ZookeeperSource.hosts``)
+    left at their default empty value.
     """
-    return value is None or value == ""
+    return value is None or value in ("", [])
 
 
 def apply_source_config_group[T: SourceProtocol](source: T, cfg: DatureConfig | None = None) -> T:

@@ -80,6 +80,7 @@ nav:
         - VaultSource: advanced/remote/vault.md
         - ConsulSource: advanced/remote/consul.md
         - EtcdSource: advanced/remote/etcd.md
+        - ZookeeperSource: advanced/remote/zookeeper.md
         - AwsSsmSource: advanced/remote/ssm.md
         - AwsSecretsManagerSource: advanced/remote/secrets_manager.md
         - AzureAppConfigSource: advanced/remote/azure_app_config.md
@@ -153,6 +154,7 @@ plugins:
           - advanced/remote/vault.md
           - advanced/remote/consul.md
           - advanced/remote/etcd.md
+          - advanced/remote/zookeeper.md
           - advanced/remote/ssm.md
           - advanced/remote/secrets_manager.md
           - advanced/remote/azure_app_config.md
