@@ -1,1 +1,0 @@
-Added `GcpSecretManagerSource` (`dature[gcp]`) to load secrets from Google Cloud Secret Manager, either as a single JSON document (`name=...`) or by listing and nesting every matching secret, with server-side filtering by name prefix or labels.

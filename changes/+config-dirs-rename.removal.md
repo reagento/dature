@@ -1,1 +1,0 @@
-`system_config_dirs` is renamed to `config_dirs` (the `system_` prefix was misleading — the list also holds user directories like `~/.config`), and `search_system_paths` is deprecated in favor of expressing "don't search" directly through `config_dirs=()`/`[]`/`{}`. Both old names still work but emit a `DeprecationWarning` and are removed in dature 1.6.
