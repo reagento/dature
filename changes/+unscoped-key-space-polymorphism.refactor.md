@@ -1,1 +1,0 @@
-Replaced the `Source.unscoped_key_space` class flag with polymorphism: `EnvSource` now overrides `on_prepared` to warn about strict mode without a prefix, and `EnvFileSource` overrides it back to a no-op. No behavior change; `unscoped_key_space` is no longer part of the `Source` surface, so any code that read it directly should switch to checking `on_prepared` behavior instead.

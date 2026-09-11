@@ -1,1 +1,0 @@
-`DockerSecretsSource.__post_init__` now chains to `super().__post_init__()`. Previously it skipped the base class's validation of `when=`, so `DockerSecretsSource(dir_=..., when="not-a-condition")` silently accepted an invalid value instead of raising `TypeError` like every other source.
