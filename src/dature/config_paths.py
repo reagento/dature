@@ -5,13 +5,13 @@ from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from dature.expansion.env_expand import expand_string_collect
-from dature.type_aliases import SystemConfigDirsArg
+from dature.type_aliases import ConfigDirsArg
 
 logger = logging.getLogger("dature")
 
 
 def _expand_entry(entry: Path | str) -> Iterator[Path]:
-    """Expand one ``system_config_dirs`` entry into zero or more ``Path``s.
+    """Expand one ``config_dirs`` entry into zero or more ``Path``s.
 
     ``Path`` entries are yielded as-is with ``~`` expanded. ``str`` entries
     additionally undergo ``$VAR`` / ``${VAR}`` / ``${VAR:-default}`` expansion
@@ -28,7 +28,7 @@ def _expand_entry(entry: Path | str) -> Iterator[Path]:
     if errors:
         for err in errors:
             logger.warning(
-                "system_config_dirs: environment variable %r is not set; skipping entry %r",
+                "config_dirs: environment variable %r is not set; skipping entry %r",
                 err.var_name,
                 entry,
             )
@@ -39,17 +39,20 @@ def _expand_entry(entry: Path | str) -> Iterator[Path]:
             yield Path(part).expanduser()
 
 
-def _resolve_dirs(system_config_dirs: "SystemConfigDirsArg | None") -> Iterator[Path]:
-    """Resolve ``system_config_dirs`` into concrete ``Path``s for the current platform."""
-    if system_config_dirs is None:
+def _resolve_dirs(config_dirs: "ConfigDirsArg | None") -> Iterator[Path]:
+    """Resolve ``config_dirs`` into concrete ``Path``s for the current platform."""
+    if config_dirs is None:
         return
 
-    if isinstance(system_config_dirs, Mapping):
-        entries = system_config_dirs.get(sys.platform)
+    if isinstance(config_dirs, Mapping):
+        entries = config_dirs.get(sys.platform)
         if entries is None:
             return
     else:
-        entries = system_config_dirs
+        entries = config_dirs
+
+    if isinstance(entries, (str, Path)):
+        entries = (entries,)
 
     for entry in entries:
         yield from _expand_entry(entry)
@@ -57,15 +60,15 @@ def _resolve_dirs(system_config_dirs: "SystemConfigDirsArg | None") -> Iterator[
 
 def find_config(
     filename: str,
-    system_config_dirs: SystemConfigDirsArg | None,
+    config_dirs: ConfigDirsArg | None,
 ) -> Path | None:
-    """Find the first existing ``filename`` in ``system_config_dirs``.
+    """Find the first existing ``filename`` in ``config_dirs``.
 
-    Returns ``None`` when no match is found or when ``system_config_dirs`` is
-    ``None`` (which happens for a ``FileFieldMixin`` accessed before
+    Returns ``None`` when no match is found or when ``config_dirs`` is
+    ``None`` or empty (which happens for a ``FileFieldMixin`` accessed before
     ``apply_source_init_params`` has merged defaults from ``LoadingConfig``).
     """
-    for d in _resolve_dirs(system_config_dirs):
+    for d in _resolve_dirs(config_dirs):
         candidate = d / filename
         if candidate.exists():
             return candidate

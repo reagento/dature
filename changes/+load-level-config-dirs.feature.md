@@ -1,0 +1,1 @@
+Added `config_dirs` to `load()`, `Loader`, and `Dature` — previously the automatic config-file search directories could only be set per-`Source` or via `Dature(loading={...})`/`DATURE_LOADING__CONFIG_DIRS`, with no way to reach them from `load()` directly. Follows the usual source > load > config precedence, same as `strict`.

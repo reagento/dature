@@ -54,6 +54,7 @@ from dature.report_types import FieldOrigin, SourceEntry
 from dature.sources.base import IndexedSource, clone_source, mark_source_cascaded
 from dature.sources.protocol import FileSourceProtocol, SourceProtocol
 from dature.type_aliases import (
+    ConfigDirsArg,
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
@@ -63,7 +64,6 @@ from dature.type_aliases import (
     NestedResolveStrategy,
     SkipFieldsInvalid,
     StrictMode,
-    SystemConfigDirsArg,
     TypeLoaderMap,
 )
 
@@ -85,8 +85,7 @@ class SourceParams:
     expand_env_vars: ExpandEnvVarsMode | None = None
     nested_resolve_strategy: NestedResolveStrategy | None = None
     nested_resolve: NestedResolve | None = None
-    search_system_paths: bool | None = None
-    system_config_dirs: SystemConfigDirsArg | None = None
+    config_dirs: ConfigDirsArg | None = None
     encoding: str | None = None
     strict: StrictMode | None = None
 

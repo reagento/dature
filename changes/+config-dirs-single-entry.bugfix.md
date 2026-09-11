@@ -1,0 +1,1 @@
+`config_dirs` (formerly `system_config_dirs`) now accepts a single `str`/`Path`, not only an iterable — `config_dirs="/etc/myapp"` previously iterated the string character-by-character (since `str` is itself `Iterable[str]`), silently turning it into a search over one-letter directory names. This applies both to the flat form and to each per-platform mapping value.

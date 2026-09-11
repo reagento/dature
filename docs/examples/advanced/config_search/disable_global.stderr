@@ -1,5 +1,5 @@
-+ Exception Group Traceback (most recent call last):
-  |   File "{SCRIPT_PATH}", line 30, in <module>
+  + Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 29, in <module>
   |     conf.load(
   |     ~~~~~~~~~^
   |         dature.Yaml12Source(file="config.yaml"),

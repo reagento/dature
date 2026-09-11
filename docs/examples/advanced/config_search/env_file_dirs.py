@@ -1,10 +1,7 @@
-from pathlib import Path
-
-SHARED_DIR = Path(__file__).parents[2] / "shared"
-
 # --8<-- [start:example]
 import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 import dature
 
@@ -18,12 +15,12 @@ class Config:
 with tempfile.TemporaryDirectory() as tmpdir:
     custom_dir = Path(tmpdir)
 
-    config_file = custom_dir / "app.yaml"
-    config_file.write_text((SHARED_DIR / "common_app.yaml").read_text())
+    config_file = custom_dir / "app.env"
+    config_file.write_text("HOST=localhost\nPORT=8080\n")
 
     config = dature.load(
-        dature.Yaml12Source(
-            file="app.yaml",
+        dature.EnvFileSource(
+            file="app.env",
             config_dirs=custom_dir,
         ),
         schema=Config,

@@ -70,9 +70,15 @@ type StaleOnErrorMode = Literal["keep", "raise", "retry"]
 
 type StrictMode = Literal["off", "warn", "error"]
 
-type SystemConfigDirsEntry = Path | str
-type SystemConfigDirsList = Iterable[SystemConfigDirsEntry]
-type SystemConfigDirsArg = SystemConfigDirsList | Mapping[str, SystemConfigDirsList]
+type ConfigDirsEntry = Path | str
+type ConfigDirsList = ConfigDirsEntry | Iterable[ConfigDirsEntry]
+type ConfigDirsArg = ConfigDirsList | Mapping[str, ConfigDirsList]
+
+# Deprecated aliases — kept for anything still importing the old names. Removed in 1.6
+# alongside system_config_dirs/search_system_paths themselves (see dature._deprecations).
+type SystemConfigDirsEntry = ConfigDirsEntry
+type SystemConfigDirsList = ConfigDirsList
+type SystemConfigDirsArg = ConfigDirsArg
 
 type NestedResolveStrategy = Literal["flat", "json"]
 # Values are FieldPath at runtime, but F[Type] returns the dataclass type itself

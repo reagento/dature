@@ -11,23 +11,22 @@ import dature
 
 @dataclass
 class Config:
-    debug: bool = True
-    name: str = "default"
+    host: str
+    port: int
 
 
 with tempfile.TemporaryDirectory() as tmpdir:
-    tmpdir_path = Path(tmpdir)
-    config_file = tmpdir_path / "config.yaml"
+    custom_dir = Path(tmpdir)
+
+    config_file = custom_dir / "app.yaml"
     config_file.write_text((SHARED_DIR / "common_app.yaml").read_text())
 
-    conf = dature.Dature(
-        loading={
-            "config_dirs": (),
-        },
+    config = dature.load(
+        dature.Yaml12Source(file="app.yaml"),
+        schema=Config,
+        config_dirs=custom_dir,
     )
 
-    conf.load(
-        dature.Yaml12Source(file="config.yaml"),
-        schema=Config,
-    )  # Failed
+    assert config.host == "localhost"
+    assert config.port == 8080
 # --8<-- [end:example]

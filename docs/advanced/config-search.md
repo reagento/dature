@@ -8,12 +8,12 @@ When you specify a config file, dature searches in the following order:
 
 1. **Specified path** - The path you provide (relative to current working directory or absolute)
 2. **User config directories** (platform-specific):
-   - **Linux**: `~/.config/`
-   - **macOS**: `~/Library/Application Support/`, `~/.config/`
-   - **Windows**: `%APPDATA%/`
+    - **Linux**: `~/.config/`
+    - **macOS**: `~/Library/Application Support/`, `~/.config/`
+    - **Windows**: `%APPDATA%/`
 3. **System config directories** (Linux/macOS only):
-   - `/etc/`
-   - `/etc/xdg/`
+    - `/etc/`
+    - `/etc/xdg/`
 
 ## Examples
 
@@ -31,6 +31,23 @@ When you specify a config file, dature searches in the following order:
     --8<-- "docs/examples/advanced/config_search/custom_dirs.py:example"
     ```
 
+=== "`load()` Keyword"
+
+    `config_dirs` is also a keyword argument on `dature.load()` itself, so it applies to
+    every source in the call that doesn't set its own `config_dirs`.
+
+    ```python
+    --8<-- "docs/examples/advanced/config_search/load_kwarg.py:example"
+    ```
+
+=== "EnvFileSource"
+
+    `config_dirs` works the same way on every file-based source — here it's applied to `EnvFileSource`.
+
+    ```python
+    --8<-- "docs/examples/advanced/config_search/env_file_dirs.py:example"
+    ```
+
 === "Disable Globally"
 
     ```python
@@ -39,8 +56,8 @@ When you specify a config file, dature searches in the following order:
 
 === "Disable Per-Source"
     Disable search only for one source while the global setting remains unchanged.
-    Even though `system_config_dirs` contains the directory with the file,
-    it won't be searched — `search_system_paths=False` overrides it locally.
+    Even though the global `config_dirs` contains the directory with the file,
+    it won't be searched — the source's own `config_dirs=()` overrides it locally.
     ```python
     --8<-- "docs/examples/advanced/config_search/disable_local.py:example"
     ```

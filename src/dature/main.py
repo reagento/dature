@@ -9,6 +9,7 @@ from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.protocols import DataclassInstance
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
+    ConfigDirsArg,
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
@@ -50,6 +51,8 @@ def load[T](
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
+    config_dirs: ConfigDirsArg | None = None,
+    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
 ) -> T: ...
 
 
@@ -75,6 +78,8 @@ def load(
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
+    config_dirs: ConfigDirsArg | None = None,
+    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]: ...
 
 
@@ -100,6 +105,8 @@ def load(  # noqa: PLR0913
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
+    config_dirs: ConfigDirsArg | None = None,
+    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
 ) -> Any:
     # --8<-- [end:load]
     return dispatch(
@@ -123,6 +130,8 @@ def load(  # noqa: PLR0913
         type_loaders=type_loaders,
         nested_resolve_strategy=nested_resolve_strategy,
         nested_resolve=nested_resolve,
+        config_dirs=config_dirs,
+        search_system_paths=search_system_paths,
     )
 
 
@@ -147,6 +156,8 @@ def dispatch(  # noqa: PLR0913
     type_loaders: TypeLoaderMap | None = None,
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
+    config_dirs: ConfigDirsArg | None = None,
+    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
     config: DatureConfig | None = None,
 ) -> Any:  # noqa: ANN401
     """Internal seam behind ``load()``: identical semantics plus an explicit config override.
@@ -193,6 +204,8 @@ def dispatch(  # noqa: PLR0913
         "type_loaders": type_loaders,
         "nested_resolve_strategy": nested_resolve_strategy,
         "nested_resolve": nested_resolve,
+        "config_dirs": config_dirs,
+        "search_system_paths": search_system_paths,
         "config": config,
     }
 

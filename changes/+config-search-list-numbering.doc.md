@@ -1,0 +1,1 @@
+Fixed the search-order list in `docs/advanced/config-search.md` rendering as a flat `1.`–`7.` list instead of `1/2/3` with nested sub-bullets — the nested bullets needed 4-space indentation, not 3, for this project's Markdown renderer to keep them nested.

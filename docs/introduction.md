@@ -130,8 +130,8 @@ See the full list of Source classes and their extra dependencies on the [main pa
 | Parameter | Description |
 |-----------|-------------|
 | `file` | Path to config file (`str`, `Path`) or file-like object (`BytesIO`, `StringIO`). `None` → empty path |
-| `search_system_paths` | Automatically search standard system locations for the config file. See [Automatic Config File Search](advanced/config-search.md) |
-| `system_config_dirs` | Override the directories searched when `search_system_paths` is enabled. See [Automatic Config File Search](advanced/config-search.md) |
+| `config_dirs` | Directories to search for the config file. Unset searches per-OS defaults, `()` disables search, a single `str`/`Path` or an iterable searches just those. See [Automatic Config File Search](advanced/config-search.md) |
+| `search_system_paths` | Deprecated, removed in dature 1.6. Use `config_dirs=()` to disable search instead of `search_system_paths=False`. |
 | `encoding` | Text encoding used to read the file |
 | `skip_if_broken` | Skip this source if it fails to parse. See [Skipping Sources with Parse Errors](advanced/skip-behaviors.md#skipping-sources-with-parse-errors) |
 | `skip_if_missing` | Skip this source if its file does not exist. See [Skipping Missing Sources](advanced/skip-behaviors.md#skipping-missing-sources) |

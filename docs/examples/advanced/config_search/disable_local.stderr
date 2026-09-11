@@ -1,10 +1,10 @@
-+ Exception Group Traceback (most recent call last):
-  |   File "{SCRIPT_PATH}", line 23, in <module>
-  |     dature.load(
-  |     ~~~~~~~~~~~^
+  + Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 29, in <module>
+  |     conf.load(
+  |     ~~~~~~~~~^
   |         dature.Yaml12Source(
   |         ^^^^^^^^^^^^^^^^^^^^
-  |     ...<4 lines>...
+  |     ...<3 lines>...
   |         schema=Config,
   |         ^^^^^^^^^^^^^^
   |     )

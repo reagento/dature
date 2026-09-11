@@ -7,14 +7,15 @@ from functools import cache
 from types import MappingProxyType
 from typing import Any, Literal, TypedDict
 
+from dature._deprecations import CONFIG_DIRS_RENAME_MESSAGE, SEARCH_SYSTEM_PATHS_MESSAGE
 from dature.protocols import DataclassInstance
 from dature.type_aliases import (
+    ConfigDirsArg,
     ExpandEnvVarsMode,
     MaskingMode,
     NestedResolveStrategy,
     StaleOnErrorMode,
     StrictMode,
-    SystemConfigDirsArg,
     TypeLoaderMap,
 )
 
@@ -56,7 +57,7 @@ class ErrorDisplayConfig:
 # --8<-- [end:error-display-config]
 
 
-def _default_system_config_dirs() -> Mapping[str, tuple[str, ...]]:
+def _default_config_dirs() -> Mapping[str, tuple[str, ...]]:
     # A MappingProxyType, not a plain dict: default_config() caches its result process-wide, so
     # every Dature() that doesn't override loading shares this exact mapping instance.
     return MappingProxyType(
@@ -87,9 +88,23 @@ class LoadingConfig:
     strict: StrictMode = "off"
     nested_resolve_strategy: NestedResolveStrategy = "flat"
     expand_env_vars: ExpandEnvVarsMode = "default"
-    search_system_paths: bool = True
-    system_config_dirs: SystemConfigDirsArg = field(default_factory=_default_system_config_dirs)
+    config_dirs: ConfigDirsArg = field(default_factory=_default_config_dirs)
     encoding: str | None = None
+    # Deprecated — removed in dature 1.6. See dature._deprecations.
+    search_system_paths: bool | None = None
+    system_config_dirs: ConfigDirsArg | None = None
+
+    def __post_init__(self) -> None:
+        # Old and new fields are not meant to be mixed — if both are passed, the deprecated one
+        # wins so its warning is never silently ignored. Removed in 1.6.
+        if self.system_config_dirs is not None:
+            warnings.warn(CONFIG_DIRS_RENAME_MESSAGE, DeprecationWarning, stacklevel=2)
+            object.__setattr__(self, "config_dirs", self.system_config_dirs)
+
+        if self.search_system_paths is not None:
+            warnings.warn(SEARCH_SYSTEM_PATHS_MESSAGE, DeprecationWarning, stacklevel=2)
+            if self.search_system_paths is False:
+                object.__setattr__(self, "config_dirs", ())
 
 
 # --8<-- [end:loading-config]
@@ -297,9 +312,11 @@ class LoadingOptions(TypedDict, total=False):
     strict: StrictMode
     nested_resolve_strategy: NestedResolveStrategy
     expand_env_vars: ExpandEnvVarsMode
-    search_system_paths: bool
-    system_config_dirs: SystemConfigDirsArg
+    config_dirs: ConfigDirsArg
     encoding: str | None
+    # Deprecated — removed in dature 1.6. See dature._deprecations.
+    search_system_paths: bool
+    system_config_dirs: ConfigDirsArg
 
 
 class VaultOptions(TypedDict, total=False):
@@ -442,7 +459,7 @@ def merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | N
         return current
     if not options:
         return cls()
-    # Shallow-copy any mapping- or list-valued override (e.g. LoadingOptions.system_config_dirs,
+    # Shallow-copy any mapping- or list-valued override (e.g. LoadingOptions.config_dirs,
     # ZookeeperOptions.hosts): otherwise the built config group would hold the caller's
     # container by reference, and a mutation the caller makes afterwards would silently change
     # an already-built, supposedly-frozen config.

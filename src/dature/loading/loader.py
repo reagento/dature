@@ -18,6 +18,7 @@ delegates to ``loader.load()``.  The original dataclass is never modified.
 """
 
 import logging
+import warnings
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import asdict, fields, is_dataclass
 from datetime import timedelta
@@ -26,6 +27,7 @@ from typing import Any, NoReturn, cast
 
 from adaptix import Retort
 
+from dature._deprecations import SEARCH_SYSTEM_PATHS_MESSAGE
 from dature.config import DatureConfig, legacy, resolve_config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
@@ -51,6 +53,7 @@ from dature.report import attach_load_report, load_report
 from dature.sources.base import IndexedSource
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
+    ConfigDirsArg,
     ExpandEnvVarsMode,
     FieldGroupTuple,
     FieldMergeMap,
@@ -68,6 +71,20 @@ from dature.validators.base import create_metadata_validator_providers
 from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
+
+
+def _fold_search_system_paths(
+    *,
+    search_system_paths: bool | None,
+    config_dirs: "ConfigDirsArg | None",
+) -> "ConfigDirsArg | None":
+    """Fold the deprecated ``search_system_paths`` flag into ``config_dirs``. Removed in 1.6."""
+    if search_system_paths is None:
+        return config_dirs
+    warnings.warn(SEARCH_SYSTEM_PATHS_MESSAGE, DeprecationWarning, stacklevel=3)
+    if search_system_paths is False and config_dirs is None:
+        return ()
+    return config_dirs
 
 
 def _validate_sources(sources: tuple[SourceProtocol, ...]) -> None:
@@ -105,9 +122,15 @@ class Loader[T: DataclassInstance]:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        config_dirs: ConfigDirsArg | None = None,
+        search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
         config: DatureConfig | None = None,
     ) -> None:
         _validate_sources(sources)
+        config_dirs = _fold_search_system_paths(
+            search_system_paths=search_system_paths,
+            config_dirs=config_dirs,
+        )
 
         self._config: DatureConfig = apply_masking_mode(
             config if config is not None else resolve_config(), masking_mode=masking_mode
@@ -161,6 +184,7 @@ class Loader[T: DataclassInstance]:
             nested_resolve_strategy=nested_resolve_strategy,
             nested_resolve=nested_resolve,
             strict=strict,
+            config_dirs=config_dirs,
         )
 
         self.field_list = fields(schema)
@@ -356,6 +380,8 @@ class Loader[T: DataclassInstance]:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        config_dirs: ConfigDirsArg | None = None,
+        search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
         config: DatureConfig | None = None,
     ) -> Callable[[type[DC]], type[DC]]:
         """Return a decorator that creates a loading subclass for the target dataclass."""
@@ -386,6 +412,8 @@ class Loader[T: DataclassInstance]:
                 type_loaders=type_loaders,
                 nested_resolve_strategy=nested_resolve_strategy,
                 nested_resolve=nested_resolve,
+                config_dirs=config_dirs,
+                search_system_paths=search_system_paths,
                 config=config,
             )
             return loader._make_loader_subclass(target_cls)
