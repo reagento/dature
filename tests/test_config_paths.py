@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -110,8 +111,7 @@ class TestFindConfig:
 
         assert result == tmp_path / "config.yaml"
         assert any(
-            "DATURE_UNDEFINED_XYZ" in record.message and "system_config_dirs" in record.message
-            for record in caplog.records
+            "DATURE_UNDEFINED_XYZ" in record.message and "config_dirs" in record.message for record in caplog.records
         )
 
     def test_mapping_selects_by_platform(
@@ -176,3 +176,58 @@ class TestFindConfig:
         entries = (tmp_path / "missing", "$DATURE_TEST_DIR")
 
         assert find_config("config.yaml", entries) == target_dir / "config.yaml"
+
+    @pytest.mark.parametrize(
+        "config_dirs",
+        [
+            pytest.param(lambda d: d, id="flat-path"),
+            pytest.param(str, id="flat-str"),
+            pytest.param(lambda d: {"linux": d}, id="mapping-value-path"),
+            pytest.param(lambda d: {"linux": str(d)}, id="mapping-value-str"),
+        ],
+    )
+    def test_accepts_single_entry_not_wrapped_in_iterable(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        config_dirs: "Callable[[Path], object]",
+    ) -> None:
+        (tmp_path / "config.yaml").write_text("a: 1")
+        monkeypatch.setattr(sys, "platform", "linux")
+
+        result = find_config("config.yaml", config_dirs(tmp_path))
+
+        assert result == tmp_path / "config.yaml"
+
+    def test_single_str_entry_still_splits_on_pathsep(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        first = tmp_path / "first"
+        first.mkdir()
+        second = tmp_path / "second"
+        second.mkdir()
+        (second / "config.yaml").write_text("found: second")
+
+        combined = f"{first}{os.pathsep}{second}"
+
+        assert find_config("config.yaml", combined) == second / "config.yaml"
+
+    @pytest.mark.parametrize(
+        "empty_dirs",
+        [
+            pytest.param((), id="tuple"),
+            pytest.param([], id="list"),
+            pytest.param({}, id="mapping"),
+        ],
+    )
+    def test_empty_config_dirs_finds_nothing(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        empty_dirs: "tuple[()] | list[object] | dict[str, object]",
+    ) -> None:
+        monkeypatch.setattr(sys, "platform", "linux")
+
+        result = find_config("config.yaml", empty_dirs)
+
+        assert result is None

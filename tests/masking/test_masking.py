@@ -750,7 +750,7 @@ class TestNameStyleMaskingIntegration:
             f"  {secret_key}: compound-field-name\n",
         )
 
-        source = Yaml11Source(file=yaml_file, name_style=name_style, search_system_paths=False)
+        source = Yaml11Source(file=yaml_file, name_style=name_style, config_dirs=())
         result = load(source, schema=Cfg, masking_mode=masking_mode, debug=True)
 
         report = load_report(result)

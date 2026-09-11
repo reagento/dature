@@ -1,10 +1,12 @@
 """File-based source base classes: ``FileFieldMixin`` and ``FileSource``."""
 
 import abc
+import warnings
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from dature._deprecations import CONFIG_DIRS_RENAME_MESSAGE, SEARCH_SYSTEM_PATHS_MESSAGE
 from dature.config_paths import find_config
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_file_path
@@ -18,12 +20,12 @@ from dature.sources.presentation import (
 )
 from dature.type_aliases import (
     FILE_LIKE_TYPES,
+    ConfigDirsArg,
     FileLike,
     FileOrStream,
     FilePath,
     JSONValue,
     NestedConflict,
-    SystemConfigDirsArg,
 )
 
 
@@ -31,11 +33,13 @@ from dature.type_aliases import (
 @dataclass(kw_only=True, repr=False)
 class FileFieldMixin:
     file: "FileLike | FilePath | None" = None
-    search_system_paths: bool | None = None
-    system_config_dirs: "SystemConfigDirsArg | None" = None
+    config_dirs: "ConfigDirsArg | None" = None
     encoding: str | None = None
     skip_if_broken: bool | None = None
     skip_if_missing: bool | None = None
+    # Deprecated — removed in dature 1.6. See dature._deprecations.
+    search_system_paths: bool | None = None
+    system_config_dirs: "ConfigDirsArg | None" = None
     resolved_file_path: Path | None = field(init=False, default=None)
     # --8<-- [end:file-source]
 
@@ -44,12 +48,26 @@ class FileFieldMixin:
         if next_post_init is not None:
             next_post_init()
 
+        self._fold_deprecated_search_params()
+
         # Convert t-string Template to string (Python 3.14+).
         if TEMPLATE_SUPPORTED and isinstance(self.file, Template):
             self.file = template_to_str(self.file)  # pyright: ignore[reportArgumentType]
         if isinstance(self.file, (str, Path)):
             self.file = expand_file_path(self.file, mode="strict")
         self.resolved_file_path = self._compute_resolved_file_path()
+
+    def _fold_deprecated_search_params(self) -> None:
+        """Fold ``system_config_dirs``/``search_system_paths`` into ``config_dirs``. Removed in 1.6."""
+        if self.system_config_dirs is not None:
+            warnings.warn(CONFIG_DIRS_RENAME_MESSAGE, DeprecationWarning, stacklevel=3)
+            if self.config_dirs is None:
+                self.config_dirs = self.system_config_dirs
+
+        if self.search_system_paths is not None:
+            warnings.warn(SEARCH_SYSTEM_PATHS_MESSAGE, DeprecationWarning, stacklevel=3)
+            if self.search_system_paths is False and self.config_dirs is None:
+                self.config_dirs = ()
 
     def _compute_resolved_file_path(self) -> Path | None:
         if self.file is None or isinstance(self.file, FILE_LIKE_TYPES):
@@ -59,10 +77,12 @@ class FileFieldMixin:
         if file_path.exists():
             return file_path
 
-        if self.search_system_paths:
-            return find_config(file_path.name, self.system_config_dirs)
+        # search_system_paths=False must still win even when config_dirs is explicitly set at the
+        # same source (docs/examples/advanced/config_search/disable_local.py). Removed in 1.6.
+        if self.search_system_paths is False:
+            return None
 
-        return None
+        return find_config(file_path.name, self.config_dirs)
 
     @staticmethod
     def resolve_file_field(file: "FileLike | FilePath | None") -> FileOrStream:

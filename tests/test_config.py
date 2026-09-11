@@ -592,29 +592,29 @@ class TestDatureInstance:
         assert "token" not in paths_b
 
     @staticmethod
-    def test_default_system_config_dirs_is_frozen() -> None:
-        """The shared default LoadingConfig.system_config_dirs can't be mutated through one
+    def test_default_config_dirs_is_frozen() -> None:
+        """The shared default LoadingConfig.config_dirs can't be mutated through one
         Dature() and leak into another — default_config() caches the same mapping for both.
         """
         a = Dature()
         b = Dature()
 
         with pytest.raises(TypeError):
-            a.config.loading.system_config_dirs["linux"] = ("changed",)
+            a.config.loading.config_dirs["linux"] = ("changed",)
 
-        assert b.config.loading.system_config_dirs["linux"] != ("changed",)
+        assert b.config.loading.config_dirs["linux"] != ("changed",)
 
     @staticmethod
-    def test_loading_system_config_dirs_copied_from_caller_dict() -> None:
-        """Dature(loading={"system_config_dirs": dirs}) must not store dirs by reference —
+    def test_loading_config_dirs_copied_from_caller_dict() -> None:
+        """Dature(loading={"config_dirs": dirs}) must not store dirs by reference —
         mutating the caller's dict afterwards must not change the already-built config.
         """
         dirs = {"linux": ("before",)}
 
-        app = Dature(loading={"system_config_dirs": dirs})
+        app = Dature(loading={"config_dirs": dirs})
         dirs["linux"] = ("after",)
 
-        assert app.config.loading.system_config_dirs["linux"] == ("before",)
+        assert app.config.loading.config_dirs["linux"] == ("before",)
 
     @staticmethod
     @pytest.mark.parametrize(
@@ -696,7 +696,7 @@ class TestDatureInstance:
 
 class TestMergeGroup:
     """merge_group() must defensively copy any mapping-valued override, not just
-    LoadingOptions.system_config_dirs — the fix is generic, keyed on the option's
+    LoadingOptions.config_dirs — the fix is generic, keyed on the option's
     runtime type, not on which config group it belongs to.
     """
 
@@ -735,13 +735,13 @@ class TestMergeGroup:
         assert merged.tags == ("a", "b")
 
     @staticmethod
-    def test_system_config_dirs_uses_the_same_generic_path() -> None:
-        """LoadingConfig.system_config_dirs is just one instance of the generic mapping-copy rule."""
+    def test_config_dirs_uses_the_same_generic_path() -> None:
+        """LoadingConfig.config_dirs is just one instance of the generic mapping-copy rule."""
         caller_dirs = {"linux": ("before",)}
-        merged = merge_group(LoadingConfig(), {"system_config_dirs": caller_dirs}, LoadingConfig)
+        merged = merge_group(LoadingConfig(), {"config_dirs": caller_dirs}, LoadingConfig)
         caller_dirs["linux"] = ("after",)
 
-        assert merged.system_config_dirs["linux"] == ("before",)
+        assert merged.config_dirs["linux"] == ("before",)
 
     @staticmethod
     def test_list_valued_option_is_copied_from_caller_list() -> None:

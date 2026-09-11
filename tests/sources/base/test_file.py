@@ -143,7 +143,7 @@ class TestFileSourceSearch:
         assert result.host == "localhost"
         assert result.port == 8080
 
-    def test_search_system_paths_disabled(
+    def test_config_dirs_search_disabled(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
@@ -154,9 +154,7 @@ class TestFileSourceSearch:
         (system_dir / "config.yaml").write_text("host: system\nport: 9000")
         (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
 
-        dature.configure(
-            loading={"search_system_paths": False, "system_config_dirs": (system_dir,)},
-        )
+        dature.configure(loading={"config_dirs": ()})
 
         result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
 
@@ -174,7 +172,7 @@ class TestFileSourceSearch:
         (custom_dir / "app.yaml").write_text("host: custom\nport: 3000")
 
         result = dature.load(
-            Yaml12Source(file="app.yaml", system_config_dirs=(custom_dir,)),
+            Yaml12Source(file="app.yaml", config_dirs=(custom_dir,)),
             schema=self._Cfg,
         )
 
@@ -193,7 +191,7 @@ class TestFileSourceSearch:
         (system_dir / "config.json").write_text('{"host": "system", "port": 2222}')
 
         result = dature.load(
-            JsonSource(file="config.json", system_config_dirs=(system_dir,)),
+            JsonSource(file="config.json", config_dirs=(system_dir,)),
             schema=self._Cfg,
         )
 
@@ -214,8 +212,7 @@ class TestFileSourceSearch:
         result = dature.load(
             Yaml12Source(
                 file="config.yaml",
-                search_system_paths=False,
-                system_config_dirs=(system_dir,),
+                config_dirs=(),
             ),
             schema=self._Cfg,
         )
@@ -223,13 +220,13 @@ class TestFileSourceSearch:
         assert result.host == "cwd"
         assert result.port == 1000
 
-    def test_enable_search_per_source_when_global_disabled(
+    def test_source_config_dirs_overrides_global_disabled(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        dature.configure(loading={"search_system_paths": False})
+        dature.configure(loading={"config_dirs": ()})
 
         system_dir = tmp_path / "system"
         system_dir.mkdir()
@@ -238,8 +235,7 @@ class TestFileSourceSearch:
         result = dature.load(
             Yaml12Source(
                 file="config.yaml",
-                search_system_paths=True,
-                system_config_dirs=(system_dir,),
+                config_dirs=(system_dir,),
             ),
             schema=self._Cfg,
         )
@@ -281,13 +277,185 @@ class TestFileSourceSearch:
         (system_dir / "config.yaml").write_text("host: mapped\nport: 8000")
 
         dature.configure(
-            loading={"system_config_dirs": {sys.platform: (system_dir,)}},
+            loading={"config_dirs": {sys.platform: (system_dir,)}},
         )
 
         result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
 
         assert result.host == "mapped"
         assert result.port == 8000
+
+
+class TestConfigDirsDeprecations:
+    """system_config_dirs / search_system_paths are deprecated, removed in dature 1.6."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_config(self):
+        dature.configure(loading={})
+
+    @dataclass
+    class _Cfg:
+        host: str
+        port: int
+
+    def test_system_config_dirs_on_source_warns_and_behaves_like_config_dirs(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        custom_dir = tmp_path / "custom_config"
+        custom_dir.mkdir()
+        (custom_dir / "app.yaml").write_text("host: custom\nport: 3000")
+
+        with pytest.warns(DeprecationWarning, match="system_config_dirs"):
+            result = dature.load(
+                Yaml12Source(file="app.yaml", system_config_dirs=(custom_dir,)),
+                schema=self._Cfg,
+            )
+
+        assert result.host == "custom"
+        assert result.port == 3000
+
+    def test_search_system_paths_false_on_source_warns_and_disables_search(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: system\nport: 5000")
+        (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
+
+        with pytest.warns(DeprecationWarning, match="search_system_paths"):
+            result = dature.load(
+                Yaml12Source(
+                    file="config.yaml",
+                    search_system_paths=False,
+                    system_config_dirs=(system_dir,),
+                ),
+                schema=self._Cfg,
+            )
+
+        assert result.host == "cwd"
+        assert result.port == 1000
+
+    def test_system_config_dirs_on_dature_loading_warns(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: mapped\nport: 8000")
+
+        with pytest.warns(DeprecationWarning, match="system_config_dirs"):
+            conf = dature.Dature(
+                loading={"system_config_dirs": {sys.platform: (system_dir,)}},
+            )
+
+        result = conf.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "mapped"
+        assert result.port == 8000
+
+    def test_search_system_paths_false_on_dature_loading_warns(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system_config"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: system\nport: 9000")
+        (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
+
+        with pytest.warns(DeprecationWarning, match="search_system_paths"):
+            conf = dature.Dature(
+                loading={"search_system_paths": False, "system_config_dirs": (system_dir,)},
+            )
+
+        result = conf.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+
+        assert result.host == "cwd"
+        assert result.port == 1000
+
+    def test_search_system_paths_on_load_warns(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        system_dir = tmp_path / "system"
+        system_dir.mkdir()
+        (system_dir / "config.yaml").write_text("host: system\nport: 5000")
+        (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
+
+        with pytest.warns(DeprecationWarning, match="search_system_paths"):
+            result = dature.load(
+                Yaml12Source(file="config.yaml", config_dirs=(system_dir,)),
+                schema=self._Cfg,
+                search_system_paths=False,
+            )
+
+        assert result.host == "cwd"
+        assert result.port == 1000
+
+
+class TestConfigDirsCascade:
+    """config_dirs cascades source > load > config, mirroring the strict cascade."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_config(self):
+        dature.configure(loading={})
+
+    @dataclass
+    class _Cfg:
+        host: str
+        port: int
+
+    def test_load_level_config_dirs_fills_unset_source_field(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        custom_dir = tmp_path / "custom_config"
+        custom_dir.mkdir()
+        (custom_dir / "app.yaml").write_text("host: custom\nport: 3000")
+
+        result = dature.load(
+            Yaml12Source(file="app.yaml"),
+            schema=self._Cfg,
+            config_dirs=(custom_dir,),
+        )
+
+        assert result.host == "custom"
+        assert result.port == 3000
+
+    def test_source_level_config_dirs_overrides_load_level(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        load_dir = tmp_path / "load_config"
+        load_dir.mkdir()
+        (load_dir / "app.yaml").write_text("host: load\nport: 4000")
+        source_dir = tmp_path / "source_config"
+        source_dir.mkdir()
+        (source_dir / "app.yaml").write_text("host: source\nport: 5000")
+
+        result = dature.load(
+            Yaml12Source(file="app.yaml", config_dirs=(source_dir,)),
+            schema=self._Cfg,
+            config_dirs=(load_dir,),
+        )
+
+        assert result.host == "source"
+        assert result.port == 5000
 
 
 class TestFileSourceEncoding:

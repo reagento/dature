@@ -493,7 +493,7 @@ class TestEnvFileSourceStream:
 
 
 class TestEnvFileSourceSearch:
-    """Tests that EnvFileSource honors search_system_paths / system_config_dirs (FileFieldMixin)."""
+    """Tests that EnvFileSource honors config_dirs (FileFieldMixin)."""
 
     @pytest.fixture(autouse=True)
     def _reset_config(self):
@@ -514,7 +514,7 @@ class TestEnvFileSourceSearch:
         (system_dir / ".env").write_text("HOST=from-system")
 
         result = load(
-            EnvFileSource(file=".env", system_config_dirs=(system_dir,)),
+            EnvFileSource(file=".env", config_dirs=(system_dir,)),
             schema=self._Cfg,
         )
 
@@ -532,13 +532,13 @@ class TestEnvFileSourceSearch:
         (system_dir / ".env").write_text("HOST=from-system")
 
         result = load(
-            EnvFileSource(file=".env", system_config_dirs=(system_dir,)),
+            EnvFileSource(file=".env", config_dirs=(system_dir,)),
             schema=self._Cfg,
         )
 
         assert result.host == "from-cwd"
 
-    def test_search_system_paths_disabled_per_source(
+    def test_config_dirs_disabled_per_source(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
@@ -552,8 +552,7 @@ class TestEnvFileSourceSearch:
             load(
                 EnvFileSource(
                     file=".env",
-                    search_system_paths=False,
-                    system_config_dirs=(system_dir,),
+                    config_dirs=(),
                 ),
                 schema=self._Cfg,
             )

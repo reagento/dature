@@ -65,7 +65,7 @@ class TestApplySourceInitParamsFilePathCache:
 
         result = apply_source_init_params(
             source,
-            SourceParams(search_system_paths=True, system_config_dirs=(tmp_path,)),
+            SourceParams(config_dirs=(tmp_path,)),
         )
 
         # After overrides: same call now resolves via the system-path search,
