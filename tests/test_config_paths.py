@@ -114,6 +114,33 @@ class TestFindConfig:
             "DATURE_UNDEFINED_XYZ" in record.message and "config_dirs" in record.message for record in caplog.records
         )
 
+    def test_skips_undefined_fallback_var_with_warning(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # Regression: a missing var inside a ${VAR:-fallback} fallback used to raise
+        # EnvVarExpandError out of find_config instead of the documented warn-and-skip
+        # behavior — the default config_dirs on linux/darwin is exactly this shape
+        # ("${XDG_CONFIG_HOME:-$HOME/.config}"), so an unset HOME would have crashed.
+        (tmp_path / "config.yaml").write_text("a: 1")
+        monkeypatch.delenv("DATURE_UNDEFINED_XYZ", raising=False)
+        monkeypatch.delenv("DATURE_ALSO_UNDEFINED_XYZ", raising=False)
+
+        with caplog.at_level(logging.WARNING, logger="dature"):
+            result = find_config(
+                "config.yaml",
+                ("${DATURE_UNDEFINED_XYZ:-$DATURE_ALSO_UNDEFINED_XYZ}/nowhere", str(tmp_path)),
+            )
+
+        assert result == tmp_path / "config.yaml"
+        expected_message = (
+            "config_dirs: environment variable 'DATURE_ALSO_UNDEFINED_XYZ' is not set; skipping entry "
+            "'${DATURE_UNDEFINED_XYZ:-$DATURE_ALSO_UNDEFINED_XYZ}/nowhere'"
+        )
+        assert [record.getMessage() for record in caplog.records] == [expected_message]
+
     def test_mapping_selects_by_platform(
         self,
         tmp_path: Path,

@@ -1,6 +1,6 @@
 import pytest
 
-from dature.errors import EnvVarExpandError
+from dature.errors import EnvVarExpandError, MissingEnvVarError
 from dature.expansion.env_expand import expand_env_vars, expand_string, expand_string_collect
 from dature.type_aliases import JSONValue
 
@@ -176,6 +176,18 @@ class TestExpandStringFallback:
             "Missing environment variables (1)\n\n  [<root>]  Missing environment variable 'DATURE_ALSO_MISSING'\n"
         )
 
+    def test_fallback_with_missing_nested_var_collect_does_not_raise(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Regression: a missing var inside a ${VAR:-fallback} fallback used to raise
+        # straight out of expand_string_collect, violating its "without raising" contract
+        # (it recursed into a fresh expander instead of reusing the collecting one).
+        monkeypatch.delenv("DATURE_MISSING", raising=False)
+        monkeypatch.delenv("DATURE_ALSO_MISSING", raising=False)
+
+        result, errors = expand_string_collect("${DATURE_MISSING:-$DATURE_ALSO_MISSING}", mode="strict")
+
+        assert result == ""
+        assert [e.var_name for e in errors] == ["DATURE_ALSO_MISSING"]
+
     @pytest.mark.parametrize(
         ("mode", "expected"),
         [
@@ -328,6 +340,42 @@ class TestExpandEnvVars:
         with pytest.raises(EnvVarExpandError):
             expand_env_vars(data, mode="strict")
 
+    def test_strict_nested_fallback_gets_field_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Regression: a missing var inside a ${VAR:-fallback} used to raise from a
+        # throwaway sub-expander before _expand_recursive_collect could attach field_path,
+        # so it always rendered as [<root>] instead of the actual field.
+        monkeypatch.delenv("DATURE_MISSING", raising=False)
+        monkeypatch.delenv("DATURE_ALSO_MISSING", raising=False)
+        data: JSONValue = {"host": "${DATURE_MISSING:-$DATURE_ALSO_MISSING}"}
+
+        with pytest.raises(EnvVarExpandError) as exc_info:
+            expand_env_vars(data, mode="strict")
+
+        errors = [e for e in exc_info.value.exceptions if isinstance(e, MissingEnvVarError)]
+        assert [e.field_path for e in errors] == [["host"]]
+
+    def test_strict_aggregates_across_fallback_and_plain_fields(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Regression: a missing var inside a fallback used to abort the re.sub callback
+        # via a raw raise, so sibling fields with their own missing vars were never
+        # reached and only one error was ever reported instead of all of them.
+        monkeypatch.delenv("DATURE_MISSING", raising=False)
+        monkeypatch.delenv("DATURE_ALSO_MISSING", raising=False)
+        monkeypatch.delenv("DATURE_OTHER_MISSING", raising=False)
+        data: JSONValue = {
+            "host": "${DATURE_MISSING:-$DATURE_ALSO_MISSING}",
+            "port": "$DATURE_OTHER_MISSING",
+        }
+
+        with pytest.raises(EnvVarExpandError) as exc_info:
+            expand_env_vars(data, mode="strict")
+
+        errors = [e for e in exc_info.value.exceptions if isinstance(e, MissingEnvVarError)]
+        reported = {(tuple(e.field_path), e.var_name) for e in errors}
+        assert reported == {
+            (("host",), "DATURE_ALSO_MISSING"),
+            (("port",), "DATURE_OTHER_MISSING"),
+        }
+
 
 class TestUnknownExpandEnvVarsMode:
     def test_expand_string_raises(self) -> None:
@@ -381,3 +429,24 @@ class TestCrossRefAwareness:
         data: JSONValue = {"url": "https://${@env.HOST}/api", "port": 8080}
         result = expand_env_vars(data, mode="default")
         assert result == {"url": "https://${@env.HOST}/api", "port": 8080}
+
+    @pytest.mark.parametrize(
+        "mode",
+        ["strict", "default", "empty"],
+    )
+    def test_double_dollar_before_cross_ref_collapses_in_data(self, mode: str) -> None:
+        # Regression: config data values never get a second (cross-source) expansion
+        # pass, unlike source init-fields — so $${@cli.env} must collapse to a literal
+        # $ here too, not survive as $${@cli.env}.
+        data: JSONValue = {"url": "$${@cli.env}"}
+
+        result = expand_env_vars(data, mode=mode)
+
+        assert result == {"url": "${@cli.env}"}
+
+    def test_regular_double_dollar_still_collapses_in_data(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("VAR", raising=False)
+
+        result = expand_env_vars({"key": "$${VAR}"}, mode="default")
+
+        assert result == {"key": "${VAR}"}
