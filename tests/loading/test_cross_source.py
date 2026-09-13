@@ -242,10 +242,24 @@ class TestInterpolation:
         assert result.url == "db.example.com"
         assert result.path == "5432"
 
-    def test_double_dollar_escaping_in_field(self) -> None:
+    def test_double_dollar_escaping_in_init_field(self) -> None:
+        # $${@a.url} in a source init-field → literal "${@a.url}" (not interpolated).
+        # b.data has no "url" key, so _load() falls back to self.url via setdefault,
+        # surfacing the (post-interpolation) init-field value in the result.
         a = _Stub(tag="a", data={"url": "v"})
-        # $${@a.url} → literal "${@a.url}" (not interpolated)
-        b = _Stub(tag="b", url="$${@a.url}", data={"url": "${@a.url}"})
+        b = _Stub(tag="b", url="$${@a.url}", data={})
+
+        result = load(a, b, schema=_StrConfig)
+
+        assert result.url == "${@a.url}"
+
+    def test_cross_ref_in_data_value_stays_literal_without_escaping(self) -> None:
+        # ${@a.url} inside a config *data* value (as opposed to a source init-field)
+        # is never interpolated — cross-refs only apply to init-fields and when=.
+        # No escaping is needed here to get a literal result; this is the current,
+        # intended behaviour, not merely the absence of an error.
+        a = _Stub(tag="a", data={"url": "v"})
+        b = _Stub(tag="b", data={"url": "${@a.url}"})
 
         result = load(a, b, schema=_StrConfig)
 

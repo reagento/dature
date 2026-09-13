@@ -38,10 +38,30 @@ depends on `EnvSource`.
 | `${@tag.key:-default}` | Use `default` if `key` is absent |
 | `$${@tag.key}` | Literal `${@tag.key}` (escape with `$$`) |
 
+## Scope
+
+`${@tag.key}` is only interpolated in a source's own constructor arguments
+(e.g. `JsonSource(path=...)`, `VaultConfig(token=...)`) and in `when=`
+conditions. It is **not** interpolated inside the data your config files
+or environment carry — a `${@tag.key}` written in a YAML/JSON/TOML value
+is passed through to the schema field literally, unchanged.
+
+This is intentional: cross-refs describe how dature should locate or
+connect to a source, not how that source's own data should be
+transformed. Making config files use dature-specific syntax would couple
+them to the tool. If you need a value from another source to end up in
+the final config, merge that source in directly — for example
+`DockerSecretsSource(dir_="/run/secrets")` merges its keys straight into
+the schema, so no `${...}` is needed in any config file at all. For
+pulling from an arbitrary external system, write a
+[custom `Source`](custom_sources.md).
+
 ## Escaping
 
-Prefix `$$` to produce a literal `$`. This is useful when a config-file path
-should contain `${@...}` literally rather than be treated as a cross-ref:
+Prefix `$$` to produce a literal `$`. This is useful in a source's own
+constructor argument, where `${@...}` would otherwise be treated as a
+cross-ref — for example when a config-file *path* should contain `${@...}`
+literally:
 
 === "Python"
 
@@ -54,6 +74,10 @@ should contain `${@...}` literally rather than be treated as a cross-ref:
     ```json
     --8<-- "docs/examples/advanced/cross_source_refs/sources/${@env.something}"
     ```
+
+Escaping `$` in *data values* (as opposed to source arguments) is a
+consequence of [env-var expansion](env-expansion.md), a separate feature —
+see its [note on cross-refs](env-expansion.md#escaping-and-cross-source-refs).
 
 ## T-string syntax (Python 3.14+)
 

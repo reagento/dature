@@ -131,6 +131,15 @@ In `"strict"` mode, all missing variables are collected and reported at once:
 
 The `${VAR:-default}` fallback syntax works in all modes.
 
+## Escaping and cross-source refs
+
+[Cross-source refs](cross_source_refs.md) (`${@tag.key}`) are a separate
+feature and are never interpolated in data values — only `$VAR`/`${VAR}`/`%VAR%`
+are. Escaping still works the same way there: `$$` always collapses to a
+literal `$`, even right before a `${@tag.key}` pattern, e.g. `"$$5 off ${@x}"`
+becomes `"$5 off ${@x}"`. With `expand_env_vars="disabled"`, `$` is never
+special in data values, so no escaping is needed at all.
+
 ## File Path Expansion
 
 Environment variables in the `file=...` parameter of Source subclasses are expanded automatically in `"strict"` mode — if a variable is missing, `EnvVarExpandError` is raised immediately at Source creation time.

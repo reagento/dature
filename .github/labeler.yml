@@ -1,5 +1,5 @@
 bug:
-  - head-branch: ['^fix/.*', '^bug/.*']
+  - head-branch: ['^fix/.*', '^bug/.*', '^bugfix/.*']
 feature:
   - head-branch: ['^feat/.*', '^feature/.*']
 chore:

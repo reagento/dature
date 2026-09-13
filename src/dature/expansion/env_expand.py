@@ -18,34 +18,30 @@ _VAR_RE = re.compile(
 )
 
 
-def _resolve_brace_default(content: str, full: str) -> str:
-    separator = ":-"
-    idx = content.find(separator)
-    if idx != -1:
-        var_name = content[:idx]
-        fallback = content[idx + len(separator) :]
-        value = os.environ.get(var_name)
-        if value is not None:
-            return value
-        return expand_string_default(fallback)
-
-    value = os.environ.get(content)
-    if value is not None:
-        return value
-    return full
-
-
-def _resolve_simple_default(var_name: str, full: str) -> str:
-    value = os.environ.get(var_name)
-    if value is not None:
-        return value
-    return full
+def _validate_mode(mode: ExpandEnvVarsMode) -> None:
+    if mode not in ("disabled", "default", "empty", "strict"):
+        msg = f"Unknown expand_env_vars mode: {mode!r}"
+        raise ValueError(msg)
 
 
 class _EnvExpander:
-    def __init__(self, *, mode: ExpandEnvVarsMode, source_text: str) -> None:
+    """Resolve ``_VAR_RE`` matches for one of ``default``/``empty``/``strict``.
+
+    ``default`` and ``empty`` never raise or record ``self._errors``; only ``strict``
+    collects a ``MissingEnvVarError`` per missing variable. The caller decides whether
+    to raise on those errors (``expand_string``) or return them (``expand_string_collect``).
+    """
+
+    def __init__(
+        self,
+        *,
+        mode: ExpandEnvVarsMode,
+        source_text: str,
+        preserve_cross_refs: bool = True,
+    ) -> None:
         self._mode: ExpandEnvVarsMode = mode
         self._source_text = source_text
+        self._preserve_cross_refs = preserve_cross_refs
         self._errors: list[MissingEnvVarError] = []
 
     @property
@@ -56,9 +52,11 @@ class _EnvExpander:
         full = match.group(0)
 
         if full == "$$":
-            # Preserve $$ immediately before {@ so the cross-source pass can
-            # collapse it to a literal $, keeping ${@...} as a plain string.
-            if match.string[match.end() : match.end() + 2] == CROSS_REF_OPEN:
+            # Preserve $$ immediately before {@ so a later cross-source pass can
+            # collapse it to a literal $, keeping ${@...} as a plain string. Only
+            # relevant for source init-fields, which get that second pass — config
+            # data values never do, so there $$ must always collapse to $.
+            if self._preserve_cross_refs and match.string[match.end() : match.end() + 2] == CROSS_REF_OPEN:
                 return "$$"
             return "$"
         if full == "%%":
@@ -69,28 +67,34 @@ class _EnvExpander:
         percent_name = match.group(3)
 
         if brace_content is not None:
-            return self._resolve_brace(brace_content, match.start())
+            return self._resolve_brace(brace_content, full, match.start())
         if dollar_name is not None:
-            return self._resolve_var(dollar_name, match.start())
-        return self._resolve_var(percent_name, match.start())
+            return self._resolve_var(dollar_name, full, match.start())
+        return self._resolve_var(percent_name, full, match.start())
 
-    def _resolve_brace(self, content: str, position: int) -> str:
-        separator = ":-"
-        idx = content.find(separator)
-        if idx != -1:
-            var_name = content[:idx]
-            fallback = content[idx + len(separator) :]
-            value = os.environ.get(var_name)
-            if value is not None:
-                return value
-            return expand_string(fallback, mode=self._mode)
-
-        return self._resolve_var(content, position)
-
-    def _resolve_var(self, var_name: str, position: int) -> str:
+    def _resolve_brace(self, content: str, full: str, position: int) -> str:
+        var_name, separator, fallback = content.partition(":-")
         value = os.environ.get(var_name)
         if value is not None:
             return value
+        if not separator:
+            return self._on_missing(var_name, full, position)
+
+        # Recurse through this same expander (not a fresh one) so that a missing
+        # variable inside the fallback contributes to this call's own error list
+        # instead of raising from a throwaway sub-expander (see changes/ bugfix
+        # fragment for the nested-fallback fix this replaced).
+        return _VAR_RE.sub(self, fallback)
+
+    def _resolve_var(self, var_name: str, full: str, position: int) -> str:
+        value = os.environ.get(var_name)
+        if value is not None:
+            return value
+        return self._on_missing(var_name, full, position)
+
+    def _on_missing(self, var_name: str, full: str, position: int) -> str:
+        if self._mode == "default":
+            return full
 
         if self._mode == "strict":
             self._errors.append(
@@ -104,68 +108,37 @@ class _EnvExpander:
         return ""
 
 
-def expand_string(text: str, *, mode: ExpandEnvVarsMode) -> str:
-    match mode:
-        case "disabled":
-            return text
-        case "default":
-            return expand_string_default(text)
-        case "empty" | "strict":
-            pass
-        case _ as unknown:
-            msg = f"Unknown expand_env_vars mode: {unknown!r}"
-            raise ValueError(msg)
+def _expand(text: str, *, mode: ExpandEnvVarsMode, preserve_cross_refs: bool) -> tuple[str, list[MissingEnvVarError]]:
+    _validate_mode(mode)
+    if mode == "disabled":
+        return text, []
 
-    expander = _EnvExpander(mode=mode, source_text=text)
-    result = _VAR_RE.sub(expander, text)
-
-    if expander.errors:
-        msg = "Missing environment variables"
-        raise EnvVarExpandError(msg, expander.errors)
-
-    return result
-
-
-def expand_string_collect(text: str, *, mode: ExpandEnvVarsMode) -> tuple[str, list[MissingEnvVarError]]:
-    """Expand string and return (result, errors) without raising."""
-    match mode:
-        case "disabled":
-            return text, []
-        case "default":
-            return expand_string_default(text), []
-        case "empty" | "strict":
-            pass
-        case _ as unknown:
-            msg = f"Unknown expand_env_vars mode: {unknown!r}"
-            raise ValueError(msg)
-
-    expander = _EnvExpander(mode=mode, source_text=text)
+    expander = _EnvExpander(mode=mode, source_text=text, preserve_cross_refs=preserve_cross_refs)
     result = _VAR_RE.sub(expander, text)
     return result, expander.errors
 
 
-def expand_string_default(text: str) -> str:
-    def _replace(match: re.Match[str]) -> str:
-        full = match.group(0)
+def expand_string(text: str, *, mode: ExpandEnvVarsMode, preserve_cross_refs: bool = True) -> str:
+    result, errors = _expand(text, mode=mode, preserve_cross_refs=preserve_cross_refs)
+    if errors:
+        msg = "Missing environment variables"
+        raise EnvVarExpandError(msg, errors)
+    return result
 
-        if full == "$$":
-            if match.string[match.end() : match.end() + 2] == CROSS_REF_OPEN:
-                return "$$"
-            return "$"
-        if full == "%%":
-            return "%"
 
-        brace_content = match.group(1)
-        if brace_content is not None:
-            return _resolve_brace_default(brace_content, full)
+def expand_string_collect(
+    text: str,
+    *,
+    mode: ExpandEnvVarsMode,
+    preserve_cross_refs: bool = True,
+) -> tuple[str, list[MissingEnvVarError]]:
+    """Expand string and return (result, errors) without raising."""
+    return _expand(text, mode=mode, preserve_cross_refs=preserve_cross_refs)
 
-        var_name = match.group(2) or match.group(3)
-        if var_name is not None:
-            return _resolve_simple_default(var_name, full)
 
-        return full
-
-    return _VAR_RE.sub(_replace, text)
+def expand_string_default(text: str, *, preserve_cross_refs: bool = True) -> str:
+    result, _ = _expand(text, mode="default", preserve_cross_refs=preserve_cross_refs)
+    return result
 
 
 def expand_file_path(file_path: FilePath, *, mode: ExpandEnvVarsMode) -> str:
@@ -197,7 +170,10 @@ def expand_env_vars(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
 
 def _expand_recursive(data: JSONValue, *, mode: ExpandEnvVarsMode) -> JSONValue:
     if isinstance(data, str):
-        return expand_string(data, mode=mode)
+        # Config data values never get a second (cross-source) expansion pass, unlike
+        # source init-fields — so $$ must always collapse to a literal $ here, even
+        # right before {@, or it would leak through as $${@...} to the final value.
+        return expand_string(data, mode=mode, preserve_cross_refs=False)
 
     if isinstance(data, dict):
         return {key: _expand_recursive(value, mode=mode) for key, value in data.items()}
@@ -216,7 +192,7 @@ def _expand_recursive_collect(
     errors: list[MissingEnvVarError],
 ) -> JSONValue:
     if isinstance(data, str):
-        result, errs = expand_string_collect(data, mode=mode)
+        result, errs = expand_string_collect(data, mode=mode, preserve_cross_refs=False)
         for err in errs:
             err.field_path = list(path)
         errors.extend(errs)
