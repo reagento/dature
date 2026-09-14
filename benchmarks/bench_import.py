@@ -66,10 +66,16 @@ def measure(py: Path, module: str) -> tuple[float, float, float, float]:
         f"import gc, tracemalloc\n{STDLIB_PREIMPORT}\ngc.collect()\ntracemalloc.start()\n"
         f"import {module}\n_, peak = tracemalloc.get_traced_memory()\ntracemalloc.stop()\nprint(peak / 1024)\n"
     )
+    # One untimed run first: it pays for .pyc compilation and cold page cache for this fresh
+    # venv, which would otherwise dominate the first few timed samples.
+    _sample(py, speed_snip, 1)
+    _sample(py, mem_snip, 1)
     speed = _sample(py, speed_snip, SPEED_RUNS)
     mem = _sample(py, mem_snip, MEM_RUNS)
+    # min rather than mean: each sample is a fresh subprocess, so mean tracks scheduler/OS
+    # jitter across processes rather than the library's own import cost.
     # speed returned in µs (print_table rescales), memory in KiB (print_mem_table rescales)
-    return statistics.mean(speed) * 1e6, statistics.stdev(speed) * 1e6, statistics.mean(mem), statistics.stdev(mem)
+    return min(speed) * 1e6, statistics.stdev(speed) * 1e6, min(mem), statistics.stdev(mem)
 
 
 def main() -> None:

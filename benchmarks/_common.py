@@ -50,7 +50,8 @@ BENCH_MULTI_ENV_VARS: dict[str, str] = {
 _ALL_ENV_VARS: dict[str, str] = {**BENCH_ENV_VARS, **BENCH_NESTED_ENV_VARS, **BENCH_MULTI_ENV_VARS}
 
 NUMBER = 500
-REPEAT = 5
+REPEAT = 9
+WARMUP = 5
 MEM_RUNS = 20
 RSS_RUNS = 1000
 
@@ -66,11 +67,21 @@ def clear_env_vars() -> None:
 
 
 def run_bench(fn) -> tuple[float, float]:
-    """Mean ± stddev per call in µs."""
+    """Min per call in µs, plus (median - min) as a spread indicator.
+
+    The first call pays one-time setup (adaptix's lazy init, dature's ``default_config()``
+    bootstrap) that can cost 30-50x a steady-state call — a handful of untimed warmup calls
+    keep that out of the sample. ``min`` rather than ``mean`` because on a shared/noisy machine
+    the mean of a few ``timeit.repeat`` samples tracks scheduler jitter, not the code; ``min`` is
+    what ``timeit`` itself recommends for this reason.
+    """
+    for _ in range(WARMUP):
+        fn()
     times = timeit.repeat(fn, number=NUMBER, repeat=REPEAT)
-    mean = statistics.mean(times) * 1e6 / NUMBER
-    std = statistics.stdev(times) * 1e6 / NUMBER
-    return mean, std
+    per_call = [t * 1e6 / NUMBER for t in times]
+    best = min(per_call)
+    spread = statistics.median(per_call) - best
+    return best, spread
 
 
 def run_mem_bench(fn, warmup: int = 5, runs: int = MEM_RUNS) -> tuple[float, float]:
