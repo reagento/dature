@@ -68,6 +68,10 @@ type MaskingMode = Literal["all", "secrets_only", "none"]
 
 type StaleOnErrorMode = Literal["keep", "raise", "retry"]
 
+# T is the loaded schema instance; the callback receives the newly published value.
+type ReloadCallback[T] = Callable[[T], None]
+type ReloadErrorCallback = Callable[[Exception], None]
+
 type StrictMode = Literal["off", "warn", "error"]
 
 type ConfigDirsEntry = Path | str

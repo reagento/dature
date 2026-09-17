@@ -163,13 +163,13 @@ class TestArgparseSourceFlat:
         assert src.load_raw().data == expected
 
     @pytest.mark.parametrize(
-        ("type_", "default", "argv", "expected_present"),
+        ("type_", "default", "argv", "expected"),
         [
-            pytest.param(int, 8080, [], False, id="int_default_dropped"),
-            pytest.param(int, 8080, ["--x", "9"], True, id="int_passed"),
-            pytest.param(str, "hello", [], False, id="str_default_dropped"),
-            pytest.param(str, "hello", ["--x", "world"], True, id="str_passed"),
-            pytest.param(float, 1.5, [], False, id="float_default_dropped"),
+            pytest.param(int, 8080, [], {}, id="int_default_dropped"),
+            pytest.param(int, 8080, ["--x", "9"], {"x": 9}, id="int_passed"),
+            pytest.param(str, "hello", [], {}, id="str_default_dropped"),
+            pytest.param(str, "hello", ["--x", "world"], {"x": "world"}, id="str_passed"),
+            pytest.param(float, 1.5, [], {}, id="float_default_dropped"),
         ],
     )
     def test_non_bool_default_dropped_unless_passed(
@@ -178,26 +178,22 @@ class TestArgparseSourceFlat:
         type_: type,
         default: object,
         argv: list[str],
-        expected_present: bool,
+        expected: dict[str, object],
     ):
         set_argv(argv)
         parser = argparse.ArgumentParser()
         parser.add_argument("--x", type=type_, default=default)
         src = ArgparseSource(parser=parser)
-        data = src.load_raw().data
 
-        assert isinstance(data, dict)
-        assert ("x" in data) == expected_present
+        assert src.load_raw().data == expected
 
     def test_help_action_ignored(self, set_argv: Callable[[list[str]], None]):
         set_argv(["--name", "x"])
         parser = argparse.ArgumentParser()
         parser.add_argument("--name")
         src = ArgparseSource(parser=parser)
-        data = src.load_raw().data
 
-        assert isinstance(data, dict)
-        assert "help" not in data
+        assert src.load_raw().data == {"name": "x"}
 
     def test_nargs_list_passed_through(self, set_argv: Callable[[list[str]], None]):
         set_argv(["--items", "a", "b", "c"])
@@ -311,7 +307,6 @@ class TestArgparseSourceSubparsers:
         data = src.load_raw().data
 
         assert isinstance(data, dict)
-        assert "create" not in data
         assert data == {"command": "delete", "verbose": False, "delete": {"item_id": 5}}
 
     def test_nested_subparsers(self, set_argv: Callable[[list[str]], None]):

@@ -125,8 +125,7 @@ class TestTracebackKeepsUserFramesForUserRaisedErrors:
 
         frame_names = _frame_names(exc_info.value)
 
-        assert "_outer" in frame_names
-        assert "_inner" in frame_names
+        assert frame_names == ["test_error_raised_directly_by_user_code_keeps_all_frames", "_outer", "_inner"]
 
 
 class TestExceptionGroupContractPreserved:

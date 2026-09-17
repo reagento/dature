@@ -20,6 +20,7 @@ from dature._deps import require_dep
         "azure.appconfiguration",
         "azure.keyvault.secrets",
         "google.cloud.secretmanager",
+        "watchdog",
     ],
 )
 def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -43,6 +44,8 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
     assert dature.AzureAppConfigSource.format_name == "azure-app-config"
     assert dature.AzureKeyVaultSource.format_name == "azure-key-vault"
     assert dature.GcpSecretManagerSource.format_name == "gcp-secret-manager"
+    assert dature.FileWatchTrigger is not None
+    assert dature.FixedIntervalTrigger is not None
 
 
 @pytest.mark.parametrize(
@@ -55,6 +58,7 @@ def test_dature_imports_without_optional_dep(optional_module: str, monkeypatch: 
         ("azure.appconfiguration", "azure-appconfig"),
         ("azure.keyvault.secrets", "azure-keyvault"),
         ("google.cloud.secretmanager", "gcp"),
+        ("watchdog", "watch"),
     ],
 )
 def test_missing_dep_error_mentions_install_command(package: str, extra: str, monkeypatch: pytest.MonkeyPatch) -> None:

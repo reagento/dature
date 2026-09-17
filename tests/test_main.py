@@ -299,7 +299,7 @@ class TestStaleOnErrorFunctionMode:
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
         warning = "stale_on_error has no effect in function mode — keep a Loader instance instead"
-        assert (warning in messages) is expect_warning
+        assert messages == ([warning] if expect_warning else [])
 
 
 class TestFileNotFoundWithLoad:

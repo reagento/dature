@@ -7,6 +7,7 @@ from dature.config import DatureConfig
 from dature.loading.loader import Loader
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.protocols import DataclassInstance
+from dature.reloading.protocol import ReloadTriggerProtocol
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     ConfigDirsArg,
@@ -17,6 +18,8 @@ from dature.type_aliases import (
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
+    ReloadCallback,
+    ReloadErrorCallback,
     SkipFieldsInvalid,
     StaleOnErrorMode,
     StrictMode,
@@ -53,6 +56,9 @@ def load[T](
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
     search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
+    reload: ReloadTriggerProtocol | None = None,
+    on_reload: ReloadCallback[T] | None = None,
+    on_error: ReloadErrorCallback | None = None,
 ) -> T: ...
 
 
@@ -80,6 +86,9 @@ def load(
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
     search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
+    reload: ReloadTriggerProtocol | None = None,
+    on_reload: ReloadCallback[DataclassInstance] | None = None,
+    on_error: ReloadErrorCallback | None = None,
 ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]: ...
 
 
@@ -107,6 +116,9 @@ def load(  # noqa: PLR0913
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
     search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
+    reload: ReloadTriggerProtocol | None = None,
+    on_reload: ReloadCallback[Any] | None = None,
+    on_error: ReloadErrorCallback | None = None,
 ) -> Any:
     # --8<-- [end:load]
     return dispatch(
@@ -132,6 +144,9 @@ def load(  # noqa: PLR0913
         nested_resolve=nested_resolve,
         config_dirs=config_dirs,
         search_system_paths=search_system_paths,
+        reload=reload,
+        on_reload=on_reload,
+        on_error=on_error,
     )
 
 
@@ -158,6 +173,9 @@ def dispatch(  # noqa: PLR0913
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
     search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
+    reload: ReloadTriggerProtocol | None = None,
+    on_reload: ReloadCallback[Any] | None = None,
+    on_error: ReloadErrorCallback | None = None,
     config: DatureConfig | None = None,
 ) -> Any:  # noqa: ANN401
     """Internal seam behind ``load()``: identical semantics plus an explicit config override.
@@ -206,12 +224,22 @@ def dispatch(  # noqa: PLR0913
         "nested_resolve": nested_resolve,
         "config_dirs": config_dirs,
         "search_system_paths": search_system_paths,
+        "reload": reload,
+        "on_reload": on_reload,
+        "on_error": on_error,
         "config": config,
     }
 
     if schema is not None:
         # Function mode — throwaway Loader. No cache carries across calls.
         # To cache, construct ``Loader(...)`` explicitly and reuse it.
+        if reload is not None:
+            msg = (
+                "reload= has no effect in function mode: the Loader is discarded after this "
+                "call, so the background reload thread would immediately become unreachable. "
+                "Construct Loader(..., reload=...) explicitly and keep the instance instead."
+            )
+            raise ValueError(msg)
         if stale_on_error is not None and stale_on_error != "raise":
             logger.warning("stale_on_error has no effect in function mode — keep a Loader instance instead")
         return Loader(*sources, schema=schema, **common_kwargs).load()

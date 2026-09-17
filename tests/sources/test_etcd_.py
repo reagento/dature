@@ -438,7 +438,7 @@ class TestEtcdSourceAuth:
         src._authenticate(client)
 
         assert client.posted_to is None
-        assert "Authorization" not in client.session.headers
+        assert client.session.headers == {}
 
     def test_user_authenticates_and_sets_token(self):
         src = EtcdSource(host="e", path="myapp", user="root", password="root-pw")

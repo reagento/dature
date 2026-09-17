@@ -646,7 +646,7 @@ class TestStringValueLoaders:
 
         assert first == second
         assert first is not second
-        assert all(a is b for a, b in zip(first, second, strict=True))
+        assert [id(x) for x in first] == [id(x) for x in second]
 
 
 class TestResolveLocation:

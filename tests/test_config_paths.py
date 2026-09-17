@@ -110,9 +110,11 @@ class TestFindConfig:
             )
 
         assert result == tmp_path / "config.yaml"
-        assert any(
-            "DATURE_UNDEFINED_XYZ" in record.message and "config_dirs" in record.message for record in caplog.records
+        expected_message = (
+            "config_dirs: environment variable 'DATURE_UNDEFINED_XYZ' is not set; skipping entry "
+            "'$DATURE_UNDEFINED_XYZ/nowhere'"
         )
+        assert [record.getMessage() for record in caplog.records] == [expected_message]
 
     def test_skips_undefined_fallback_var_with_warning(
         self,

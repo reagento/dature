@@ -983,7 +983,7 @@ class TestCallableMergeStrategy:
 
         messages = [r.message for r in caplog.records if r.name == "dature"]
         warning = "Merge-related parameters have no effect with a single source"
-        assert (warning in messages) is expect_warning
+        assert messages == ([warning] if expect_warning else [])
 
     def test_callable_with_raise_on_conflict(self, tmp_path: Path):
         a = tmp_path / "a.json"

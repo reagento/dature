@@ -67,6 +67,7 @@ from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.main import DEFAULT_STRATEGY, dispatch
 from dature.masking.detection import matches_secret_name
 from dature.protocols import DataclassInstance
+from dature.reloading.protocol import ReloadTriggerProtocol
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import (
     ExpandEnvVarsMode,
@@ -76,6 +77,8 @@ from dature.type_aliases import (
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
+    ReloadCallback,
+    ReloadErrorCallback,
     SkipFieldsInvalid,
     StaleOnErrorMode,
     StrictMode,
@@ -214,6 +217,9 @@ class Dature:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        reload: ReloadTriggerProtocol | None = None,
+        on_reload: ReloadCallback[T] | None = None,
+        on_error: ReloadErrorCallback | None = None,
     ) -> T: ...
 
     @overload
@@ -239,6 +245,9 @@ class Dature:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        reload: ReloadTriggerProtocol | None = None,
+        on_reload: ReloadCallback[DataclassInstance] | None = None,
+        on_error: ReloadErrorCallback | None = None,
     ) -> Callable[[type[DataclassInstance]], type[DataclassInstance]]: ...
 
     def load(  # noqa: PLR0913
@@ -263,6 +272,9 @@ class Dature:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        reload: ReloadTriggerProtocol | None = None,
+        on_reload: ReloadCallback[Any] | None = None,
+        on_error: ReloadErrorCallback | None = None,
     ) -> Any:
         """Load config from *sources* into *schema*, or return a decorator if ``schema=None``.
 
@@ -295,6 +307,9 @@ class Dature:
             "type_loaders": self._merge_type_loaders(type_loaders),
             "nested_resolve_strategy": nested_resolve_strategy,
             "nested_resolve": nested_resolve,
+            "reload": reload,
+            "on_reload": on_reload,
+            "on_error": on_error,
             "config": self._config,
         }
         if schema is not None:
@@ -323,6 +338,9 @@ class Dature:
         type_loaders: TypeLoaderMap | None = None,
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
+        reload: ReloadTriggerProtocol | None = None,
+        on_reload: ReloadCallback[T] | None = None,
+        on_error: ReloadErrorCallback | None = None,
     ) -> Loader[T]:
         """Build and return a ``Loader`` configured with this instance's settings.
 
@@ -353,6 +371,9 @@ class Dature:
             type_loaders=self._merge_type_loaders(type_loaders),
             nested_resolve_strategy=nested_resolve_strategy,
             nested_resolve=nested_resolve,
+            reload=reload,
+            on_reload=on_reload,
+            on_error=on_error,
             config=self._config,
         )
 

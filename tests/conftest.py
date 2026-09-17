@@ -12,6 +12,7 @@ import pytest
 import time_machine
 
 from dature.config import default_config, legacy
+from dature.reloading.scheduler import Scheduler
 
 
 @pytest.fixture
@@ -303,3 +304,16 @@ def _reset_config() -> Generator[None]:
     yield
     legacy.reset()
     default_config.cache_clear()
+
+
+@pytest.fixture
+def scheduler() -> Generator[Scheduler]:
+    """A private ``Scheduler`` for tests that start a real trigger.
+
+    Injected via ``ReloadTrigger(..., scheduler=scheduler)``/``FixedIntervalTrigger(...)``/
+    ``FileWatchTrigger(...)`` instead of touching the process-wide default — isolation by
+    construction, no cleanup of shared state needed.
+    """
+    sched = Scheduler()
+    yield sched
+    sched.shutdown()
