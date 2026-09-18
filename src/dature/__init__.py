@@ -1,6 +1,5 @@
 from dature._version import __version__
 from dature.conditions import When
-from dature.config import configure
 from dature.field_path import Absolute, F
 from dature.instance import Dature
 from dature.loading.loader import Loader
@@ -58,7 +57,6 @@ __all__ = [
     "Yaml12Source",
     "ZookeeperSource",
     "__version__",
-    "configure",
     "load",
     "load_report",
     "ref",

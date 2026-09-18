@@ -80,7 +80,7 @@ class ZookeeperSource(RemoteSource):
         V.root(
             lambda s: bool(s.hosts),
             error_message=(
-                "hosts is required (set on instance or via configure(zookeeper={...}) / DATURE_ZOOKEEPER__HOSTS)"
+                "hosts is required (set on instance or via Dature(zookeeper={...}) / DATURE_ZOOKEEPER__HOSTS)"
             ),
         ),
         V.root(

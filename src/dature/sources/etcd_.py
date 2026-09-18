@@ -19,7 +19,7 @@ class EtcdSource(RemoteSource):
     host: Annotated[
         str,
         (V.len() >= 1).with_error_message(
-            "host is required (set on instance or via configure(etcd={...}) / DATURE_ETCD__HOST)"
+            "host is required (set on instance or via Dature(etcd={...}) / DATURE_ETCD__HOST)"
         ),
     ] = ""
     port: Annotated[int | None, (V > 0).with_error_message("port must be a positive integer")] = None

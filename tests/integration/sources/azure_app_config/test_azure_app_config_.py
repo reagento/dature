@@ -15,8 +15,9 @@ import pytest
 from azure.appconfiguration import AzureAppConfigurationClient, ConfigurationSetting
 from testcontainers.core.container import DockerContainer
 
-from dature import AzureAppConfigSource, configure, load
+from dature import AzureAppConfigSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.azure_credentials import NoopCredential
 from tests.integration.sources.azure_app_config.helpers import (
@@ -103,21 +104,24 @@ class TestAzureAppConfigSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="connection_string_from_configure"),
+            pytest.param("dature_instance", id="connection_string_from_dature_instance"),
             pytest.param("env", id="connection_string_from_env"),
         ],
     )
     def test_load_with_settings(self, via: str, azure_app_config_endpoint: str, monkeypatch: pytest.MonkeyPatch):
         connection_string = _hmac_connection_string(azure_app_config_endpoint)
-        if via == "configure":
-            configure(azure_app_config={"connection_string": connection_string})
+        if via == "dature_instance":
+            app = Dature(azure_app_config={"connection_string": connection_string})
+            result = app.load(
+                AzureAppConfigSource(key_filter=f"{KV_PREFIX}:*", prefix=KV_PREFIX),
+                schema=_Config,
+            )
         else:
             monkeypatch.setenv("DATURE_AZURE_APP_CONFIG__CONNECTION_STRING", connection_string)
-
-        result = load(
-            AzureAppConfigSource(key_filter=f"{KV_PREFIX}:*", prefix=KV_PREFIX),
-            schema=_Config,
-        )
+            result = load(
+                AzureAppConfigSource(key_filter=f"{KV_PREFIX}:*", prefix=KV_PREFIX),
+                schema=_Config,
+            )
 
         assert result == EXPECTED_DATACLASS
 

@@ -15,8 +15,9 @@ from urllib.parse import urlparse
 import hvac
 import pytest
 
-from dature import VaultSource, configure, load
+from dature import VaultSource, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.instance import Dature
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -261,18 +262,21 @@ class TestVaultSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="creds_from_configure"),
+            pytest.param("dature_instance", id="creds_from_dature_instance"),
             pytest.param("env", id="creds_from_env"),
         ],
     )
     def test_load_with_creds(self, via, vault_host, vault_port, vault_scheme, vault_root_token, monkeypatch):
-        if via == "configure":
-            configure(vault={"host": vault_host, "port": vault_port, "scheme": vault_scheme, "token": vault_root_token})
+        if via == "dature_instance":
+            app = Dature(
+                vault={"host": vault_host, "port": vault_port, "scheme": vault_scheme, "token": vault_root_token},
+            )
+            result = app.load(VaultSource(path=KV_PATH), schema=_Config)
         else:
             monkeypatch.setenv("DATURE_VAULT__HOST", vault_host)
             monkeypatch.setenv("DATURE_VAULT__PORT", str(vault_port))
             monkeypatch.setenv("DATURE_VAULT__SCHEME", vault_scheme)
             monkeypatch.setenv("DATURE_VAULT__TOKEN", vault_root_token)
+            result = load(VaultSource(path=KV_PATH), schema=_Config)
 
-        result = load(VaultSource(path=KV_PATH), schema=_Config)
         assert result == EXPECTED_DATACLASS

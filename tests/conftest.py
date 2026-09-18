@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 import time_machine
 
-from dature.config import default_config, legacy
+from dature.config import default_config
 from dature.reloading.scheduler import Scheduler
 
 
@@ -299,11 +299,24 @@ def block_import(_clean_dature_modules: None) -> Callable[[str], AbstractContext
 
 @pytest.fixture
 def _reset_config() -> Generator[None]:
-    legacy.reset()
     default_config.cache_clear()
     yield
-    legacy.reset()
     default_config.cache_clear()
+
+
+@pytest.fixture
+def _no_global_masking(monkeypatch: pytest.MonkeyPatch, _reset_config: None) -> None:
+    """Disable the process-wide default masking mode via ``DATURE_*``.
+
+    For tests that aren't about masking — lets error/report assertions compare literal,
+    unredacted values (the default mode masks every string).
+    """
+    monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", "none")
+    default_config.cache_clear()
+    # Force the reload now, outside the test body — otherwise the first default_config() call
+    # inside the test (e.g. under caplog.at_level) would emit the bootstrap EnvSource's own
+    # debug/info log lines, polluting log-content assertions that don't expect them.
+    default_config()
 
 
 @pytest.fixture

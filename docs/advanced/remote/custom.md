@@ -20,7 +20,7 @@ Subclass `RemoteSource` and implement two methods:
 - Declarative validation, checked after config-group merge and before fetching: `Literal`-typed fields are checked against their allowed values automatically; single-field rules use `Annotated[..., V ...]` predicates (e.g. `host: Annotated[str, (V.len() >= 1).with_error_message(...)]`); genuine cross-field rules use the `root_validators` ClassVar (e.g. "either `token` or `role_id+secret_id` is set", as `VaultSource` does).
 - `__repr__()` — defaults to `f"{self.format_name} '{self.remote_address()}'"`.
 
-The `config_group` ClassVar that ties `VaultSource` to `dature.configure(vault=...)` is wired into `dature.config.DatureConfig` and is **not extensible from outside the package**. For a custom subclass, expose connection params via constructor arguments.
+The `config_group` ClassVar that ties `VaultSource` to `dature.Dature(vault=...)` is wired into `dature.config.DatureConfig` and is **not extensible from outside the package**. For a custom subclass, expose connection params via constructor arguments.
 
 !!! warning "Not part of dature's API surface"
 

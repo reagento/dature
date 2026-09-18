@@ -11,8 +11,9 @@ import hvac
 import hvac.exceptions
 import pytest
 
-from dature import VaultSource, configure, load
+from dature import VaultSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
@@ -115,14 +116,14 @@ class TestVaultSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestVaultSourceConfigFallback:
     def test_host_from_configure(self):
-        configure(vault={"host": "from-configure", "token": "t"})
-        merged = apply_source_config_group(VaultSource(path="p"))
+        cfg = Dature(vault={"host": "from-configure", "token": "t"}).config
+        merged = apply_source_config_group(VaultSource(path="p"), cfg=cfg)
         assert merged.host == "from-configure"
         assert merged.token == "t"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_VAULT__HOST", "localhost")
         monkeypatch.setenv("DATURE_VAULT__TOKEN", "root")
@@ -131,8 +132,8 @@ class TestVaultSourceConfigFallback:
         assert merged.token == "root"
 
     def test_instance_overrides_global(self):
-        configure(vault={"host": "global", "token": "global-token"})
-        merged = apply_source_config_group(VaultSource(path="p", host="instance"))
+        cfg = Dature(vault={"host": "global", "token": "global-token"}).config
+        merged = apply_source_config_group(VaultSource(path="p", host="instance"), cfg=cfg)
         assert merged.host == "instance"
         assert merged.token == "global-token"
 
@@ -145,8 +146,8 @@ class TestVaultSourceConfigFallback:
         ],
     )
     def test_kv_version_fallback(self, global_value, instance_value, expected):
-        configure(vault={"host": "v", "token": "t", "kv_version": global_value})
-        merged = apply_source_config_group(VaultSource(path="p", kv_version=instance_value))
+        cfg = Dature(vault={"host": "v", "token": "t", "kv_version": global_value}).config
+        merged = apply_source_config_group(VaultSource(path="p", kv_version=instance_value), cfg=cfg)
         assert merged.kv_version == expected
 
     @pytest.mark.parametrize(
@@ -161,8 +162,8 @@ class TestVaultSourceConfigFallback:
         config_kwargs = {"host": "v", "token": "t"}
         if global_value is not None:
             config_kwargs["mount_point"] = global_value
-        configure(vault=config_kwargs)
-        merged = apply_source_config_group(VaultSource(path="p", mount_point=instance_value))
+        cfg = Dature(vault=config_kwargs).config
+        merged = apply_source_config_group(VaultSource(path="p", mount_point=instance_value), cfg=cfg)
         assert merged.mount_point == expected
 
 

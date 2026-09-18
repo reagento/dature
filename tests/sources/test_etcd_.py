@@ -12,8 +12,9 @@ import etcd3gw.client
 import etcd3gw.exceptions
 import pytest
 
-from dature import EtcdSource, configure, load
+from dature import EtcdSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
@@ -120,17 +121,17 @@ class TestEtcdSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestEtcdSourceConfigFallback:
     def test_host_from_configure(self):
-        configure(etcd={"host": "from-configure", "user": "u", "password": "pw"})
+        cfg = Dature(etcd={"host": "from-configure", "user": "u", "password": "pw"}).config
 
-        merged = apply_source_config_group(EtcdSource(path="p"))
+        merged = apply_source_config_group(EtcdSource(path="p"), cfg=cfg)
 
         assert merged.host == "from-configure"
         assert merged.user == "u"
         assert merged.password == "pw"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_ETCD__HOST", "localhost")
         monkeypatch.setenv("DATURE_ETCD__USER", "root")
@@ -143,9 +144,9 @@ class TestEtcdSourceConfigFallback:
         assert merged.password == "root-pw"
 
     def test_instance_overrides_global(self):
-        configure(etcd={"host": "global", "user": "global-user", "password": "global-pw"})
+        cfg = Dature(etcd={"host": "global", "user": "global-user", "password": "global-pw"}).config
 
-        merged = apply_source_config_group(EtcdSource(path="p", host="instance"))
+        merged = apply_source_config_group(EtcdSource(path="p", host="instance"), cfg=cfg)
 
         assert merged.host == "instance"
         assert merged.user == "global-user"
@@ -162,9 +163,9 @@ class TestEtcdSourceConfigFallback:
         config_kwargs = {"host": "e"}
         if global_value is not None:
             config_kwargs["port"] = global_value
-        configure(etcd=config_kwargs)
+        cfg = Dature(etcd=config_kwargs).config
 
-        merged = apply_source_config_group(EtcdSource(path="p", port=instance_value))
+        merged = apply_source_config_group(EtcdSource(path="p", port=instance_value), cfg=cfg)
 
         assert merged.port == expected
 
@@ -180,9 +181,9 @@ class TestEtcdSourceConfigFallback:
         config_kwargs = {"host": "e"}
         if global_value is not None:
             config_kwargs["protocol"] = global_value
-        configure(etcd=config_kwargs)
+        cfg = Dature(etcd=config_kwargs).config
 
-        merged = apply_source_config_group(EtcdSource(path="p", protocol=instance_value))
+        merged = apply_source_config_group(EtcdSource(path="p", protocol=instance_value), cfg=cfg)
 
         assert merged.protocol == expected
 

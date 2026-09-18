@@ -12,8 +12,9 @@ from typing import Final, cast
 
 import pytest
 
-from dature import ConsulSource, configure, load
+from dature import ConsulSource, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -193,17 +194,18 @@ class TestConsulSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="creds_from_configure"),
+            pytest.param("dature_instance", id="creds_from_dature_instance"),
             pytest.param("env", id="creds_from_env"),
         ],
     )
     def test_load_with_creds(self, via, consul_host, consul_port, consul_token, monkeypatch):
-        if via == "configure":
-            configure(consul={"host": consul_host, "port": consul_port, "token": consul_token})
+        if via == "dature_instance":
+            app = Dature(consul={"host": consul_host, "port": consul_port, "token": consul_token})
+            result = app.load(ConsulSource(path=KV_PREFIX), schema=_Config)
         else:
             monkeypatch.setenv("DATURE_CONSUL__HOST", consul_host)
             monkeypatch.setenv("DATURE_CONSUL__PORT", str(consul_port))
             monkeypatch.setenv("DATURE_CONSUL__TOKEN", consul_token)
+            result = load(ConsulSource(path=KV_PREFIX), schema=_Config)
 
-        result = load(ConsulSource(path=KV_PREFIX), schema=_Config)
         assert result == EXPECTED_DATACLASS

@@ -1,4 +1,3 @@
-import threading
 import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
@@ -16,7 +15,6 @@ from dature.type_aliases import (
     NestedResolveStrategy,
     StaleOnErrorMode,
     StrictMode,
-    TypeLoaderMap,
 )
 
 
@@ -400,44 +398,6 @@ class GcpSecretManagerOptions(TypedDict, total=False):
     credentials_file: str | None
 
 
-# ---------------------------------------------------------------------------
-# Private legacy state — written by the configure() shim, cleared by tests.
-# The whole _LegacyState class and legacy singleton are removed in dature 1.5.
-# ---------------------------------------------------------------------------
-
-
-@dataclass(slots=True)
-class _LegacyState:
-    """Process-wide state written by the deprecated ``configure()`` shim. Removed in dature 1.5."""
-
-    override: DatureConfig | None = None
-    type_loaders: TypeLoaderMap = field(default_factory=dict)
-
-    def reset(self) -> None:
-        self.override = None
-        self.type_loaders = {}
-
-
-legacy = _LegacyState()
-
-# Guards configure()'s read-modify-write of legacy.override/legacy.type_loaders — without it,
-# two concurrent configure() calls can read the same base config and one's merged groups clobber
-# the other's on write. Not used by resolve_config()/resolve_error_display(): those are plain
-# reads of an already-published DatureConfig and need no synchronization. Removed in 1.5 alongside
-# configure() itself.
-_configure_lock = threading.Lock()
-
-
-def resolve_config() -> DatureConfig:
-    """Resolve the config an internal call site should use when none was passed explicitly.
-
-    During the ``configure()`` deprecation period this honours a process-wide override
-    installed via ``configure()``; once that shim is removed in 1.5 this collapses to a
-    direct call to ``default_config()``.
-    """
-    return legacy.override if legacy.override is not None else default_config()
-
-
 def resolve_error_display() -> ErrorDisplayConfig:
     """Resolve ``ErrorDisplayConfig`` for error rendering, which has no config parameter to thread.
 
@@ -447,8 +407,6 @@ def resolve_error_display() -> ErrorDisplayConfig:
     "bootstrap in flight" or "bootstrap failed" — in both cases built-in defaults are the only
     answer available.
     """
-    if legacy.override is not None:
-        return legacy.override.error_display
     if default_config.cache_info().currsize == 0:
         return BOOTSTRAP_CONFIG.error_display
     return default_config().error_display
@@ -468,65 +426,3 @@ def merge_group[D: DataclassInstance](current: D, options: Mapping[str, Any] | N
         for name, value in options.items()
     }
     return replace(current, **safe_options)
-
-
-# --8<-- [start:configure]
-def configure(  # noqa: PLR0913
-    *,
-    masking: MaskingOptions | None = None,
-    error_display: ErrorDisplayOptions | None = None,
-    loading: LoadingOptions | None = None,
-    vault: VaultOptions | None = None,
-    consul: ConsulOptions | None = None,
-    etcd: EtcdOptions | None = None,
-    zookeeper: ZookeeperOptions | None = None,
-    ssm: SsmOptions | None = None,
-    secrets_manager: SecretsManagerOptions | None = None,
-    azure_app_config: AzureAppConfigOptions | None = None,
-    azure_key_vault: AzureKeyVaultOptions | None = None,
-    gcp_secret_manager: GcpSecretManagerOptions | None = None,
-    type_loaders: TypeLoaderMap | None = None,
-) -> None:
-    # --8<-- [end:configure]
-    """Deprecated. Use ``dature.Dature(...)`` instead.
-
-    .. deprecated:: 1.3.0
-        ``configure()`` is a backwards-compatibility shim.  It will be removed in dature 1.5.
-        Migrate to ``dature.Dature(...)`` — the same group kwargs are accepted.
-    """
-    from dature._deprecations import CONFIGURE_DEPRECATION_MESSAGE  # noqa: PLC0415
-
-    warnings.warn(CONFIGURE_DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
-
-    with _configure_lock:
-        current = resolve_config()
-
-        merged_masking = merge_group(current.masking, masking, MaskingConfig)
-        merged_error = merge_group(current.error_display, error_display, ErrorDisplayConfig)
-        merged_loading = merge_group(current.loading, loading, LoadingConfig)
-        merged_vault = merge_group(current.vault, vault, VaultConfig)
-        merged_consul = merge_group(current.consul, consul, ConsulConfig)
-        merged_etcd = merge_group(current.etcd, etcd, EtcdConfig)
-        merged_zookeeper = merge_group(current.zookeeper, zookeeper, ZookeeperConfig)
-        merged_ssm = merge_group(current.ssm, ssm, SsmConfig)
-        merged_secrets_manager = merge_group(current.secrets_manager, secrets_manager, SecretsManagerConfig)
-        merged_azure_app_config = merge_group(current.azure_app_config, azure_app_config, AzureAppConfigConfig)
-        merged_azure_key_vault = merge_group(current.azure_key_vault, azure_key_vault, AzureKeyVaultConfig)
-        merged_gcp_secret_manager = merge_group(current.gcp_secret_manager, gcp_secret_manager, GcpSecretManagerConfig)
-
-        legacy.override = DatureConfig(
-            masking=merged_masking,
-            error_display=merged_error,
-            loading=merged_loading,
-            vault=merged_vault,
-            consul=merged_consul,
-            etcd=merged_etcd,
-            zookeeper=merged_zookeeper,
-            ssm=merged_ssm,
-            secrets_manager=merged_secrets_manager,
-            azure_app_config=merged_azure_app_config,
-            azure_key_vault=merged_azure_key_vault,
-            gcp_secret_manager=merged_gcp_secret_manager,
-        )
-        if type_loaders is not None:
-            legacy.type_loaders = type_loaders

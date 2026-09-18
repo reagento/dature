@@ -11,8 +11,9 @@ from pathlib import Path
 import pytest
 from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceNotFoundError
 
-from dature import AzureAppConfigSource, configure, load
+from dature import AzureAppConfigSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import remote_value_loaders, string_value_loaders
@@ -130,15 +131,15 @@ class TestAzureAppConfigSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestAzureAppConfigSourceConfigFallback:
     def test_endpoint_from_configure(self):
-        configure(azure_app_config={"endpoint": "https://from-configure.azconfig.io"})
+        cfg = Dature(azure_app_config={"endpoint": "https://from-configure.azconfig.io"}).config
 
-        merged = apply_source_config_group(AzureAppConfigSource())
+        merged = apply_source_config_group(AzureAppConfigSource(), cfg=cfg)
 
         assert merged.endpoint == "https://from-configure.azconfig.io"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_endpoint_from_env_var(self, monkeypatch):
         monkeypatch.setenv("DATURE_AZURE_APP_CONFIG__ENDPOINT", "https://from-env.azconfig.io")
 
@@ -147,9 +148,9 @@ class TestAzureAppConfigSourceConfigFallback:
         assert merged.endpoint == "https://from-env.azconfig.io"
 
     def test_instance_overrides_global(self):
-        configure(azure_app_config={"endpoint": "https://global.azconfig.io"})
+        cfg = Dature(azure_app_config={"endpoint": "https://global.azconfig.io"}).config
 
-        merged = apply_source_config_group(AzureAppConfigSource(endpoint="https://instance.azconfig.io"))
+        merged = apply_source_config_group(AzureAppConfigSource(endpoint="https://instance.azconfig.io"), cfg=cfg)
 
         assert merged.endpoint == "https://instance.azconfig.io"
 

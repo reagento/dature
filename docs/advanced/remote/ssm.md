@@ -33,15 +33,15 @@ By default `AwsSsmSource` reads recursively (`recursive=True`) and splits parame
 
 With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `/` nesting instead of `__`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON), reading a single parameter whose value is an entire JSON document. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(ssm={...})` (or the matching `DATURE_SSM__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(ssm={...})` (or the matching `DATURE_SSM__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/ssm/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_SSM__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(ssm={...})` → `DATURE_SSM__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "Pagination"
     `get_parameters_by_path` returns at most 10 parameters per page. `AwsSsmSource` always paginates through the full result set, so large parameter trees are read completely.

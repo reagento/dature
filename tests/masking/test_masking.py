@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from dature import Dature, JsonSource, Yaml11Source, configure, load, load_report
-from dature.config import MaskingConfig
+from dature import Dature, JsonSource, Yaml11Source, load, load_report
+from dature.config import MaskingConfig, default_config
 from dature.errors import DatureConfigError, FieldLoadError
 from dature.field_path import F
 from dature.fields.secret_str import SecretStr
@@ -412,7 +412,7 @@ _PUBLIC_VALUE = "production"
 
 @pytest.mark.usefixtures("_reset_config")
 class TestSecretMaskingIntegration:
-    def test_load_report_masks_secrets(self, tmp_path: Path):
+    def test_load_report_masks_secrets(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         json_file = tmp_path / "config.json"
         json_file.write_text(f'{{"password": "{_SECRET_VALUE}", "host": "{_PUBLIC_VALUE}"}}')
 
@@ -421,7 +421,8 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        configure(masking={"masking_mode": "secrets_only"})
+        monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", "secrets_only")
+        default_config.cache_clear()
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = load_report(result)
@@ -434,7 +435,7 @@ class TestSecretMaskingIntegration:
         assert password_origin.key == "password"
         assert password_origin.value == _MASKED_SECRET
 
-    def test_merge_report_masks_secrets(self, tmp_path: Path):
+    def test_merge_report_masks_secrets(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         defaults = tmp_path / "defaults.json"
         defaults.write_text(f'{{"password": "{_SECRET_VALUE}", "host": "{_PUBLIC_VALUE}"}}')
 
@@ -446,7 +447,8 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        configure(masking={"masking_mode": "secrets_only"})
+        monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", "secrets_only")
+        default_config.cache_clear()
         result = load(
             JsonSource(file=defaults),
             JsonSource(file=overrides),
@@ -465,7 +467,7 @@ class TestSecretMaskingIntegration:
         assert password_origin.key == "password"
         assert password_origin.value == _MASKED_SECRET
 
-    def test_load_report_masks_secret_str_type(self, tmp_path: Path):
+    def test_load_report_masks_secret_str_type(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         json_file = tmp_path / "config.json"
         json_file.write_text(f'{{"api_key": "{_SECRET_VALUE}", "host": "{_PUBLIC_VALUE}"}}')
 
@@ -474,7 +476,8 @@ class TestSecretMaskingIntegration:
             api_key: SecretStr
             host: str
 
-        configure(masking={"masking_mode": "secrets_only"})
+        monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", "secrets_only")
+        default_config.cache_clear()
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = load_report(result)
@@ -634,6 +637,7 @@ class TestSecretMaskingIntegration:
     def test_function_mode_report_respects_global_masking_mode(
         self,
         tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
         masking_mode: str,
         expected_password: str,
     ):
@@ -645,7 +649,8 @@ class TestSecretMaskingIntegration:
             password: str
             host: str
 
-        configure(masking={"masking_mode": masking_mode})
+        monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", masking_mode)
+        default_config.cache_clear()
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True)
 
         report = load_report(result)
@@ -665,6 +670,7 @@ class TestSecretMaskingIntegration:
     def test_function_mode_error_respects_global_masking_mode(
         self,
         tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
         masking_mode: str,
         expected_password: str,
     ):
@@ -676,7 +682,8 @@ class TestSecretMaskingIntegration:
             password: str
             port: int
 
-        configure(masking={"masking_mode": masking_mode})
+        monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", masking_mode)
+        default_config.cache_clear()
 
         with pytest.raises(DatureConfigError) as exc_info:
             load(JsonSource(file=json_file), schema=Cfg)
@@ -811,7 +818,7 @@ class TestNameStyleMaskingIntegration:
 
 @pytest.mark.usefixtures("_reset_config")
 class TestLoadLevelMaskingParams:
-    def test_load_level_masking_mode(self, tmp_path: Path):
+    def test_load_level_masking_mode(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         json_file = tmp_path / "config.json"
         json_file.write_text(f'{{"password": "{_SECRET_VALUE}", "host": "{_PUBLIC_VALUE}"}}')
 
@@ -820,7 +827,8 @@ class TestLoadLevelMaskingParams:
             password: str
             host: str
 
-        configure(masking={"masking_mode": "none"})
+        monkeypatch.setenv("DATURE_MASKING__MASKING_MODE", "none")
+        default_config.cache_clear()
         result = load(JsonSource(file=json_file), schema=Cfg, debug=True, masking_mode="secrets_only")
 
         report = load_report(result)
@@ -854,9 +862,9 @@ class TestMaskingConfigLeaksRegression:
 
     Both bugs only surfaced because a real ``masking`` was silently dropped in favour of the
     process-global config while a bare ``masking_mode`` string kept flowing. They must be
-    reproduced via ``Dature(masking={...})`` rather than ``configure()`` — ``configure()``
-    sets the process-global default, which the buggy code paths read from anyway, so it
-    would pass even with the bug present.
+    reproduced via ``Dature(masking={...})`` rather than the process-global default (set via
+    ``DATURE_MASKING__*``) — the buggy code paths read from the process-global default anyway,
+    so it would pass even with the bug present.
     """
 
     def test_multi_source_debug_log_uses_call_level_masking(self, tmp_path: Path, caplog: pytest.LogCaptureFixture):

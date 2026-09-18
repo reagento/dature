@@ -11,7 +11,7 @@ Core concepts for everyday dature usage. Start here after the Getting Started gu
 | [Validation](validation.md) | `Annotated` validators, root validators, custom validators, `__post_init__` |
 | [Merging](merging.md) | Load from multiple sources and combine them with a merge strategy |
 | [Masking](masking.md) | Automatic secret detection and masking in logs and reports |
-| [Configure](configure.md) | Global defaults via `dature.configure()` |
+| [Configure](configure.md) | Global defaults via `dature.Dature(...)` and `DATURE_*` env vars |
 | [CLI](cli.md) | The `dature inspect` / `dature validate` command-line tool |
 
 ## Recommended reading order

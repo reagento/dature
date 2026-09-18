@@ -7,6 +7,7 @@ import pytest
 
 import dature
 from dature import JsonSource
+from dature.config import default_config
 from dature.errors import DatureConfigError, FieldLoadError
 from dature.sources.base import FileFieldMixin
 from dature.sources.yaml_ import Yaml12Source
@@ -123,7 +124,7 @@ class TestFileSourceSearch:
 
     @pytest.fixture(autouse=True)
     def _reset_config(self):
-        dature.configure(loading={})
+        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -154,7 +155,8 @@ class TestFileSourceSearch:
         (system_dir / "config.yaml").write_text("host: system\nport: 9000")
         (tmp_path / "config.yaml").write_text("host: cwd\nport: 1000")
 
-        dature.configure(loading={"config_dirs": ()})
+        monkeypatch.setenv("DATURE_LOADING__CONFIG_DIRS", "")
+        default_config.cache_clear()
 
         result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
 
@@ -226,7 +228,8 @@ class TestFileSourceSearch:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        dature.configure(loading={"config_dirs": ()})
+        monkeypatch.setenv("DATURE_LOADING__CONFIG_DIRS", "")
+        default_config.cache_clear()
 
         system_dir = tmp_path / "system"
         system_dir.mkdir()
@@ -276,11 +279,10 @@ class TestFileSourceSearch:
         system_dir.mkdir()
         (system_dir / "config.yaml").write_text("host: mapped\nport: 8000")
 
-        dature.configure(
-            loading={"config_dirs": {sys.platform: (system_dir,)}},
-        )
-
-        result = dature.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
+        # Platform-keyed mappings can't be expressed via a single env var — use an
+        # explicit Dature instance instead.
+        conf = dature.Dature(loading={"config_dirs": {sys.platform: (system_dir,)}})
+        result = conf.load(Yaml12Source(file="config.yaml"), schema=self._Cfg)
 
         assert result.host == "mapped"
         assert result.port == 8000
@@ -291,7 +293,7 @@ class TestConfigDirsDeprecations:
 
     @pytest.fixture(autouse=True)
     def _reset_config(self):
-        dature.configure(loading={})
+        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -409,7 +411,7 @@ class TestConfigDirsCascade:
 
     @pytest.fixture(autouse=True)
     def _reset_config(self):
-        dature.configure(loading={})
+        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -461,7 +463,7 @@ class TestConfigDirsCascade:
 class TestFileSourceEncoding:
     @pytest.fixture(autouse=True)
     def _reset_config(self):
-        dature.configure(loading={})
+        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -487,15 +489,17 @@ class TestFileSourceEncoding:
         with pytest.raises((DatureConfigError, UnicodeDecodeError)):
             dature.load(JsonSource(file=tmp_path / "config.json", encoding="utf-8"), schema=self._Cfg)
 
-    def test_global_config_encoding_applied(self, tmp_path: Path) -> None:
+    def test_global_config_encoding_applied(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         (tmp_path / "config.json").write_bytes('{"name": "Привет"}'.encode("cp1251"))
-        dature.configure(loading={"encoding": "cp1251"})
+        monkeypatch.setenv("DATURE_LOADING__ENCODING", "cp1251")
+        default_config.cache_clear()
         result = dature.load(JsonSource(file=tmp_path / "config.json"), schema=self._Cfg)
         assert result.name == "Привет"
 
-    def test_source_level_encoding_wins_over_global(self, tmp_path: Path) -> None:
+    def test_source_level_encoding_wins_over_global(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         (tmp_path / "config.json").write_bytes('{"name": "Привет"}'.encode("cp1251"))
-        dature.configure(loading={"encoding": "utf-8"})
+        monkeypatch.setenv("DATURE_LOADING__ENCODING", "utf-8")
+        default_config.cache_clear()
         result = dature.load(
             JsonSource(file=tmp_path / "config.json", encoding="cp1251"),
             schema=self._Cfg,

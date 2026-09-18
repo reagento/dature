@@ -14,8 +14,9 @@ import kazoo.client
 import kazoo.exceptions
 import pytest
 
-from dature import ZookeeperSource, configure, load
+from dature import ZookeeperSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
@@ -177,17 +178,17 @@ class TestZookeeperSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestZookeeperSourceConfigFallback:
     def test_hosts_from_configure(self):
-        configure(zookeeper={"hosts": "from-configure:2181", "user": "u", "password": "pw"})
+        cfg = Dature(zookeeper={"hosts": "from-configure:2181", "user": "u", "password": "pw"}).config
 
-        merged = apply_source_config_group(ZookeeperSource(path="p"))
+        merged = apply_source_config_group(ZookeeperSource(path="p"), cfg=cfg)
 
         assert merged.hosts == "from-configure:2181"
         assert merged.user == "u"
         assert merged.password == "pw"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_ZOOKEEPER__HOSTS", "localhost:2181")
         monkeypatch.setenv("DATURE_ZOOKEEPER__USER", "root")
@@ -200,9 +201,9 @@ class TestZookeeperSourceConfigFallback:
         assert merged.password == "root-pw"
 
     def test_instance_overrides_global(self):
-        configure(zookeeper={"hosts": "global:2181", "user": "global-user", "password": "global-pw"})
+        cfg = Dature(zookeeper={"hosts": "global:2181", "user": "global-user", "password": "global-pw"}).config
 
-        merged = apply_source_config_group(ZookeeperSource(path="p", hosts="instance:2181"))
+        merged = apply_source_config_group(ZookeeperSource(path="p", hosts="instance:2181"), cfg=cfg)
 
         assert merged.hosts == "instance:2181"
         assert merged.user == "global-user"
@@ -216,9 +217,9 @@ class TestZookeeperSourceConfigFallback:
         ],
     )
     def test_list_hosts_fallback(self, hosts, expected):
-        configure(zookeeper={"hosts": "global:2181"})
+        cfg = Dature(zookeeper={"hosts": "global:2181"}).config
 
-        merged = apply_source_config_group(ZookeeperSource(path="p", hosts=hosts))
+        merged = apply_source_config_group(ZookeeperSource(path="p", hosts=hosts), cfg=cfg)
 
         assert merged.hosts == expected
 
@@ -234,9 +235,9 @@ class TestZookeeperSourceConfigFallback:
         config_kwargs = {"hosts": "zk1:2181"}
         if global_value is not None:
             config_kwargs["timeout"] = global_value
-        configure(zookeeper=config_kwargs)
+        cfg = Dature(zookeeper=config_kwargs).config
 
-        merged = apply_source_config_group(ZookeeperSource(path="p", timeout=instance_value))
+        merged = apply_source_config_group(ZookeeperSource(path="p", timeout=instance_value), cfg=cfg)
 
         assert merged.timeout == expected
 

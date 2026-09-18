@@ -18,7 +18,7 @@ class AwsSsmSource(RemoteSource):
     region_name: Annotated[
         str,
         (V.len() >= 1).with_error_message(
-            "region_name is required (set on instance or via configure(ssm={...}) / DATURE_SSM__REGION_NAME)"
+            "region_name is required (set on instance or via Dature(ssm={...}) / DATURE_SSM__REGION_NAME)"
         ),
     ] = ""
     profile_name: str | None = None

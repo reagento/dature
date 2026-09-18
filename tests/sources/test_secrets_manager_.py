@@ -10,8 +10,9 @@ import boto3
 import pytest
 from botocore.exceptions import ClientError
 
-from dature import AwsSecretsManagerSource, configure, load
+from dature import AwsSecretsManagerSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
@@ -88,15 +89,15 @@ class TestAwsSecretsManagerSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestAwsSecretsManagerSourceConfigFallback:
     def test_region_from_configure(self):
-        configure(secrets_manager={"region_name": "eu-west-1"})
+        cfg = Dature(secrets_manager={"region_name": "eu-west-1"}).config
 
-        merged = apply_source_config_group(AwsSecretsManagerSource(name="s"))
+        merged = apply_source_config_group(AwsSecretsManagerSource(name="s"), cfg=cfg)
 
         assert merged.region_name == "eu-west-1"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_SECRETS_MANAGER__REGION_NAME", "eu-west-1")
         monkeypatch.setenv("DATURE_SECRETS_MANAGER__PROFILE_NAME", "dev")
@@ -107,9 +108,9 @@ class TestAwsSecretsManagerSourceConfigFallback:
         assert merged.profile_name == "dev"
 
     def test_instance_overrides_global(self):
-        configure(secrets_manager={"region_name": "global-region"})
+        cfg = Dature(secrets_manager={"region_name": "global-region"}).config
 
-        merged = apply_source_config_group(AwsSecretsManagerSource(name="s", region_name="instance-region"))
+        merged = apply_source_config_group(AwsSecretsManagerSource(name="s", region_name="instance-region"), cfg=cfg)
 
         assert merged.region_name == "instance-region"
 

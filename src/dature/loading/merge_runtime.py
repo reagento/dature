@@ -31,7 +31,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, fields
 from typing import Protocol, runtime_checkable
 
-from dature.config import BOOTSTRAP_CONFIG, DatureConfig, LoadingConfig, resolve_config
+from dature.config import BOOTSTRAP_CONFIG, DatureConfig, LoadingConfig, default_config
 from dature.errors import DatureConfigError, DatureError, SourceLoadError, SourceLocation
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import SkippedFieldSource, SourceContext
@@ -102,7 +102,7 @@ def apply_source_init_params[T: SourceProtocol](
     load-level value, or falls back to *loading*.<same_name> if available.
     *loading* defaults to the process-wide config.loading when omitted.
     """
-    effective_loading = loading if loading is not None else resolve_config().loading
+    effective_loading = loading if loading is not None else default_config().loading
     source_field_names = {f.name for f in fields(source) if f.init}
     overrides: dict[str, object] = {}
 
@@ -153,7 +153,7 @@ def apply_source_config_group[T: SourceProtocol](source: T, cfg: DatureConfig | 
     ``LoadCtx.load`` after cross-ref interpolation has been applied so that
     string fields contain real values before invariants are checked.
     """
-    effective_cfg = cfg if cfg is not None else resolve_config()
+    effective_cfg = cfg if cfg is not None else default_config()
     group_name: str | None = source.config_group
     cfg_group = getattr(effective_cfg, group_name, None) if group_name is not None else None
 
@@ -227,9 +227,9 @@ def resolve_type_loaders(
 ) -> TypeLoaderMap | None:
     """Merge load-level and source-level type loaders.
 
-    Instance-level type loaders (from ``configure()`` / ``Dature``) are pre-merged into
-    *load_type_loaders* at the ``Loader.__init__`` boundary, so they do not need to be
-    read from the global here.  Priority: instance < load-level < source.
+    Instance-level type loaders (from ``Dature``) are pre-merged into *load_type_loaders*
+    at the ``Loader.__init__`` boundary, so they do not need to be read from the
+    instance here.  Priority: instance < load-level < source.
     """
     merged = {**(load_type_loaders or {}), **(source.type_loaders or {})}
     return merged or None

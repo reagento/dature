@@ -15,8 +15,9 @@ import pytest
 from etcd3gw.client import Etcd3Client
 from testcontainers.core.container import DockerContainer
 
-from dature import EtcdSource, configure, load
+from dature import EtcdSource, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.sources.etcd.helpers import (
@@ -260,18 +261,18 @@ class TestEtcdSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="settings_from_configure"),
+            pytest.param("dature_instance", id="settings_from_dature_instance"),
             pytest.param("env", id="settings_from_env"),
         ],
     )
     def test_load_with_settings(self, via, etcd_address_no_auth, monkeypatch):
         etcd_host, etcd_port = etcd_address_no_auth
-        if via == "configure":
-            configure(etcd={"host": etcd_host, "port": etcd_port})
+        if via == "dature_instance":
+            app = Dature(etcd={"host": etcd_host, "port": etcd_port})
+            result = app.load(EtcdSource(path=KV_PREFIX), schema=_Config)
         else:
             monkeypatch.setenv("DATURE_ETCD__HOST", etcd_host)
             monkeypatch.setenv("DATURE_ETCD__PORT", str(etcd_port))
-
-        result = load(EtcdSource(path=KV_PREFIX), schema=_Config)
+            result = load(EtcdSource(path=KV_PREFIX), schema=_Config)
 
         assert result == EXPECTED_DATACLASS

@@ -34,15 +34,15 @@ By default (`name="*"`) `GcpSecretManagerSource` lists **every** secret in the p
 
 With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `--` nesting instead of `__`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON) when combined with `name` set — reading a single secret whose value is an entire JSON document. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(gcp_secret_manager={...})` (or the matching `DATURE_GCP_SECRET_MANAGER__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(gcp_secret_manager={...})` (or the matching `DATURE_GCP_SECRET_MANAGER__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/gcp_secret_manager/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_GCP_SECRET_MANAGER__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(gcp_secret_manager={...})` → `DATURE_GCP_SECRET_MANAGER__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "List mode has a server-side filter"
     Unlike `AzureKeyVaultSource`, Secret Manager supports server-side filtering — `name_prefix` and `labels` are translated into Secret Manager's `filter` query, so list mode (`name="*"`) only enumerates matching secrets instead of every secret in the project. Fetching each matched secret's value is still one round trip per secret (N+1).

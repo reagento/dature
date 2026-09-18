@@ -57,7 +57,7 @@ class AzureAppConfigSource(RemoteSource):
         V.root(
             lambda s: (s.endpoint is None) != (s.connection_string is None),
             error_message="exactly one of endpoint or connection_string must be set "
-            "(set endpoint on instance or via configure(azure_app_config={...}) / "
+            "(set endpoint on instance or via Dature(azure_app_config={...}) / "
             "DATURE_AZURE_APP_CONFIG__ENDPOINT)",
         ),
         V.root(

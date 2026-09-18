@@ -1,8 +1,8 @@
 """``Dature`` — the explicit, immutable config instance.
 
-Use ``Dature(...)`` instead of ``configure()`` to override env-derived defaults.
-Each instance is independent: creating a new one with different parameters does
-not affect other instances or the process-wide defaults.
+Use ``Dature(...)`` to override env-derived defaults. Each instance is independent:
+creating a new one with different parameters does not affect other instances or the
+process-wide defaults.
 
 Configuration binds at **construction time** (or, in decorator mode, at
 **decoration / import time**).  This means:
@@ -13,18 +13,6 @@ Configuration binds at **construction time** (or, in decorator mode, at
   imports the decorated class — not lazily on each ``Settings()`` call.  If you
   need config to be determined at call time, use ``conf.load(..., schema=...)``
   in function mode instead.
-
-Migration from ``configure()``:
-
-.. code-block:: python
-
-   # Before:
-   dature.configure(vault={"host": "vault.internal"})
-   result = dature.load(VaultSource(path="secrets"), schema=Settings)
-
-   # After:
-   conf = dature.Dature(vault={"host": "vault.internal"})
-   result = conf.load(VaultSource(path="secrets"), schema=Settings)
 """
 
 # keep in sync with main.load overloads and Loader.as_decorator signature

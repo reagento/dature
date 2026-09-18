@@ -18,7 +18,7 @@ class GcpSecretManagerSource(RemoteSource):
         str,
         (V.len() >= 1).with_error_message(
             "project_id is required (set on instance or via "
-            "configure(gcp_secret_manager={...}) / DATURE_GCP_SECRET_MANAGER__PROJECT_ID)"
+            "Dature(gcp_secret_manager={...}) / DATURE_GCP_SECRET_MANAGER__PROJECT_ID)"
         ),
     ] = ""
 

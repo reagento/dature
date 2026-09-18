@@ -13,8 +13,9 @@ import pytest
 from google.api_core.exceptions import NotFound, PermissionDenied, ServiceUnavailable, Unauthenticated
 from google.auth.exceptions import DefaultCredentialsError
 
-from dature import GcpSecretManagerSource, configure, load
+from dature import GcpSecretManagerSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import remote_value_loaders, string_value_loaders
@@ -149,15 +150,15 @@ class TestGcpSecretManagerSourceValidation:
             validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestGcpSecretManagerSourceConfigFallback:
     def test_project_id_from_configure(self):
-        configure(gcp_secret_manager={"project_id": "from-configure"})
+        cfg = Dature(gcp_secret_manager={"project_id": "from-configure"}).config
 
-        merged = apply_source_config_group(GcpSecretManagerSource())
+        merged = apply_source_config_group(GcpSecretManagerSource(), cfg=cfg)
 
         assert merged.project_id == "from-configure"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_project_id_from_env_var(self, monkeypatch):
         monkeypatch.setenv("DATURE_GCP_SECRET_MANAGER__PROJECT_ID", "from-env")
 
@@ -166,9 +167,9 @@ class TestGcpSecretManagerSourceConfigFallback:
         assert merged.project_id == "from-env"
 
     def test_instance_overrides_global(self):
-        configure(gcp_secret_manager={"project_id": "global-proj"})
+        cfg = Dature(gcp_secret_manager={"project_id": "global-proj"}).config
 
-        merged = apply_source_config_group(GcpSecretManagerSource(project_id="instance-proj"))
+        merged = apply_source_config_group(GcpSecretManagerSource(project_id="instance-proj"), cfg=cfg)
 
         assert merged.project_id == "instance-proj"
 

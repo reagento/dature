@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-import dature
 from dature import Absolute, EnvFileSource, EnvSource, load
+from dature.config import default_config
 from dature.errors import DatureConfigError
 from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
@@ -497,7 +497,7 @@ class TestEnvFileSourceSearch:
 
     @pytest.fixture(autouse=True)
     def _reset_config(self):
-        dature.configure(loading={})
+        default_config.cache_clear()
 
     @dataclass
     class _Cfg:

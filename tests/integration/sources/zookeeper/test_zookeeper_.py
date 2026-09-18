@@ -16,8 +16,9 @@ from kazoo.client import KazooClient
 from kazoo.security import make_digest_acl
 from testcontainers.core.container import DockerContainer
 
-from dature import ZookeeperSource, configure, load
+from dature import ZookeeperSource, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.sources.zookeeper.helpers import (
@@ -284,17 +285,17 @@ class TestZookeeperSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="settings_from_configure"),
+            pytest.param("dature_instance", id="settings_from_dature_instance"),
             pytest.param("env", id="settings_from_env"),
         ],
     )
     def test_load_with_settings(self, via, zk_address_no_auth, monkeypatch):
         zk_host, zk_port = zk_address_no_auth
-        if via == "configure":
-            configure(zookeeper={"hosts": f"{zk_host}:{zk_port}"})
+        if via == "dature_instance":
+            app = Dature(zookeeper={"hosts": f"{zk_host}:{zk_port}"})
+            result = app.load(ZookeeperSource(path=KV_PREFIX), schema=_Config)
         else:
             monkeypatch.setenv("DATURE_ZOOKEEPER__HOSTS", f"{zk_host}:{zk_port}")
-
-        result = load(ZookeeperSource(path=KV_PREFIX), schema=_Config)
+            result = load(ZookeeperSource(path=KV_PREFIX), schema=_Config)
 
         assert result == EXPECTED_DATACLASS

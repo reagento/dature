@@ -7,8 +7,9 @@ from typing import Literal
 
 import pytest
 
-from dature import F, JsonSource, When, Yaml12Source, configure, load
+from dature import F, JsonSource, When, Yaml12Source, load
 from dature.errors.exceptions import DatureError
+from dature.instance import Dature
 from dature.loading.merge_runtime import (
     MergeConfig,
     SourceParams,
@@ -100,12 +101,11 @@ class _FakeListField(Source):
         return {}
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestApplySourceConfigGroup:
     def test_noop_when_config_group_is_none(self):
-        configure(vault={"host": "x"})
+        cfg = Dature(vault={"host": "x"}).config
         src = _FakeRemote(host=None, config_group=None)
-        assert apply_source_config_group(src) is src
+        assert apply_source_config_group(src, cfg=cfg) is src
 
     def test_returns_same_instance_when_no_overrides(self):
         # Every overlapping field is set on the source, so the (non-None) VaultConfig defaults
@@ -117,8 +117,8 @@ class TestApplySourceConfigGroup:
     def test_unrelated_config_field_ignored(self):
         # `mount_point` exists on VaultConfig but not on _FakeRemote — must not crash
         # nor add the attribute to the merged source
-        configure(vault={"mount_point": "kv", "host": "x"})
-        merged = apply_source_config_group(_FakeRemote())
+        cfg = Dature(vault={"mount_point": "kv", "host": "x"}).config
+        merged = apply_source_config_group(_FakeRemote(), cfg=cfg)
         assert merged.host == "x"
         assert not hasattr(merged, "mount_point")
 
@@ -146,24 +146,23 @@ class TestApplySourceConfigGroup:
         ],
     )
     def test_field_resolution(self, instance_kwargs, config_kwargs, field, expected):
-        configure(vault=config_kwargs)
-        merged = apply_source_config_group(_FakeRemote(**instance_kwargs))
+        cfg = Dature(vault=config_kwargs).config
+        merged = apply_source_config_group(_FakeRemote(**instance_kwargs), cfg=cfg)
         assert getattr(merged, field) == expected
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestApplySourceConfigGroupEmptyList:
     """``str | list[str]`` fields (e.g. ``ZookeeperSource.hosts``) default to ``""``, but a
     caller can also pass an explicit empty list — both must fall through to the config group."""
 
     def test_empty_list_falls_through_to_config(self):
-        configure(zookeeper={"hosts": "from-config:2181"})
-        merged = apply_source_config_group(_FakeListField(hosts=[]))
+        cfg = Dature(zookeeper={"hosts": "from-config:2181"}).config
+        merged = apply_source_config_group(_FakeListField(hosts=[]), cfg=cfg)
         assert merged.hosts == "from-config:2181"
 
     def test_non_empty_list_instance_wins(self):
-        configure(zookeeper={"hosts": "from-config:2181"})
-        merged = apply_source_config_group(_FakeListField(hosts=["instance:2181"]))
+        cfg = Dature(zookeeper={"hosts": "from-config:2181"}).config
+        merged = apply_source_config_group(_FakeListField(hosts=["instance:2181"]), cfg=cfg)
         assert merged.hosts == ["instance:2181"]
 
 

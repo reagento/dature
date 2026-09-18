@@ -115,7 +115,7 @@ variant of the field name.
 `secret_field_names` passed to `dature.load()` extends by-name detection for **schema fields**
 only. To also mask non-schema raw keys (e.g. entries inside a `dict[str, str]` field) that match a
 custom pattern under `masking_mode="secrets_only"`, set the pattern globally instead:
-`dature.configure(masking={"secret_field_names": (...)})`.
+`dature.Dature(masking={"secret_field_names": (...)})`.
 
 ## Examples
 

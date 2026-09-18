@@ -8,7 +8,7 @@ from typing import cast
 
 import pytest
 
-from dature import Dature, EnvFileSource, EnvSource, F, JsonSource, Loader, configure, load
+from dature import Dature, EnvFileSource, EnvSource, F, JsonSource, Loader, load
 from dature.errors import StrictModeError
 from dature.errors.exceptions import UnknownKeyError
 from dature.loading.strict.known_keys import known_key_tree
@@ -25,10 +25,10 @@ class _RecursiveNode:
 
 
 @pytest.fixture(autouse=True)
-def _no_masking(_reset_config: None) -> None:
+def _no_masking(_no_global_masking: None) -> None:
     # Strict-mode assertions compare literal error text against the file/key content;
     # the default masking mode would redact anything that looks secret-shaped.
-    configure(masking={"masking_mode": "none"})
+    pass
 
 
 def _write_json(tmp_path: Path, content: str) -> Path:

@@ -33,18 +33,18 @@ By default `ConsulSource` reads recursively (`recursive=True`) and splits keys o
 
 With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `/` nesting instead of `__`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON). `decode="raw"` yields raw `bytes` and sits outside the type-coercion matrix. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(consul={...})` (or the matching `DATURE_CONSUL__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(consul={...})` (or the matching `DATURE_CONSUL__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/consul/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_CONSUL__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(consul={...})` → `DATURE_CONSUL__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "py-consul and CONSUL_HTTP_ADDR"
-    `py-consul` falls back to the `CONSUL_HTTP_ADDR` environment variable only when both `host` and `port` are `None` (i.e. not set at the `Consul()` constructor level). With `ConsulSource`, `host` and `port` always flow through from `ConsulConfig` defaults (`"localhost"`, `8500`) — so `CONSUL_HTTP_ADDR` is never consulted. Use `configure(consul={"host": ..., "port": ...})` or `DATURE_CONSUL__HOST` / `DATURE_CONSUL__PORT` instead.
+    `py-consul` falls back to the `CONSUL_HTTP_ADDR` environment variable only when both `host` and `port` are `None` (i.e. not set at the `Consul()` constructor level). With `ConsulSource`, `host` and `port` always flow through from `ConsulConfig` defaults (`"localhost"`, `8500`) — so `CONSUL_HTTP_ADDR` is never consulted. Use `dature.Dature(consul={"host": ..., "port": ...})` or `DATURE_CONSUL__HOST` / `DATURE_CONSUL__PORT` instead.
 
 ## Combining with other sources
 
