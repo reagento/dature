@@ -115,32 +115,37 @@ class AzureAppConfigSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _fetch(self) -> JSONValue:
-        require_dep("azure.appconfiguration", "azure-appconfig")
+    def _create_client(self) -> "Any":  # noqa: ANN401
         from azure.appconfiguration import AzureAppConfigurationClient  # noqa: PLC0415
         from azure.core.credentials import TokenCredential  # noqa: PLC0415
+
+        options = dict(self.client_options) if self.client_options else {}
+        if self.connection_string is not None:
+            return AzureAppConfigurationClient.from_connection_string(self.connection_string, **options)
+        return AzureAppConfigurationClient(
+            base_url=cast("str", self.endpoint),
+            credential=cast("TokenCredential", self._build_credential()),
+            **options,
+        )
+
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("azure.appconfiguration", "azure-appconfig")
         from azure.core.exceptions import (  # noqa: PLC0415
             ClientAuthenticationError,
             HttpResponseError,
             ResourceNotFoundError,
         )
 
-        options = dict(self.client_options) if self.client_options else {}
-        if self.connection_string is not None:
-            client = AzureAppConfigurationClient.from_connection_string(self.connection_string, **options)
-        else:
-            client = AzureAppConfigurationClient(
-                base_url=cast("str", self.endpoint),
-                credential=cast("TokenCredential", self._build_credential()),
-                **options,
-            )
-
         try:
-            settings = list(
-                client.list_configuration_settings(
-                    key_filter=self.key_filter, label_filter=self.label_filter, **self.request_options
+            with self.get_client() as client:
+                settings = list(
+                    client.list_configuration_settings(
+                        key_filter=self.key_filter, label_filter=self.label_filter, **self.request_options
+                    )
                 )
-            )
         except ResourceNotFoundError:
             msg = f"Azure App Configuration key(s) not found: {self.remote_address()}"
             raise KeyError(msg) from None

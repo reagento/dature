@@ -2,9 +2,10 @@
 
 import abc
 import json
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Final
+from typing import Any, Final
 
 from adaptix.provider import Provider
 
@@ -57,6 +58,34 @@ class RemoteSource(Source, abc.ABC):
         prefixed = self._apply_prefix(data)
         expanded = expand_env_vars(prefixed, mode=resolved_expand)
         return self._parse_string_values(expanded) if self._decodes_to_strings() else expanded
+
+    @contextmanager
+    def get_client(self) -> "Iterator[Any]":
+        """Build a client via :meth:`_create_client`, yield it, and always release it afterwards.
+
+        Each remote source only has to say how to build (and authenticate) its client via
+        :meth:`_create_client` and, if needed, override :meth:`_close_client` to say how to
+        release it — the same client stays alive for the whole ``_fetch()`` call and is never
+        leaked, including when ``_fetch()`` raises.
+        """
+        client = self._create_client()
+        try:
+            yield client
+        finally:
+            self._close_client(client)
+
+    def _create_client(self) -> "Any":  # noqa: ANN401
+        """Build the client to be yielded by :meth:`get_client`.
+
+        Subclasses using :meth:`get_client` must override this.
+        """
+        raise NotImplementedError
+
+    def _close_client(self, client: object) -> None:
+        """Release a client built by :meth:`_create_client`.
+
+        No-op by default; subclasses whose client needs explicit teardown override this.
+        """
 
     def __repr__(self) -> str:
         return f"{self.format_name} '{self.remote_address()}'"

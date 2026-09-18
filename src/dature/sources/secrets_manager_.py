@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Annotated, ClassVar, cast
+from typing import Annotated, Any, ClassVar, cast
 
 from dature._deps import require_dep
 from dature.sources.base import RemoteSource
@@ -45,10 +45,8 @@ class AwsSecretsManagerSource(RemoteSource):
         host = self.endpoint_url or self.region_name
         return f"secretsmanager://{host}/{self.name}"
 
-    def _fetch(self) -> JSONValue:
-        require_dep("boto3", "aws")
+    def _create_client(self) -> "Any":  # noqa: ANN401
         import boto3  # noqa: PLC0415
-        from botocore.exceptions import ClientError  # noqa: PLC0415
 
         session = boto3.Session(
             profile_name=self.profile_name,
@@ -56,7 +54,14 @@ class AwsSecretsManagerSource(RemoteSource):
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
         )
-        client = session.client("secretsmanager", region_name=self.region_name, endpoint_url=self.endpoint_url)
+        return session.client("secretsmanager", region_name=self.region_name, endpoint_url=self.endpoint_url)
+
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("boto3", "aws")
+        from botocore.exceptions import ClientError  # noqa: PLC0415
 
         kwargs = {"SecretId": self.name}
         if self.version_id is not None:
@@ -65,7 +70,8 @@ class AwsSecretsManagerSource(RemoteSource):
             kwargs["VersionStage"] = self.version_stage
 
         try:
-            resp = client.get_secret_value(**kwargs)
+            with self.get_client() as client:
+                resp = client.get_secret_value(**kwargs)
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code", "")
             if code == "ResourceNotFoundException":

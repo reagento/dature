@@ -143,6 +143,10 @@ class FakeSecretClient:
         self._get_error = get_error
         self.init_kwargs: dict[str, object] = {}
         self.get_secret_calls: list[tuple[str, str | None]] = []
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
 
     def list_properties_of_secrets(self) -> "list[FakeSecretProps]":
         if self._list_error is not None:
@@ -194,6 +198,23 @@ class TestAzureKeyVaultSourceFetch:
         src.load_raw()
 
         assert client.get_secret_calls == [("app-config", "abc123")]
+
+    def test_client_closed_after_fetch(self, monkeypatch):
+        client = FakeSecretClient(values={"app-config": "v"})
+        src = self._make_source(monkeypatch, client, name="app-config")
+
+        src.load_raw()
+
+        assert client.closed is True
+
+    def test_client_closed_even_on_error(self, monkeypatch):
+        client = FakeSecretClient(props=[])
+        src = self._make_source(monkeypatch, client)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert client.closed is True
 
     def test_list_mode_nests_on_separator(self, monkeypatch):
         client = FakeSecretClient(

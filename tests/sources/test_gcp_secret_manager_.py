@@ -189,6 +189,14 @@ class FakeAccessResponse:
         self.payload = payload
 
 
+class FakeTransport:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class FakeSecretManagerClient:
     def __init__(
         self,
@@ -205,6 +213,7 @@ class FakeSecretManagerClient:
         self.init_kwargs: dict[str, object] = {}
         self.get_secret_calls: list[tuple[str, str]] = []
         self.list_requests: list[dict[str, object]] = []
+        self.transport = FakeTransport()
 
     def list_secrets(self, request: dict[str, object]) -> "list[FakeSecret]":
         self.list_requests.append(request)
@@ -260,6 +269,23 @@ class TestGcpSecretManagerSourceFetch:
         src.load_raw()
 
         assert client.get_secret_calls == [("app-config", "3")]
+
+    def test_client_transport_closed_after_fetch(self, monkeypatch):
+        client = FakeSecretManagerClient(values={"app-config": "v"})
+        src = self._make_source(monkeypatch, client, name="app-config")
+
+        src.load_raw()
+
+        assert client.transport.closed is True
+
+    def test_client_transport_closed_even_on_error(self, monkeypatch):
+        client = FakeSecretManagerClient(secret_ids=[])
+        src = self._make_source(monkeypatch, client)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert client.transport.closed is True
 
     def test_list_mode_nests_on_separator(self, monkeypatch):
         client = FakeSecretManagerClient(

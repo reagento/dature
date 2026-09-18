@@ -173,6 +173,10 @@ class FakeSsmClient:
         self._error = error
         self.get_parameter_kwargs: dict[str, object] | None = None
         self.paginator: FakePaginator | None = None
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
 
     def get_paginator(self, name: str) -> FakePaginator:
         assert name == "get_parameters_by_path"
@@ -224,6 +228,23 @@ class TestAwsSsmSourceFetch:
             "db": {"host": "localhost", "port": "5432"},
             "name": "svc",
         }
+
+    def test_client_closed_after_fetch(self, monkeypatch):
+        client = FakeSsmClient(pages=[{"Parameters": [{"Name": "/myapp/name", "Value": "svc", "Type": "String"}]}])
+        src = self._make_source(monkeypatch, client)
+
+        src.load_raw()
+
+        assert client.closed is True
+
+    def test_client_closed_even_on_error(self, monkeypatch):
+        client = FakeSsmClient(pages=[{"Parameters": []}])
+        src = self._make_source(monkeypatch, client)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert client.closed is True
 
     def test_recursive_paginates_across_pages(self, monkeypatch):
         pages = [

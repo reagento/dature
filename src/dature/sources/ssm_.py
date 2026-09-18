@@ -83,10 +83,8 @@ class AwsSsmSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _fetch(self) -> JSONValue:
-        require_dep("boto3", "aws")
+    def _create_client(self) -> "Any":  # noqa: ANN401
         import boto3  # noqa: PLC0415
-        from botocore.exceptions import ClientError  # noqa: PLC0415
 
         session = boto3.Session(
             profile_name=self.profile_name,
@@ -94,32 +92,40 @@ class AwsSsmSource(RemoteSource):
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
         )
-        client = session.client("ssm", region_name=self.region_name, endpoint_url=self.endpoint_url)
+        return session.client("ssm", region_name=self.region_name, endpoint_url=self.endpoint_url)
+
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("boto3", "aws")
+        from botocore.exceptions import ClientError  # noqa: PLC0415
 
         auth_failure_codes = {"AccessDeniedException", "UnrecognizedClientException", "InvalidSignatureException"}
 
         try:
-            if self.recursive:
-                paginator = client.get_paginator("get_parameters_by_path")
-                params: list[dict[str, Any]] = []
-                for page in paginator.paginate(Path=self.path, Recursive=True, WithDecryption=self.decrypt):
-                    params.extend(cast("list[dict[str, Any]]", page["Parameters"]))
-                found = bool(params)
-                result: JSONValue = (
-                    self._nest_flat_keys(
-                        params,
-                        key_fn=lambda p: cast("str", p["Name"]),
-                        value_fn=self._decode_value,
-                        prefix=self.path,
-                        separator=self.separator,
+            with self.get_client() as client:
+                if self.recursive:
+                    paginator = client.get_paginator("get_parameters_by_path")
+                    params: list[dict[str, Any]] = []
+                    for page in paginator.paginate(Path=self.path, Recursive=True, WithDecryption=self.decrypt):
+                        params.extend(cast("list[dict[str, Any]]", page["Parameters"]))
+                    found = bool(params)
+                    result: JSONValue = (
+                        self._nest_flat_keys(
+                            params,
+                            key_fn=lambda p: cast("str", p["Name"]),
+                            value_fn=self._decode_value,
+                            prefix=self.path,
+                            separator=self.separator,
+                        )
+                        if found
+                        else {}
                     )
-                    if found
-                    else {}
-                )
-            else:
-                resp = client.get_parameter(Name=self.path, WithDecryption=self.decrypt)
-                found = True
-                result = self._build_single(cast("dict[str, Any]", resp["Parameter"]))
+                else:
+                    resp = client.get_parameter(Name=self.path, WithDecryption=self.decrypt)
+                    found = True
+                    result = self._build_single(cast("dict[str, Any]", resp["Parameter"]))
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code", "")
             if code == "ParameterNotFound":

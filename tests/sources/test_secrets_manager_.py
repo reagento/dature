@@ -129,6 +129,10 @@ class FakeSecretsManagerClient:
         self._secret_binary = secret_binary
         self._error = error
         self.get_secret_value_kwargs: dict[str, object] | None = None
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
 
     def get_secret_value(self, **kwargs: object) -> dict[str, object]:
         self.get_secret_value_kwargs = kwargs
@@ -177,6 +181,24 @@ class TestAwsSecretsManagerSourceFetch:
         result = src.load_raw()
 
         assert result.loaded_data == {"host": "localhost"}
+
+    def test_client_closed_after_fetch(self, monkeypatch):
+        client = FakeSecretsManagerClient(secret_string="{}")
+        src = self._make_source(monkeypatch, client)
+
+        src.load_raw()
+
+        assert client.closed is True
+
+    def test_client_closed_even_on_error(self, monkeypatch):
+        error = ClientError({"Error": {"Code": "ResourceNotFoundException"}}, "GetSecretValue")
+        client = FakeSecretsManagerClient(error=error)
+        src = self._make_source(monkeypatch, client)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert client.closed is True
 
     def test_version_id_and_stage_passed_through(self, monkeypatch):
         client = FakeSecretsManagerClient(secret_string="{}")

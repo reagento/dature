@@ -169,6 +169,10 @@ class FakeAppConfigClient:
         self.list_kwargs: dict[str, object] | None = None
         self.init_kwargs: dict[str, object] = {}
         self.from_connection_string_args: tuple[str, dict[str, object]] | None = None
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
 
     def list_configuration_settings(self, **kwargs: object) -> "list[FakeSetting]":
         self.list_kwargs = kwargs
@@ -229,6 +233,23 @@ class TestAzureAppConfigSourceFetch:
         result = src.load_raw()
 
         assert result.loaded_data == {"myapp:db:host": "localhost"}
+
+    def test_client_closed_after_fetch(self, monkeypatch):
+        client = FakeAppConfigClient(settings=[FakeSetting("myapp:name", "svc")])
+        src = self._make_source(monkeypatch, client)
+
+        src.load_raw()
+
+        assert client.closed is True
+
+    def test_client_closed_even_on_error(self, monkeypatch):
+        client = FakeAppConfigClient(settings=[])
+        src = self._make_source(monkeypatch, client)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert client.closed is True
 
     def test_content_type_json_always_parsed(self, monkeypatch):
         client = FakeAppConfigClient(
