@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Annotated, ClassVar, Literal, cast
+from typing import Annotated, Any, ClassVar, Literal, cast
 
 from dature._deps import require_dep
 from dature.sources.base import RemoteSource
@@ -57,28 +57,35 @@ class VaultSource(RemoteSource):
                 raise ValueError(msg)
         return f"{self._base_url()}/v1/{self.mount_point}/{infix}{self.path}"
 
-    def _fetch(self) -> JSONValue:
-        require_dep("hvac", "vault")
+    def _create_client(self) -> "Any":  # noqa: ANN401
         import hvac  # noqa: PLC0415
-        import hvac.exceptions  # noqa: PLC0415
 
         client = hvac.Client(url=self._base_url(), namespace=self.namespace, verify=self.verify)
         if self.token is not None:
             client.token = self.token
         else:
             client.auth.approle.login(role_id=self.role_id, secret_id=self.secret_id)
+        return client
+
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.session.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("hvac", "vault")
+        import hvac.exceptions  # noqa: PLC0415
 
         try:
-            match self.kv_version:
-                case 1:
-                    resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)
-                    return cast("JSONValue", resp["data"])
-                case 2 | None:
-                    resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
-                    return cast("JSONValue", resp["data"]["data"])
-                case _ as unknown:
-                    msg = f"Unknown kv_version: {unknown!r}"
-                    raise ValueError(msg)
+            with self.get_client() as client:
+                match self.kv_version:
+                    case 1:
+                        resp = client.secrets.kv.v1.read_secret(path=self.path, mount_point=self.mount_point)
+                        return cast("JSONValue", resp["data"])
+                    case 2 | None:
+                        resp = client.secrets.kv.v2.read_secret_version(path=self.path, mount_point=self.mount_point)
+                        return cast("JSONValue", resp["data"]["data"])
+                    case _ as unknown:
+                        msg = f"Unknown kv_version: {unknown!r}"
+                        raise ValueError(msg)
         except hvac.exceptions.InvalidPath:
             msg = f"Vault path not found: {self.remote_address()}"
             raise KeyError(msg) from None

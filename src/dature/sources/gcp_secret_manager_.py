@@ -117,43 +117,49 @@ class GcpSecretManagerSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _fetch(self) -> JSONValue:
-        require_dep("google.cloud.secretmanager", "gcp")
-        from google.api_core.exceptions import NotFound, PermissionDenied, Unauthenticated  # noqa: PLC0415
-        from google.auth.exceptions import DefaultCredentialsError  # noqa: PLC0415
+    def _create_client(self) -> "Any":  # noqa: ANN401
         from google.cloud import secretmanager  # noqa: PLC0415
 
         options = dict(self.client_options) if self.client_options else {}
-        client = secretmanager.SecretManagerServiceClient(
+        return secretmanager.SecretManagerServiceClient(
             credentials=cast("Any", self._build_credentials()),
             transport=cast("Any", self.transport),
             **options,
         )
 
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.transport.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("google.cloud.secretmanager", "gcp")
+        from google.api_core.exceptions import NotFound, PermissionDenied, Unauthenticated  # noqa: PLC0415
+        from google.auth.exceptions import DefaultCredentialsError  # noqa: PLC0415
+
         try:
-            if self.name != "*":
-                version_name = f"projects/{self.project_id}/secrets/{self.name}/versions/{self.version}"
-                response = client.access_secret_version(name=version_name)
-                return self._decode_raw(response.payload.data.decode("utf-8"))
+            with self.get_client() as client:
+                if self.name != "*":
+                    version_name = f"projects/{self.project_id}/secrets/{self.name}/versions/{self.version}"
+                    response = client.access_secret_version(name=version_name)
+                    return self._decode_raw(response.payload.data.decode("utf-8"))
 
-            parent = f"projects/{self.project_id}"
-            secrets = [
-                secret.name.rsplit("/", 1)[-1]
-                for secret in client.list_secrets(request={"parent": parent, "filter": self._build_filter()})
-            ]
-            if not secrets:
-                msg = f"GCP Secret Manager has no secrets: {self.remote_address()}"
-                raise KeyError(msg) from None
+                parent = f"projects/{self.project_id}"
+                secrets = [
+                    secret.name.rsplit("/", 1)[-1]
+                    for secret in client.list_secrets(request={"parent": parent, "filter": self._build_filter()})
+                ]
+                if not secrets:
+                    msg = f"GCP Secret Manager has no secrets: {self.remote_address()}"
+                    raise KeyError(msg) from None
 
-            items = [
-                (
-                    secret_name,
-                    client.access_secret_version(
-                        name=f"projects/{self.project_id}/secrets/{secret_name}/versions/{self.version}"
-                    ).payload.data.decode("utf-8"),
-                )
-                for secret_name in secrets
-            ]
+                items = [
+                    (
+                        secret_name,
+                        client.access_secret_version(
+                            name=f"projects/{self.project_id}/secrets/{secret_name}/versions/{self.version}"
+                        ).payload.data.decode("utf-8"),
+                    )
+                    for secret_name in secrets
+                ]
         except NotFound:
             msg = f"GCP Secret Manager secret not found: {self.remote_address()}"
             raise KeyError(msg) from None

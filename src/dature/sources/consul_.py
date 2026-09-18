@@ -78,15 +78,10 @@ class ConsulSource(RemoteSource):
         last_segment = key.rsplit(self.separator, 1)[-1] if self.separator else key
         return {last_segment: value}
 
-    def _fetch(self) -> JSONValue:
-        require_dep("consul", "consul")
-        # py-consul's __init__.py re-exports these without __all__, which mypy's
-        # no_implicit_reexport (part of strict=true) rejects — import from the
-        # defining submodules directly instead.
-        from consul.exceptions import ACLDisabled, ACLPermissionDenied  # noqa: PLC0415
+    def _create_client(self) -> "Any":  # noqa: ANN401
         from consul.std import Consul  # noqa: PLC0415
 
-        client = Consul(
+        return Consul(
             host=self.host,
             port=self.port,
             scheme=self.scheme,
@@ -95,28 +90,39 @@ class ConsulSource(RemoteSource):
             verify=self.verify,
         )
 
-        try:
-            _index, data = client.kv.get(self.path, recurse=self.recursive)
-        except (ACLPermissionDenied, ACLDisabled):
-            msg = f"Consul auth failed for {self.remote_address()}"
-            raise PermissionError(msg) from None
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.http.close()
 
-        if data is None:
-            msg = f"Consul key not found: {self.remote_address()}"
-            raise KeyError(msg) from None
+    def _fetch(self) -> JSONValue:
+        require_dep("consul", "consul")
+        # py-consul's __init__.py re-exports these without __all__, which mypy's
+        # no_implicit_reexport (part of strict=true) rejects — import from the
+        # defining submodules directly instead.
+        from consul.exceptions import ACLDisabled, ACLPermissionDenied  # noqa: PLC0415
 
-        if self.recursive:
-            result: JSONValue = self._nest_flat_keys(
-                cast("list[dict[str, Any]]", data),
-                key_fn=lambda i: cast("str", i["Key"]),
-                value_fn=lambda i: self._decode_value(i.get("Value")),
-                prefix=self.path,
-                separator=self.separator,
-            )
-        else:
-            result = self._build_single(cast("dict[str, Any]", data))
+        with self.get_client() as client:
+            try:
+                _index, data = client.kv.get(self.path, recurse=self.recursive)
+            except (ACLPermissionDenied, ACLDisabled):
+                msg = f"Consul auth failed for {self.remote_address()}"
+                raise PermissionError(msg) from None
 
-        return result
+            if data is None:
+                msg = f"Consul key not found: {self.remote_address()}"
+                raise KeyError(msg) from None
+
+            if self.recursive:
+                result: JSONValue = self._nest_flat_keys(
+                    cast("list[dict[str, Any]]", data),
+                    key_fn=lambda i: cast("str", i["Key"]),
+                    value_fn=lambda i: self._decode_value(i.get("Value")),
+                    prefix=self.path,
+                    separator=self.separator,
+                )
+            else:
+                result = self._build_single(cast("dict[str, Any]", data))
+
+            return result
 
     def _decodes_to_strings(self) -> bool:
         return self.decode == "utf-8"

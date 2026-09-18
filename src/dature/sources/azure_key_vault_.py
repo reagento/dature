@@ -95,38 +95,44 @@ class AzureKeyVaultSource(RemoteSource):
                 msg = f"Unknown decode mode: {unknown!r}"
                 raise ValueError(msg)
 
-    def _fetch(self) -> JSONValue:
-        require_dep("azure.keyvault.secrets", "azure-keyvault")
+    def _create_client(self) -> "Any":  # noqa: ANN401
         from azure.core.credentials import TokenCredential  # noqa: PLC0415
-        from azure.core.exceptions import (  # noqa: PLC0415
-            ClientAuthenticationError,
-            HttpResponseError,
-            ResourceNotFoundError,
-        )
         from azure.keyvault.secrets import SecretClient  # noqa: PLC0415
 
         options = dict(self.client_options) if self.client_options else {}
-        client = SecretClient(
+        return SecretClient(
             vault_url=self.vault_url,
             credential=cast("TokenCredential", self._build_credential()),
             **options,
         )
 
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("azure.keyvault.secrets", "azure-keyvault")
+        from azure.core.exceptions import (  # noqa: PLC0415
+            ClientAuthenticationError,
+            HttpResponseError,
+            ResourceNotFoundError,
+        )
+
         try:
-            if self.name != "*":
-                secret = client.get_secret(self.name, self.version)
-                return self._decode_raw(secret.value)
+            with self.get_client() as client:
+                if self.name != "*":
+                    secret = client.get_secret(self.name, self.version)
+                    return self._decode_raw(secret.value)
 
-            names = [
-                props.name
-                for props in client.list_properties_of_secrets()
-                if props.enabled is not False and props.name is not None
-            ]
-            if not names:
-                msg = f"Azure Key Vault has no secrets: {self.remote_address()}"
-                raise KeyError(msg) from None
+                names = [
+                    props.name
+                    for props in client.list_properties_of_secrets()
+                    if props.enabled is not False and props.name is not None
+                ]
+                if not names:
+                    msg = f"Azure Key Vault has no secrets: {self.remote_address()}"
+                    raise KeyError(msg) from None
 
-            secrets = [(secret_name, client.get_secret(secret_name).value) for secret_name in names]
+                secrets = [(secret_name, client.get_secret(secret_name).value) for secret_name in names]
         except ResourceNotFoundError:
             msg = f"Azure Key Vault secret not found: {self.remote_address()}"
             raise KeyError(msg) from None

@@ -163,9 +163,20 @@ class FakeKV:
         return 0, self._data
 
 
+class FakeHttp:
+    """Stand-in for py-consul's ``consul.Consul().http`` (holds the ``requests.Session``)."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class FakeConsul:
     def __init__(self, data: object, **kwargs: object) -> None:  # noqa: ARG002
         self.kv = FakeKV(data)
+        self.http = FakeHttp()
 
 
 @dataclass
@@ -174,13 +185,40 @@ class _FetchConfig:
 
 
 class TestConsulSourceFetch:
-    def _make_source(self, monkeypatch: pytest.MonkeyPatch, data: object, **kwargs: object) -> ConsulSource:
+    def _make_source(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        data: object,
+        *,
+        created_clients: "list[FakeConsul] | None" = None,
+        **kwargs: object,
+    ) -> ConsulSource:
         def _fake_consul(**kw: object) -> FakeConsul:
-            return FakeConsul(data, **kw)
+            client = FakeConsul(data, **kw)
+            if created_clients is not None:
+                created_clients.append(client)
+            return client
 
         monkeypatch.setattr(consul.std, "Consul", _fake_consul)
         kwargs.setdefault("expand_env_vars", "default")
         return ConsulSource(host="c", path="myapp", **kwargs)
+
+    def test_client_http_closed_after_fetch(self, monkeypatch):
+        created: list[FakeConsul] = []
+        src = self._make_source(monkeypatch, [], created_clients=created, recursive=True)
+
+        src.load_raw()
+
+        assert created[0].http.closed is True
+
+    def test_client_http_closed_even_on_error(self, monkeypatch):
+        created: list[FakeConsul] = []
+        src = self._make_source(monkeypatch, None, created_clients=created)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert created[0].http.closed is True
 
     def test_recursive_nests_on_separator(self, monkeypatch):
         data = [
@@ -344,6 +382,7 @@ class TestConsulSourceFetch:
         class DeniedConsul:
             def __init__(self, **kwargs):  # noqa: ARG002
                 self.kv = DeniedKV()
+                self.http = FakeHttp()
 
         monkeypatch.setattr(consul.std, "Consul", DeniedConsul)
         src = ConsulSource(host="c", path="myapp")

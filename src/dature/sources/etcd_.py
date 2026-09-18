@@ -99,10 +99,8 @@ class EtcdSource(RemoteSource):
             raise PermissionError(msg)
         client.session.headers["Authorization"] = token
 
-    def _fetch(self) -> JSONValue:
-        require_dep("etcd3gw", "etcd")
+    def _create_client(self) -> "Any":  # noqa: ANN401
         from etcd3gw.client import Etcd3Client  # noqa: PLC0415
-        from etcd3gw.exceptions import Etcd3Exception  # noqa: PLC0415
 
         client_kwargs: dict[str, Any] = {
             "host": self.host,
@@ -115,24 +113,32 @@ class EtcdSource(RemoteSource):
             client_kwargs["port"] = self.port
         if self.protocol is not None:
             client_kwargs["protocol"] = self.protocol
-        client = Etcd3Client(**client_kwargs)
+        return Etcd3Client(**client_kwargs)
+
+    def _close_client(self, client: Any) -> None:  # noqa: ANN401
+        client.session.close()
+
+    def _fetch(self) -> JSONValue:
+        require_dep("etcd3gw", "etcd")
+        from etcd3gw.exceptions import Etcd3Exception  # noqa: PLC0415
 
         try:
-            self._authenticate(client)
-            if self.recursive:
-                items = cast("list[tuple[bytes, dict[str, object]]]", client.get_prefix(self.path))
-                result: JSONValue = self._nest_flat_keys(
-                    items,
-                    key_fn=lambda item: cast("bytes", item[1]["key"]).decode("utf-8"),
-                    value_fn=lambda item: self._decode_value(item[0]),
-                    prefix=self.path,
-                    separator=self.separator,
-                )
-                found = bool(items)
-            else:
-                values = client.get(self.path)
-                found = bool(values)
-                result = self._build_single(self.path, values[0]) if found else {}
+            with self.get_client() as client:
+                self._authenticate(client)
+                if self.recursive:
+                    items = cast("list[tuple[bytes, dict[str, object]]]", client.get_prefix(self.path))
+                    result: JSONValue = self._nest_flat_keys(
+                        items,
+                        key_fn=lambda item: cast("bytes", item[1]["key"]).decode("utf-8"),
+                        value_fn=lambda item: self._decode_value(item[0]),
+                        prefix=self.path,
+                        separator=self.separator,
+                    )
+                    found = bool(items)
+                else:
+                    values = client.get(self.path)
+                    found = bool(values)
+                    result = self._build_single(self.path, values[0]) if found else {}
         except Etcd3Exception as exc:
             # etcd3gw has no dedicated permission-denied exception class — a missing or
             # invalid token surfaces here as a bare Etcd3Exception. etcd's gRPC-gateway maps

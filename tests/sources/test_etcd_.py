@@ -188,12 +188,23 @@ class TestEtcdSourceConfigFallback:
         assert merged.protocol == expected
 
 
+class FakeEtcd3Session:
+    """Stand-in for ``etcd3gw.client.Etcd3Client``'s ``requests.Session``."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class FakeEtcd3Client:
     """Stand-in for ``etcd3gw.client.Etcd3Client``."""
 
     def __init__(self, get_prefix_data: object = None, get_data: object = None, **kwargs: object) -> None:  # noqa: ARG002
         self._get_prefix_data = get_prefix_data if get_prefix_data is not None else []
         self._get_data = get_data if get_data is not None else []
+        self.session = FakeEtcd3Session()
 
     def get_prefix(self, path: str) -> object:  # noqa: ARG002
         return self._get_prefix_data
@@ -214,15 +225,37 @@ class TestEtcdSourceFetch:
         *,
         get_prefix_data: object = None,
         get_data: object = None,
+        created_clients: "list[FakeEtcd3Client] | None" = None,
         **kwargs: object,
     ) -> EtcdSource:
         def _fake_client(**kw: object) -> FakeEtcd3Client:
-            return FakeEtcd3Client(get_prefix_data=get_prefix_data, get_data=get_data, **kw)
+            client = FakeEtcd3Client(get_prefix_data=get_prefix_data, get_data=get_data, **kw)
+            if created_clients is not None:
+                created_clients.append(client)
+            return client
 
         monkeypatch.setattr(sys.modules["etcd3gw.client"], "Etcd3Client", _fake_client)
         kwargs.setdefault("path", "myapp")
         kwargs.setdefault("expand_env_vars", "default")
         return EtcdSource(host="e", **kwargs)
+
+    def test_client_session_closed_after_fetch(self, monkeypatch):
+        created: list[FakeEtcd3Client] = []
+        data = [(b"svc", {"key": b"myapp/name"})]
+        src = self._make_source(monkeypatch, get_prefix_data=data, created_clients=created)
+
+        src.load_raw()
+
+        assert created[0].session.closed is True
+
+    def test_client_session_closed_even_on_error(self, monkeypatch):
+        created: list[FakeEtcd3Client] = []
+        src = self._make_source(monkeypatch, get_prefix_data=[], created_clients=created, recursive=False)
+
+        with pytest.raises(KeyError):
+            src.load_raw()
+
+        assert created[0].session.closed is True
 
     def test_recursive_nests_on_separator(self, monkeypatch):
         data = [
@@ -359,8 +392,8 @@ class TestEtcdSourceFetch:
 
     def test_auth_failure_raises_permission_error(self, monkeypatch):
         class DeniedClient:
-            def __init__(self, **kwargs):
-                pass
+            def __init__(self, **kwargs):  # noqa: ARG002
+                self.session = FakeEtcd3Session()
 
             def get_prefix(self, path):  # noqa: ARG002
                 msg = "Forbidden"
@@ -374,8 +407,8 @@ class TestEtcdSourceFetch:
 
     def test_other_etcd_exception_propagates(self, monkeypatch):
         class BrokenClient:
-            def __init__(self, **kwargs):
-                pass
+            def __init__(self, **kwargs):  # noqa: ARG002
+                self.session = FakeEtcd3Session()
 
             def get_prefix(self, path):  # noqa: ARG002
                 msg = "boom"
@@ -389,8 +422,8 @@ class TestEtcdSourceFetch:
 
     def test_wrong_password_during_fetch_raises_permission_error(self, monkeypatch):
         class RejectingClient:
-            def __init__(self, **kwargs):
-                pass
+            def __init__(self, **kwargs):  # noqa: ARG002
+                self.session = FakeEtcd3Session()
 
             def get_url(self, path):  # noqa: ARG002
                 return "http://e:2379/v3/auth/authenticate"
