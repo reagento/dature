@@ -47,6 +47,9 @@ Thumbs.db
 .env.*.local
 .env.test
 
+# Prek
+.prek_home
+
 # Ruff
 .ruff_cache/
 

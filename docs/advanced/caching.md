@@ -152,3 +152,9 @@ speed/memory trade-off.
 loader = Loader(source, schema=Config, cache=False, cache_engine=True)
 ```
 
+## Reloading a cached config in the background
+
+`cache=True` caches forever on its own — nothing invalidates it. To pick up changes without
+restarting the process, attach a background trigger with `reload=`; see
+[Background Reloading](reloading.md).
+

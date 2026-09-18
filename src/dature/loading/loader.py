@@ -18,9 +18,10 @@ delegates to ``loader.load()``.  The original dataclass is never modified.
 """
 
 import logging
+import threading
 import warnings
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import asdict, fields, is_dataclass
+from dataclasses import asdict, dataclass, fields, is_dataclass
 from datetime import timedelta
 from functools import update_wrapper
 from typing import Any, NoReturn, cast
@@ -49,6 +50,8 @@ from dature.loading.retort import RetortCache
 from dature.loading.source_validation import validate_source
 from dature.masking.detection import build_secret_paths
 from dature.protocols import DataclassInstance
+from dature.reloading.controller import ReloadController, ReloadOutcome, validate_reload_args
+from dature.reloading.protocol import ReloadTriggerProtocol
 from dature.report import attach_load_report, load_report
 from dature.sources.base import IndexedSource
 from dature.sources.protocol import SourceProtocol
@@ -62,6 +65,8 @@ from dature.type_aliases import (
     MergeStrategyName,
     NestedResolve,
     NestedResolveStrategy,
+    ReloadCallback,
+    ReloadErrorCallback,
     SkipFieldsInvalid,
     StaleOnErrorMode,
     StrictMode,
@@ -71,6 +76,14 @@ from dature.validators.base import create_metadata_validator_providers
 from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
+
+
+@dataclass(frozen=True, slots=True)
+class _CacheEntry[T]:
+    """Immutable cache snapshot. Published/read as a single attribute for lock-free reads."""
+
+    data: T
+    at: float
 
 
 def _fold_search_system_paths(
@@ -124,6 +137,9 @@ class Loader[T: DataclassInstance]:
         nested_resolve: NestedResolve | None = None,
         config_dirs: ConfigDirsArg | None = None,
         search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
+        reload: ReloadTriggerProtocol | None = None,
+        on_reload: ReloadCallback[T] | None = None,
+        on_error: ReloadErrorCallback | None = None,
         config: DatureConfig | None = None,
     ) -> None:
         _validate_sources(sources)
@@ -141,6 +157,13 @@ class Loader[T: DataclassInstance]:
         if isinstance(cache, timedelta) and cache < timedelta(0):
             msg = f"cache timedelta must be non-negative, got {cache!r}"
             raise ValueError(msg)
+        validate_reload_args(
+            schema_name=schema.__name__,
+            cache=cache,
+            reload=reload,
+            on_reload=on_reload,
+            on_error=on_error,
+        )
         if cache_engine is None:
             cache_engine = self._config.loading.cache_engine
         if stale_on_error is None:
@@ -189,9 +212,26 @@ class Loader[T: DataclassInstance]:
 
         self.field_list = fields(schema)
 
-        # Cache state.
-        self._cached_data: T | None = None
-        self._cached_at: float | None = None
+        # Cache state — published/read as one atomic snapshot so the hot read path never
+        # needs a lock (see _CacheEntry).
+        self._cache_entry: _CacheEntry[T] | None = None
+        self._lock = threading.RLock()
+
+        # reload= is an external cache-invalidation signal: its trigger writes into the same
+        # _cache_entry that the TTL/eternal cache reads from. See ReloadController for the
+        # lifecycle (weakref safety net, start/stop idempotency, on_reload/on_error dispatch).
+        self._reload: ReloadController[T] | None = (
+            ReloadController(
+                self,
+                trigger=reload,
+                on_reload=on_reload,
+                on_error=on_error,
+                schema_name=schema.__name__,
+            )
+            if reload is not None
+            else None
+        )
+
         # Tracks which source indices were enabled on the last load.
         # When the enabled set changes (env var drove a different when= outcome),
         # the cached result is auto-cleared before the freshness check.
@@ -266,35 +306,67 @@ class Loader[T: DataclassInstance]:
         # When no source has when=, the enabled set is fixed and _enabled_sig is pre-set at
         # construction time — skipping this loop is the fast path for the common case.
         if self._has_conditional_sources:
-            new_sig = tuple(
-                i for i, s in enumerate(self._sources) if when_has_cross_refs(s) or evaluate_when_eager(s.when)
-            )
-            if new_sig != self._enabled_sig:
-                self._cached_data = None
-                self._cached_at = None
-                self._enabled_sig = new_sig
-                self._merge_meta = None
-                self._source = None
+            with self._lock:
+                self._refresh_enabled_sig_locked()
 
-        if self._cached_data is not None and cache_is_fresh(cache=self._cache, cached_at=self._cached_at):
-            return self._cached_data
+        # Single atomic attribute read — safe without the lock even while a background
+        # reload is concurrently publishing a new entry (see _CacheEntry).
+        entry = self._cache_entry
+        if entry is not None and cache_is_fresh(cache=self._cache, cached_at=entry.at):
+            return entry.data
+
+        with self._lock:
+            result, _ = self._load_locked(force=False)
+            return result
+
+    def _refresh_enabled_sig_locked(self) -> None:
+        new_sig = tuple(i for i, s in enumerate(self._sources) if when_has_cross_refs(s) or evaluate_when_eager(s.when))
+        if new_sig != self._enabled_sig:
+            self._cache_entry = None
+            self._enabled_sig = new_sig
+            self._merge_meta = None
+            self._source = None
+
+    def _load_locked(self, *, force: bool) -> tuple[T, Exception | None]:
+        """Perform (or skip) a full load. Must be called with ``self._lock`` held.
+
+        ``force=False`` re-checks freshness first — another thread may have already
+        refreshed the entry while this one was waiting for the lock. The second element of
+        the return value is the exception that forced a stale fallback, or ``None`` on a
+        normal load — only the trigger-driven reload path needs it (to report it to
+        ``on_error``); ``load()`` discards it.
+        """
+        if not force:
+            entry = self._cache_entry
+            if entry is not None and cache_is_fresh(cache=self._cache, cached_at=entry.at):
+                return entry.data, None
         try:
             if self._merge_meta is None:
                 self._prepare_for_load()
             result = self._do_load()
         except (DatureError, DatureErrorGroup, DatureConfigError) as exc:
-            if not self._should_keep_stale():
+            stale = self._stale_fallback(exc)
+            if stale is None:
                 self._raise_or_truncate(exc)
-            return self._on_stale_fallback(exc)
+            return stale, exc
         except Exception as exc:  # noqa: BLE001
             exc.__traceback__ = None  # sub-exceptions in ExceptionGroup render their own tb even when outer tb=None
-            if not self._should_keep_stale():
+            stale = self._stale_fallback(exc)
+            if stale is None:
                 raise DatureConfigError(self._schema.__name__, [exc]) from None  # pyright: ignore[reportArgumentType]
-            return self._on_stale_fallback(exc)
+            return stale, exc
         if self._cache is not False:
-            self._cached_data = result
-            self._cached_at = aligned_now(self._cache)
-        return result
+            self._cache_entry = _CacheEntry(result, aligned_now(self._cache))
+        self.start_reload()
+        return result, None
+
+    def _refresh_locked(self) -> tuple[T, Exception | None]:
+        """Force a full reload, bypassing freshness. Must be called with ``self._lock`` held."""
+        if self._has_conditional_sources:
+            self._refresh_enabled_sig_locked()
+        self._merge_meta = None
+        self._source = None
+        return self._load_locked(force=True)
 
     def _raise_or_truncate(self, exc: DatureError | DatureErrorGroup | DatureConfigError) -> NoReturn:
         """Re-raise *exc*, truncating it first if it's a group that exceeds ``max_errors``.
@@ -325,39 +397,62 @@ class Loader[T: DataclassInstance]:
         except DatureErrorGroup as exc:
             raise_truncated(exc, self._config.error_display)
 
-    def _should_keep_stale(self) -> bool:
-        """Whether a reload failure should fall back to the last good config instead of raising.
+    def _stale_fallback(self, exc: Exception) -> T | None:
+        """Return the previously cached config after a load failure, or ``None`` if *exc* must
+        propagate instead (per ``stale_on_error``, or because there's nothing to fall back to).
 
-        There is nothing to fall back to on the very first load — ``_cached_data`` is only ever
-        populated by a prior successful ``.load()``, so this is ``False`` regardless of
-        ``stale_on_error`` until at least one load has succeeded.
+        There is nothing to fall back to on the very first load — ``_cache_entry`` is only ever
+        populated by a prior successful ``.load()``. ``"keep"`` restarts the TTL window on the
+        stale value so a persistently broken source isn't retried on every access; ``"retry"``
+        leaves ``at`` untouched so the next call attempts a fresh reload again.
         """
-        if self._cached_data is None:
-            return False
+        entry = self._cache_entry
+        if entry is None:
+            return None
         match self._stale_on_error:
             case "raise":
-                return False
-            case "keep" | "retry":
-                return True
+                return None
+            case "keep":
+                entry = _CacheEntry(entry.data, aligned_now(self._cache))
+                self._cache_entry = entry
+            case "retry":
+                pass
             case _ as unknown:
                 msg = f"Unknown stale_on_error mode: {unknown!r}"
                 raise ValueError(msg) from None
-
-    def _on_stale_fallback(self, exc: Exception) -> T:
-        """Return the previously cached config after a reload failure, per ``stale_on_error``.
-
-        ``"keep"`` restarts the TTL window on the stale value so a persistently broken source
-        isn't retried on every access; ``"retry"`` leaves ``_cached_at`` untouched so the next
-        call attempts a fresh reload again.
-        """
         logger.warning(
             "[%s] Config reload failed, keeping the previously loaded config: %s",
             self._schema.__name__,
             exc,
         )
-        if self._stale_on_error == "keep":
-            self._cached_at = aligned_now(self._cache)
-        return self._cached_data  # type: ignore[return-value]  # guarded by _should_keep_stale
+        return entry.data
+
+    # ------------------------------------------------------------------ #
+    # Background reload
+    # ------------------------------------------------------------------ #
+
+    def start_reload(self) -> None:
+        """Start the background reload trigger. Idempotent. No-op if ``reload=`` wasn't passed."""
+        if self._reload is not None:
+            self._reload.start(self._sources)
+
+    def stop_reload(self) -> None:
+        """Stop the background reload trigger. Idempotent, safe even if never started."""
+        if self._reload is not None:
+            self._reload.stop()
+
+    def _reload_for_trigger(self) -> ReloadOutcome[T]:
+        """Force a full reload for the trigger. Runs on the shared scheduler thread.
+
+        This is ``Loader``'s implementation of ``ReloadTarget`` — called by ``ReloadController``
+        from the trigger's thread, wrapped in a weakref check that never lets an exception
+        escape to that thread.
+        """
+        with self._lock:
+            previous = self._cache_entry
+            instance, stale_exc = self._refresh_locked()
+        changed = previous is None or instance is not previous.data
+        return ReloadOutcome(instance=instance, error=stale_exc, changed=changed)
 
     @staticmethod
     def as_decorator[DC: DataclassInstance](  # noqa: PLR0913
@@ -382,6 +477,9 @@ class Loader[T: DataclassInstance]:
         nested_resolve: NestedResolve | None = None,
         config_dirs: ConfigDirsArg | None = None,
         search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
+        reload: ReloadTriggerProtocol | None = None,
+        on_reload: ReloadCallback[DataclassInstance] | None = None,
+        on_error: ReloadErrorCallback | None = None,
         config: DatureConfig | None = None,
     ) -> Callable[[type[DC]], type[DC]]:
         """Return a decorator that creates a loading subclass for the target dataclass."""
@@ -414,6 +512,9 @@ class Loader[T: DataclassInstance]:
                 nested_resolve=nested_resolve,
                 config_dirs=config_dirs,
                 search_system_paths=search_system_paths,
+                reload=reload,
+                on_reload=on_reload,
+                on_error=on_error,
                 config=config,
             )
             return loader._make_loader_subclass(target_cls)

@@ -878,7 +878,7 @@ class TestMaskingConfigLeaksRegression:
             conf.load(JsonSource(file=defaults), JsonSource(file=overrides), schema=Cfg, debug=True)
 
         raw_data_lines = [r.getMessage() for r in caplog.records if "raw data" in r.getMessage()]
-        assert raw_data_lines
+        assert len(raw_data_lines) == 2
         assert all("[MASKED]" in line for line in raw_data_lines)
 
     def test_decorator_revalidation_error_uses_call_level_masking(self, tmp_path: Path):
@@ -902,7 +902,6 @@ class TestMaskingConfigLeaksRegression:
         with pytest.raises(DatureConfigError) as exc_info:
             Settings(password=_SECRET_VALUE)
 
-        message = str(exc_info.value.exceptions[0])
-        assert "[MASKED]" in message
-        assert "<REDACTED>" not in message
-        assert _SECRET_VALUE not in message
+        field_error = exc_info.value.exceptions[0]
+        assert isinstance(field_error, FieldLoadError)
+        assert field_error.message == "Invalid variant: '[MASKED]'"

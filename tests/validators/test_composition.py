@@ -29,9 +29,7 @@ class TestOr:
 
     def test_error_message(self) -> None:
         msg = ((V == "a") | (V == "b")).get_error_message()
-        assert "or" in msg
-        assert "must be equal to a" in msg
-        assert "must be equal to b" in msg
+        assert msg == "Value must be equal to a or Value must be equal to b"
 
 
 class TestNot:
@@ -44,8 +42,7 @@ class TestNot:
 
     def test_error_message(self) -> None:
         msg = (~(V == "x")).get_error_message()
-        assert msg.startswith("NOT (")
-        assert "must be equal to x" in msg
+        assert msg == "NOT (Value must be equal to x)"
 
 
 class TestCombinedComposition:

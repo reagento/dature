@@ -98,6 +98,7 @@ nav:
       - Strict Mode: advanced/strict-mode.md
       - Debug & Reports: advanced/debug.md
       - Caching: advanced/caching.md
+      - Reloading: advanced/reloading.md
   - Comparison:
     - vs pydantic-settings: comparison/why-not-pydantic-settings.md
     - vs Hydra: comparison/why-not-hydra.md
@@ -171,6 +172,7 @@ plugins:
           - advanced/strict-mode.md
           - advanced/debug.md
           - advanced/caching.md
+          - advanced/reloading.md
         Comparison:
           - comparison/why-not-pydantic-settings.md
           - comparison/why-not-hydra.md

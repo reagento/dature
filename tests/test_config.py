@@ -428,7 +428,8 @@ class TestConcurrentDefaultConfig:
             t.join()
 
         assert not errors
-        assert all(r == results[0] for r in results)
+        assert len(results) == 20
+        assert results == [results[0]] * 20
 
 
 @pytest.mark.usefixtures("_reset_config")
@@ -586,10 +587,8 @@ class TestDatureInstance:
             base_patterns=b.config.masking.secret_field_names,
         )
 
-        assert "token" in paths_a
-        assert "username" not in paths_a
-        assert "username" in paths_b
-        assert "token" not in paths_b
+        assert paths_a == frozenset({"token"})
+        assert paths_b == frozenset({"username"})
 
     @staticmethod
     def test_default_config_dirs_is_frozen() -> None:
@@ -637,7 +636,7 @@ class TestDatureInstance:
     @staticmethod
     def test_error_display_appears_in_repr() -> None:
         app = Dature(error_display={"max_line_length": 40})
-        assert "error_display=" in repr(app)
+        assert "error_display=ErrorDisplayConfig(max_visible_lines=3, max_errors=7, max_line_length=40)" in repr(app)
 
     @staticmethod
     @pytest.mark.parametrize(
@@ -674,8 +673,9 @@ class TestDatureInstance:
     )
     def test_repr_masks_secret_fields(group: str, options: dict[str, str], secret_value: str) -> None:
         app = Dature(**{group: options})
+        field_name = next(iter(options))
         assert secret_value not in repr(app)
-        assert "<REDACTED>" in repr(app)
+        assert f"{field_name}='<REDACTED>'" in repr(app)
 
     @staticmethod
     def test_replace_preserves_prior_overrides() -> None:

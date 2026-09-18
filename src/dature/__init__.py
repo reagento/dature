@@ -6,6 +6,8 @@ from dature.instance import Dature
 from dature.loading.loader import Loader
 from dature.main import load
 from dature.refs import ref
+from dature.reloading.file_watch import FileWatchTrigger
+from dature.reloading.interval import FixedIntervalTrigger
 from dature.report import load_report
 from dature.sources.argparse_ import ArgparseSource
 from dature.sources.azure_app_config_ import AzureAppConfigSource
@@ -40,6 +42,8 @@ __all__ = [
     "EnvSource",
     "EtcdSource",
     "F",
+    "FileWatchTrigger",
+    "FixedIntervalTrigger",
     "GcpSecretManagerSource",
     "IniSource",
     "Json5Source",

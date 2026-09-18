@@ -1,12 +1,17 @@
 """Unit tests for src/dature/loading/loader.py — the public ``Loader`` class."""
 
 import dataclasses
+import gc
+import logging
+import threading
+import weakref
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import Flag
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Annotated, assert_type, cast
+from typing import Annotated, Any, assert_type, cast
 from unittest.mock import patch
 
 import pytest
@@ -14,9 +19,12 @@ import time_machine
 
 import dature
 import dature.sources.base
-from dature import EnvFileSource, EnvSource, JsonSource, Loader, V, When, load
+from dature import Dature, EnvFileSource, EnvSource, JsonSource, Loader, V, When, load
 from dature.errors.exceptions import CrossRefExpandError, DatureConfigError, DatureError, FieldLoadError
 from dature.loading.cache import cache_is_fresh
+from dature.reloading.interval import FixedIntervalTrigger
+from dature.reloading.protocol import ReloadContext, ReloadTriggerProtocol
+from dature.reloading.scheduler import Scheduler
 from dature.sources.base import Source
 from dature.type_aliases import JSONValue
 
@@ -29,14 +37,18 @@ class _Config:
 
 @dataclass(kw_only=True, repr=False)
 class _Stub(dature.sources.base.Source):
-    """Minimal in-memory source for when= tests."""
+    """Minimal in-memory source for when=/reload= tests. ``fail`` simulates a broken reload."""
 
     data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+    fail: bool = False
 
     format_name: str = "stub"
     location_label: str = "STUB"
 
     def _load(self) -> JSONValue:
+        if self.fail:
+            msg = "stub source is broken"
+            raise RuntimeError(msg)
         return dict(self.data)
 
 
@@ -154,8 +166,7 @@ class TestMissingDefaultFactorySection:
             load(_Stub(data={"debug": True}), schema=schema)
 
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
-        assert not any(isinstance(e, TypeError) for e in errors)
-        assert len(errors) == 1
+        assert [type(e) for e in errors] == [FieldLoadError]
         assert errors[0].field_path == ["tg"]
 
     def test_missing_section_message_names_factory_and_required_params(self) -> None:
@@ -191,7 +202,7 @@ class TestMissingDefaultFactorySection:
             )
 
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
-        assert not any(isinstance(e, TypeError) for e in errors)
+        assert [type(e) for e in errors] == [FieldLoadError] * len(errors)
         assert {tuple(e.field_path) for e in errors} == {("debug",), ("tg", "use_proxy"), ("tg", "proxy")}
 
     def test_nested_unsafe_factory_reports_nested_path(self) -> None:
@@ -214,7 +225,7 @@ class TestMissingDefaultFactorySection:
             load(_Stub(data=data), schema=_ConfigWithDb)
 
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
-        assert all(e.field_path == ["tg"] for e in errors)
+        assert [e.field_path for e in errors] == [["tg"]]
 
     def test_section_split_across_two_sources_loads_normally(self) -> None:
         result = load(
@@ -238,7 +249,7 @@ class TestMissingDefaultFactorySection:
             )
 
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
-        assert not any(isinstance(e, TypeError) for e in errors)
+        assert [type(e) for e in errors] == [FieldLoadError] * len(errors)
         assert {tuple(e.field_path) for e in errors} == {("tg", "use_proxy"), ("tg", "proxy")}
 
     @pytest.mark.parametrize("schema", [_ConfigWithDb, _ConfigRequired], ids=["with-factory", "required"])
@@ -258,7 +269,7 @@ class TestMissingDefaultFactorySection:
             )
 
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
-        assert not any(isinstance(e, TypeError) for e in errors)
+        assert [type(e) for e in errors] == [FieldLoadError] * len(errors)
         by_path = {tuple(e.field_path): e.message for e in errors}
         assert by_path.keys() == {("tg", "use_proxy"), ("tg", "proxy")}
         assert by_path[("tg", "use_proxy")] == "Missing required field"
@@ -281,9 +292,11 @@ class TestMissingDefaultFactorySection:
             )
 
         errors = [cast("FieldLoadError", e) for e in exc_info.value.exceptions]
-        assert not any("__init__()" in e.message for e in errors)
-        assert {tuple(e.field_path) for e in errors} == {("tg", "use_proxy"), ("tg", "proxy")}
-        assert all(e.message == "Missing required field" for e in errors)
+        by_path = {tuple(e.field_path): e.message for e in errors}
+        assert by_path == {
+            ("tg", "use_proxy"): "Missing required field",
+            ("tg", "proxy"): "Missing required field",
+        }
 
 
 @dataclasses.dataclass
@@ -566,7 +579,9 @@ class TestLoaderStaleOnError:
             second = loader.load()
 
         assert second is first
-        assert "Config reload failed, keeping the previously loaded config" in caplog.text
+        msgs = [r.getMessage() for r in caplog.records]
+        assert len(msgs) == 1
+        assert msgs[0].startswith("[_Config] Config reload failed, keeping the previously loaded config: ")
 
     def test_first_load_failure_always_raises(self, tmp_path: Path) -> None:
         # No previous successful load to fall back to — "keep" cannot help.
@@ -601,7 +616,9 @@ class TestLoaderStaleOnError:
 
         # Still inside the failed reload's TTL window: "keep" restarted it (fresh, no re-read
         # attempted), "retry" left it stale (re-attempts the broken source every call).
-        assert cache_is_fresh(cache=loader._cache, cached_at=loader._cached_at) is expect_fresh
+        entry = loader._cache_entry
+        assert entry is not None
+        assert cache_is_fresh(cache=loader._cache, cached_at=entry.at) is expect_fresh
 
     def test_recovers_once_source_is_fixed(self, tmp_path: Path, time_control: time_machine.Traveller) -> None:
         json_file = tmp_path / "config.json"
@@ -1056,8 +1073,7 @@ class TestEagerWhen:
             _Tracked(name="active", data={"x": "ok"}),
             schema=_WhenCfg,
         )
-        assert "disabled" not in load_calls
-        assert "active" in load_calls
+        assert load_calls == ["active"]
         assert result.x == "ok"
 
     def test_all_sources_disabled_raises(self, monkeypatch):
@@ -1269,3 +1285,308 @@ class TestLazyRevalidation:
 
         with pytest.raises(DatureConfigError):
             Cfg(port=-1)
+
+
+class ManualTrigger:
+    """Test double for ``ReloadTriggerProtocol`` — deliberately does NOT inherit ``ReloadTrigger``.
+
+    Proves custom triggers work via structural typing alone, and lets tests fire a reload
+    synchronously (no sleeping, no real thread) by calling ``.fire()``.
+    """
+
+    def __init__(self) -> None:
+        self.start_count = 0
+        self.stop_count = 0
+        self.context: ReloadContext | None = None
+        self._on_trigger: Callable[[], None] | None = None
+
+    def start(self, *, on_trigger: Callable[[], None], context: ReloadContext) -> None:
+        if self._on_trigger is not None:
+            msg = "ManualTrigger already started"
+            raise RuntimeError(msg)
+        self.start_count += 1
+        self.context = context
+        self._on_trigger = on_trigger
+
+    def stop(self) -> None:
+        self.stop_count += 1
+        self._on_trigger = None
+
+    def fire(self) -> None:
+        assert self._on_trigger is not None, "fire() called before start()"
+        self._on_trigger()
+
+
+class TestLoaderReload:
+    def test_reload_swaps_cached_instance(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+
+        first = loader.load()
+        source.data = {"host": "b", "port": 2}
+        trigger.fire()
+        second = loader.load()
+
+        assert first == _Config(host="a", port=1)
+        assert second == _Config(host="b", port=2)
+        assert second is not first
+
+    def test_on_reload_receives_new_instance(self) -> None:
+        received: list[_Config] = []
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger, on_reload=received.append)
+
+        loader.load()
+        source.data = {"host": "b", "port": 2}
+        trigger.fire()
+
+        assert received == [_Config(host="b", port=2)]
+
+    @pytest.mark.parametrize("mode", ["keep", "retry", "raise"])
+    def test_reload_failure_keeps_previous_instance(self, mode: str) -> None:
+        errors: list[Exception] = []
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(
+            source,
+            schema=_Config,
+            cache=True,
+            stale_on_error=mode,
+            reload=trigger,
+            on_error=errors.append,
+        )
+
+        loader.load()
+        source.fail = True
+        trigger.fire()
+
+        assert loader.load() == _Config(host="a", port=1)
+        assert len(errors) == 1
+        messages = [str(errors[0]), *(str(e) for e in getattr(errors[0], "exceptions", ()))]
+        if mode == "raise":
+            assert messages == ["_Config loading errors (1)", "stub source is broken"]
+        else:
+            assert messages == ["stub source is broken"]
+
+    def test_reload_starts_lazily(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+
+        assert trigger.start_count == 0
+
+        loader.load()
+
+        assert trigger.start_count == 1
+
+    def test_start_reload_is_idempotent(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+
+        loader.start_reload()
+        loader.start_reload()
+
+        assert trigger.start_count == 1
+
+    @pytest.mark.parametrize("call_load_first", [True, False])
+    def test_stop_reload_is_idempotent(self, call_load_first: bool) -> None:
+        # "Idempotent" per the protocol contract means safe/side-effect-free to call repeatedly
+        # and even without a prior start() — not that Loader suppresses the forwarded stop()
+        # calls itself. ManualTrigger.stop() is safe to call any number of times.
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+        if call_load_first:
+            loader.load()
+
+        loader.stop_reload()
+        loader.stop_reload()
+
+        assert trigger.stop_count == 2
+
+    def test_callback_exception_does_not_kill_reload(self, caplog: pytest.LogCaptureFixture) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+
+        def _broken_on_reload(_: _Config) -> None:
+            msg = "callback exploded"
+            raise RuntimeError(msg)
+
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger, on_reload=_broken_on_reload)
+        loader.load()
+        source.data = {"host": "b", "port": 2}
+
+        with caplog.at_level(logging.ERROR, logger="dature"):
+            trigger.fire()
+
+        assert loader.load() == _Config(host="b", port=2)
+        assert [r.getMessage() for r in caplog.records] == ["[_Config] reload callback raised"]
+        assert caplog.records[0].exc_info is not None
+        assert caplog.records[0].exc_info[0] is RuntimeError
+
+    def test_on_error_not_invoked_for_callback_failure(self) -> None:
+        errors: list[Exception] = []
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+
+        def _broken_on_reload(_: _Config) -> None:
+            msg = "callback exploded"
+            raise RuntimeError(msg)
+
+        loader = Loader(
+            source,
+            schema=_Config,
+            cache=True,
+            reload=trigger,
+            on_reload=_broken_on_reload,
+            on_error=errors.append,
+        )
+        loader.load()
+        source.data = {"host": "b", "port": 2}
+
+        trigger.fire()
+
+        assert errors == []
+
+    def test_reload_recomputes_conditional_sources(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("APP_ENV", raising=False)
+        dev_source = _Stub(data={"host": "dev-host", "port": 1}, when=When("${APP_ENV}") == "dev")
+        prod_source = _Stub(data={"host": "prod-host", "port": 2}, when=When("${APP_ENV}") == "prod")
+        trigger = ManualTrigger()
+        monkeypatch.setenv("APP_ENV", "dev")
+        loader = Loader(dev_source, prod_source, schema=_Config, cache=True, reload=trigger)
+
+        first = loader.load()
+        monkeypatch.setenv("APP_ENV", "prod")
+        trigger.fire()
+
+        assert first == _Config(host="dev-host", port=1)
+        assert loader.load() == _Config(host="prod-host", port=2)
+
+    def test_cache_true_reload_publishes_entry(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+
+        loader.load()
+        source.data = {"host": "b", "port": 2}
+        trigger.fire()
+
+        # Fast path (no lock) must see the reload-published entry.
+        entry = loader._cache_entry
+        assert entry is not None
+        assert loader.load() is entry.data
+        assert loader.load() == _Config(host="b", port=2)
+
+    def test_cache_timedelta_with_reload_raises_explicit(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+
+        with pytest.raises(ValueError, match="mutually exclusive"):
+            Loader(source, schema=_Config, cache=timedelta(seconds=30), reload=trigger)
+
+    def test_cache_timedelta_with_reload_raises_from_global_config(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        config = Dature(loading={"cache": timedelta(seconds=30)}).config
+
+        with pytest.raises(ValueError, match="mutually exclusive"):
+            Loader(source, schema=_Config, reload=trigger, config=config)
+
+    def test_cache_false_reload_warns_and_does_not_publish(self, caplog: pytest.LogCaptureFixture) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+
+        with caplog.at_level(logging.WARNING, logger="dature"):
+            loader = Loader(source, schema=_Config, cache=False, reload=trigger)
+
+        assert [r.getMessage() for r in caplog.records] == [
+            (
+                "[_Config] reload= has no effect on cached reads with cache=False — on_reload/on_error "
+                "will still fire, but every load() call still does a full synchronous load."
+            )
+        ]
+        loader.load()
+        assert loader._cache_entry is None
+
+
+class TestLoaderReloadValidation:
+    @pytest.mark.parametrize("loader_fn", [load, Dature().load])
+    def test_function_mode_reload_raises(self, loader_fn: Callable[..., Any], tmp_path: Path) -> None:
+        json_file = tmp_path / "config.json"
+        json_file.write_text('{"host": "h", "port": 1}')
+
+        with pytest.raises(ValueError, match="reload= has no effect in function mode"):
+            loader_fn(JsonSource(file=json_file), schema=_Config, reload=ManualTrigger())
+
+    @pytest.mark.parametrize("kwarg", ["on_reload", "on_error"])
+    def test_callbacks_without_trigger_raise(self, kwarg: str) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+
+        with pytest.raises(ValueError, match="on_reload/on_error require reload="):
+            Loader(source, schema=_Config, **{kwarg: lambda *_: None})
+
+    def test_reload_rejects_non_trigger(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+
+        with pytest.raises(TypeError, match="must implement ReloadTriggerProtocol"):
+            Loader(source, schema=_Config, reload=object())
+
+    def test_custom_protocol_trigger_accepted(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+
+        assert isinstance(trigger, ReloadTriggerProtocol)
+        assert not isinstance(trigger, dature.FixedIntervalTrigger)
+
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+        loader.load()
+        source.data = {"host": "b", "port": 2}
+        trigger.fire()
+
+        assert loader.load() == _Config(host="b", port=2)
+
+
+class TestLoaderReloadLifecycle:
+    def test_loader_gc_unregisters_entry(self, scheduler: Scheduler) -> None:
+        def _make() -> None:
+            source = _Stub(data={"host": "a", "port": 1})
+            trigger = FixedIntervalTrigger(interval=60, scheduler=scheduler)
+            loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+            loader.load()
+
+        _make()
+        gc.collect()
+        gc.collect()
+
+        assert scheduler._entries == {}
+
+    def test_failed_reload_does_not_leak_loader(self) -> None:
+        source = _Stub(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        weak = None
+
+        def _make() -> None:
+            nonlocal weak
+            loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+            loader.load()
+            source.fail = True
+            trigger.fire()
+            weak = weakref.ref(loader)
+
+        _make()
+        gc.collect()
+        gc.collect()
+
+        assert weak is not None
+        assert weak() is None
+
+    def test_no_reload_leaves_no_thread(self) -> None:
+        before = threading.active_count()
+        source = _Stub(data={"host": "a", "port": 1})
+        Loader(source, schema=_Config, cache=True).load()
+
+        assert threading.active_count() == before
