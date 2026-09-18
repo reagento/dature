@@ -9,10 +9,8 @@ from dature.config import (
     ErrorDisplayConfig,
     LoadingConfig,
     MaskingConfig,
-    configure,
     default_config,
     merge_group,
-    resolve_config,
     resolve_error_display,
 )
 from dature.errors import DatureConfigError
@@ -37,166 +35,7 @@ class TestDefaultConfig:
 
 
 @pytest.mark.usefixtures("_reset_config")
-class TestConfigure:
-    @staticmethod
-    @pytest.mark.parametrize(
-        ("kwargs", "attr_path", "expected"),
-        [
-            (
-                {"masking": {"mask": "[HIDDEN]"}},
-                ("masking", "mask"),
-                "[HIDDEN]",
-            ),
-            (
-                {"masking": {"visible_prefix": 3}},
-                ("masking", "visible_prefix"),
-                3,
-            ),
-            (
-                {"error_display": {"max_visible_lines": 10}},
-                ("error_display", "max_visible_lines"),
-                10,
-            ),
-            (
-                {"loading": {"cache": False, "debug": True}},
-                ("loading", "cache"),
-                False,
-            ),
-            (
-                {"loading": {"cache": False, "debug": True}},
-                ("loading", "debug"),
-                True,
-            ),
-            (
-                {"loading": {"cache_engine": True}},
-                ("loading", "cache_engine"),
-                True,
-            ),
-            (
-                {"loading": {"stale_on_error": "raise"}},
-                ("loading", "stale_on_error"),
-                "raise",
-            ),
-            (
-                {"loading": {"search_system_paths": False}},
-                ("loading", "search_system_paths"),
-                False,
-            ),
-            (
-                {"vault": {"host": "vault.internal"}},
-                ("vault", "host"),
-                "vault.internal",
-            ),
-            (
-                {"consul": {"datacenter": "dc1"}},
-                ("consul", "datacenter"),
-                "dc1",
-            ),
-            (
-                {"etcd": {"user": "admin"}},
-                ("etcd", "user"),
-                "admin",
-            ),
-            (
-                {"ssm": {"region_name": "eu-west-1"}},
-                ("ssm", "region_name"),
-                "eu-west-1",
-            ),
-            (
-                {"secrets_manager": {"region_name": "eu-west-1"}},
-                ("secrets_manager", "region_name"),
-                "eu-west-1",
-            ),
-            (
-                {"azure_app_config": {"endpoint": "https://x.azconfig.io"}},
-                ("azure_app_config", "endpoint"),
-                "https://x.azconfig.io",
-            ),
-            (
-                {"azure_key_vault": {"vault_url": "https://x.vault.azure.net"}},
-                ("azure_key_vault", "vault_url"),
-                "https://x.vault.azure.net",
-            ),
-            (
-                {"gcp_secret_manager": {"project_id": "my-proj"}},
-                ("gcp_secret_manager", "project_id"),
-                "my-proj",
-            ),
-        ],
-        ids=[
-            "masking-mask",
-            "masking-visible_prefix",
-            "error_display-max_visible_lines",
-            "loading-cache",
-            "loading-debug",
-            "loading-cache_engine",
-            "loading-stale_on_error",
-            "loading-search_system_paths",
-            "vault-host",
-            "consul-datacenter",
-            "etcd-user",
-            "ssm-region_name",
-            "secrets_manager-region_name",
-            "azure_app_config-endpoint",
-            "azure_key_vault-vault_url",
-            "gcp_secret_manager-project_id",
-        ],
-    )
-    def test_configure_overrides(
-        kwargs: dict[str, Any],
-        attr_path: tuple[str, str],
-        expected: str | int | bool,
-    ) -> None:
-        with pytest.warns(DeprecationWarning, match="configure()"):
-            configure(**kwargs)
-
-        group = getattr(resolve_config(), attr_path[0])
-        assert getattr(group, attr_path[1]) == expected
-
-    @staticmethod
-    @pytest.mark.parametrize(
-        ("kwargs", "unchanged_group", "expected_default"),
-        [
-            (
-                {"masking": {"mask": "###"}},
-                "error_display",
-                ErrorDisplayConfig(),
-            ),
-            (
-                {"masking": {"mask": "###"}},
-                "loading",
-                LoadingConfig(),
-            ),
-            (
-                {"error_display": {"max_visible_lines": 10}},
-                "masking",
-                MaskingConfig(),
-            ),
-        ],
-        ids=[
-            "masking-preserves-error_display",
-            "masking-preserves-loading",
-            "error_display-preserves-masking",
-        ],
-    )
-    def test_configure_preserves_other_groups(
-        kwargs: dict[str, Any],
-        unchanged_group: str,
-        expected_default: MaskingConfig | ErrorDisplayConfig | LoadingConfig,
-    ) -> None:
-        with pytest.warns(DeprecationWarning, match="configure()"):
-            configure(**kwargs)
-        assert getattr(resolve_config(), unchanged_group) == expected_default
-
-    @staticmethod
-    def test_configure_issues_deprecation_warning() -> None:
-        """configure() must emit a DeprecationWarning pointing at dature 1.5."""
-        with pytest.warns(DeprecationWarning, match="1.5"):
-            configure(masking={"mask": "[GONE]"})
-
-
-@pytest.mark.usefixtures("_reset_config")
-class TestConfigureEmptyDictReset:
+class TestDatureEmptyDictReset:
     @staticmethod
     @pytest.mark.parametrize(
         ("group", "override", "expected_default"),
@@ -224,57 +63,15 @@ class TestConfigureEmptyDictReset:
         override: dict[str, Any],
         expected_default: MaskingConfig | ErrorDisplayConfig | LoadingConfig,
     ) -> None:
-        with pytest.warns(DeprecationWarning, match="configure()"):
-            configure(**{group: override})
-        assert getattr(resolve_config(), group) != expected_default
-
-        with pytest.warns(DeprecationWarning, match="configure()"):
-            configure(**{group: {}})
-        assert getattr(resolve_config(), group) == expected_default
+        assert getattr(Dature(**{group: override}).config, group) != expected_default
+        assert getattr(Dature(**{group: {}}).config, group) == expected_default
 
     @staticmethod
     def test_empty_dict_preserves_other_groups() -> None:
-        with pytest.warns(DeprecationWarning, match="configure()"):
-            configure(masking={"mask": "*****"}, error_display={"max_visible_lines": 10})
-        with pytest.warns(DeprecationWarning, match="configure()"):
-            configure(masking={})
+        app = Dature(masking={}, error_display={"max_visible_lines": 10})
 
-        assert resolve_config().masking == MaskingConfig()
-        assert resolve_config().error_display.max_visible_lines == 10
-
-    @staticmethod
-    def test_concurrent_configure_calls_do_not_lose_groups() -> None:
-        """Two concurrent configure() calls updating different groups must both take effect."""
-        barrier = threading.Barrier(2)
-        errors: list[Exception] = []
-
-        def call_masking() -> None:
-            try:
-                barrier.wait()
-                with pytest.warns(DeprecationWarning, match="configure()"):
-                    configure(masking={"mask": "[SECRET]"})
-            except Exception as exc:  # noqa: BLE001
-                errors.append(exc)
-
-        def call_loading() -> None:
-            try:
-                barrier.wait()
-                with pytest.warns(DeprecationWarning, match="configure()"):
-                    configure(loading={"debug": True})
-            except Exception as exc:  # noqa: BLE001
-                errors.append(exc)
-
-        t1 = threading.Thread(target=call_masking)
-        t2 = threading.Thread(target=call_loading)
-        t1.start()
-        t2.start()
-        t1.join()
-        t2.join()
-
-        assert not errors
-        cfg = resolve_config()
-        assert cfg.masking.mask == "[SECRET]"
-        assert cfg.loading.debug is True
+        assert app.config.masking == MaskingConfig()
+        assert app.config.error_display.max_visible_lines == 10
 
 
 @pytest.mark.usefixtures("_reset_config")
@@ -537,7 +334,7 @@ class TestDatureInstance:
 
     @staticmethod
     def test_default_config_not_called_when_loader_config_explicit() -> None:
-        """Passing config= to Loader bypasses resolve_config() / default_config()."""
+        """Passing config= to Loader bypasses default_config()."""
         app = Dature(masking={"mask": "[TEST]"})
         before = default_config.cache_info()
 
@@ -838,14 +635,3 @@ class TestResolveErrorDisplay:
         result = resolve_error_display()
 
         assert result.max_line_length == 120
-
-    @staticmethod
-    def test_configure_override_takes_precedence_over_cache(monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("DATURE_ERROR_DISPLAY__MAX_LINE_LENGTH", "120")
-        default_config.cache_clear()
-        default_config()
-
-        configure(error_display={"max_visible_lines": 99})
-        result = resolve_error_display()
-
-        assert result.max_visible_lines == 99

@@ -31,15 +31,15 @@ pip install dature[vault,type-stubs]   # runtime + mypy/pyright stubs for hvac
 
 Vault KV v2 secret data is native JSON, so `VaultSource` follows the same coercion rules as the JSON source — see [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(vault={...})` (or the matching `DATURE_VAULT__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(vault={...})` (or the matching `DATURE_VAULT__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/vault/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_VAULT__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(vault={...})` → `DATURE_VAULT__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 ## Combining with other sources
 

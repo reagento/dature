@@ -8,7 +8,7 @@ from typing import Annotated
 
 import pytest
 
-from dature import JsonSource, V, configure, load, load_report
+from dature import JsonSource, V, load, load_report
 from dature.errors import DatureConfigError
 from dature.report import LoadReport
 from dature.report_types import FieldOrigin, SourceEntry
@@ -16,10 +16,10 @@ from dature.strategies.source import SourceFirstWins, SourceLastWins
 
 
 @pytest.fixture(autouse=True)
-def _no_masking(_reset_config: None) -> None:
+def _no_masking(_no_global_masking: None) -> None:
     # This file isn't about masking — disable it so report/merge assertions can
     # compare literal, unredacted values (the default mode masks every string).
-    configure(masking={"masking_mode": "none"})
+    pass
 
 
 class TestGetLoadReportMergeFunction:

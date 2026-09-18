@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import JsonSource, Toml11Source, Yaml12Source, configure, load
+from dature import JsonSource, Toml11Source, Yaml12Source, load
 from dature.config import ErrorDisplayConfig
 from dature.errors import CaretSpan, DatureConfigError, FieldLoadError, LineRange, MergeConflictError, SourceLocation
 from dature.instance import Dature
@@ -416,12 +416,8 @@ class TestMultilineValueDisplay:
             ],
         )
 
-    @pytest.mark.usefixtures("_reset_config")
+    @pytest.mark.usefixtures("_no_global_masking")
     def test_toml_array_of_tables_error(self, array_of_tables_error_first_toml_file: Path):
-        # This test isn't about masking — disable it so the rendered error message
-        # shows the literal invalid value (the default mode masks every string).
-        configure(masking={"masking_mode": "none"})
-
         @dataclass
         class Product:
             name: str
@@ -446,12 +442,8 @@ class TestMultilineValueDisplay:
             f"   └── FILE '{array_of_tables_error_first_toml_file}', line 3"
         )
 
-    @pytest.mark.usefixtures("_reset_config")
+    @pytest.mark.usefixtures("_no_global_masking")
     def test_toml_array_of_tables_error_last_element(self, array_of_tables_error_last_toml_file: Path):
-        # This test isn't about masking — disable it so the rendered error message
-        # shows the literal invalid value (the default mode masks every string).
-        configure(masking={"masking_mode": "none"})
-
         @dataclass
         class Product:
             name: str

@@ -12,8 +12,9 @@ from pathlib import Path
 import pytest
 from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceNotFoundError
 
-from dature import AzureKeyVaultSource, configure, load
+from dature import AzureKeyVaultSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import remote_value_loaders, string_value_loaders
@@ -92,15 +93,15 @@ class TestAzureKeyVaultSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestAzureKeyVaultSourceConfigFallback:
     def test_vault_url_from_configure(self):
-        configure(azure_key_vault={"vault_url": "https://from-configure.vault.azure.net"})
+        cfg = Dature(azure_key_vault={"vault_url": "https://from-configure.vault.azure.net"}).config
 
-        merged = apply_source_config_group(AzureKeyVaultSource())
+        merged = apply_source_config_group(AzureKeyVaultSource(), cfg=cfg)
 
         assert merged.vault_url == "https://from-configure.vault.azure.net"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_vault_url_from_env_var(self, monkeypatch):
         monkeypatch.setenv("DATURE_AZURE_KEY_VAULT__VAULT_URL", "https://from-env.vault.azure.net")
 
@@ -109,9 +110,9 @@ class TestAzureKeyVaultSourceConfigFallback:
         assert merged.vault_url == "https://from-env.vault.azure.net"
 
     def test_instance_overrides_global(self):
-        configure(azure_key_vault={"vault_url": "https://global.vault.azure.net"})
+        cfg = Dature(azure_key_vault={"vault_url": "https://global.vault.azure.net"}).config
 
-        merged = apply_source_config_group(AzureKeyVaultSource(vault_url="https://instance.vault.azure.net"))
+        merged = apply_source_config_group(AzureKeyVaultSource(vault_url="https://instance.vault.azure.net"), cfg=cfg)
 
         assert merged.vault_url == "https://instance.vault.azure.net"
 

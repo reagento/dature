@@ -287,10 +287,6 @@ Explicit, immutable configuration instance. All parameters merge on top of `DATU
 | `gcp_secret_manager` | `GcpSecretManagerOptions \| None` | `None` | GCP Secret Manager connection defaults, used by `GcpSecretManagerSource` when its own fields are unset. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Instance-level custom type loaders `{type: callable}`. Merged with load-level and source-level loaders (source takes priority). |
 
-!!! warning "configure() is deprecated"
-    `dature.configure()` is deprecated since **1.3** and will be removed in **1.5**.
-    Migrate to `dature.Dature(...)` — the same option groups are accepted.
-
 ### `MaskingConfig`
 
 ```python

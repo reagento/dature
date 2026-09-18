@@ -33,15 +33,15 @@ pip install dature[azure-appconfig]
 
 With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `:` nesting instead of `__`. Settings whose `content_type` is `application/json` are always JSON-decoded regardless of `decode`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON), reading a single setting whose value is an entire JSON document. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(azure_app_config={...})` (or the matching `DATURE_AZURE_APP_CONFIG__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(azure_app_config={...})` (or the matching `DATURE_AZURE_APP_CONFIG__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/azure_app_config/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_AZURE_APP_CONFIG__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(azure_app_config={...})` → `DATURE_AZURE_APP_CONFIG__*` env. `None` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "Key Vault references are not resolved"
     Azure App Configuration settings can reference secrets stored in Azure Key Vault (`application/vnd.microsoft.appconfig.keyvaultref+json`). `AzureAppConfigSource` intentionally does not resolve these — merge in an [`AzureKeyVaultSource`](azure_key_vault.md) alongside it and let dature's own multi-source merge fill in the values: `load(AzureAppConfigSource(...), AzureKeyVaultSource(...))`.

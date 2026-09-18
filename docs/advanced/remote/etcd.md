@@ -34,15 +34,15 @@ By default `EtcdSource` reads recursively (`recursive=True`) and splits keys on 
 
 With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `/` nesting instead of `__`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON). `decode="raw"` yields raw `bytes` and sits outside the type-coercion matrix. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(etcd={...})` (or the matching `DATURE_ETCD__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(etcd={...})` (or the matching `DATURE_ETCD__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/etcd/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_ETCD__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(etcd={...})` → `DATURE_ETCD__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "Authentication is layered on top of etcd3gw"
     `etcd3gw` has no built-in support for etcd's user/password auth. `EtcdSource` implements it itself: when `user` is set, it calls `POST /v3/auth/authenticate` through the client's own `post()` helper and stores the returned token on `client.session.headers["Authorization"]` before issuing any other request. `ca_cert` and `cert_cert`/`cert_key` are passed straight to `Etcd3Client`, which applies them to its own session.

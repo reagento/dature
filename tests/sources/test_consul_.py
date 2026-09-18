@@ -12,8 +12,9 @@ import consul.exceptions
 import consul.std
 import pytest
 
-from dature import ConsulSource, configure, load
+from dature import ConsulSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
@@ -98,14 +99,14 @@ class TestConsulSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestConsulSourceConfigFallback:
     def test_host_from_configure(self):
-        configure(consul={"host": "from-configure", "token": "t"})
-        merged = apply_source_config_group(ConsulSource(path="p"))
+        cfg = Dature(consul={"host": "from-configure", "token": "t"}).config
+        merged = apply_source_config_group(ConsulSource(path="p"), cfg=cfg)
         assert merged.host == "from-configure"
         assert merged.token == "t"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_CONSUL__HOST", "localhost")
         monkeypatch.setenv("DATURE_CONSUL__TOKEN", "root")
@@ -114,8 +115,8 @@ class TestConsulSourceConfigFallback:
         assert merged.token == "root"
 
     def test_instance_overrides_global(self):
-        configure(consul={"host": "global", "token": "global-token"})
-        merged = apply_source_config_group(ConsulSource(path="p", host="instance"))
+        cfg = Dature(consul={"host": "global", "token": "global-token"}).config
+        merged = apply_source_config_group(ConsulSource(path="p", host="instance"), cfg=cfg)
         assert merged.host == "instance"
         assert merged.token == "global-token"
 
@@ -131,8 +132,8 @@ class TestConsulSourceConfigFallback:
         config_kwargs = {"host": "c"}
         if global_value is not None:
             config_kwargs["port"] = global_value
-        configure(consul=config_kwargs)
-        merged = apply_source_config_group(ConsulSource(path="p", port=instance_value))
+        cfg = Dature(consul=config_kwargs).config
+        merged = apply_source_config_group(ConsulSource(path="p", port=instance_value), cfg=cfg)
         assert merged.port == expected
 
     @pytest.mark.parametrize(
@@ -147,8 +148,8 @@ class TestConsulSourceConfigFallback:
         config_kwargs = {"host": "c"}
         if global_value is not None:
             config_kwargs["scheme"] = global_value
-        configure(consul=config_kwargs)
-        merged = apply_source_config_group(ConsulSource(path="p", scheme=instance_value))
+        cfg = Dature(consul=config_kwargs).config
+        merged = apply_source_config_group(ConsulSource(path="p", scheme=instance_value), cfg=cfg)
         assert merged.scheme == expected
 
 

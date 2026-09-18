@@ -29,7 +29,7 @@ from typing import Any, NoReturn, cast
 from adaptix import Retort
 
 from dature._deprecations import SEARCH_SYSTEM_PATHS_MESSAGE
-from dature.config import DatureConfig, legacy, resolve_config
+from dature.config import DatureConfig, default_config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
 from dature.errors.location import ErrorContext
@@ -149,7 +149,7 @@ class Loader[T: DataclassInstance]:
         )
 
         self._config: DatureConfig = apply_masking_mode(
-            config if config is not None else resolve_config(), masking_mode=masking_mode
+            config if config is not None else default_config(), masking_mode=masking_mode
         )
 
         if cache is None:
@@ -192,16 +192,7 @@ class Loader[T: DataclassInstance]:
         self._skip_if_missing = skip_if_missing
         self._skip_field_if_invalid = skip_field_if_invalid
         self._secret_field_names = secret_field_names
-        # A Dature instance always passes its own resolved *config* through, so `config is None`
-        # here means this Loader isn't backed by one — either the deprecated free-function
-        # dature.load()/@dature.load(...) API, or a bare Loader(...)/Loader.as_decorator(...)
-        # construction. Both have no instance-level storage of their own, so the deprecated
-        # configure(type_loaders=...) global shim is the only way to reach them.
-        # Priority: legacy < load-level < source. Removed in 1.5 alongside configure() itself.
-        legacy_type_loaders = legacy.type_loaders if config is None else {}
-        self._type_loaders_arg: TypeLoaderMap | None = (
-            {**legacy_type_loaders, **(type_loaders or {})} if legacy_type_loaders else type_loaders
-        )
+        self._type_loaders_arg: TypeLoaderMap | None = type_loaders
         self._source_params = SourceParams(
             expand_env_vars=expand_env_vars,
             nested_resolve_strategy=nested_resolve_strategy,

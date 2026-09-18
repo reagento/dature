@@ -26,7 +26,7 @@ In decorator mode, caching is enabled by default:
     --8<-- "docs/examples/advanced/caching/advanced_caching_ttl.py"
     ```
 
-Caching can also be configured globally via `configure()`.
+Caching can also be configured globally via `dature.Dature(...)`.
 
 ## TTL caching
 
@@ -105,8 +105,8 @@ Notes:
   before the reload attempt — a failure in that case always raises, since the stale value belongs
   to a different set of sources.
 - Falling back to a stale value logs a `logging.WARNING` via the `"dature"` logger.
-- `stale_on_error=None` (the default) falls back to `configure(loading={"stale_on_error": ...})`,
-  same as `cache`/`cache_engine`.
+- `stale_on_error=None` (the default) falls back to `Dature(loading={"stale_on_error": ...})`
+  (or the `DATURE_LOADING__STALE_ON_ERROR` env var), same as `cache`/`cache_engine`.
 
 ## Function-mode caching: `Loader`
 
@@ -140,7 +140,8 @@ kept around for reuse, or discarded after every load.
 - `cache_engine=True` — the compiled engine is kept alive for the `Loader`/class lifetime, so
   repeated loads skip recompiling it. This is what makes a hot, uncached reload fast.
 - `cache_engine=None` (the default when passed explicitly) — falls back to
-  `configure(loading={"cache_engine": ...})`, same as other loading options.
+  `Dature(loading={"cache_engine": ...})` (or `DATURE_LOADING__CACHE_ENGINE`), same as other
+  loading options.
 
 Because the default `cache=True` already caches the result forever, the compiled engine is only
 ever needed once — retaining it brings no benefit, so `cache_engine` defaults to `False`. Turn it

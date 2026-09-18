@@ -17,7 +17,7 @@ class AwsSecretsManagerSource(RemoteSource):
     region_name: Annotated[
         str,
         (V.len() >= 1).with_error_message(
-            "region_name is required (set on instance or via configure(secrets_manager={...}) / "
+            "region_name is required (set on instance or via Dature(secrets_manager={...}) / "
             "DATURE_SECRETS_MANAGER__REGION_NAME)"
         ),
     ] = ""

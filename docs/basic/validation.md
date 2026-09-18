@@ -63,7 +63,7 @@ Validate the entire object after loading:
     --8<-- "docs/examples/basic/validation/validation_root.stderr"
     ```
 
-Root validators receive the fully constructed dataclass instance and return `True` if valid. Pass them via `root_validators=` on `load()`, `Loader`, or `configure()` — they run once on the final merged object, after all sources have been applied.
+Root validators receive the fully constructed dataclass instance and return `True` if valid. Pass them via `root_validators=` on `load()`, `Loader`, or `dature.Dature(...)` — they run once on the final merged object, after all sources have been applied.
 
 ## Metadata Validators
 

@@ -31,15 +31,15 @@ The secret's payload **is** the config document: no path nesting or key splittin
 
 Like [`VaultSource`](vault.md), the secret's JSON payload is read natively — no string-based type coercion. A secret whose value is not a JSON object (e.g. a bare string or number) raises `TypeError`, since it cannot be the root of a config document. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(secrets_manager={...})` (or the matching `DATURE_SECRETS_MANAGER__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(secrets_manager={...})` (or the matching `DATURE_SECRETS_MANAGER__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/secrets_manager/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_SECRETS_MANAGER__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(secrets_manager={...})` → `DATURE_SECRETS_MANAGER__*` env. `None` or `""` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
 
 !!! note "Credentials fall back to boto3's own chain"
     Leaving `aws_access_key_id`/`aws_secret_access_key`/`profile_name` unset does not mean "no auth" — boto3's `Session` still resolves credentials from environment variables, an EC2/ECS instance profile, or an SSO/CLI profile, exactly as it would for any other AWS SDK call.

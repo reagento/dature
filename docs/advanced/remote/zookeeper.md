@@ -35,12 +35,12 @@ By default `ZookeeperSource` reads recursively (`recursive=True`) and splits zno
 
 With `decode="utf-8"` (the default) every value is a string and collections are JSON literals — the same dialect as ENV, with `/` nesting instead of `__`. `decode="json"` behaves like [`VaultSource`](vault.md) (native JSON). `decode="raw"` yields raw `bytes` and sits outside the type-coercion matrix. See [Supported Types](../../supported_types.md) for the full matrix.
 
-## Global configuration via configure()
+## Global configuration via dature.Dature
 
-Connection settings rarely change per-call, so they can be set once via `dature.configure(zookeeper={...})` (or the matching `DATURE_ZOOKEEPER__*` env vars):
+Connection settings rarely change per-call, so they can be set once via `dature.Dature(zookeeper={...})` (or the matching `DATURE_ZOOKEEPER__*` env vars):
 
 ```python
 --8<-- "docs/examples/advanced/remote/zookeeper/configure.py"
 ```
 
-Precedence (highest first): instance fields → `configure()` → `DATURE_ZOOKEEPER__*` env. `None`, `""` or `[]` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.
+Precedence (highest first): instance fields → `dature.Dature(zookeeper={...})` → `DATURE_ZOOKEEPER__*` env. `None`, `""` or `[]` on the instance means "fall through to the next layer". See [Configure](../../basic/configure.md) for the full picture.

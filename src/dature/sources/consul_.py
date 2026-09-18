@@ -18,7 +18,7 @@ class ConsulSource(RemoteSource):
     host: Annotated[
         str,
         (V.len() >= 1).with_error_message(
-            "host is required (set on instance or via configure(consul={...}) / DATURE_CONSUL__HOST)"
+            "host is required (set on instance or via Dature(consul={...}) / DATURE_CONSUL__HOST)"
         ),
     ] = ""
     port: Annotated[int | None, (V > 0).with_error_message("port must be a positive integer")] = None

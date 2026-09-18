@@ -20,9 +20,9 @@ from dature import (
     VaultSource,
     Yaml11Source,
     Yaml12Source,
-    configure,
     load,
 )
+from dature.config import default_config
 from dature.errors import DatureConfigError
 from dature.protocols import DataclassInstance
 from dature.sources.base import Source
@@ -353,10 +353,11 @@ class _ConfigAwareSource(Source):
 
 @pytest.mark.usefixtures("_reset_config")
 class TestSingleSourceConfigGroup:
-    def test_load_applies_config_group(self) -> None:
+    def test_load_applies_config_group(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Regression: single-source load() must call apply_source_config_group so that
-        # ``configure(vault={...})`` (and ``DATURE_VAULT__*``) actually reach the source.
-        configure(vault={"host": "from-config"})
+        # ``DATURE_VAULT__*`` actually reaches the source.
+        monkeypatch.setenv("DATURE_VAULT__HOST", "from-config")
+        default_config.cache_clear()
 
         @dataclass
         class Config:
@@ -365,8 +366,9 @@ class TestSingleSourceConfigGroup:
         result = load(_ConfigAwareSource(), schema=Config)
         assert result.host_value == "from-config"
 
-    def test_decorator_applies_config_group(self) -> None:
-        configure(vault={"host": "from-config"})
+    def test_decorator_applies_config_group(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("DATURE_VAULT__HOST", "from-config")
+        default_config.cache_clear()
 
         @load(_ConfigAwareSource())
         @dataclass

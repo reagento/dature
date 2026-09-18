@@ -15,7 +15,7 @@ class VaultSource(RemoteSource):
     host: Annotated[
         str,
         (V.len() >= 1).with_error_message(
-            "host is required (set on instance or via configure(vault={...}) / DATURE_VAULT__HOST)"
+            "host is required (set on instance or via Dature(vault={...}) / DATURE_VAULT__HOST)"
         ),
     ] = ""
     port: Annotated[int | None, (V > 0).with_error_message("port must be a positive integer")] = None

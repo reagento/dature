@@ -18,7 +18,7 @@ Pass `type_loaders` as a `dict[type, Callable]` mapping types to conversion func
 
 ### Per-source vs Global
 
-`type_loaders` can be set per-source in `Source`, in `dature.load()` for merge mode, or globally via `configure()`:
+`type_loaders` can be set per-source in `Source`, in `dature.load()` for merge mode, or globally via `dature.Dature(...)`:
 
 === "Per-source (Source)"
 

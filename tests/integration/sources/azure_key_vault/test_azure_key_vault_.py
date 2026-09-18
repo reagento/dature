@@ -21,7 +21,8 @@ from typing import Final
 import pytest
 from azure.keyvault.secrets import SecretClient
 
-from dature import AzureKeyVaultSource, configure, load
+from dature import AzureKeyVaultSource, load
+from dature.instance import Dature
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.azure_credentials import NoopCredential
 from tests.sources.checker import assert_all_types_equal
@@ -119,7 +120,7 @@ class TestAzureKeyVaultSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="vault_url_from_configure"),
+            pytest.param("dature_instance", id="vault_url_from_dature_instance"),
             pytest.param("env", id="vault_url_from_env"),
         ],
     )
@@ -130,14 +131,17 @@ class TestAzureKeyVaultSourceGlobalConfigEndToEnd:
         azure_key_vault_client_options: ClientOptions,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        if via == "configure":
-            configure(azure_key_vault={"vault_url": azure_key_vault_url})
+        if via == "dature_instance":
+            app = Dature(azure_key_vault={"vault_url": azure_key_vault_url})
+            result = app.load(
+                AzureKeyVaultSource(credential=NoopCredential(), client_options=azure_key_vault_client_options),
+                schema=_Config,
+            )
         else:
             monkeypatch.setenv("DATURE_AZURE_KEY_VAULT__VAULT_URL", azure_key_vault_url)
-
-        result = load(
-            AzureKeyVaultSource(credential=NoopCredential(), client_options=azure_key_vault_client_options),
-            schema=_Config,
-        )
+            result = load(
+                AzureKeyVaultSource(credential=NoopCredential(), client_options=azure_key_vault_client_options),
+                schema=_Config,
+            )
 
         assert result == EXPECTED_DATACLASS

@@ -17,7 +17,7 @@ class AzureKeyVaultSource(RemoteSource):
     vault_url: Annotated[
         str,
         (V.len() >= 1).with_error_message(
-            "vault_url is required (set on instance or via configure(azure_key_vault={...}) / "
+            "vault_url is required (set on instance or via Dature(azure_key_vault={...}) / "
             "DATURE_AZURE_KEY_VAULT__VAULT_URL)"
         ),
     ] = ""

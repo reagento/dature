@@ -29,8 +29,9 @@ from google.cloud import secretmanager
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 
-from dature import GcpSecretManagerSource, configure, load
+from dature import GcpSecretManagerSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.integration.sources.gcp_secret_manager.conftest import GCP_PROJECT_ID
 from tests.integration.sources.gcp_secret_manager.helpers import (
@@ -190,7 +191,7 @@ class TestGcpSecretManagerSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="project_id_from_configure"),
+            pytest.param("dature_instance", id="project_id_from_dature_instance"),
             pytest.param("env", id="project_id_from_env"),
         ],
     )
@@ -200,15 +201,18 @@ class TestGcpSecretManagerSourceGlobalConfigEndToEnd:
         gcp_secret_manager_transport: object,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        if via == "configure":
-            configure(gcp_secret_manager={"project_id": GCP_PROJECT_ID})
+        if via == "dature_instance":
+            app = Dature(gcp_secret_manager={"project_id": GCP_PROJECT_ID})
+            result = app.load(
+                GcpSecretManagerSource(transport=gcp_secret_manager_transport),
+                schema=_Config,
+            )
         else:
             monkeypatch.setenv("DATURE_GCP_SECRET_MANAGER__PROJECT_ID", GCP_PROJECT_ID)
-
-        result = load(
-            GcpSecretManagerSource(transport=gcp_secret_manager_transport),
-            schema=_Config,
-        )
+            result = load(
+                GcpSecretManagerSource(transport=gcp_secret_manager_transport),
+                schema=_Config,
+            )
 
         assert result == EXPECTED_DATACLASS
 

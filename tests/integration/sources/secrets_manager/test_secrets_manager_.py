@@ -12,8 +12,9 @@ from typing import Final
 
 import pytest
 
-from dature import AwsSecretsManagerSource, configure, load
+from dature import AwsSecretsManagerSource, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -190,7 +191,7 @@ class TestAwsSecretsManagerSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="settings_from_configure"),
+            pytest.param("dature_instance", id="settings_from_dature_instance"),
             pytest.param("env", id="settings_from_env"),
         ],
     )
@@ -208,8 +209,9 @@ class TestAwsSecretsManagerSourceGlobalConfigEndToEnd:
             "aws_access_key_id": localstack_iam_credentials["aws_access_key_id"],
             "aws_secret_access_key": localstack_iam_credentials["aws_secret_access_key"],
         }
-        if via == "configure":
-            configure(secrets_manager=settings)
+        if via == "dature_instance":
+            app = Dature(secrets_manager=settings)
+            result = app.load(AwsSecretsManagerSource(name=SECRET_NAME), schema=_Config)
         else:
             monkeypatch.setenv("DATURE_SECRETS_MANAGER__REGION_NAME", secrets_manager_region_name)
             monkeypatch.setenv("DATURE_SECRETS_MANAGER__ENDPOINT_URL", secrets_manager_endpoint_url)
@@ -221,7 +223,6 @@ class TestAwsSecretsManagerSourceGlobalConfigEndToEnd:
                 "DATURE_SECRETS_MANAGER__AWS_SECRET_ACCESS_KEY",
                 localstack_iam_credentials["aws_secret_access_key"],
             )
-
-        result = load(AwsSecretsManagerSource(name=SECRET_NAME), schema=_Config)
+            result = load(AwsSecretsManagerSource(name=SECRET_NAME), schema=_Config)
 
         assert result == EXPECTED_DATACLASS

@@ -12,8 +12,9 @@ from typing import Final
 
 import pytest
 
-from dature import AwsSsmSource, configure, load
+from dature import AwsSsmSource, load
 from dature.errors import DatureConfigError, SourceLocation
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
@@ -185,7 +186,7 @@ class TestAwsSsmSourceGlobalConfigEndToEnd:
     @pytest.mark.parametrize(
         "via",
         [
-            pytest.param("configure", id="settings_from_configure"),
+            pytest.param("dature_instance", id="settings_from_dature_instance"),
             pytest.param("env", id="settings_from_env"),
         ],
     )
@@ -196,14 +197,14 @@ class TestAwsSsmSourceGlobalConfigEndToEnd:
             "aws_access_key_id": localstack_iam_credentials["aws_access_key_id"],
             "aws_secret_access_key": localstack_iam_credentials["aws_secret_access_key"],
         }
-        if via == "configure":
-            configure(ssm=settings)
+        if via == "dature_instance":
+            app = Dature(ssm=settings)
+            result = app.load(AwsSsmSource(path=KV_PREFIX), schema=_Config)
         else:
             monkeypatch.setenv("DATURE_SSM__REGION_NAME", ssm_region_name)
             monkeypatch.setenv("DATURE_SSM__ENDPOINT_URL", ssm_endpoint_url)
             monkeypatch.setenv("DATURE_SSM__AWS_ACCESS_KEY_ID", localstack_iam_credentials["aws_access_key_id"])
             monkeypatch.setenv("DATURE_SSM__AWS_SECRET_ACCESS_KEY", localstack_iam_credentials["aws_secret_access_key"])
-
-        result = load(AwsSsmSource(path=KV_PREFIX), schema=_Config)
+            result = load(AwsSsmSource(path=KV_PREFIX), schema=_Config)
 
         assert result == EXPECTED_DATACLASS

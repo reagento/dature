@@ -64,20 +64,6 @@ failure differently:
 Register instance-level custom type loaders that apply to all loads through that instance.
 Priority: `Dature` < load-level < source. See [Custom Types & Loaders](../advanced/custom_types.md#per-source-vs-global).
 
-!!! warning "configure() is deprecated"
-    `dature.configure()` is deprecated since **1.3** and will be removed in **1.5**.
-    Migrate to `dature.Dature(...)` — the same option groups are accepted.
-
-    ```python
-    # Before
-    --8<-- "docs/examples/basic/configure/configure_migration.py:before"
-    ```
-
-    ```python
-    # After
-    --8<-- "docs/examples/basic/configure/configure_migration.py:after"
-    ```
-
 ## Environment Variables
 
 dature auto-loads its own config from `DATURE_*` environment variables on first use. Nested fields use `__` as delimiter:

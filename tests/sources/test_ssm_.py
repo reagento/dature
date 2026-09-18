@@ -11,8 +11,9 @@ import boto3
 import pytest
 from botocore.exceptions import ClientError
 
-from dature import AwsSsmSource, configure, load
+from dature import AwsSsmSource, load
 from dature.errors import DatureConfigError
+from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
 from dature.sources.base import remote_value_loaders, string_value_loaders
@@ -122,15 +123,15 @@ class TestAwsSsmSourceValidation:
         validate_source(merged)
 
 
-@pytest.mark.usefixtures("_reset_config")
 class TestAwsSsmSourceConfigFallback:
     def test_region_from_configure(self):
-        configure(ssm={"region_name": "eu-west-1"})
+        cfg = Dature(ssm={"region_name": "eu-west-1"}).config
 
-        merged = apply_source_config_group(AwsSsmSource(path="p"))
+        merged = apply_source_config_group(AwsSsmSource(path="p"), cfg=cfg)
 
         assert merged.region_name == "eu-west-1"
 
+    @pytest.mark.usefixtures("_reset_config")
     def test_creds_from_env_vars(self, monkeypatch):
         monkeypatch.setenv("DATURE_SSM__REGION_NAME", "eu-west-1")
         monkeypatch.setenv("DATURE_SSM__PROFILE_NAME", "dev")
@@ -141,9 +142,9 @@ class TestAwsSsmSourceConfigFallback:
         assert merged.profile_name == "dev"
 
     def test_instance_overrides_global(self):
-        configure(ssm={"region_name": "global-region"})
+        cfg = Dature(ssm={"region_name": "global-region"}).config
 
-        merged = apply_source_config_group(AwsSsmSource(path="p", region_name="instance-region"))
+        merged = apply_source_config_group(AwsSsmSource(path="p", region_name="instance-region"), cfg=cfg)
 
         assert merged.region_name == "instance-region"
 
