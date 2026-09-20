@@ -23,16 +23,19 @@ class DockerSecretsSource(FlatKeySource):
             self.dir_ = expand_file_path(self.dir_, mode="strict")
 
     def __repr__(self) -> str:
-        return f"{self.format_name} '{self.dir_}'"
+        return f"{self.format_name} '{self.file_display()}'"
 
     def display_name(self) -> str:
         return self.file_display() or self.format_name
 
     def file_display(self) -> str | None:
-        return str(self.dir_)
+        return self.redact(str(self.dir_))
 
     def file_path_for_errors(self) -> Path | None:
         return Path(self.dir_)
+
+    def display_file_path_for_errors(self) -> Path | None:
+        return Path(self.redact(str(self.file_path_for_errors())))
 
     def resolve_location(
         self,
@@ -70,10 +73,11 @@ class DockerSecretsSource(FlatKeySource):
                         search_from=value_start,
                     )
                 line_carets = self._value_line_carets(value_lines, value_start, first_caret)
+        display_path = Path(self.redact(str(secret_file)))
         return [
             SourceLocation(
                 location_label=self.location_label,
-                file_path=secret_file,
+                file_path=display_path,
                 line_range=None,
                 line_content=line_content,
                 env_var_name=None,

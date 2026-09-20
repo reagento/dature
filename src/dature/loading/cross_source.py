@@ -18,10 +18,17 @@ from collections import deque
 from dataclasses import dataclass
 
 from dature.conditions import Condition
+from dature.config import MaskingConfig
 from dature.errors.exceptions import DatureError
-from dature.expansion.cross_source import expand_cross_refs, find_refs, needs_cross_ref_expansion
+from dature.expansion.cross_source import (
+    expand_cross_refs,
+    expand_cross_refs_tracking_secrets,
+    find_refs,
+    needs_cross_ref_expansion,
+)
 from dature.expansion.env_expand import expand_string_default
-from dature.sources.base import clone_source
+from dature.masking.masking import mask_value
+from dature.sources.base import Source, clone_source
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue
 
@@ -88,6 +95,9 @@ def evaluate_when_lazy(
 def clone_with_interpolation(
     source: SourceProtocol,
     context: dict[str, dict[str, JSONValue]],
+    *,
+    secret_key_patterns: tuple[str, ...] = (),
+    masking: MaskingConfig | None = None,
 ) -> SourceProtocol:
     """Return a copy of *source* with cross-refs in init fields expanded.
 
@@ -95,18 +105,33 @@ def clone_with_interpolation(
     ``merge_runtime``. Unlike those, this does *not* mark the expanded fields as
     cascade-filled — it only rewrites the value of a field the caller already set
     explicitly, so the field should keep showing in ``repr()``.
+
+    *secret_key_patterns* names the heuristic used to spot secret-looking ``${@tag.key}``
+    keys (same as schema-field masking). Every substituted value whose ref matched is
+    recorded on the clone via :meth:`~dature.sources.base.source.Source.mark_cross_ref_secrets`
+    as a ``(raw, mask_value(raw, masking))`` pair, so display surfaces can redact the raw
+    substring wherever it shows up without affecting the value actually used to do the
+    source's job. *masking* must be given whenever *secret_key_patterns* is non-empty.
     """
     overrides: dict[str, object] = {}
+    secrets: list[str] = []
     for name, value in _init_string_fields(source).items():
         if needs_cross_ref_expansion(value):
-            expanded = expand_cross_refs(value, context=context)
+            expanded, secret_values = expand_cross_refs_tracking_secrets(
+                value, context=context, secret_key_patterns=secret_key_patterns
+            )
             if expanded != value:
                 overrides[name] = expanded
+            secrets.extend(secret_values)
 
     if not overrides:
         return source
 
-    return clone_source(source, overrides)
+    cloned = clone_source(source, overrides)
+    if secrets and isinstance(cloned, Source):
+        effective_masking = masking if masking is not None else MaskingConfig()
+        cloned.mark_cross_ref_secrets((raw, mask_value(raw, effective_masking)) for raw in secrets)
+    return cloned
 
 
 def _find_cycle(start: int, deps: list[list[int]]) -> list[int]:

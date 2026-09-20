@@ -175,6 +175,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
     ) -> list[SourceLocation]:
         var_name = self._resolve_var_name(field_path, self.prefix, self.nested_sep, nested_conflict)
         file_path = self.file_path_for_errors()
+        display_path = self.display_file_path_for_errors()
         file_content: str | None = None
         if file_path is not None:
             with suppress(OSError, UnicodeDecodeError):
@@ -205,7 +206,7 @@ class EnvFileSource(FileFieldMixin, EnvSource):
         return [
             SourceLocation(
                 location_label=self.location_label,
-                file_path=file_path,
+                file_path=display_path,
                 line_range=line_range,
                 line_content=line_content,
                 env_var_name=var_name,

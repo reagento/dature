@@ -154,6 +154,7 @@ class Source(abc.ABC):
 
     def __post_init__(self) -> None:
         self._cascaded: frozenset[str] = frozenset()
+        self._cross_ref_secrets: tuple[tuple[str, str], ...] = ()
         if self.when is not None and not isinstance(self.when, Condition):
             msg = (
                 f"when= must be a Condition built with the When() DSL, "
@@ -186,6 +187,28 @@ class Source(abc.ABC):
         if isinstance(other, CascadeAwareProtocol):
             self.mark_cascaded(other.cascaded_fields)
 
+    def mark_cross_ref_secrets(self, secrets: "Iterable[tuple[str, str]]") -> None:
+        """Record ``(raw, masked)`` pairs substituted into this source from a secret-looking
+        cross-source reference (e.g. ``${@vault.db_password}``).
+
+        The raw substituted value is still needed to actually do the source's job (e.g. open
+        a file), but display surfaces (repr, debug reports, error messages) must show the
+        masked form instead — see :meth:`redact`.
+        """
+        merged = {**dict(self._cross_ref_secrets), **dict(secrets)}
+        self._cross_ref_secrets = tuple(sorted(merged.items(), key=lambda pair: len(pair[0]), reverse=True))
+
+    def redact(self, text: str) -> str:
+        """Replace any secret substring recorded by :meth:`mark_cross_ref_secrets` in *text*.
+
+        Longer secrets are replaced first so that one secret's value being a substring of
+        another's doesn't leave a partial match. Call once at a display boundary (repr,
+        debug report, error message) — not on the value actually used to do the source's job.
+        """
+        for raw, masked in self._cross_ref_secrets:
+            text = text.replace(raw, masked)
+        return text
+
     def __repr__(self) -> str:
         parts = []
         for f in fields(self):
@@ -200,7 +223,8 @@ class Source(abc.ABC):
                 with suppress(Exception):
                     if value == f.default_factory():
                         continue
-            parts.append(f"{f.name}={value!r}")
+            rendered = self.redact(repr(value)) if isinstance(value, str) else repr(value)
+            parts.append(f"{f.name}={rendered}")
         return f"{type(self).__name__}({', '.join(parts)})"
 
     @property

@@ -120,6 +120,7 @@ ignore = [
     "S105",    # possible hardcoded password
     "S106",    # possible hardcoded password assigned to argument
     "FBT001",  # boolean argument in function definition
+    "S311",    # insecure random number generator
 ]
 "src/dature/loaders/*.py" = [
     "FBT001",  # loader functions accept bool as scalar value, not as a flag

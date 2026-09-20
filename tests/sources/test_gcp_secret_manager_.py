@@ -298,6 +298,35 @@ class TestGcpSecretManagerSourceFetch:
 
         assert result.loaded_data == {"db": {"host": "localhost", "port": "5432"}, "name": "svc"}
 
+    def test_list_mode_skips_secret_that_disappears_after_listing(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        client = FakeSecretManagerClient(
+            secret_ids=["db-host", "db-port"],
+            values={"db-port": "5432"},
+        )
+        original_access_secret_version = client.access_secret_version
+
+        def _access_secret_version(name: str) -> FakeAccessResponse:
+            if "/secrets/db-host/" in name:
+                msg = "gone"
+                raise NotFound(msg)
+            return original_access_secret_version(name)
+
+        monkeypatch.setattr(client, "access_secret_version", _access_secret_version)
+        src = self._make_source(monkeypatch, client)
+
+        with caplog.at_level("WARNING", logger="dature"):
+            result = src.load_raw()
+
+        assert result.loaded_data == {"db-port": "5432"}
+        assert [r.getMessage() for r in caplog.records] == [
+            (
+                "gcp-secret-manager://my-proj/*/versions/latest: secret 'db-host' disappeared "
+                "between listing and fetch, skipping"
+            )
+        ]
+
     def test_list_mode_passes_filter(self, monkeypatch):
         client = FakeSecretManagerClient(secret_ids=["db-host"], values={"db-host": "localhost"})
         src = self._make_source(monkeypatch, client, name_prefix="db-")

@@ -186,6 +186,21 @@ Classic `ab*****cd` style:
 * `"my_secret_password"` → `"my*****rd"`
 * `"ab"` → `"ab"` (too short — shown as-is)
 
+## Cross-Source Reference Secrets
+
+A [cross-source reference](../advanced/cross_source_refs.md) like `${@vault.db_password}`
+can substitute a secret-looking value into another source's own field — e.g.
+`JsonSource(file="/cfg/${@vault.db_password}.json")`. When the referenced key looks like a
+secret, dature records the substituted value and redacts it wherever that source's
+configuration is displayed: debug reports, error locations, and `repr()`.
+
+The redaction uses the same `mask`, `visible_prefix`, `visible_suffix`, and `masking_mode`
+settings as everywhere else — only the secret substring is replaced, so
+`/cfg/${@vault.db_password}.json` shows as `/cfg/<REDACTED>.json` instead of hiding the
+whole path. The real value is still used to do the source's job (e.g. open the file); only
+its display is affected. Setting `masking_mode="none"` disables this too, showing the real
+value.
+
 ## Configuration
 
 ### Per-load

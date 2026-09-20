@@ -96,7 +96,18 @@ class TestFileFieldMixin:
 
         assert result == expected
 
-    def test_file_display_with_resolved_path(self, tmp_path: Path):
+    @pytest.mark.parametrize(
+        ("method_name", "expected_transform"),
+        [
+            ("file_display", str),
+            ("file_path_for_errors", lambda p: p),
+        ],
+    )
+    def test_file_display_and_path_for_errors_with_resolved_path(self, tmp_path: Path, method_name, expected_transform):
+        """``Src`` mixes in ``FileFieldMixin`` without ``Source`` — this also exercises the
+        ``_redact`` getattr fallback, since a bare mixin has no ``redact`` method to delegate to.
+        """
+
         @dataclass
         class Src(FileFieldMixin):
             pass
@@ -105,26 +116,14 @@ class TestFileFieldMixin:
         config_file.write_text("{}")
 
         src = Src(file=config_file)
-        assert src.file_display() == str(config_file)
+        result = getattr(src, method_name)()
 
-    def test_file_path_for_errors_with_resolved_path(self, tmp_path: Path):
-        @dataclass
-        class Src(FileFieldMixin):
-            pass
-
-        config_file = tmp_path / "config.json"
-        config_file.write_text("{}")
-
-        src = Src(file=config_file)
-        assert src.file_path_for_errors() == config_file
+        assert result == expected_transform(config_file)
 
 
+@pytest.mark.usefixtures("_reset_config")
 class TestFileSourceSearch:
     """Tests for FileSource system path search (FileFieldMixin._resolved_file_path)."""
-
-    @pytest.fixture(autouse=True)
-    def _reset_config(self):
-        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -288,12 +287,9 @@ class TestFileSourceSearch:
         assert result.port == 8000
 
 
+@pytest.mark.usefixtures("_reset_config")
 class TestConfigDirsDeprecations:
     """system_config_dirs / search_system_paths are deprecated, removed in dature 1.6."""
-
-    @pytest.fixture(autouse=True)
-    def _reset_config(self):
-        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -406,12 +402,9 @@ class TestConfigDirsDeprecations:
         assert result.port == 1000
 
 
+@pytest.mark.usefixtures("_reset_config")
 class TestConfigDirsCascade:
     """config_dirs cascades source > load > config, mirroring the strict cascade."""
-
-    @pytest.fixture(autouse=True)
-    def _reset_config(self):
-        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
@@ -460,11 +453,8 @@ class TestConfigDirsCascade:
         assert result.port == 5000
 
 
+@pytest.mark.usefixtures("_reset_config")
 class TestFileSourceEncoding:
-    @pytest.fixture(autouse=True)
-    def _reset_config(self):
-        default_config.cache_clear()
-
     @dataclass
     class _Cfg:
         name: str

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from dature import EnvSource, JsonSource, When, load
+from dature import Dature, EnvSource, JsonSource, When, load, load_report
 from dature.errors.exceptions import DatureError
 from dature.loading.cross_source import (
     build_cross_ref_plan,
@@ -372,6 +372,70 @@ class TestEnvSourceProvidesFilePath:
         )
 
         assert result.value == "resolved"
+
+
+class TestCrossRefMaskingGap:
+    """Regression (dature audit, stage 4.1): a secret value threaded through a cross-ref
+    into another source's init-field (e.g. ``file=``) used to surface in cleartext in the
+    debug report, because masking only ever touched structured ``raw_data``/``merged_data``
+    — never ``SourceEntry.file_path`` / ``FieldOrigin.source_file`` — even under the default
+    ``masking_mode="all"``, and ``masking_mode="none"`` was ignored for this case. Fixed by
+    recording the substituted secret substring (with its masked form, computed from the
+    effective ``MaskingConfig``) on the source itself and redacting only that substring
+    wherever a source's file path surfaces (report, error locations, ``repr()``), so
+    ``/cfg/<REDACTED>.json`` is shown instead of losing the whole path or leaking the secret.
+    """
+
+    def _load_with_secret_file_ref(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, **load_kwargs: object):
+        monkeypatch.setenv("APP_TOKEN", "s3cr3t-token")
+        config_file = tmp_path / "s3cr3t-token.json"
+        config_file.write_text('{"value": "ok"}')
+
+        result = load(
+            JsonSource(file=str(tmp_path) + "/${@env.token}.json"),
+            EnvSource(prefix="APP_"),
+            schema=_Config,
+            debug=True,
+            **load_kwargs,
+        )
+
+        report = load_report(result)
+        assert report is not None
+
+        return [source.file_path for source in report.sources]
+
+    @pytest.mark.parametrize("masking_mode", ["all", "secrets_only"])
+    def test_secret_env_var_in_file_path_is_redacted_per_config(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, masking_mode: str
+    ) -> None:
+        file_paths = self._load_with_secret_file_ref(tmp_path, monkeypatch, masking_mode=masking_mode)
+
+        assert file_paths == ["env", str(tmp_path / "<REDACTED>.json")]
+
+    def test_masking_mode_none_leaves_secret_derived_path_untouched(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        file_paths = self._load_with_secret_file_ref(tmp_path, monkeypatch, masking_mode="none")
+
+        assert file_paths == ["env", str(tmp_path / "s3cr3t-token.json")]
+
+    def test_custom_mask_string_from_config_is_used(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("APP_TOKEN", "s3cr3t-token")
+        config_file = tmp_path / "s3cr3t-token.json"
+        config_file.write_text('{"value": "ok"}')
+
+        conf = Dature(masking={"mask": "[CUSTOM]"})
+        result = conf.load(
+            JsonSource(file=str(tmp_path) + "/${@env.token}.json"),
+            EnvSource(prefix="APP_"),
+            schema=_Config,
+            debug=True,
+        )
+
+        report = load_report(result)
+        assert report is not None
+        file_paths = [source.file_path for source in report.sources]
+        assert file_paths == ["env", str(tmp_path / "[CUSTOM].json")]
 
 
 class TestEnvSourceProvidesPrefix:

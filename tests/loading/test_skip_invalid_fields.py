@@ -9,12 +9,9 @@ import pytest
 from dature import F, JsonSource, load
 from dature.errors import DatureConfigError
 
-
-@pytest.fixture(autouse=True)
-def _no_masking(_no_global_masking: None) -> None:
-    # This file isn't about masking — disable it so error/report assertions can
-    # compare literal, unredacted values (the default mode masks every string).
-    pass
+# This file isn't about masking — disable it so error/report assertions can
+# compare literal, unredacted values (the default mode masks every string).
+pytestmark = pytest.mark.usefixtures("_no_global_masking")
 
 
 class TestMergeSkipInvalidFields:

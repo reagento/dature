@@ -5,13 +5,13 @@ import json
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 from adaptix.provider import Provider
 
 from dature.errors import SourceLocation
 from dature.expansion.env_expand import expand_env_vars
-from dature.sources.base.source import Source, remote_value_loaders
+from dature.sources.base.source import Source, bytes_value_loaders, remote_value_loaders, string_value_loaders
 from dature.sources.presentation import build_search_path
 from dature.type_aliases import ExpandEnvVarsMode, JSONValue, NestedConflict
 
@@ -33,6 +33,24 @@ class RemoteSource(Source, abc.ABC):
 
     def format_loaders(self) -> "list[Provider]":
         return remote_value_loaders()
+
+    def _decode_mode_loaders(self, decode: Literal["utf-8", "json", "raw"]) -> "list[Provider]":
+        """Resolve the loader set for a ``decode`` mode.
+
+        Shared by every remote source whose ``decode`` option picks between raw bytes, a
+        decoded string, or a JSON document, so the four call sites can't drift out of sync
+        on which modes exist.
+        """
+        match decode:
+            case "raw":
+                return bytes_value_loaders()
+            case "utf-8":
+                return string_value_loaders()
+            case "json":
+                return remote_value_loaders()
+            case _ as unknown:
+                msg = f"Unknown decode mode: {unknown!r}"
+                raise ValueError(msg)
 
     def _load(self) -> JSONValue:
         return self._fetch()
@@ -87,11 +105,15 @@ class RemoteSource(Source, abc.ABC):
         No-op by default; subclasses whose client needs explicit teardown override this.
         """
 
+    def display_address(self) -> str:
+        """Same as :meth:`remote_address`, but with cross-ref secret substitutions redacted."""
+        return self.redact(self.remote_address())
+
     def __repr__(self) -> str:
-        return f"{self.format_name} '{self.remote_address()}'"
+        return f"{self.format_name} '{self.display_address()}'"
 
     def display_name(self) -> str:
-        return self.remote_address()
+        return self.display_address()
 
     @staticmethod
     def _nest_flat_keys[T](
@@ -142,7 +164,7 @@ class RemoteSource(Source, abc.ABC):
         input_value: JSONValue = None,  # noqa: ARG002
         loaded_data: JSONValue | None = None,
     ) -> list[SourceLocation]:
-        addr = self.remote_address()
+        addr = self.display_address()
         # ``loaded_data`` holds the raw ``_fetch()`` result (pre-prefix); the schema-side
         # ``field_path`` is already prefix-stripped, so prepend the prefix before looking up.
         search_path = build_search_path(field_path, self.prefix)

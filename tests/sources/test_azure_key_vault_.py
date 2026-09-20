@@ -238,6 +238,35 @@ class TestAzureKeyVaultSourceFetch:
 
         assert result.loaded_data == {"a": "1"}
 
+    def test_list_mode_skips_secret_that_disappears_after_listing(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        client = FakeSecretClient(
+            props=[FakeSecretProps("db-host"), FakeSecretProps("db-port")],
+            values={"db-port": "5432"},
+        )
+        original_get_secret = client.get_secret
+
+        def _get_secret(name: str, version: str | None = None) -> FakeKVSecret:
+            if name == "db-host":
+                msg = "gone"
+                raise ResourceNotFoundError(msg)
+            return original_get_secret(name, version)
+
+        monkeypatch.setattr(client, "get_secret", _get_secret)
+        src = self._make_source(monkeypatch, client)
+
+        with caplog.at_level("WARNING", logger="dature"):
+            result = src.load_raw()
+
+        assert result.loaded_data == {"db-port": "5432"}
+        assert [r.getMessage() for r in caplog.records] == [
+            (
+                "azure-key-vault://https://x.vault.azure.net/*: secret 'db-host' disappeared "
+                "between listing and fetch, skipping"
+            )
+        ]
+
     def test_list_mode_keeps_secret_with_unknown_enabled_state(self, monkeypatch):
         client = FakeSecretClient(
             props=[FakeSecretProps("a", enabled=None)],

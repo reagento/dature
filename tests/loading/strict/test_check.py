@@ -24,11 +24,9 @@ class _RecursiveNode:
     child: "_RecursiveNode | None" = None
 
 
-@pytest.fixture(autouse=True)
-def _no_masking(_no_global_masking: None) -> None:
-    # Strict-mode assertions compare literal error text against the file/key content;
-    # the default masking mode would redact anything that looks secret-shaped.
-    pass
+# Strict-mode assertions compare literal error text against the file/key content;
+# the default masking mode would redact anything that looks secret-shaped.
+pytestmark = pytest.mark.usefixtures("_no_global_masking")
 
 
 def _write_json(tmp_path: Path, content: str) -> Path:

@@ -68,7 +68,17 @@ class SourceProtocol(Protocol):
     @property
     def resolved_tag(self) -> str: ...
 
-    def load_raw(self) -> LoadRawResult: ...
+    def load_raw(self) -> LoadRawResult:
+        """Load and pre-process this source's data.
+
+        Errors must surface as a readable exception carrying a field path to the problem,
+        not propagate raw. The sole documented exception is ``ArgparseSource``: its parser's
+        ``parse_args()`` raises ``SystemExit`` on a missing required CLI argument, which is
+        deliberately left to propagate as-is (see its docstring) rather than translated,
+        since aborting the process with argparse's own usage message is the expected CLI
+        behavior.
+        """
+        ...
 
     def display_name(self) -> str: ...
 
@@ -112,6 +122,8 @@ class FileSourceProtocol(Protocol):
 
     def file_path_for_errors(self) -> Path | None: ...
 
+    def display_file_path_for_errors(self) -> Path | None: ...
+
     def build_line_index(self, content: str) -> "dict[tuple[str, ...], LineRange] | None": ...
 
 
@@ -131,3 +143,16 @@ class CascadeAwareProtocol(Protocol):
     def mark_cascaded(self, names: Iterable[str]) -> None: ...
 
     def inherit_cascaded(self, other: object) -> None: ...
+
+
+@runtime_checkable
+class RedactableProtocol(Protocol):
+    """Optional interface for sources that can redact secret-derived substrings from display text.
+
+    ``LoadCtx`` checks ``isinstance(source, RedactableProtocol)`` before calling ``redact`` on an
+    error message, since a bare ``SourceProtocol`` implementation isn't required to track
+    cross-ref secrets. Any class exposing this member satisfies the protocol — subclassing
+    ``Source`` is sufficient but not required.
+    """
+
+    def redact(self, text: str) -> str: ...

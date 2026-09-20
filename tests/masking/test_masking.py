@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -395,6 +396,35 @@ class TestMaskEnvLine:
         result = mask_env_line(line, masking=_NONE_MASKING, secret_leaf_names=frozenset({"password"}))
 
         assert result == line
+
+
+_STRUCTURED_SECRET = "s3cr3t_payload"
+
+
+class TestMaskStructuredLineNestedContainers:
+    """A secret embedded anywhere inside a nested ``{...}``/``[...]`` structure must never
+    survive masking as a substring of the output -- regardless of nesting depth or container
+    kind (dict/list). Complements the example-based ``TestMaskEnvLine`` cases with broader
+    structural coverage of ``_mask_structured_line``'s hand-rolled tokenizer.
+    """
+
+    @pytest.mark.parametrize(
+        "container",
+        [
+            pytest.param({"password": _STRUCTURED_SECRET}, id="dict-root"),
+            pytest.param(["a", _STRUCTURED_SECRET, 3], id="list-root"),
+            pytest.param(
+                {"db": {"credentials": [1, {"token": _STRUCTURED_SECRET}, "x"]}},
+                id="deep-nested-dict-in-list-in-dict",
+            ),
+        ],
+    )
+    def test_secret_never_survives_as_substring(self, container: object) -> None:
+        line = json.dumps(container)
+
+        masked = mask_env_line(line, masking=MaskingConfig())
+
+        assert _STRUCTURED_SECRET not in masked
 
 
 class TestGracefulDegradation:

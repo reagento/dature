@@ -205,6 +205,9 @@ def _expand_recursive_collect(
         }
 
     if isinstance(data, list):
-        return [_expand_recursive_collect(item, mode=mode, path=path, errors=errors) for item in data]
+        return [
+            _expand_recursive_collect(item, mode=mode, path=[*path, str(i)], errors=errors)
+            for i, item in enumerate(data)
+        ]
 
     return data

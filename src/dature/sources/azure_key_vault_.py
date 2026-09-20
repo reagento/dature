@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Literal, cast
@@ -10,6 +11,8 @@ from dature.sources.base import RemoteSource, string_value_loaders
 from dature.type_aliases import JSONValue
 from dature.validators.root import RootPredicate
 from dature.validators.v import V
+
+logger = logging.getLogger("dature")
 
 
 @dataclass(kw_only=True, repr=False)
@@ -132,7 +135,20 @@ class AzureKeyVaultSource(RemoteSource):
                     msg = f"Azure Key Vault has no secrets: {self.remote_address()}"
                     raise KeyError(msg) from None
 
-                secrets = [(secret_name, client.get_secret(secret_name).value) for secret_name in names]
+                secrets: list[tuple[str, str | None]] = []
+                for secret_name in names:
+                    try:
+                        value = client.get_secret(secret_name).value
+                    except ResourceNotFoundError:
+                        # Listed a moment ago, gone now (deleted concurrently) — one missing
+                        # secret shouldn't fail the whole list-mode load.
+                        logger.warning(
+                            "%s: secret %r disappeared between listing and fetch, skipping",
+                            self.remote_address(),
+                            secret_name,
+                        )
+                        continue
+                    secrets.append((secret_name, value))
         except ResourceNotFoundError:
             msg = f"Azure Key Vault secret not found: {self.remote_address()}"
             raise KeyError(msg) from None
