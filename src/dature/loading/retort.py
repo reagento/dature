@@ -1,5 +1,6 @@
-from collections.abc import Callable, Iterable
-from contextlib import suppress
+import linecache
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager, suppress
 from dataclasses import fields, is_dataclass
 from datetime import timedelta
 from enum import Flag
@@ -33,6 +34,8 @@ from dature.skip_field_provider import (
     ModelToDictProvider,
     RequireUnsafeFactoryFieldsProvider,
     SkipFieldProvider,
+    TrackingModelLoaderProvider,
+    generated_sources_var,
 )
 from dature.sources.base import IndexedSource, bytes_value_loaders, remote_value_loaders, string_value_loaders
 from dature.sources.protocol import SourceProtocol
@@ -149,8 +152,21 @@ _FINAL_SENTINEL: Final[object] = object()
 # AggregateLoadError that dature's error extraction relies on. The happy path loads through FAST;
 # on any failure the load is replayed through RICH (built lazily) to obtain the trailed error.
 # Both hold no schema-/source-specific state; all customisation is added via .extend().
-_BASE_FAST: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.DISABLE)
-_BASE_RICH: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.ALL)
+#
+# TrackingModelLoaderProvider() is baked in here, as the base's own (lowest-priority) instance
+# recipe, rather than appended inside build_base_recipe(): every later .extend() call (recipe,
+# overrides, root validators, skip/field-pass providers, ...) prepends ahead of whatever the base
+# already has, so this guarantees it is always checked dead last among dature's own providers —
+# exactly where adaptix's own built-in ModelLoaderProvider naturally sits relative to them. Adding
+# it to build_base_recipe's own returned list is not equivalent: callers that append more
+# providers (e.g. ConstructorOverrideProvider, root validators in _final_raw) after that list have
+# their own providers wrongly checked *after* the catch-all instead of before it.
+_BASE_FAST: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.DISABLE).extend(
+    recipe=[TrackingModelLoaderProvider()]
+)
+_BASE_RICH: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.ALL).extend(
+    recipe=[TrackingModelLoaderProvider()]
+)
 
 # Precomputed FAST retorts for the two built-in "uncustomized" default recipes (string-value
 # sources like EnvSource/CLI vs. plain sources like JSON/TOML/YAML). Sources with no
@@ -361,6 +377,38 @@ class RetortCache:
     ) -> tuple[int, object, bool, frozenset[Any]]:
         return (source_idx, _FINAL_SENTINEL, rich, _loaders_frozenset(type_loaders))
 
+    @contextmanager
+    def evict_generated_sources(self) -> Iterator[None]:
+        """Purge linecache entries this block causes adaptix to compile, when ``cache_engine`` is off.
+
+        adaptix's ``BasicClosureCompiler._compile`` unconditionally writes the source of every
+        compiled loader into the process-global ``linecache.cache`` for traceback readability,
+        and never evicts it. That's harmless when the compiled ``Retort`` is cached and reused,
+        but with ``cache_engine`` disabled a fresh ``Retort`` is compiled on every call (see
+        ``_get_or_build``), so linecache would otherwise grow without bound.
+
+        Every model-loader provider dature adds to a recipe (``TrackingModelLoaderProvider`` and
+        the ``ModelLoaderProvider`` subclasses in ``skip_field_provider.py``) compiles through
+        ``_TrackingCompiler``, which records each filename it registers into
+        ``generated_sources_var`` while it's set. That lets this evict exactly what the current
+        load compiled, rather than guessing by filename prefix — a concurrent load on another
+        thread gets its own registry (``ContextVar`` is per-context) and is never touched. Nothing
+        in adaptix itself is modified: each provider constructs its own ``_TrackingCompiler``
+        instance via ``_get_compiler()``, a supported (if private) per-provider seam, so code
+        elsewhere in the process using adaptix directly is unaffected.
+        """
+        if self._cache_engine:
+            yield
+            return
+        registry: set[str] = set()
+        token = generated_sources_var.set(registry)
+        try:
+            yield
+        finally:
+            generated_sources_var.reset(token)
+            for key in registry:
+                linecache.cache.pop(key, None)
+
     def _get_or_build(self, key: tuple[Any, ...], build: Callable[[], Retort]) -> Retort:
         """Return ``self._cache[key]``, building it via *build* on a miss.
 
@@ -517,9 +565,9 @@ class RetortCache:
             )
             if precomputed is not None:
                 return precomputed
-            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
             override = [ConstructorOverrideProvider(self.constructor, self._schema)] if self.constructor else []
             unsafe_factory_override = [RequireUnsafeFactoryFieldsProvider()]
+            recipe = build_base_recipe(indexed.source, resolved_type_loaders=resolved_type_loaders)
             return self._base(rich).extend(recipe=[*recipe, *unsafe_factory_override, *override, *self._root_providers])
 
         key = self._final_key(indexed.index, rich, resolved_type_loaders)

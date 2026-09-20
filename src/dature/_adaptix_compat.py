@@ -6,6 +6,7 @@ upgrade only requires fixing imports here, not across the providers. Re-check
 every symbol whenever the pinned adaptix version changes.
 """
 
+from adaptix._internal.code_tools.compiler import BasicClosureCompiler, ClosureCompiler
 from adaptix._internal.model_tools.definitions import (
     DefaultFactory,
     DefaultValue,
@@ -23,6 +24,8 @@ from adaptix._internal.provider.shape_provider import InputShapeRequest, provide
 
 __all__ = [
     "AlwaysTrueRequestChecker",
+    "BasicClosureCompiler",
+    "ClosureCompiler",
     "DefaultFactory",
     "DefaultValue",
     "InputShape",

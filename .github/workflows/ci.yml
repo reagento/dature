@@ -134,7 +134,29 @@ jobs:
         run: uv sync --all-extras --dev --upgrade-package adaptix==${{ matrix.adaptix-version }}
 
       - name: Run tests
-        run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples
+        run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples --ignore=tests/memory
+
+  leak-tests:
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run leak tests
+        run: uv run pytest -v tests/memory
 
   examples-tests:
     needs: [lint]
@@ -235,7 +257,7 @@ jobs:
         run: uv run python -c "from importlib.metadata import version; print('typing_extensions', version('typing-extensions'))"
 
       - name: Run tests
-        run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples
+        run: uv run pytest -v --ignore=tests/integration --ignore=tests/examples --ignore=tests/memory
 
   coverage:
     permissions:
@@ -259,7 +281,7 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov --cov-report=term --ignore=tests/integration --ignore=tests/examples
+        run: uv run pytest --cov --cov-report=term --ignore=tests/integration --ignore=tests/examples --ignore=tests/memory
 
       - name: Extract coverage percentage
         id: cov
@@ -320,13 +342,17 @@ jobs:
 
   test-result:
     if: always()
-    needs: [test, coverage, integration-tests, examples-tests, typing-extensions-test]
+    needs: [test, coverage, integration-tests, examples-tests, typing-extensions-test, leak-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
         run: |
           if [[ "${{ needs.test.result }}" != "success" ]]; then
             echo "::error::Tests failed or were cancelled: ${{ needs.test.result }}"
+            exit 1
+          fi
+          if [[ "${{ needs.leak-tests.result }}" != "success" ]]; then
+            echo "::error::Leak tests failed or were cancelled: ${{ needs.leak-tests.result }}"
             exit 1
           fi
           if [[ "${{ needs.coverage.result }}" != "success" ]]; then
