@@ -596,9 +596,10 @@ class Loader[T: DataclassInstance]:
         self.validation_loader = None
         self.error_ctx = None
         self._revalidation_indexed = None
-        if self._is_single:
-            return self._do_load_single()
-        return self._do_load_multi()
+        with self._retort_cache.evict_generated_sources():
+            if self._is_single:
+                return self._do_load_single()
+            return self._do_load_multi()
 
     def _do_load_single(self) -> T:
         indexed = IndexedSource(self._source, 0)  # type: ignore[arg-type]  # set by _prepare_for_load
@@ -639,15 +640,16 @@ class Loader[T: DataclassInstance]:
         """
         if self.validation_loader is not None or self._revalidation_indexed is None:
             return
-        validation_loader, ctx = build_revalidation(
-            indexed=self._revalidation_indexed,
-            schema=self._schema,
-            retort_cache=self._retort_cache,
-            type_loaders=self._type_loaders_arg,
-            secret_paths=self.secret_paths,
-            masking=self._config.masking,
-            error_display=self._config.error_display,
-        )
+        with self._retort_cache.evict_generated_sources():
+            validation_loader, ctx = build_revalidation(
+                indexed=self._revalidation_indexed,
+                schema=self._schema,
+                retort_cache=self._retort_cache,
+                type_loaders=self._type_loaders_arg,
+                secret_paths=self.secret_paths,
+                masking=self._config.masking,
+                error_display=self._config.error_display,
+            )
         self.validation_loader = validation_loader
         # Single-source set error_ctx eagerly (richer ctx); multi-source takes build_revalidation's.
         if self.error_ctx is None:
