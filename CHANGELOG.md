@@ -1,3 +1,131 @@
+## 1.5.0
+
+### Features
+
+- Added `reload=` — a background trigger that periodically reloads a config in place and keeps
+  the cache up to date, without restarting the process. Two triggers ship out of the box:
+  `FixedIntervalTrigger` (unconditional reload on a fixed cadence) and `FileWatchTrigger` (reload
+  when a watched file changes, requiring the optional `watchdog` package). Both accept `scheduler=`
+  to run on a dedicated thread instead of the shared process-wide default.
+  `on_reload=`/`on_error=` callbacks observe successful and failed reloads; a failed reload never
+  replaces the currently cached config (see `stale_on_error`). `reload=` is mutually exclusive with
+  `cache=timedelta(...)` and has no effect in function mode (`dature.load(...)` without a `Loader`
+  kept around) — both raise `ValueError`. Custom triggers can be written directly against
+  `ReloadTriggerProtocol` without subclassing anything. See the new "Background Reloading" docs page.
+
+### Bugfixes
+
+- A `$$` in a config *data* value immediately before `{@` (e.g. `$${@tag.key}`) no longer leaks
+  through unresolved as `$${@tag.key}`. Env-var expansion preserved that `$$` unconditionally so a
+  second, cross-source-ref expansion pass could collapse it to a literal `$` — but data values never
+  get that second pass, only a source's own constructor arguments and `when=` conditions do. Config
+  data values now always collapse `$$` to `$`, matching the documented, unconditional escaping
+  behaviour and the fact that `${@tag.key}` is not interpolated in data values at all, so no escaping
+  was ever needed there in the first place. Escaping in source constructor arguments (e.g.
+  `JsonSource(path="$${@env.foo}")`) is unaffected.
+- A cross-source reference (`${@tag.key}`) substituted into another source's init field
+  (`file=`, `dir_=`, a remote source's host/path/…) surfaced in cleartext in the debug report
+  (`SourceEntry.file_path` / `FieldOrigin.source_file`), error messages, and `repr()`, even when
+  `key` looked like a secret (e.g. `${@vault.db_password}`) — masking only ever covered
+  structured document data, never a source's own init-field values. `masking_mode="none"` was
+  also ignored for this case, redacting even when masking was explicitly disabled.
+
+  Every source now records `(raw, masked)` pairs for substituted values whose ref matched the
+  secret-name heuristic, masking each with the effective `MaskingConfig` (`mask`,
+  `visible_prefix`, `visible_suffix`) — the same rule already used for schema-field masking, and
+  respecting `masking_mode`. Display surfaces (file paths in reports, error locations, `repr()`,
+  remote addresses) redact only the secret substring, e.g. `/cfg/<REDACTED>.json` instead of
+  losing the whole path — the real value is still used to do the source's job (e.g. open the
+  file), only its display is affected.
+- A missing environment variable inside a `${VAR:-fallback}` fallback (e.g. `${A:-$B}` with both
+  `A` and `B` unset) in `"strict"` mode used to raise immediately from a throwaway sub-expander
+  instead of being collected like every other missing variable. This meant `expand_string_collect`
+  raised despite its documented "without raising" contract, `field_path` on the resulting error was
+  lost (rendered as `[<root>]` instead of the actual field), sibling fields with their own missing
+  variables were never reported, and `config_dirs` entries using this fallback shape (e.g. the
+  default `${XDG_CONFIG_HOME:-$HOME/.config}`) could crash `find_config` instead of being skipped
+  with a warning as documented. The fallback is now resolved by the same expander as the rest of the
+  string, so its errors are collected and attributed correctly.
+- A missing environment variable inside a list element (e.g. `hosts: ["ok", "$MISSING"]`) now
+  reports `field_path` as `["hosts", "1"]` instead of `["hosts"]`, so `expand_env_vars="strict"`
+  errors point at the offending list index rather than the whole list.
+- All remote sources (Vault, Consul, etcd, SSM, Secrets Manager, Azure App Configuration,
+  Azure Key Vault, GCP Secret Manager) now close their network client after each `_fetch()`,
+  including when it raises. Previously only `ZooKeeperSource` did this — the other eight built a
+  fresh HTTP/gRPC client on every fetch and never released it, so a background `reload=` trigger
+  (added in 1.4) would leak a client, and its underlying connection, on every tick for the lifetime
+  of the process.
+- With `cache_engine=False` (the default), every `load()` call compiled a fresh `adaptix` `Retort`
+  from scratch and discarded it, but `adaptix`'s codegen unconditionally left the compiled source
+  of each loader behind in Python's process-global `linecache.cache` for traceback readability,
+  never evicting it. A `Loader` (or `@load(...)`-decorated class) called repeatedly with
+  `cache=False` would grow that cache without bound for the life of the process. `RetortCache` now
+  purges the `linecache` entries it registered once each `load()` call finishes using them, whenever
+  `cache_engine` is disabled.
+- `GcpSecretManagerSource` and `AzureKeyVaultSource` list mode (`name="*"`) fetches every listed
+  secret one by one after the initial listing call. If a secret was deleted or became inaccessible
+  in the window between listing and fetching, the "secret not found" error aborted the whole load,
+  even though every other secret fetched fine.
+
+  Fetching an individual secret in list mode now catches that not-found error, logs a warning
+  naming the skipped secret, and continues with the rest — a single missing secret no longer fails
+  the entire source. Fetching still happens sequentially (no added concurrency); auth failures and
+  other errors from the listing call itself still abort the load as before.
+
+### Docs
+
+- Refreshed the numbers in `docs/comparison/benchmarks.md` against a hardened benchmark harness:
+  `benchmarks/_common.py`'s `run_bench` now warms up each callable before timing (a dature build's
+  first call pays ~35x a steady-state call for adaptix's lazy init and the one-time config
+  bootstrap) and reports `min` instead of `mean` across repeats; `benchmarks/bench_import.py`
+  discards one untimed sample per fresh venv before measuring. Previous runs could read up to 2x
+  higher purely from that noise, not from an actual dature slowdown. ([#refresh-benchmark-numbers](https://github.com/reagento/dature/issues/refresh-benchmark-numbers))
+- Documented that `ArgparseSource` is the one source that does not translate its own errors
+  into a readable, field-path-carrying exception: a missing required CLI argument raises
+  `SystemExit` straight out of `parser.parse_args()` instead, matching normal CLI behavior. No
+  behavior change — `SourceProtocol.load_raw()` and `ArgparseSource`'s docstring now say so
+  explicitly.
+
+### Refactoring
+
+- `ConsulSource`, `EtcdSource`, `ZookeeperSource`, and `AwsSsmSource` shared an identical
+  `match self.decode: case "raw"/"utf-8"/"json"` block in `format_loaders()`, copied byte for byte
+  across all four. Extracted into `RemoteSource._decode_mode_loaders()`. Fixing the duplication
+  surfaced an unexplained gap: `AwsSsmSource` only supported `"utf-8"`/`"json"`, missing the `"raw"`
+  mode the other three had. `AwsSsmSource` now also accepts `decode="raw"` for parity — a
+  backward-compatible addition, existing behavior for `"utf-8"`/`"json"` is unchanged.
+- `dature.expansion.env_expand` merges the two parallel `$VAR`/`${VAR}`/`%VAR%` expanders that
+  previously existed side by side — one for `"default"` mode, one for `"empty"`/`"strict"` — into a
+  single `_EnvExpander`. They differed only in what to do when a variable is missing; that policy is
+  now one method (`_on_missing`) instead of duplicated regex-callback bodies. No observable behavior
+  changes.
+- `deep_merge_last_wins` and `deep_merge_first_wins` (`merging/deep_merge.py`) differed only in their
+  base case (`return override` vs. `return base`). Merged into a single `_deep_merge` helper
+  parameterized by `last_wins`, so a future change to the recursive merge logic (e.g. list handling)
+  can't be applied to one copy and forgotten in the other. Also documented in the new helper's
+  docstring that lists are always replaced wholesale by `override`, never merged element-wise — that
+  was true before and remains unchanged. No observable behavior change.
+- `loading/merge.py` repeated the same "attach load report → enrich skipped-field errors → raise"
+  sequence by hand at five raise sites across `_run_field_passes`, `_raise_enriched_root_error`, and
+  `_finalize_load`. Moved it into `_FinalizeCtx.raise_with()`, the state object each of those
+  functions already threads through, so the sequence lives in one place. No observable behavior
+  change.
+
+### Removals
+
+- Removed `dature.configure()`, deprecated since 1.3 with removal announced for 1.5. Migrate to
+  `dature.Dature(...)`, which accepts the same option groups (`vault=`, `masking=`, `loading=`, ...).
+  The process-wide override is gone along with it — `DATURE_*` environment variables are now the
+  only way to set configuration for the whole process.
+
+### Misc
+
+- Added `tests/memory/`, a regression suite around every public form of `load()` (function mode,
+  `@load(...)`, `Loader.load`, `Dature().load`, `Dature().loader`) that fails if repeated loads
+  retain live objects or process memory. Marked `memory` and excluded from the main test matrix —
+  it runs in its own CI job instead.
+
+
 ## 1.4.0
 
 ### Features
