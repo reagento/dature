@@ -1513,6 +1513,56 @@ class TestLoaderReload:
         assert loader._cache_entry is None
 
 
+@dataclass(kw_only=True, repr=False)
+class _FakeRemoteClient:
+    closed: bool = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+@dataclass(kw_only=True, repr=False)
+class _FakeRemoteSource(dature.sources.base.RemoteSource):
+    """RemoteSource whose ``get_client()`` client-lifecycle can be observed from the outside."""
+
+    data: dict[str, JSONValue] = dataclasses.field(default_factory=dict)
+    clients: list[_FakeRemoteClient] = dataclasses.field(default_factory=list)
+
+    format_name: str = "fake-remote"
+    location_label: str = "FAKE_REMOTE"
+
+    def remote_address(self) -> str:
+        return "fake-remote://stub"
+
+    def _create_client(self) -> _FakeRemoteClient:
+        client = _FakeRemoteClient()
+        self.clients.append(client)
+        return client
+
+    def _close_client(self, client: object) -> None:
+        cast("_FakeRemoteClient", client).close()
+
+    def _fetch(self) -> JSONValue:
+        with self.get_client():
+            return dict(self.data)
+
+
+class TestLoaderReloadClientLifecycle:
+    def test_reload_ticks_never_leak_remote_clients(self) -> None:
+        source = _FakeRemoteSource(data={"host": "a", "port": 1})
+        trigger = ManualTrigger()
+        loader = Loader(source, schema=_Config, cache=True, reload=trigger)
+
+        loader.load()
+        for i in range(5):
+            source.data = {"host": f"host-{i}", "port": i}
+            trigger.fire()
+
+        assert loader.load() == _Config(host="host-4", port=4)
+        assert len(source.clients) == 6
+        assert all(client.closed for client in source.clients)
+
+
 class TestLoaderReloadValidation:
     @pytest.mark.parametrize("loader_fn", [load, Dature().load])
     def test_function_mode_reload_raises(self, loader_fn: Callable[..., Any], tmp_path: Path) -> None:

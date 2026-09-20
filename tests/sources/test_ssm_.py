@@ -16,7 +16,7 @@ from dature.errors import DatureConfigError
 from dature.instance import Dature
 from dature.loading.merge_runtime import apply_source_config_group
 from dature.loading.source_validation import validate_source
-from dature.sources.base import remote_value_loaders, string_value_loaders
+from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
 from tests.sources.checker import assert_all_types_equal
 
@@ -38,6 +38,7 @@ class TestAwsSsmSourceDisplayProperties:
         [
             pytest.param("utf-8", string_value_loaders(), id="utf8"),
             pytest.param("json", remote_value_loaders(), id="json"),
+            pytest.param("raw", bytes_value_loaders(), id="raw"),
         ],
     )
     def test_format_loaders(self, decode, expected):
@@ -293,6 +294,21 @@ class TestAwsSsmSourceFetch:
         result = src.load_raw()
 
         assert result.loaded_data == {"tags": ["a", "b", "c"]}
+
+    def test_raw_decode_loads_into_bytes_field(self, monkeypatch):
+        # Regression: SsmSource only supported decode="utf-8"/"json", unlike Consul/etcd/
+        # ZooKeeper's shared decode dispatch, which also has "raw" (bytes passthrough).
+        params = [{"Name": "/myapp/blob", "Value": "\x00\x01raw", "Type": "String"}]
+        client = FakeSsmClient(pages=[{"Parameters": params}])
+        self._make_source(monkeypatch, client, decode="raw")
+
+        @dataclass
+        class Config:
+            blob: bytes
+
+        result = load(AwsSsmSource(path="/myapp", region_name="us-east-1", decode="raw"), schema=Config)
+
+        assert result == Config(blob=b"\x00\x01raw")
 
     def test_decrypt_flag_passed_as_with_decryption(self, monkeypatch):
         params = [{"Name": "/myapp/a", "Value": "1", "Type": "String"}]

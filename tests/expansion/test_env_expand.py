@@ -354,6 +354,18 @@ class TestExpandEnvVars:
         errors = [e for e in exc_info.value.exceptions if isinstance(e, MissingEnvVarError)]
         assert [e.field_path for e in errors] == [["host"]]
 
+    def test_strict_list_element_gets_field_path_with_index(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Regression: list elements were expanded with the parent's path unchanged, so a
+        # missing var inside a list pointed at the whole list instead of the offending index.
+        monkeypatch.delenv("DATURE_MISSING", raising=False)
+        data: JSONValue = {"hosts": ["ok", "$DATURE_MISSING"]}
+
+        with pytest.raises(EnvVarExpandError) as exc_info:
+            expand_env_vars(data, mode="strict")
+
+        errors = [e for e in exc_info.value.exceptions if isinstance(e, MissingEnvVarError)]
+        assert [e.field_path for e in errors] == [["hosts", "1"]]
+
     def test_strict_aggregates_across_fallback_and_plain_fields(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Regression: a missing var inside a fallback used to abort the re.sub callback
         # via a raw raise, so sibling fields with their own missing vars were never

@@ -5,28 +5,29 @@ from dature.type_aliases import JSONValue
 _MIN_CONFLICT_SOURCES = 2
 
 
-def deep_merge_last_wins(base: JSONValue, override: JSONValue) -> JSONValue:
+def _deep_merge(base: JSONValue, override: JSONValue, *, last_wins: bool) -> JSONValue:
+    """Merge two dict trees recursively.
+
+    On a type mismatch (e.g. dict vs. scalar) or once both sides bottom out at a scalar, the
+    whole subtree is replaced rather than merged — this includes lists, which are always
+    replaced entirely by *override* (or kept as *base*'s), never concatenated or merged
+    element-wise, even though ``FieldAppend``/``FieldPrepend`` (``strategies/field.py``) exist
+    as an opt-in per-field alternative.
+    """
     if isinstance(base, dict) and isinstance(override, dict):
         result = dict(base)
         for key, value in override.items():
-            if key in result:
-                result[key] = deep_merge_last_wins(result[key], value)
-            else:
-                result[key] = value
+            result[key] = _deep_merge(result[key], value, last_wins=last_wins) if key in result else value
         return result
-    return override
+    return override if last_wins else base
+
+
+def deep_merge_last_wins(base: JSONValue, override: JSONValue) -> JSONValue:
+    return _deep_merge(base, override, last_wins=True)
 
 
 def deep_merge_first_wins(base: JSONValue, override: JSONValue) -> JSONValue:
-    if isinstance(base, dict) and isinstance(override, dict):
-        result = dict(base)
-        for key, value in override.items():
-            if key in result:
-                result[key] = deep_merge_first_wins(result[key], value)
-            else:
-                result[key] = value
-        return result
-    return base
+    return _deep_merge(base, override, last_wins=False)
 
 
 def _collect_conflicts(

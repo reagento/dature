@@ -804,3 +804,33 @@ class TestCascadeAwareRepr:
         cloned = clone_source(_NotCascadeAware(), {"prefix": "app"})  # type: ignore[type-var]
 
         assert cloned.prefix == "app"
+
+
+class TestCrossRefSecretRedaction:
+    """``Source.redact`` replaces recorded cross-ref secret substrings anywhere they surface —
+    including plain ``__repr__`` fields, not just ``file=``/``dir_=`` (dature audit, bug 2)."""
+
+    def test_repr_redacts_secret_in_non_file_field(self):
+        source = MockSource(prefix="token=SUPER-SECRET")
+        source.mark_cross_ref_secrets([("SUPER-SECRET", "<REDACTED>")])
+
+        assert repr(source) == "MockSource(prefix='token=<REDACTED>', test_data={})"
+
+    def test_redact_is_noop_without_matches(self):
+        source = MockSource()
+
+        assert source.redact("no secrets here") == "no secrets here"
+
+    def test_redact_replaces_multiple_matches(self):
+        source = MockSource()
+        source.mark_cross_ref_secrets([("aaa", "<A>"), ("bbb", "<B>")])
+
+        assert source.redact("x=aaa y=bbb") == "x=<A> y=<B>"
+
+    def test_redact_prefers_longer_secret_over_its_substring(self):
+        """``mark_cross_ref_secrets`` sorts by descending length so a secret that is itself a
+        substring of another recorded secret doesn't get partially replaced first."""
+        source = MockSource()
+        source.mark_cross_ref_secrets([("secret", "<SHORT>"), ("secret-long", "<LONG>")])
+
+        assert source.redact("value=secret-long") == "value=<LONG>"

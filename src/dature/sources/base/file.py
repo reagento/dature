@@ -18,6 +18,7 @@ from dature.sources.presentation import (
     find_parent_line_range,
     strip_common_indent,
 )
+from dature.sources.protocol import RedactableProtocol
 from dature.type_aliases import (
     FILE_LIKE_TYPES,
     ConfigDirsArg,
@@ -108,15 +109,36 @@ class FileFieldMixin:
             return Path(file)
         return None
 
+    def _redact(self, text: str) -> str:
+        """Redact secret-derived cross-ref substitutions from *text*.
+
+        Delegates to ``Source.redact`` when this instance is one — ``FileFieldMixin`` is also
+        used standalone (e.g. in tests), without ``Source`` mixed in, so it can't assume
+        ``redact`` exists.
+        """
+        return self.redact(text) if isinstance(self, RedactableProtocol) else text
+
     def file_display(self) -> str | None:
         if self.resolved_file_path is not None:
-            return str(self.resolved_file_path)
-        return self.file_field_display(self.file)
+            return self._redact(str(self.resolved_file_path))
+        display = self.file_field_display(self.file)
+        return self._redact(display) if display is not None else None
 
     def file_path_for_errors(self) -> Path | None:
         if self.resolved_file_path is not None:
             return self.resolved_file_path
         return self.file_field_path_for_errors(self.file)
+
+    def display_file_path_for_errors(self) -> Path | None:
+        """Same as :meth:`file_path_for_errors`, but redacted when the path was filled in via
+        a cross-source reference to a secret-looking key.
+
+        The real path from ``file_path_for_errors()`` is still needed to actually open the
+        file; this one is for surfaces the user sees (debug reports, error messages), which
+        must not show the secret-derived path verbatim.
+        """
+        path = self.file_path_for_errors()
+        return Path(self._redact(str(path))) if path is not None else None
 
     def display_name(self) -> str:
         return self.file_display() or self.format_name  # type: ignore[attr-defined]
@@ -142,23 +164,24 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
         loaded_data: "JSONValue | None" = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         file_path = self.file_path_for_errors()
+        display_path = self.display_file_path_for_errors()
         file_content: str | None = None
         if file_path is not None:
             with suppress(OSError, UnicodeDecodeError):
                 file_content = file_path.read_text(encoding=self.encoding)
         if file_content is None or not field_path:
-            return [empty_location(self.location_label, file_path)]
+            return [empty_location(self.location_label, display_path)]
 
         search_path = build_search_path(field_path, self.prefix)
         line_index = self.build_line_index(file_content)
         if line_index is None:
-            return [empty_location(self.location_label, file_path)]
+            return [empty_location(self.location_label, display_path)]
 
         line_range: LineRange | None = line_index.get(tuple(search_path))
         if line_range is None:
             line_range = find_parent_line_range(line_index, search_path)
         if line_range is None:
-            return [empty_location(self.location_label, file_path)]
+            return [empty_location(self.location_label, display_path)]
 
         lines = file_content.splitlines()
         content_lines: list[str] | None = None
@@ -177,7 +200,7 @@ class FileSource(FileFieldMixin, Source, abc.ABC):
         return [
             SourceLocation(
                 location_label=self.location_label,
-                file_path=file_path,
+                file_path=display_path,
                 line_range=line_range,
                 line_content=content_lines,
                 env_var_name=None,

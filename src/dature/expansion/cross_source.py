@@ -2,6 +2,7 @@ import re
 from typing import Final
 
 from dature.errors.exceptions import CrossRefError, CrossRefExpandError
+from dature.masking.detection import matches_secret_name
 from dature.type_aliases import JSONValue
 
 # ${@tag.key}, ${@tag.key.nested}, ${@tag.key:-default}
@@ -51,10 +52,13 @@ class _CrossRefExpander:
         *,
         context: dict[str, dict[str, JSONValue]],
         field_path: list[str] | None,
+        secret_key_patterns: tuple[str, ...] = (),
     ) -> None:
         self._context = context
         self._field_path = field_path or []
         self._errors: list[CrossRefError] = []
+        self._secret_key_patterns = secret_key_patterns
+        self._secret_values: list[str] = []
 
     def __call__(self, match: re.Match[str]) -> str:
         full = match.group(0)
@@ -104,11 +108,18 @@ class _CrossRefExpander:
             )
             return full
 
-        return str(value) if not isinstance(value, bool) else ("true" if value else "false")
+        result = str(value) if not isinstance(value, bool) else ("true" if value else "false")
+        if self._secret_key_patterns and matches_secret_name(key_path.rpartition(".")[2], self._secret_key_patterns):
+            self._secret_values.append(result)
+        return result
 
     @property
     def errors(self) -> list[CrossRefError]:
         return self._errors
+
+    @property
+    def secret_values(self) -> list[str]:
+        return self._secret_values
 
 
 def expand_cross_refs(
@@ -122,9 +133,26 @@ def expand_cross_refs(
     Raises CrossRefExpandError listing all resolution failures.
     $$ is replaced with a literal $.
     """
-    expander = _CrossRefExpander(context=context, field_path=field_path)
+    result, _ = expand_cross_refs_tracking_secrets(text, context=context, field_path=field_path, secret_key_patterns=())
+    return result
+
+
+def expand_cross_refs_tracking_secrets(
+    text: str,
+    *,
+    context: dict[str, dict[str, JSONValue]],
+    field_path: list[str] | None = None,
+    secret_key_patterns: tuple[str, ...] = (),
+) -> tuple[str, list[str]]:
+    """Like :func:`expand_cross_refs`, but also return the substituted values whose
+    ``${@tag.key}`` had a ``key`` matching *secret_key_patterns*.
+
+    Used to redact secret-derived substitutions from display surfaces without touching
+    the value actually used to do the source's job.
+    """
+    expander = _CrossRefExpander(context=context, field_path=field_path, secret_key_patterns=secret_key_patterns)
     result = _CROSS_RE.sub(expander, text)
     if expander.errors:
         msg = "Cross-source reference errors"
         raise CrossRefExpandError(msg, expander.errors)
-    return result
+    return result, expander.secret_values

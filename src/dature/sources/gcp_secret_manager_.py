@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Literal, cast
@@ -10,6 +11,8 @@ from dature.sources.base import RemoteSource, string_value_loaders
 from dature.type_aliases import JSONValue
 from dature.validators.root import RootPredicate
 from dature.validators.v import V
+
+logger = logging.getLogger("dature")
 
 
 @dataclass(kw_only=True, repr=False)
@@ -151,15 +154,22 @@ class GcpSecretManagerSource(RemoteSource):
                     msg = f"GCP Secret Manager has no secrets: {self.remote_address()}"
                     raise KeyError(msg) from None
 
-                items = [
-                    (
-                        secret_name,
-                        client.access_secret_version(
+                items: list[tuple[str, str]] = []
+                for secret_name in secrets:
+                    try:
+                        response = client.access_secret_version(
                             name=f"projects/{self.project_id}/secrets/{secret_name}/versions/{self.version}"
-                        ).payload.data.decode("utf-8"),
-                    )
-                    for secret_name in secrets
-                ]
+                        )
+                    except NotFound:
+                        # Listed a moment ago, gone now (deleted concurrently) — one missing
+                        # secret shouldn't fail the whole list-mode load.
+                        logger.warning(
+                            "%s: secret %r disappeared between listing and fetch, skipping",
+                            self.remote_address(),
+                            secret_name,
+                        )
+                        continue
+                    items.append((secret_name, response.payload.data.decode("utf-8")))
         except NotFound:
             msg = f"GCP Secret Manager secret not found: {self.remote_address()}"
             raise KeyError(msg) from None

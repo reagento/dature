@@ -10,7 +10,7 @@ from typing import Annotated, Any, ClassVar, Final, Literal, cast
 from adaptix.provider import Provider
 
 from dature._deps import require_dep
-from dature.sources.base import RemoteSource, bytes_value_loaders, string_value_loaders
+from dature.sources.base import RemoteSource
 from dature.type_aliases import JSONValue
 from dature.validators.root import RootPredicate
 from dature.validators.v import V
@@ -104,16 +104,7 @@ class ZookeeperSource(RemoteSource):
         return f"zk://{self._hosts_str()}{self._root_path()}"
 
     def format_loaders(self) -> "list[Provider]":
-        match self.decode:
-            case "raw":
-                return bytes_value_loaders()
-            case "utf-8":
-                return string_value_loaders()
-            case "json":
-                return super().format_loaders()
-            case _ as unknown:
-                msg = f"Unknown decode mode: {unknown!r}"
-                raise ValueError(msg)
+        return self._decode_mode_loaders(self.decode)
 
     def _decode_value(self, raw: bytes) -> JSONValue:
         match self.decode:

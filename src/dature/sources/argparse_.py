@@ -42,6 +42,13 @@ class ArgparseSource(CliSource):
             create: CreateArgs | None = None
 
         config = load(ArgparseSource(parser=parser), schema=Config)
+
+    **Contract exception:** every other source translates its own errors into a readable
+    message with a field path (see ``SourceProtocol.load_raw``). This source does not:
+    ``self.parser.parse_args()`` calls ``sys.exit(2)`` on a missing required argument or bad
+    input, so a ``SystemExit`` propagates straight out of ``load()`` with argparse's own
+    usage message on stderr. That's the expected behavior for a CLI entry point — trading a
+    dature-style error report for argparse's own, à la carte usage text.
     """
 
     parser: argparse.ArgumentParser

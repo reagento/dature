@@ -103,7 +103,7 @@ def load_single[T: DataclassInstance](  # noqa: PLR0913
     format_name = source.format_name
     report: LoadReport | None = None
     if debug:
-        source_path = source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
+        source_path = source.display_file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
         report_file_path = str(source_path) if source_path is not None else source.display_name()
         report = build_single_source_report(
             dataclass_name=schema.__name__,
@@ -174,7 +174,12 @@ class _FieldPassEntry:
 
 @dataclass(frozen=True, slots=True)
 class _FinalizeCtx:
-    """Bundled parameters for _finalize_load that describe the merge result and root-construction inputs."""
+    """Bundled parameters for _finalize_load that describe the merge result and root-construction inputs.
+
+    Also owns the attach-report/enrich-skipped-fields/raise triplet every raise site in this
+    module needs, via :meth:`raise_with` — so that sequence lives in one place instead of being
+    hand-rolled at each call site.
+    """
 
     merged: JSONValue
     last_loaded: IndexedSource
@@ -185,23 +190,15 @@ class _FinalizeCtx:
     report_obj: LoadReport | None
     skipped_fields: dict[str, list[SkippedFieldSource]]
 
-
-def _raise_config_error(
-    exc: DatureConfigError,
-    schema: type,
-    report_obj: LoadReport | None,
-    skipped_fields: dict[str, list[SkippedFieldSource]],
-    *,
-    from_none: bool = False,
-) -> Never:
-    """Attach the load report and re-raise *exc*, optionally suppressing the exception chain."""
-    if report_obj is not None:
-        attach_load_report(schema, report_obj)
-    if skipped_fields:
-        raise enrich_skipped_errors(exc, skipped_fields) from None
-    if from_none:
-        raise exc from None
-    raise exc
+    def raise_with(self, schema: type, exc: DatureConfigError, *, from_none: bool = False) -> Never:
+        """Attach the load report and re-raise *exc*, optionally suppressing the exception chain."""
+        if self.report_obj is not None:
+            attach_load_report(schema, self.report_obj)
+        if self.skipped_fields:
+            raise enrich_skipped_errors(exc, self.skipped_fields) from None
+        if from_none:
+            raise exc from None
+        raise exc
 
 
 def _run_field_passes(
@@ -239,11 +236,7 @@ def _run_field_passes(
         if field_pass_errors:
             if ctx.error_mode == "immediate":
                 field_pass_error = DatureConfigError(schema.__name__, field_pass_errors)
-                if ctx.report_obj is not None:
-                    attach_load_report(schema, ctx.report_obj)
-                if ctx.skipped_fields:
-                    raise enrich_skipped_errors(field_pass_error, ctx.skipped_fields) from None
-                raise field_pass_error
+                ctx.raise_with(schema, field_pass_error)
             deferred_field_errors.extend(field_pass_errors)
         if field_pass_result is not None:
             validated_field_names.update(name for name, value in field_pass_result.items() if value is not NOT_LOADED)
@@ -271,20 +264,14 @@ def _raise_enriched_root_error[T](
     root_errors = enrich_missing_factory_field_errors(retort_cache.unsafe_default_factory_fields, original_errors)
     if ctx.error_mode == "defer":
         combined = merge_root_and_field_errors(schema.__name__, root_errors, deferred_field_errors)
-        _raise_config_error(combined, schema, ctx.report_obj, ctx.skipped_fields, from_none=True)
-    if ctx.report_obj is not None:
-        attach_load_report(schema, ctx.report_obj)
+        ctx.raise_with(schema, combined, from_none=True)
     if root_errors is original_errors:
         # Nothing was rewritten (the overwhelmingly common case: no unsafe-factory field in the
         # schema) — re-raise the original exception object itself, preserving its traceback,
         # instead of wrapping it in a fresh DatureConfigError for no reason.
-        if ctx.skipped_fields:
-            raise enrich_skipped_errors(root_exc, ctx.skipped_fields) from None
-        raise root_exc
+        ctx.raise_with(schema, root_exc)
     enriched_exc = DatureConfigError(schema.__name__, root_errors)
-    if ctx.skipped_fields:
-        raise enrich_skipped_errors(enriched_exc, ctx.skipped_fields) from None
-    raise enriched_exc from None
+    ctx.raise_with(schema, enriched_exc, from_none=True)
 
 
 def _finalize_load[T: DataclassInstance](
@@ -326,7 +313,7 @@ def _finalize_load[T: DataclassInstance](
 
     if deferred_field_errors:
         field_pass_error = DatureConfigError(schema.__name__, deferred_field_errors)
-        _raise_config_error(field_pass_error, schema, ctx.report_obj, ctx.skipped_fields)
+        ctx.raise_with(schema, field_pass_error)
 
     fallback_errors = compute_default_fallback_errors(
         retort_cache.annotated_default_fields, validated_field_names, result

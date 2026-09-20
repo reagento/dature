@@ -52,7 +52,7 @@ from dature.nested_dict import flatten_dict
 from dature.protocols import DataclassInstance
 from dature.report_types import FieldOrigin, SourceEntry
 from dature.sources.base import IndexedSource, clone_source, mark_source_cascaded
-from dature.sources.protocol import FileSourceProtocol, SourceProtocol
+from dature.sources.protocol import FileSourceProtocol, RedactableProtocol, SourceProtocol
 from dature.type_aliases import (
     ConfigDirsArg,
     ExpandEnvVarsMode,
@@ -215,9 +215,15 @@ class MergeConfig:
     ``BOOTSTRAP_CONFIG`` (pure defaults, no env) so that ``MergeConfig`` constructed outside
     ``Loader`` (e.g. directly in tests) behaves deterministically."""
     cross_ref_plan: CrossRefPlan | None = field(default=None, init=False)
+    cross_ref_secret_key_patterns: tuple[str, ...] = field(default=(), init=False)
 
     def __post_init__(self) -> None:
         self.sources = prepare_sources(self.sources, self.source_params, self.config)
+        if self.config.masking.masking_mode != "none":
+            self.cross_ref_secret_key_patterns = (
+                *self.config.masking.secret_field_names,
+                *(self.secret_field_names or ()),
+            )
         self.cross_ref_plan = build_cross_ref_plan(self.sources)
 
 
@@ -456,7 +462,12 @@ class LoadCtx:
         """
         context = self._resolve_dep_refs(source_idx)
         if context:
-            self._sources[source_idx] = clone_with_interpolation(self._sources[source_idx], context)
+            self._sources[source_idx] = clone_with_interpolation(
+                self._sources[source_idx],
+                context,
+                secret_key_patterns=self._merge_meta.cross_ref_secret_key_patterns,
+                masking=self._masking,
+            )
         source = self._sources[source_idx]
         if not self._eval_lazy_when(source, context):
             return False
@@ -578,13 +589,13 @@ class LoadCtx:
             if not (skip_on_error or should_skip_broken(source, self._merge_meta)):
                 location = SourceLocation(
                     location_label=source.location_label,
-                    file_path=source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None,
+                    file_path=source.display_file_path_for_errors() if isinstance(source, FileSourceProtocol) else None,
                     line_range=None,
                     line_content=None,
                     env_var_name=None,
                 )
                 source_error = SourceLoadError(
-                    message=str(exc),
+                    message=source.redact(str(exc)) if isinstance(source, RedactableProtocol) else str(exc),
                     location=location,
                 )
                 raise DatureConfigError(self.dataclass_name, [source_error]) from None
@@ -642,7 +653,7 @@ class LoadCtx:
             masked_raw,
         )
 
-        src_file_path = source.file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
+        src_file_path = source.display_file_path_for_errors() if isinstance(source, FileSourceProtocol) else None
         self._entry_pos_by_source_idx[source_idx] = len(self._source_entries)
         self._source_entries.append(
             SourceEntry(

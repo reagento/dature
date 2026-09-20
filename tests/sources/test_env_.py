@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from dature import Absolute, EnvFileSource, EnvSource, load
-from dature.config import default_config
 from dature.errors import DatureConfigError
 from dature.field_path import F
 from examples.all_types_dataclass import EXPECTED_ALL_TYPES, AllPythonTypesCompact
@@ -492,12 +491,9 @@ class TestEnvFileSourceStream:
         assert result.port == 8080
 
 
+@pytest.mark.usefixtures("_reset_config")
 class TestEnvFileSourceSearch:
     """Tests that EnvFileSource honors config_dirs (FileFieldMixin)."""
-
-    @pytest.fixture(autouse=True)
-    def _reset_config(self):
-        default_config.cache_clear()
 
     @dataclass
     class _Cfg:
