@@ -1,3 +1,8 @@
+---
+description: >-
+  Attach a background reload trigger to a cached dature config — FixedIntervalTrigger or FileWatchTrigger — to pick up changes without restarting the process.
+---
+
 # Background Reloading
 
 `reload=` attaches a background trigger that periodically reloads a config and swaps the

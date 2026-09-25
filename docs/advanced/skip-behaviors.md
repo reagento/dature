@@ -1,3 +1,8 @@
+---
+description: >-
+  Make dature tolerate broken config sources: skip_if_broken skips unparseable files, skip_field_if_invalid drops individual fields that fail type or constraint checks.
+---
+
 # Skip Behaviors
 
 ## Skipping Sources with Parse Errors

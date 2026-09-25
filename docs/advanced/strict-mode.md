@@ -1,3 +1,8 @@
+---
+description: >-
+  Catch typo'd config keys with dature's strict mode: warn, error, or ignore keys that don't map to any dataclass field, set globally or per-source.
+---
+
 # Strict Mode
 
 By default, dature ignores config keys that don't map to any field on your dataclass — a typo

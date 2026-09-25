@@ -43,7 +43,8 @@ class _TrackingCompiler(BasicClosureCompiler):
 
     adaptix's ``_compile`` unconditionally writes the compiled source into the process-global
     ``linecache.cache`` (for traceback readability) and never evicts it — see
-    ``adaptix._internal.code_tools.compiler.BasicClosureCompiler._compile``. Recording the exact
+    ``adaptix._internal.code_tools.compiler.BasicClosureCompiler._compile`` and
+    https://github.com/reagento/adaptix/issues/461. Recording the exact
     key here, at the same place it is written, lets ``RetortCache.evict_generated_sources`` drop
     precisely what the current load compiled, instead of guessing by filename prefix. This is a
     plain subclass used only by the providers below — nothing in adaptix itself is modified or

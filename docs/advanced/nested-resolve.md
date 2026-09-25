@@ -1,3 +1,8 @@
+---
+description: >-
+  How dature resolves nested dataclasses from flat-key sources like environment variables, .env files and Docker secrets — JSON strings vs separate flat keys.
+---
+
 # Nested Resolve
 
 Flat-key sources (ENV, `.env` file, Docker secrets) store nested dataclasses as either a single JSON string or as separate flat keys:

@@ -1,3 +1,8 @@
+---
+description: >-
+  AzureKeyVaultSource loads secrets from Azure Key Vault into a dature dataclass, listing and fetching every secret by default and nesting names on a separator.
+---
+
 # AzureKeyVaultSource
 
 `AzureKeyVaultSource` loads secrets from [Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/overview). It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[azure-keyvault]` optional extra.

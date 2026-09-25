@@ -1,3 +1,8 @@
+---
+description: >-
+  dature auto-masks secret values in error messages, debug logs and LoadReport output, by type, field name pattern, or heuristic detection.
+---
+
 # Masking
 
 dature automatically masks values in error messages, debug logs, and `LoadReport` to prevent accidental leakage of sensitive data.

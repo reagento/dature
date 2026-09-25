@@ -1,3 +1,8 @@
+---
+description: >-
+  Build a custom dature source for an unsupported format by subclassing Source, FileSource, FlatKeySource or RemoteSource from dature.sources.base.
+---
+
 # Custom Source Classes
 
 For formats that dature doesn't support out of the box, you can create your own source by subclassing one of the base classes from `dature.sources.base`:

@@ -1,3 +1,8 @@
+---
+description: >-
+  AzureAppConfigSource loads configuration from Azure App Configuration's key-value store into a dature dataclass, with glob-based key_filter and prefix nesting.
+---
+
 # AzureAppConfigSource
 
 `AzureAppConfigSource` loads configuration from [Azure App Configuration](https://learn.microsoft.com/en-us/azure/azure-app-configuration/overview)'s key-value store. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[azure-appconfig]` optional extra.

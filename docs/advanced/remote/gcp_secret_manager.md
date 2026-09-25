@@ -1,3 +1,8 @@
+---
+description: >-
+  GcpSecretManagerSource loads secrets from Google Cloud Secret Manager into a dature dataclass, listing every secret in the project and nesting names on a separator.
+---
+
 # GcpSecretManagerSource
 
 `GcpSecretManagerSource` loads secrets from [Google Cloud Secret Manager](https://cloud.google.com/secret-manager/docs). It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[gcp]` optional extra.

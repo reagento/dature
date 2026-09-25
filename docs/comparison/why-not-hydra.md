@@ -1,3 +1,8 @@
+---
+description: >-
+  dature vs Hydra: a library that returns a typed dataclass versus a framework that takes over your entry point, working directory and logging.
+---
+
 # Why Not Hydra?
 
 [Hydra](https://hydra.cc/) (by Meta Research) is a powerful configuration framework built for ML experimentation. Its composition system, CLI overrides, parameter sweeps, and plugin architecture make it the go-to choice for training pipelines with many hyperparameter combinations.

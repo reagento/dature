@@ -1,3 +1,8 @@
+---
+description: >-
+  Reference values across dature sources with ${@tag.key} syntax — pass a Vault token from an env var or build connection strings from several sources declaratively.
+---
+
 # Cross-Source References
 
 Sources can reference values from other sources using the `${@tag.key}` syntax.

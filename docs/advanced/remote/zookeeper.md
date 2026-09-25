@@ -1,3 +1,8 @@
+---
+description: >-
+  ZookeeperSource loads configuration from an Apache ZooKeeper znode tree into a dature dataclass, nesting znode paths into a dict hierarchy.
+---
+
 # ZookeeperSource
 
 `ZookeeperSource` loads configuration from an [Apache ZooKeeper](https://zookeeper.apache.org/) znode tree. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[zookeeper]` optional extra.

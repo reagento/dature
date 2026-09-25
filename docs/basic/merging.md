@@ -1,3 +1,8 @@
+---
+description: >-
+  How dature merges multiple config sources into one dataclass: read order, per-field conflict resolution, and the built-in merge strategies.
+---
+
 # Merging
 
 ## How Merging Works

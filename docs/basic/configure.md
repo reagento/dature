@@ -1,3 +1,8 @@
+---
+description: >-
+  Customize dature's loading behavior with an immutable Dature instance: option groups that merge on top of DATURE_* environment defaults.
+---
+
 # Configure
 
 ## The Dature instance

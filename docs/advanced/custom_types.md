@@ -1,3 +1,8 @@
+---
+description: >-
+  Teach dature to parse custom Python types from config strings with type_loaders, either per-source or globally.
+---
+
 # Custom Types
 
 Use `type_loaders` to teach dature how to parse custom types from strings.

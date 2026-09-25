@@ -1,3 +1,8 @@
+---
+description: >-
+  EtcdSource loads configuration from etcd v3's KV store into a dature dataclass, with recursive key nesting via the etcd3gw client.
+---
+
 # EtcdSource
 
 `EtcdSource` loads configuration from [etcd](https://etcd.io/) v3's KV store. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[etcd]` optional extra.

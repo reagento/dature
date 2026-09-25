@@ -1,3 +1,8 @@
+---
+description: >-
+  dature's special runtime types — SecretStr, ByteSize and more — that any source format can load, covering masking and human-readable size parsing.
+---
+
 # Special Types
 
 These types are part of dature's type system and can be loaded from any source format. This page covers their runtime behavior. For syntax (how to write their values in config files), see [Supported Types](../supported_types.md#custom-fields).

@@ -30,7 +30,8 @@
       "Bash(git commit:*)",
       "Bash(git add:*)",
       "Bash(uv publish:*)",
-      "Bash(sudo:*)"
+      "Bash(sudo:*)",
+      "Bash(gh:*)"
     ]
   },
   "hooks": {

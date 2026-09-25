@@ -1,3 +1,8 @@
+---
+description: >-
+  dature's F[Config].field syntax builds type-safe field path references, used across naming, validation, merge strategies and field groups.
+---
+
 # Field Paths
 
 `F` is a type-safe factory for building field path references. It is used wherever dature needs to identify a specific dataclass field — explicit renaming, merge strategies, validation, field groups, and more.

@@ -1,3 +1,8 @@
+---
+description: >-
+  How dature's decorator-mode caching works: cache=True reuses the first load result, cache=False re-reads sources on every call.
+---
+
 # Caching
 
 In decorator mode, caching is enabled by default:

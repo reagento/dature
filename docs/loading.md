@@ -1,3 +1,8 @@
+---
+description: >-
+  How dature loads a single source end to end: reading raw data, dropping or failing on invalid fields, running validators, and coercing strings into typed dataclass values.
+---
+
 # Loading
 
 ## How Single-Source Loading Works

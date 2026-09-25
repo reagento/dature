@@ -1,5 +1,5 @@
 site_name: dature
-site_url: https://dature.readthedocs.io/
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, "http://localhost:8000/"]
 site_description: Type-safe configuration loader for Python dataclasses
 site_author: Niccolum
 
@@ -7,6 +7,19 @@ repo_name: reagento/dature
 repo_url: https://github.com/reagento/dature
 
 copyright: Copyright &copy; 2026-2026 Niccolum
+
+extra:
+  # landing page <title>; inner pages stay "<page> - dature"
+  site_tagline: Type-safe configuration loader for Python dataclasses
+  # set by ReadTheDocs; empty (falsy) for a local build
+  rtd_version: !ENV [READTHEDOCS_VERSION, ""]
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/reagento/dature
+      name: dature source code on GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/dature/
+      name: dature on PyPI
 
 theme:
   name: material
@@ -132,6 +145,7 @@ plugins:
       full_output: llms-full.txt
       sections:
         Getting Started:
+          - index.md
           - introduction.md
           - loading.md
           - supported_types.md
@@ -213,4 +227,5 @@ markdown_extensions:
   - tables
   - toc:
       permalink: "#"
+      permalink_title: Anchor link to this section for reference
       toc_depth: 3

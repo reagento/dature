@@ -1,3 +1,8 @@
+---
+description: >-
+  dature vs Dynaconf: a typed @dataclass schema with mypy support instead of dynamic settings.FOO attribute access with no static schema.
+---
+
 # Why Not Dynaconf?
 
 [Dynaconf](https://www.dynaconf.com/) is a flexible configuration management library with multi-format support, layered environments, and dynamic reloading. It covers a lot of ground.

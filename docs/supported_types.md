@@ -1,3 +1,8 @@
+---
+description: >-
+  Which Python types dature can coerce from YAML, JSON, JSON5, TOML and INI — from primitives and dates to Enum, IPv4Address, SecretStr and other custom fields.
+---
+
 # Supported Types
 
 ## Type Coercion

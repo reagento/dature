@@ -1,3 +1,8 @@
+---
+description: >-
+  ConsulSource loads configuration from HashiCorp Consul's KV store into a dature dataclass, with recursive key nesting and path-based prefixing.
+---
+
 # ConsulSource
 
 `ConsulSource` loads configuration from [HashiCorp Consul](https://www.consul.io/) KV store. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[consul]` optional extra.

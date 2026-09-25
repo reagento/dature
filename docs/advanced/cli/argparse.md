@@ -1,3 +1,8 @@
+---
+description: >-
+  ArgparseSource loads command-line arguments into a dature dataclass, composable with file and env-var sources so CLI flags override defaults.
+---
+
 # ArgparseSource
 
 `ArgparseSource` loads command-line arguments into a dataclass, just like

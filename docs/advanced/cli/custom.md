@@ -1,3 +1,8 @@
+---
+description: >-
+  Subclass dature's abstract CliSource to plug in click, typer or any other CLI library by implementing a single _parse_argv method.
+---
+
 # Custom CLI Source
 
 `CliSource` is the abstract base class for all CLI sources. To plug in a
