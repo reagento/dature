@@ -1,3 +1,8 @@
+---
+description: >-
+  Enable a dature source only when a condition is met with when= and the When() DSL — skipped sources never touch the filesystem or network.
+---
+
 # Conditional Sources
 
 Use `when=` to include a source only when a condition is met.

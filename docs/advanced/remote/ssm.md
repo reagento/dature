@@ -1,3 +1,8 @@
+---
+description: >-
+  AwsSsmSource loads configuration from AWS Systems Manager Parameter Store's hierarchical key tree into a dature dataclass, via boto3.
+---
+
 # AwsSsmSource
 
 `AwsSsmSource` loads configuration from [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)'s hierarchical KV tree. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[aws]` optional extra.

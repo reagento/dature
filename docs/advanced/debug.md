@@ -1,3 +1,8 @@
+---
+description: >-
+  Pass debug=True to dature.load() to collect a LoadReport showing which source provided each field, for auditing and troubleshooting configuration.
+---
+
 # Debug & Reports
 
 Pass `debug=True` to collect a `LoadReport`:

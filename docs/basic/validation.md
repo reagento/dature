@@ -1,3 +1,8 @@
+---
+description: >-
+  Validate dature-loaded configuration with Annotated type hints, root validators, metadata validators, custom validators, and standard dataclass __post_init__.
+---
+
 # Validation
 
 dature supports multiple validation approaches: `Annotated` type hints, root validators, metadata validators, custom validators, and standard `__post_init__`.

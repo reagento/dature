@@ -1,3 +1,8 @@
+---
+description: >-
+  Use dature field groups to guarantee related dataclass fields are always overridden together by the same source, avoiding inconsistent partial overrides.
+---
+
 # Field Groups
 
 Ensure related fields are always overridden together:

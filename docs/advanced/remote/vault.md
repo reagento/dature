@@ -1,3 +1,8 @@
+---
+description: >-
+  VaultSource loads configuration and secrets from HashiCorp Vault KV secrets engines into a dature dataclass, via the optional hvac dependency.
+---
+
 # VaultSource
 
 `VaultSource` loads configuration from [HashiCorp Vault](https://www.vaultproject.io/) KV secrets engines. It is the shipped implementation of the abstract [`RemoteSource`](custom.md) base class.

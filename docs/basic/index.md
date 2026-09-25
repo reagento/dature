@@ -1,3 +1,8 @@
+---
+description: >-
+  Core dature concepts for everyday configuration loading: naming conventions, field paths, validation, merging, secret masking, the Dature instance, and the CLI.
+---
+
 # Basic
 
 Core concepts for everyday dature usage. Start here after the Getting Started guide.

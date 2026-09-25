@@ -1,3 +1,8 @@
+---
+description: >-
+  Full dature API reference: dature.load(), the Dature instance, every built-in Source class, F field paths, validators, and merge strategy signatures.
+---
+
 # API Reference
 
 ## Core

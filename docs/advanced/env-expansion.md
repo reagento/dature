@@ -1,3 +1,8 @@
+---
+description: >-
+  dature expands ${VAR} and ${VAR:-default} environment variable placeholders inside string values across every supported file format and file paths.
+---
+
 # ENV Variable Expansion
 
 String values in all file formats support environment variable expansion:

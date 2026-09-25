@@ -1,3 +1,8 @@
+---
+description: >-
+  dature loads configuration in two styles: a one-off function call or a cached decorator on your dataclass. Learn the difference and when to pick each mode.
+---
+
 # Introduction
 
 dature offers two ways to load configuration: **function mode** and **decorator mode**.

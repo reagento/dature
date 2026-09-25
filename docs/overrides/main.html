@@ -3,6 +3,135 @@
 {% block site_meta %}
   {{ super() }}
   <meta name="readthedocs-addons-api-version" content="1" />
+  {#- Fixing site_url to the version path (see mkdocs.yml) makes every version
+      self-canonical, so an archived version would otherwise compete with
+      `latest` for the same queries. -#}
+  {% if config.extra.rtd_version and config.extra.rtd_version != "latest" %}
+    <meta name="robots" content="noindex, follow">
+  {% endif %}
+{% endblock %}
+
+{#-
+  One title for the tab and the social cards. The landing page carries the
+  tagline, because "dature" alone says nothing about Python or config.
+
+  `page.is_homepage` requires the page to be top-level in nav, but `index.md`
+  is nested under "Getting Started" here, so it's always False for us — use
+  the source path instead.
+-#}
+{% set is_home = page and page.file.src_uri == "index.md" %}
+
+{% macro seo_title() -%}
+  {%- if page and page.meta and page.meta.title -%}
+    {{ page.meta.title }} - {{ config.site_name }}
+  {%- elif page and page.title and not is_home -%}
+    {{ page.title | striptags }} - {{ config.site_name }}
+  {%- elif config.extra.site_tagline -%}
+    {{ config.site_name }} — {{ config.extra.site_tagline }}
+  {%- else -%}
+    {{ config.site_name }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% block htmltitle %}
+  <title>{{ seo_title() }}</title>
+{% endblock %}
+
+{#-
+  A nav section has no page of its own, so its breadcrumb points at the first
+  page underneath it — the one its entry opens in the sidebar.
+-#}
+{% macro node_url(node) -%}
+  {%- if node.is_page -%}
+    {{- node.canonical_url -}}
+  {%- elif node.is_section -%}
+    {%- set found = namespace(url="") -%}
+    {%- for child in node.children -%}
+      {%- if not found.url -%}
+        {%- set found.url = node_url(child) | trim -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{- found.url -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{% block extrahead %}
+  {#- Breadcrumbs are the one rich result a documentation site reliably gets:
+      they replace the bare URL in the search snippet. -#}
+  {%- set home_url = config.site_url if config.site_url.endswith("/") else config.site_url ~ "/" -%}
+  {%- set trail = [] -%}
+  {#- the page itself is the last step, so a section that merely opens on it is not
+      a step of its own -#}
+  {%- set seen = [home_url, page.canonical_url] if page else [home_url] -%}
+  {%- set resolved = namespace(complete=true) -%}
+  {%- for ancestor in (page.ancestors if page else []) | reverse -%}
+    {%- set url = node_url(ancestor) | trim -%}
+    {#- navigation.indexes gives a section its own index.md, so its first child
+        genuinely IS that section (dedup). A section with no index.md merely
+        borrows its first child's URL to be clickable — if that child is the
+        current page, the section is still a distinct breadcrumb step. -#}
+    {%- set first_child = ancestor.children[0] if ancestor.is_section and ancestor.children else none -%}
+    {%- set is_index_section = first_child and first_child.is_page and (first_child.file.src_uri.split("/") | last) == "index.md" -%}
+    {%- if not url -%}
+      {%- set resolved.complete = false -%}
+    {%- elif url not in seen or not is_index_section -%}
+      {%- if url not in seen -%}
+        {%- set _ = seen.append(url) -%}
+      {%- endif -%}
+      {%- set _ = trail.append((ancestor.title, url)) -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if page and not is_home and resolved.complete %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": {{ config.site_name | tojson }},
+          "item": {{ home_url | tojson }}
+        },
+        {%- for title, url in trail %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index + 1 }},
+          "name": {{ title | striptags | tojson }},
+          "item": {{ url | tojson }}
+        },
+        {%- endfor %}
+        {
+          "@type": "ListItem",
+          "position": {{ trail | length + 2 }},
+          "name": {{ page.title | striptags | tojson }}
+        }
+      ]
+    }
+  </script>
+  {%- endif %}
+
+  {%- if page and is_home %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareSourceCode",
+      "name": {{ config.site_name | tojson }},
+      "description": {{ config.site_description | tojson }},
+      "url": {{ home_url | tojson }},
+      "codeRepository": {{ config.repo_url | tojson }},
+      "programmingLanguage": "Python",
+      "runtimePlatform": "Python 3",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "keywords": "configuration, config, dataclass, type-safe, yaml, json, json5, toml, ini, env, settings, loader",
+      "author": {
+        "@type": "Organization",
+        "name": "reagento",
+        "url": "https://github.com/reagento"
+      }
+    }
+  </script>
+  {%- endif %}
 {% endblock %}
 
 {# AI Chat widget — uncomment when self-hosted solution is deployed

@@ -1,3 +1,8 @@
+---
+description: >-
+  The dature console script: inspect a LoadReport for an existing configuration with dature inspect, or validate a schema with dature validate.
+---
+
 # CLI
 
 dature ships with a `dature` console script — installed automatically with the package, no extra dependencies. It provides two subcommands:

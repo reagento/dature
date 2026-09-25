@@ -1,3 +1,8 @@
+---
+description: >-
+  Performance benchmarks comparing dature's import cost, build+load cost and warm reuse speed against pydantic-settings, python-decouple, dynaconf and hydra.
+---
+
 # Performance Benchmarks
 
 Comparison of dature against pydantic-settings, python-decouple, dynaconf, and hydra, split

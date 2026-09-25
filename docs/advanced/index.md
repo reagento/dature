@@ -1,3 +1,8 @@
+---
+description: >-
+  Power-user dature features: merge strategies, remote sources like Vault and AWS SSM, custom types and sources, strict mode, caching and background reloading.
+---
+
 # Advanced
 
 Power-user features for complex configuration setups. Most apps won't need all of these; pick what applies.

@@ -1,3 +1,8 @@
+---
+description: >-
+  dature vs pydantic-settings: stdlib dataclasses instead of Pydantic models, 8 config formats, explicit multi-source merge strategies, and field-group overrides.
+---
+
 # Why Not pydantic-settings?
 
 pydantic-settings is a mature, well-maintained library backed by the Pydantic ecosystem. It has built-in CLI support, JSON/YAML/TOML file sources, and strong validation via Pydantic's Rust core.

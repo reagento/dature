@@ -1,3 +1,8 @@
+---
+description: >-
+  Subclass dature's abstract RemoteSource to plug in any remote backend — secret managers, key-value stores, HTTP APIs — by implementing remote_address and _fetch.
+---
+
 # Custom Remote Source
 
 `RemoteSource` is the abstract base for sources that fetch configuration from remote services — secret managers, key-value stores, HTTP APIs. Subclass it to plug in any backend: AWS Secrets Manager, Azure Key Vault, Consul KV, or your own.

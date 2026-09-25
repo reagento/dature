@@ -1,3 +1,8 @@
+---
+description: >-
+  Override dature's global merge strategy per field with field_merges — append, prepend, or a custom FieldMergeStrategy class.
+---
+
 # Merge Strategies
 
 ## Per-Field Merge Strategies

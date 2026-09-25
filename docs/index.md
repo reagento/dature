@@ -1,6 +1,9 @@
-# dature
+---
+description: >-
+  dature is a type-safe configuration loader for Python dataclasses: load config from YAML, JSON, TOML, INI, ENV files, environment variables and Docker secrets with automatic type conversion and human-readable validation errors.
+---
 
-**Type-safe configuration loader for Python dataclasses.**
+# dature — Type-safe configuration loader for Python dataclasses
 
 Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Docker secrets with automatic type conversion, validation and human-readable error messages.
 

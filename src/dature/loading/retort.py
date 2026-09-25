@@ -383,9 +383,10 @@ class RetortCache:
 
         adaptix's ``BasicClosureCompiler._compile`` unconditionally writes the source of every
         compiled loader into the process-global ``linecache.cache`` for traceback readability,
-        and never evicts it. That's harmless when the compiled ``Retort`` is cached and reused,
-        but with ``cache_engine`` disabled a fresh ``Retort`` is compiled on every call (see
-        ``_get_or_build``), so linecache would otherwise grow without bound.
+        and never evicts it (see https://github.com/reagento/adaptix/issues/461). That's
+        harmless when the compiled ``Retort`` is cached and reused, but with ``cache_engine``
+        disabled a fresh ``Retort`` is compiled on every call (see ``_get_or_build``), so
+        linecache would otherwise grow without bound.
 
         Every model-loader provider dature adds to a recipe (``TrackingModelLoaderProvider`` and
         the ``ModelLoaderProvider`` subclasses in ``skip_field_provider.py``) compiles through

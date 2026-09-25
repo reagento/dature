@@ -1,3 +1,8 @@
+---
+description: >-
+  AwsSecretsManagerSource loads a single named AWS Secrets Manager secret — a JSON document — directly into a dature dataclass via boto3.
+---
+
 # AwsSecretsManagerSource
 
 `AwsSecretsManagerSource` loads configuration from [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html) — a single named secret holding a JSON document. It is a concrete implementation of the abstract [`RemoteSource`](custom.md) base class and ships with the `dature[aws]` optional extra.

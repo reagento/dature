@@ -1,3 +1,8 @@
+---
+description: >-
+  Map dataclass field names to config keys with dature's name_style conventions, explicit field_mapping aliases, and the prefix option.
+---
+
 # Naming
 
 Control how dataclass field names map to config keys.

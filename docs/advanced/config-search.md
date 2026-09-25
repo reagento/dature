@@ -1,3 +1,8 @@
+---
+description: >-
+  How dature's file-based sources auto-discover config files across standard system and user config directories on every platform, and the search order used.
+---
+
 # Automatic Config File Search
 
 By default, all file-based sources automatically search for config files in standard system locations. This feature is enabled by default and works across all platforms.

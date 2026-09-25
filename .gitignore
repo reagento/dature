@@ -70,4 +70,5 @@ tmp/
 site/
 
 # LLM
-.nessy
+.nessy/
+.claude/skills/custom-fetch/
