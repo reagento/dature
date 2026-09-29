@@ -344,6 +344,7 @@ docs = [
     "mkdocs-llmstxt>=0.5",
     "mkdocs-minify-plugin>=0.8",
     "pymdown-extensions>=10.7",
+    "pygments>=2.18",
 ]
 examples = [
     "click>=8",
