@@ -74,29 +74,35 @@ article h3:not(:has(code)) {
   transform-origin: left center;
 }
 
+/* article h2/h3 need the .typography class in the selector: the theme's own
+   .typography h2/h3 rules set font-size directly (class+element beats our
+   plain element-only "article h2/h3"), so without it these are silently
+   overridden and the "smaller" headings render at the theme's original
+   (larger) size while h1 (which the theme only ever sets display:none on)
+   shrinks correctly - exactly the "h1 smaller than its own subheadings" bug. */
 article h1 {
-  font-size: 1.6rem;
-}
-
-article h2 {
   font-size: 1.15rem;
 }
 
-article h3 {
+article .typography h2 {
   font-size: 0.9rem;
+}
+
+article .typography h3 {
+  font-size: 0.75rem;
 }
 
 @media (max-width: 44.9375em) {
   article h1 {
-    font-size: 1.25rem;
-  }
-
-  article h2 {
     font-size: 1rem;
   }
 
-  article h3 {
+  article .typography h2 {
     font-size: 0.85rem;
+  }
+
+  article .typography h3 {
+    font-size: 0.7rem;
   }
 }
 
@@ -180,6 +186,15 @@ article h3 {
 .rst-versions,
 readthedocs-flyout {
   display: none !important;
+}
+
+/* GitHub stargazer count (docs/overrides/templates/header.html) — the star
+   icon uses fill="currentColor" so it otherwise inherits the link's default
+   text color; the theme's prebuilt base.css doesn't scan our override
+   templates, so a Tailwind utility class like text-yellow-500 wouldn't be
+   in the bundle — set the color directly instead. */
+#stargazers-icon {
+  color: #eab308;
 }
 
 /* Version selector (docs/overrides/templates/version_select.html) */
@@ -395,6 +410,19 @@ article pre.mermaid {
   width: auto;
 }
 
+/* The top mask (see above) sits right after a `div.h-9` spacer, so it always
+   covers a fixed 32-64px band from the sidebar's own top edge, mask or no
+   scrolling. The theme's built-in top-level "pages" group reserves `pt-6`
+   (24px) of extra top padding for exactly this reason, clearing the band
+   almost entirely. Our nav has no bare top-level pages, so the very first
+   thing rendered is a section group ("Getting Started") with only the
+   default `p-2` (8px) - nowhere near enough, so its label renders partially
+   underneath the mask and reads as permanently faded. Give the first group
+   the same clearance the pages group already gets. */
+[data-sidebar="content"] > div[data-sidebar="group"]:first-child {
+  padding-top: 2rem;
+}
+
 /* Table header has no background of its own in the theme — same default as
    body rows, distinguished only by the bottom border and bold text. Tint it
    with the same --color-muted token used elsewhere on the page (filename
@@ -411,4 +439,14 @@ article table thead tr th {
    hover shade so hovering it highlights like every other row. */
 article table thead tr:hover th {
   background-color: var(--color-border);
+}
+
+/* The theme's own base.css sets `white-space: nowrap` on every th/td, built
+   for short shadcn/ui data-grid values — our prose tables hold full
+   sentences (comparison tables, format lists), so nowrap forces each row
+   onto one unbroken line instead of wrapping, pushing the table far past
+   the viewport width and forcing horizontal scroll where it used to fit. */
+article table thead tr th,
+article table tbody tr td {
+  white-space: normal;
 }
