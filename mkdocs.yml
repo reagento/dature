@@ -22,45 +22,18 @@ extra:
       name: dature on PyPI
 
 theme:
-  name: material
-  font:
-    text: Inter
-    code: Roboto Mono
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  favicon: assets/img/logo.svg
-  features:
-    - navigation.instant
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.sections
-    - navigation.indexes
-    - navigation.tracking
-    - navigation.prune
-    - navigation.top
-    - navigation.footer
-    - content.code.copy
-    - content.code.annotate
-    - content.tabs.link
-    - search.suggest
-    - search.highlight
-  logo: assets/img/logo.svg
-  icon:
-    repo: fontawesome/brands/github
+  name: shadcn
   custom_dir: docs/overrides
+  icon: assets/img/logo.svg
+  favicon: assets/img/logo.svg
+  show_title: false
+  show_stargazers: true
+  show_datetime: true
+  hide_source_files: true
+  accent: "oklch(46.7% 0.084 25.7)"
+  pygments_style:
+    light: xcode
+    dark: dracula
 
 nav:
   - Getting Started:
@@ -86,6 +59,10 @@ nav:
       - Skip Behaviors: advanced/skip-behaviors.md
     - Sources:
       - Config Search: advanced/config-search.md
+      - Custom Types: advanced/custom_types.md
+      - Custom Sources: advanced/custom_sources.md
+      - Cross-Source Refs: advanced/cross_source_refs.md
+      - Conditional Sources: advanced/conditional_sources.md
       - CLI:
         - ArgparseSource: advanced/cli/argparse.md
         - Custom CLI Source: advanced/cli/custom.md
@@ -100,10 +77,6 @@ nav:
         - AzureKeyVaultSource: advanced/remote/azure_key_vault.md
         - GcpSecretManagerSource: advanced/remote/gcp_secret_manager.md
         - Custom Remote Source: advanced/remote/custom.md
-      - Custom Types: advanced/custom_types.md
-      - Custom Sources: advanced/custom_sources.md
-      - Cross-Source Refs: advanced/cross_source_refs.md
-      - Conditional Sources: advanced/conditional_sources.md
     - Values:
       - ENV Expansion: advanced/env-expansion.md
       - Special Types: advanced/special-types.md
@@ -122,7 +95,7 @@ nav:
     - Changelog: changelog.md
 
 plugins:
-  - search:
+  - shadcn/search:
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
   - macros
   - git-revision-date-localized:
@@ -130,8 +103,7 @@ plugins:
       enable_git_follow: false
       fallback_to_build_date: true
       strict: false
-  - social:
-      enabled: !ENV [CI, false]
+      enable_parallel_processing: false
   - minify:
       minify_html: true
       minify_js: true
@@ -201,6 +173,7 @@ extra_css:
 
 extra_javascript:
   - javascript/readthedocs.js
+  - javascript/tabs.js
 
 markdown_extensions:
   - admonition
@@ -214,6 +187,7 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
+      css_class: codehilite
   - pymdownx.inlinehilite
   - pymdownx.snippets:
       base_path:

@@ -1,0 +1,207 @@
+{#- Official injection point for extra <head> content (the theme's own file is
+    empty, kept only as a comment pointing here). -#}
+
+{#- The theme only auto-includes its pygments stylesheet when the legacy
+    `codehilite` extension is enabled; this project uses pymdownx.highlight
+    instead, so the include has to be triggered manually. -#}
+{% include "templates/external/pygments.html" %}
+
+{#- pymdownx.superfences emits `<pre class="mermaid">` for ```mermaid fences,
+    but the theme (unlike Material) doesn't bundle mermaid.js itself.
+    Navigation here is plain page loads (no SPA instant-navigation), so a
+    single run on load is enough — re-run only on theme toggle, since that
+    swaps the `.dark` class without a reload and diagrams must repaint to
+    match, same as the pygments stylesheet swap. -#}
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+  const diagrams = document.querySelectorAll("pre.mermaid");
+  const sources = new Map();
+  diagrams.forEach((el) => sources.set(el, el.textContent));
+
+  function currentTheme() {
+    return document.documentElement.classList.contains("dark") ? "dark" : "default";
+  }
+
+  /* Diagrams render at their natural (often wide) size and get squeezed down
+     to the article's column width, shrinking labels past legibility. Rather
+     than fighting mermaid's own sizing, clone the already-rendered SVG into a
+     full-viewport overlay on click — same crisp vector, just displayed much
+     larger, with wheel-to-zoom past "fit to screen" and drag-to-pan once
+     zoomed in (a full pan/zoom library is overkill for a click-to-enlarge). */
+  function lightbox() {
+    let el = document.getElementById("mermaid-lightbox");
+    if (el) {
+      return el;
+    }
+
+    el = document.createElement("div");
+    el.id = "mermaid-lightbox";
+    el.className = "mermaid-lightbox";
+    el.innerHTML =
+      '<div class="mermaid-lightbox-toolbar">' +
+      '<button type="button" data-zoom="out" aria-label="Zoom out">−</button>' +
+      '<button type="button" data-zoom="reset" aria-label="Reset zoom">100%</button>' +
+      '<button type="button" data-zoom="in" aria-label="Zoom in">+</button>' +
+      "</div>" +
+      '<div class="mermaid-lightbox-viewport"><div class="mermaid-lightbox-stage"></div></div>';
+    document.body.appendChild(el);
+
+    const viewport = el.querySelector(".mermaid-lightbox-viewport");
+    const stage = el.querySelector(".mermaid-lightbox-stage");
+    const zoomLabel = el.querySelector('[data-zoom="reset"]');
+    let scale = 1;
+    let x = 0;
+    let y = 0;
+    let dragging = false;
+    let moved = false;
+    let startX = 0;
+    let startY = 0;
+
+    function apply() {
+      stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      zoomLabel.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    function setScale(next) {
+      scale = Math.min(8, Math.max(1, next));
+      if (scale === 1) {
+        x = 0;
+        y = 0;
+      }
+      apply();
+    }
+
+    function reset() {
+      scale = 1;
+      x = 0;
+      y = 0;
+      apply();
+    }
+
+    el.close = () => el.classList.remove("open");
+    el.show = (svg) => {
+      /* mermaid measures the (narrow) article column at render time and
+         bakes that width/height straight onto the SVG element — the same
+         thing that made the inline diagram look tiny in the first place.
+         Stripping those attributes isn't enough on its own: with no
+         width/height left, `width:auto;height:auto` doesn't reliably derive
+         a usable size from viewBox alone (it's a long-standing cross-browser
+         SVG sizing quirk, worse inside a flex container) — in practice the
+         clone rendered at a tiny fallback size regardless of the max-width/
+         max-height CSS. Compute the displayed size ourselves instead: read
+         the viewBox and set explicit pixel width/height that fill most of
+         the viewport while preserving aspect ratio, so the base size before
+         any wheel-zoom is always correct. */
+      const clone = svg.cloneNode(true);
+      clone.removeAttribute("width");
+      clone.removeAttribute("height");
+      clone.style.removeProperty("max-width");
+      clone.style.removeProperty("max-height");
+      clone.style.removeProperty("width");
+      clone.style.removeProperty("height");
+
+      const viewBox = clone.getAttribute("viewBox");
+      const dims = viewBox ? viewBox.trim().split(/\s+/).map(Number) : [];
+      const [, , vbWidth, vbHeight] = dims;
+      if (vbWidth > 0 && vbHeight > 0) {
+        const maxWidth = window.innerWidth * 0.9 - 48;
+        const maxHeight = window.innerHeight * 0.9 - 48;
+        const fit = Math.min(maxWidth / vbWidth, maxHeight / vbHeight);
+        clone.style.width = `${vbWidth * fit}px`;
+        clone.style.height = `${vbHeight * fit}px`;
+      }
+
+      stage.replaceChildren(clone);
+      reset();
+      el.classList.add("open");
+    };
+
+    viewport.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        setScale(scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+      },
+      { passive: false },
+    );
+
+    viewport.addEventListener("mousedown", (e) => {
+      if (scale === 1) {
+        return;
+      }
+      dragging = true;
+      moved = false;
+      startX = e.clientX - x;
+      startY = e.clientY - y;
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging) {
+        return;
+      }
+      moved = true;
+      x = e.clientX - startX;
+      y = e.clientY - startY;
+      apply();
+    });
+
+    window.addEventListener("mouseup", () => {
+      dragging = false;
+    });
+
+    viewport.addEventListener("click", (e) => {
+      if (moved) {
+        moved = false;
+        return;
+      }
+      if (e.target === viewport) {
+        el.close();
+      }
+    });
+
+    viewport.addEventListener("dblclick", reset);
+
+    el.querySelector('[data-zoom="in"]').addEventListener("click", () => setScale(scale * 1.4));
+    el.querySelector('[data-zoom="out"]').addEventListener("click", () => setScale(scale / 1.4));
+    el.querySelector('[data-zoom="reset"]').addEventListener("click", reset);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        el.close();
+      }
+    });
+
+    return el;
+  }
+
+  function wireZoom() {
+    diagrams.forEach((el) => {
+      const svg = el.querySelector("svg");
+      if (!svg) {
+        return;
+      }
+      el.onclick = () => lightbox().show(svg);
+    });
+  }
+
+  async function renderMermaid() {
+    if (sources.size === 0) {
+      return;
+    }
+    mermaid.initialize({ startOnLoad: false, theme: currentTheme() });
+    for (const [el, source] of sources) {
+      el.removeAttribute("data-processed");
+      el.textContent = source;
+    }
+    await mermaid.run({ nodes: Array.from(sources.keys()) });
+    wireZoom();
+  }
+
+  renderMermaid();
+
+  new MutationObserver(renderMermaid).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+</script>

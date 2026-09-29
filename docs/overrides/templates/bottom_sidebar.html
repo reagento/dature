@@ -1,0 +1,84 @@
+{#-
+  Full replacement of shadcn's templates/bottom_sidebar.html (mobile nav dialog).
+
+  The theme's own version only renders top_item.children|selectattr("is_page"),
+  so any subsection under a top-level nav item (e.g. Advanced > Sources, or
+  Advanced > Merging & Strategies) is silently dropped — only that section's
+  direct pages show up. dature's Advanced section is almost entirely
+  subsections (one direct page, four subsections), so on mobile it looked like
+  the whole section had vanished. This recurses into subsections instead of
+  filtering them out, same fix as docs/overrides/templates/sidebar_section.html
+  for the desktop sidebar.
+-#}
+{% macro render_link(item) %}
+<a class="text-2xl font-medium" href="{{ item.url | url }}">
+    {% if item.meta and item.meta.sidebar_title %}
+    {{ item.meta.sidebar_title }}
+    {% else %}
+    {{ item.title }}
+    {% endif %}
+</a>
+{% endmacro %}
+
+{% macro render_group(item) %}
+<div class="flex flex-col gap-4">
+    <div class="text-muted-foreground text-sm font-medium">{{ item.title }}</div>
+    <div class="flex flex-col gap-3 pl-3">
+        {% for child in item.children %}
+        {% if child.is_page %}
+        {{ render_link(child) }}
+        {% elif child.children %}
+        {{ render_group(child) }}
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
+
+<dialog id="bottom-sidebar" onclick="onBottomSidebarDialogClick(event)" class="bg-transparent"
+    style="position: fixed; left: 0px; top: 0px; transform: translate(0px, 58px); min-width: max-content; --radix-popper-transform-origin: 0% 0px; will-change: transform; z-index: 50; --radix-popper-available-width: 504px; --radix-popper-available-height: 857px; --radix-popper-anchor-width: 72.94999694824219px; --radix-popper-anchor-height: 32px;">
+    <div data-side="bottom" data-align="start" data-state="open" role="dialog" data-slot="popover-content"
+        class="text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 origin-(--radix-popover-content-transform-origin) border outline-hidden bg-background/90 no-scrollbar h-(--radix-popper-available-height) w-(--radix-popper-available-width) overflow-y-auto rounded-none border-none p-0 shadow-none backdrop-blur duration-100"
+        style="--radix-popover-content-transform-origin: var(--radix-popper-transform-origin); --radix-popover-content-available-width: var(--radix-popper-available-width); --radix-popover-content-available-height: var(--radix-popper-available-height); --radix-popover-trigger-width: var(--radix-popper-anchor-width); --radix-popover-trigger-height: var(--radix-popper-anchor-height);"
+        tabindex="-1">
+        <div class="flex flex-col gap-12 overflow-auto px-6 py-6">
+            {% if nav|length > 1 %}
+            {% set top_items = nav|selectattr("is_page")|sort(attribute="meta.order") %}
+            {% set other_items = nav|rejectattr("is_page")|list %}
+
+            {% if top_items|length > 0 %}
+            <div class="flex flex-col gap-4">
+                <div class="text-muted-foreground text-sm font-medium">{{ _("Menu") }}</div>
+                <div class="flex flex-col gap-3">
+                    {% for top_item in top_items %}
+                    {{ render_link(top_item) }}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if other_items|length > 0 %}
+            <div class="flex flex-col gap-8">
+                {% for top_item in other_items %}
+                <div class="flex flex-col gap-4">
+                    <div class="text-muted-foreground text-sm font-medium">{{ top_item.title }}</div>
+                    {% if top_item.children %}
+                    <div class="flex flex-col gap-3">
+                        {% for child in top_item.children %}
+                        {% if child.is_page %}
+                        {{ render_link(child) }}
+                        {% elif child.children %}
+                        {{ render_group(child) }}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
+
+        </div>
+    </div>
+</dialog>

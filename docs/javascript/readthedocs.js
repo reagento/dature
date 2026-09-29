@@ -1,5 +1,7 @@
-// Build a version selector from RTD API data and inject it into the Material header.
-// HTML structure matches Material's native renderVersionSelector output.
+// Build a version selector from RTD Addons API data and inject it into the
+// shadcn header slot (#dature-version-select, docs/overrides/templates/version_select.html).
+// This theme has no SPA instant-navigation, so a single injection on
+// "readthedocs-addons-data-ready" is enough — no MutationObserver needed.
 
 const MAX_VISIBLE = 10;
 
@@ -42,55 +44,22 @@ function latestPatchOnly(versions) {
   return versions.filter((v) => !semverRe.test(v.slug) || kept.has(v.slug));
 }
 
-function renderVersionItem(version) {
-  return `
-    <li class="md-version__item">
-      <a href="${sanitizeUrl(version.urls.documentation)}" class="md-version__link">
-        ${escapeHtml(version.slug)}
-      </a>
-    </li>`;
+function renderOption(version, current) {
+  const opt = document.createElement("option");
+  opt.value = sanitizeUrl(version.urls.documentation);
+  opt.textContent = version.slug;
+  if (version.slug === current.slug) {
+    opt.selected = true;
+  }
+  return opt;
 }
 
-// Cached HTML fragments, built once from RTD data
-let versioningHtml = "";
-let olderItemsHtml = "";
-// Set when MutationObserver detects missing selector but data isn't ready yet
-let pendingInject = false;
-
-function injectVersionSelector() {
-  if (versioningHtml === "") {
-    pendingInject = true;
+function injectVersionSelector(config) {
+  const container = document.getElementById("dature-version-select");
+  if (container === null) {
     return;
   }
 
-  pendingInject = false;
-
-  const topic = document.querySelector(".md-header__topic");
-  if (topic === null) {
-    return;
-  }
-
-  // Remove existing selector (previous from instant loading)
-  const existing = topic.querySelector(".md-version");
-  if (existing !== null) {
-    existing.remove();
-  }
-  topic.insertAdjacentHTML("beforeend", versioningHtml);
-
-  // "older versions…" expands the list inline
-  const toggle = topic.querySelector(".md-version__show-older");
-  if (toggle !== null) {
-    toggle.addEventListener("click", function (e) {
-      e.stopPropagation();
-      const li = toggle.closest(".md-version__item");
-      li.insertAdjacentHTML("afterend", olderItemsHtml);
-      li.remove();
-    });
-  }
-}
-
-document.addEventListener("readthedocs-addons-data-ready", function (event) {
-  const config = event.detail.data();
   const versions = latestPatchOnly(
     config.versions.active.filter((v) => !v.hidden)
   );
@@ -99,48 +68,30 @@ document.addEventListener("readthedocs-addons-data-ready", function (event) {
   const visible = versions.slice(0, MAX_VISIBLE);
   const older = versions.slice(MAX_VISIBLE);
 
-  let olderToggle = "";
-  olderItemsHtml = older.map(renderVersionItem).join("\n");
+  const select = document.createElement("select");
+  select.setAttribute("aria-label", "Select version");
 
   if (older.length > 0) {
-    olderToggle = `
-        <li class="md-version__item">
-          <span class="md-version__link md-version__show-older">
-            older versions…
-          </span>
-        </li>`;
+    const visibleGroup = document.createElement("optgroup");
+    visibleGroup.label = "Versions";
+    visible.forEach((v) => visibleGroup.appendChild(renderOption(v, current)));
+    select.appendChild(visibleGroup);
+
+    const olderGroup = document.createElement("optgroup");
+    olderGroup.label = "Older versions";
+    older.forEach((v) => olderGroup.appendChild(renderOption(v, current)));
+    select.appendChild(olderGroup);
+  } else {
+    visible.forEach((v) => select.appendChild(renderOption(v, current)));
   }
 
-  versioningHtml = `
-      <div class="md-version">
-        <button class="md-version__current" aria-label="Select version">
-          ${escapeHtml(current.slug)}
-        </button>
-        <ul class="md-version__list">
-          ${visible.map(renderVersionItem).join("\n")}
-          ${olderToggle}
-        </ul>
-      </div>`;
-
-  injectVersionSelector();
-});
-
-// Re-inject after Material instant navigation replaces the DOM.
-// Debounce via setTimeout so we inject only after Material finishes its
-// batch of DOM mutations, not in between them.
-document.addEventListener("DOMContentLoaded", function () {
-  if (typeof document.body.dataset.mdColorScheme === "undefined") {
-    return;
-  }
-  let timer = 0;
-  new MutationObserver(function () {
-    const topic = document.querySelector(".md-header__topic");
-    if (topic !== null && topic.querySelector(".md-version") === null) {
-      clearTimeout(timer);
-      timer = setTimeout(injectVersionSelector, 50);
-    }
-  }).observe(document.querySelector(".md-header") || document.body, {
-    childList: true,
-    subtree: true,
+  select.addEventListener("change", (event) => {
+    window.location.href = event.target.value;
   });
+
+  container.replaceChildren(select);
+}
+
+document.addEventListener("readthedocs-addons-data-ready", function (event) {
+  injectVersionSelector(event.detail.data());
 });
