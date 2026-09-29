@@ -1,0 +1,41 @@
+{#-
+  Full replacement of shadcn's templates/sidebar_item.html.
+
+  The theme's own version prints the title as a bare text node, with no
+  wrapping element to hang a per-glyph style on. The sidebar is styled as
+  the pixel font (docs/stylesheets/extra.css), which needs a dedicated
+  span (.pixel-label) to stretch vertically without also stretching the
+  "new"/"alpha"/"beta" tag badges that can follow it.
+-#}
+<li data-slot="sidebar-menu-item" data-sidebar="menu-item" class="group/menu-item relative">
+    <a data-slot="sidebar-menu-button" data-active="{{ '%s' % sidebar_item.active|lower }}" data-sidebar="menu-button"
+        data-size="default" href="{{ sidebar_item.url | url }}"
+        class="peer/menu-button flex items-center gap-2 rounded-md p-2 text-left ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground relative h-[30px] w-full overflow-visible border border-transparent text-[0.8rem] font-medium after:absolute after:inset-x-0 after:-inset-y-1 after:z-0 after:rounded-md data-[active=true]:border-accent data-[active=true]:bg-accent 3xl:fixed:max-w-48">
+
+        <span class="pixel-label">
+            {% if sidebar_item.meta and sidebar_item.meta.sidebar_title %}
+            {{ sidebar_item.meta.sidebar_title }}
+            {% else %}
+            {{ sidebar_item.title }}
+            {% endif %}
+        </span>
+
+        {% if sidebar_item.meta and sidebar_item.meta.new %}
+        {% with tag_content = _("New") %}
+        {% include "templates/new.html" %}
+        {% endwith %}
+        {% endif %}
+
+        {% if sidebar_item.meta and sidebar_item.meta.alpha %}
+        {% with new_tag_class = "bg-warning" %}
+        {% include "templates/new.html" %}
+        {% endwith %}
+        {% endif %}
+
+        {% if sidebar_item.meta and sidebar_item.meta.beta %}
+        {% with new_tag_class = "bg-warning" %}
+        {% include "templates/new.html" %}
+        {% endwith %}
+        {% endif %}
+    </a>
+</li>

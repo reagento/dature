@@ -519,3 +519,39 @@ jobs:
           curl -X POST \
             -H "Authorization: Token ${{ secrets.RTD_API_TOKEN }}" \
             https://readthedocs.org/api/v3/projects/dature/versions/latest/builds/
+
+  docs-preview-comment:
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment with docs preview link
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # RTD's "Build pull requests" project setting always serves PR
+          # previews from this exact URL shape (project slug + PR number,
+          # twice) - no need to call the RTD API to look anything up, the
+          # link is knowable the moment the PR is opened. It 404s until RTD
+          # finishes the first build for this PR.
+          #
+          # `opened` only fires once, so gating on it means every later push
+          # (synchronize) shows this job as skipped instead of re-posting -
+          # post on any pull_request event instead, but skip if we already
+          # commented on this PR.
+          #
+          # No checkout step here, so `gh` can't infer the repo from a local
+          # git remote - every call needs an explicit --repo.
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | startswith("Docs preview:")) | .id' | head -1)
+          if [ -n "$EXISTING" ]; then
+            exit 0
+          fi
+
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+            "Docs preview: https://dature--${PR_NUMBER}.org.readthedocs.build/en/${PR_NUMBER}/ (live once the Read the Docs build for this PR finishes)"

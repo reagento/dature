@@ -1,0 +1,28 @@
+<!--
+  Full replacement of shadcn's templates/page.html.
+
+  The theme's own page.html always prints its own <h1> from page.title,
+  regardless of theme.show_title (that option only gates the topbar brand
+  <h1> in header.html, not this one). Every page here already opens with its
+  own Markdown `# H1`, so the theme's auto-heading is just dropped instead of
+  reproduced — removing it, not hiding it, since two <h1>s on one page is
+  wrong for accessibility/SEO even if only one is visible.
+-->
+{#-
+  The theme's own page-header row (copy/prev/next buttons) plus the datetime
+  row reserve two empty flex rows of vertical space above every page's own
+  title before any content-relevant data ever appears there (no page in this
+  project sets page.meta.summary or external_links) - dropped entirely so the
+  title sits right at the top of the content column, on every page.
+-#}
+<article class="w-full" view-transition-name="page">
+  <div class="typography w-full flex-1 *:data-[slot=alert]:first:mt-0">
+    {{ page.content }}
+  </div>
+  {# TOC #}
+  <script>
+    document.querySelectorAll('article h2, article h3').forEach((header) => {
+      toc.observer.observe(header);
+    });
+  </script>
+</article>
