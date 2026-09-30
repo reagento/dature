@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
 
+import pytest
 from adaptix import Retort
 from adaptix.load_error import AggregateLoadError, LoadError
 
@@ -74,3 +76,24 @@ class TestExtractFieldErrors:
             assert len(errors) == 3
             paths = sorted([e.field_path[0] for e in errors])
             assert paths == ["a", "b", "c"]
+
+    def test_bad_variant_secret_with_special_chars_is_masked(self):
+        # Regression: `repr()` of a value containing `\n`/`\t`/`\\` differs from
+        # `str()` as a substring, so the old "replace str(input_value) in message"
+        # masking never matched and the secret leaked in the BadVariantLoadError text.
+        @dataclass
+        class Config:
+            mode: Literal["a", "b"]
+
+        r = Retort(strict_coercion=True)
+        masking = MaskingConfig()
+        secret_value = "top-secret\ntoken"
+
+        with pytest.raises((AggregateLoadError, LoadError)) as exc_info:
+            r.load({"mode": secret_value}, Config)
+        errors = extract_field_errors(exc_info.value, masking=masking, secret_paths=frozenset({"mode"}))
+
+        assert len(errors) == 1
+        assert errors[0].field_path == ["mode"]
+        assert errors[0].message == f"Invalid variant: {masking.mask!r}"
+        assert errors[0].input_value == masking.mask

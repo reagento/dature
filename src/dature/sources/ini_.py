@@ -56,13 +56,7 @@ class IniSource(FileSource):
             with path.open(encoding=self.encoding) as f:
                 config.read_file(f)
         if self.prefix and self.prefix in config:
-            result: dict[str, JSONValue] = self._normalize_section(dict(config[self.prefix]))
-            child_prefix = self.prefix + "."
-            for section in config.sections():
-                if section.startswith(child_prefix):
-                    nested_key = section[len(child_prefix) :]
-                    result[nested_key] = self._normalize_section(dict(config[section]))
-            return {self.prefix: result}
+            return self._load_prefixed_sections(config, self.prefix)
 
         all_sections: dict[str, JSONValue] = {}
         if config.defaults():
@@ -76,6 +70,23 @@ class IniSource(FileSource):
                 target = cast("dict[str, JSONValue]", target[part])
             target[parts[-1]] = self._normalize_section(dict(config[section]))
         return all_sections
+
+    def _load_prefixed_sections(self, config: configparser.ConfigParser, prefix: str) -> JSONValue:
+        result: dict[str, JSONValue] = self._normalize_section(dict(config[prefix]))
+        child_prefix = prefix + "."
+        for section in config.sections():
+            if section.startswith(child_prefix):
+                nested_key = section[len(child_prefix) :]
+                result[nested_key] = self._normalize_section(dict(config[section]))
+
+        # `Source._apply_prefix` (base class) navigates the returned tree by splitting
+        # the prefix on "." and descending one key per segment, so a dotted prefix must
+        # be nested here to match — a single flat key containing the literal dots would
+        # make that traversal fail to find anything.
+        nested: dict[str, JSONValue] = result
+        for part in reversed(prefix.split(".")):
+            nested = {part: nested}
+        return nested
 
     def build_line_index(self, content: str) -> dict[tuple[str, ...], LineRange] | None:
         parser = MetadataConfigParser()

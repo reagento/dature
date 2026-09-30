@@ -98,3 +98,16 @@ class TestByteSize:
     def test_invalid(self, value: str, error_match: str) -> None:
         with pytest.raises(ValueError, match=error_match):
             ByteSize(value)
+
+    @pytest.mark.parametrize(
+        "value",
+        [-1, -1024],
+    )
+    def test_negative_int_raises(self, value: int) -> None:
+        # Regression: ByteSize(-5) (from int) used to construct silently, while the
+        # equivalent string form ByteSize("-5B") already raised — an asymmetry that
+        # could mask configuration bugs.
+        with pytest.raises(ValueError, match=r"^Byte size cannot be negative: .+$") as exc_info:
+            ByteSize(value)
+
+        assert str(exc_info.value) == f"Byte size cannot be negative: {value!r}"

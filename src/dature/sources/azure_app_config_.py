@@ -6,8 +6,9 @@ from typing import Any, ClassVar, Literal, cast
 from adaptix.provider import Provider
 
 from dature._deps import require_dep
+from dature.expansion.env_expand import expand_env_vars
 from dature.sources.base import RemoteSource, string_value_loaders
-from dature.type_aliases import JSONValue
+from dature.type_aliases import ExpandEnvVarsMode, JSONValue
 from dature.validators.root import RootPredicate
 from dature.validators.v import V
 
@@ -105,7 +106,9 @@ class AzureAppConfigSource(RemoteSource):
 
     def _decode_setting(self, setting: Any) -> JSONValue:  # noqa: ANN401
         if setting.content_type == "application/json":
-            return cast("JSONValue", json.loads(setting.value))
+            decoded = cast("JSONValue", json.loads(setting.value))
+            expanded = expand_env_vars(decoded, mode=self.expand_env_vars)  # type: ignore[arg-type]
+            return cast("JSONValue", _JsonLeaf(expanded))
         match self.decode:
             case "json":
                 return cast("JSONValue", json.loads(setting.value))
@@ -171,6 +174,49 @@ class AzureAppConfigSource(RemoteSource):
 
     def _decodes_to_strings(self) -> bool:
         return self.decode == "utf-8"
+
+    def _pre_processing(
+        self,
+        data: JSONValue,
+        *,
+        resolved_expand: ExpandEnvVarsMode,
+    ) -> JSONValue:
+        processed = super()._pre_processing(data, resolved_expand=resolved_expand)
+        return _unwrap_json_leaves(processed)
+
+
+class _JsonLeaf:
+    """Opaque wrapper around a ``content_type=application/json`` setting's decoded value.
+
+    ``_apply_prefix``/``expand_env_vars``/``_parse_string_values`` all pass unrecognised
+    objects through unchanged, so wrapping keeps this value safe from the generic
+    flat-key scalar inference until ``_pre_processing`` unwraps it right before returning.
+    The raw (pre-``_pre_processing``) payload is kept around as ``LoadRawResult.loaded_data``
+    for error rendering, so ``__eq__``/``__repr__`` delegate to the wrapped value to keep
+    that payload comparing and printing exactly like the unwrapped value would.
+    """
+
+    __slots__ = ("value",)
+    __hash__ = None  # type: ignore[assignment]  # wraps dicts/lists, which are unhashable anyway
+
+    def __init__(self, value: JSONValue) -> None:
+        self.value = value
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, _JsonLeaf):
+            return self.value == other.value
+        return self.value == other
+
+    def __repr__(self) -> str:
+        return repr(self.value)
+
+
+def _unwrap_json_leaves(data: JSONValue) -> JSONValue:
+    if isinstance(data, _JsonLeaf):
+        return data.value
+    if isinstance(data, dict):
+        return {key: _unwrap_json_leaves(value) for key, value in data.items()}
+    return data
 
 
 def _extract_endpoint(connection_string: str | None) -> str | None:

@@ -261,6 +261,26 @@ class TestAzureAppConfigSourceFetch:
 
         assert result.loaded_data == {"db": {"host": "localhost"}}
 
+    def test_content_type_json_string_values_survive_scalar_inference(self, monkeypatch):
+        # Regression: a `content_type=application/json` setting decodes via `json.loads`,
+        # so its string leaves already have their final type. The default `decode="utf-8"`
+        # global mode still ran every leaf through the generic flat-key scalar inference,
+        # which re-interpreted a JSON string like "123" as an int.
+        client = FakeAppConfigClient(
+            settings=[
+                FakeSetting("db", '{"host": "localhost", "port": "123"}', content_type="application/json"),
+                FakeSetting("plain:count", "123"),
+            ]
+        )
+        src = self._make_source(monkeypatch, client)
+
+        result = src.load_raw()
+
+        assert result.data == {
+            "db": {"host": "localhost", "port": "123"},
+            "plain": {"count": 123},
+        }
+
     def test_uses_connection_string_when_set(self, monkeypatch):
         client = FakeAppConfigClient(settings=[FakeSetting("a", "1")])
         src = self._make_source(

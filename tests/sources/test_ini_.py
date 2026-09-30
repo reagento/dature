@@ -149,6 +149,30 @@ class TestIniSource:
 
         assert result.value == "prefix$nonexistent/suffix"
 
+    def test_dotted_prefix_matching_section_name(self, tmp_path: Path):
+        # Regression: a dotted `prefix` that equals a literal INI section name used to
+        # be returned as one flat key containing the dots (`{"app.db": {...}}`), which
+        # `Source._apply_prefix` (splitting the prefix on ".") could never navigate to —
+        # the source silently produced an empty dict.
+        @dataclass
+        class Pool:
+            size: int
+
+        @dataclass
+        class Config:
+            host: str
+            pool: Pool
+
+        ini_file = tmp_path / "dotted.ini"
+        ini_file.write_text("[app.db]\nhost = localhost\n\n[app.db.pool]\nsize = 5\n")
+
+        result = load(
+            IniSource(file=ini_file, prefix="app.db"),
+            schema=Config,
+        )
+
+        assert result == Config(host="localhost", pool=Pool(size=5))
+
     def test_field_mapping_uppercase_alias(self, tmp_path: Path):
         @dataclass
         class Config:
