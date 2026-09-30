@@ -36,6 +36,11 @@ class SourceFirstFound:
     Broken sources are silently skipped (legacy FIRST_FOUND semantics) via
     :py:`ctx.merge(..., skip_on_error=True)`, regardless of per-source
     ``skip_if_broken``.
+
+    Combining this with ``field_merges`` is a no-op for the aggregation part:
+    since only one source ever loads, ``field_merges`` strategies like
+    ``"append"``/``"prepend"`` see values from at most one source and never
+    actually combine anything.
     """
 
     def __call__(self, sources: Sequence[SourceProtocol], ctx: LoadCtx) -> JSONValue:

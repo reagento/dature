@@ -45,7 +45,8 @@ def _describe_error(exc: BaseException, *, masking: MaskingConfig, is_secret: bo
         field_names = ", ".join(sorted(exc.fields))
         message = f"Unknown field(s): {field_names}"
     elif isinstance(exc, BadVariantLoadError):
-        message = f"Invalid variant: {exc.input_value!r}"
+        shown_value = mask_value(str(exc.input_value), masking) if is_secret else exc.input_value
+        message = f"Invalid variant: {shown_value!r}"
     else:
         message = str(exc)
 

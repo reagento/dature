@@ -1,0 +1,1 @@
+Fixed `AzureAppConfigSource` corrupting string values inside settings with `content_type=application/json` (e.g. an intentional JSON string `"123"` was silently turned into the integer `123`) when the store's global `decode` mode is `"utf-8"`.

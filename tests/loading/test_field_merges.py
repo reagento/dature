@@ -662,6 +662,38 @@ class TestFieldMergesErrors:
         assert result.host == "localhost"
         assert result.port == 8080
 
+    def test_field_merge_raises_when_intermediate_path_overridden(self, tmp_path: Path):
+        # Regression: `set_nested_value` silently no-ops when an intermediate path
+        # segment isn't a dict (e.g. another source overrides the whole subtree with
+        # `None`) — previously the aggregated `field_merges` value was dropped on the
+        # floor with no error at all.
+        a = tmp_path / "a.json"
+        a.write_text('{"database": {"tags": ["a"]}}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"database": null}')
+
+        @dataclass
+        class Database:
+            tags: list[str]
+
+        @dataclass
+        class Config:
+            database: Database
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                JsonSource(file=a),
+                JsonSource(file=b),
+                schema=Config,
+                field_merges={F[Config].database.tags: "append"},
+            )
+
+        assert str(exc_info.value.exceptions[0]) == (
+            "  [database.tags]  field_merges could not apply: intermediate path 'database' "
+            "was overridden with an incompatible value by another source"
+        )
+
     def test_three_sources_field_merge(self, tmp_path: Path):
         a = tmp_path / "a.json"
         a.write_text('{"tags": ["a"]}')

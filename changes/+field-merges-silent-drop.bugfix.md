@@ -1,0 +1,1 @@
+`field_merges` no longer silently drops the aggregated value when another source overrides an intermediate path segment with an incompatible value (e.g. a whole subtree overridden with `None`). This now raises a clear `DatureConfigError` instead of leaving the field unset with no diagnostic.

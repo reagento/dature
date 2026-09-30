@@ -34,12 +34,13 @@ from dature.masking.detection import build_secret_paths
 from dature.masking.masking import mask_json_value
 from dature.merging.field_group import validate_all_field_groups
 from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths, build_field_merge_map
-from dature.nested_dict import collect_field_values, set_nested_value
+from dature.nested_dict import ABSENT, collect_field_values, get_nested_value, set_nested_value
 from dature.protocols import DataclassInstance
 from dature.report import LoadReport, attach_load_report, build_merge_report, build_single_source_report
 from dature.sources.base import IndexedSource
 from dature.sources.protocol import FileSourceProtocol
-from dature.strategies.source import resolve_source_strategy
+from dature.strategies.field import FieldMergeStrategy
+from dature.strategies.source import SourceFirstFound, resolve_source_strategy
 from dature.type_aliases import NOT_LOADED, JSONValue, TypeLoaderMap
 
 logger = logging.getLogger("dature")
@@ -330,6 +331,36 @@ def _finalize_load[T: DataclassInstance](
     return result
 
 
+def apply_field_merges(
+    merged: JSONValue,
+    field_merge_strategies: dict[str, FieldMergeStrategy],
+    *,
+    loaded_for_fields: list[JSONValue],
+    dataclass_name: str,
+) -> JSONValue:
+    for field_path, field_strategy in field_merge_strategies.items():
+        values = collect_field_values(loaded_for_fields, field_path)
+        if not values:
+            continue
+        aggregated = field_strategy(values)
+        merged = set_nested_value(merged, field_path, aggregated)
+        if get_nested_value(merged, field_path) is ABSENT:
+            # `set_nested_value` silently no-ops when an intermediate segment of
+            # `field_path` isn't a dict in `merged` (e.g. another source overrode
+            # that whole subtree with a scalar/None) — surface that instead of
+            # dropping the aggregated field_merges result on the floor.
+            intermediate = field_path.rsplit(".", 1)[0]
+            error = FieldLoadError(
+                field_path=field_path.split("."),
+                message=(
+                    f"field_merges could not apply: intermediate path {intermediate!r} "
+                    "was overridden with an incompatible value by another source"
+                ),
+            )
+            raise DatureConfigError(dataclass_name, [error])
+    return merged
+
+
 def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0915
     *,
     merge_meta: MergeConfig,
@@ -377,6 +408,13 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0915
         dataclass_name=schema.__name__,
     )
     field_merge_paths = frozenset(field_merge_strategies.keys()) or None
+    if field_merge_strategies and isinstance(strategy, SourceFirstFound):
+        logger.warning(
+            "[%s] field_merges is a no-op with strategy='first_found': only the first "
+            "successfully loaded source is ever read, so there is never more than one "
+            "value to combine.",
+            schema.__name__,
+        )
 
     ctx = LoadCtx(
         merge_meta=merge_meta,
@@ -410,13 +448,12 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0915
         )
 
     if field_merge_strategies:
-        loaded_for_fields = ctx.loaded_raw_dicts()
-        for field_path, field_strategy in field_merge_strategies.items():
-            values = collect_field_values(loaded_for_fields, field_path)
-            if not values:
-                continue
-            aggregated = field_strategy(values)
-            merged = set_nested_value(merged, field_path, aggregated)
+        merged = apply_field_merges(
+            merged,
+            field_merge_strategies,
+            loaded_for_fields=ctx.loaded_raw_dicts(),
+            dataclass_name=schema.__name__,
+        )
 
     report = ctx.build_report()
 

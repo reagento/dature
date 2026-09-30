@@ -25,6 +25,9 @@ class ByteSize:
 
     def __init__(self, value: int | str) -> None:
         if isinstance(value, int):
+            if value < 0:
+                msg = f"Byte size cannot be negative: {value!r}"
+                raise ValueError(msg)
             self._bytes = value
         else:
             self._bytes = self._parse(value)
