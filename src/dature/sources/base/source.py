@@ -9,6 +9,7 @@ rendering helpers live in ``presentation``.
 import abc
 import json
 import logging
+import threading
 from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, field, fields, replace
@@ -72,6 +73,7 @@ class _ReadSlot:
 
     data: "JSONValue" = None
     at: "float | None" = None
+    timer: "threading.Timer | None" = field(default=None, repr=False)
 
 
 _STRING_VALUE_LOADERS: Final[tuple[Provider, ...]] = (
@@ -343,7 +345,32 @@ class Source(abc.ABC):
         data = self._load()
         slot.data = data
         slot.at = aligned_now(self.shared_read)
+        self._schedule_shared_cleanup(slot)
         return data
+
+    def _schedule_shared_cleanup(self, slot: "_ReadSlot") -> None:
+        """Proactively free a shared_read entry once its TTL elapses.
+
+        Pull-based expiry (``cache_is_fresh``) already makes stale data unreachable on the
+        next :meth:`load_raw` call; this reclaims the cached document eagerly so it doesn't
+        rot in memory if the source is never read again. ``shared_read=True`` never expires,
+        so nothing is scheduled.
+        """
+        if not isinstance(self.shared_read, timedelta):
+            return
+
+        if slot.timer is not None:
+            slot.timer.cancel()
+
+        def _clear() -> None:
+            slot.data = None
+            slot.at = None
+            slot.timer = None
+
+        timer = threading.Timer(self.shared_read.total_seconds(), _clear)
+        timer.daemon = True
+        slot.timer = timer
+        timer.start()
 
     def _apply_prefix(self, data: JSONValue) -> JSONValue:
         root = data

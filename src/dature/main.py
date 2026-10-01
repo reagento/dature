@@ -55,7 +55,6 @@ def load[T](
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
-    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
     reload: ReloadTriggerProtocol | None = None,
     on_reload: ReloadCallback[T] | None = None,
     on_error: ReloadErrorCallback | None = None,
@@ -85,7 +84,6 @@ def load(
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
-    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
     reload: ReloadTriggerProtocol | None = None,
     on_reload: ReloadCallback[DataclassInstance] | None = None,
     on_error: ReloadErrorCallback | None = None,
@@ -115,7 +113,6 @@ def load(  # noqa: PLR0913
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
-    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
     reload: ReloadTriggerProtocol | None = None,
     on_reload: ReloadCallback[Any] | None = None,
     on_error: ReloadErrorCallback | None = None,
@@ -143,7 +140,6 @@ def load(  # noqa: PLR0913
         nested_resolve_strategy=nested_resolve_strategy,
         nested_resolve=nested_resolve,
         config_dirs=config_dirs,
-        search_system_paths=search_system_paths,
         reload=reload,
         on_reload=on_reload,
         on_error=on_error,
@@ -172,7 +168,6 @@ def dispatch(  # noqa: PLR0913
     nested_resolve_strategy: NestedResolveStrategy | None = None,
     nested_resolve: NestedResolve | None = None,
     config_dirs: ConfigDirsArg | None = None,
-    search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
     reload: ReloadTriggerProtocol | None = None,
     on_reload: ReloadCallback[Any] | None = None,
     on_error: ReloadErrorCallback | None = None,
@@ -223,7 +218,6 @@ def dispatch(  # noqa: PLR0913
         "nested_resolve_strategy": nested_resolve_strategy,
         "nested_resolve": nested_resolve,
         "config_dirs": config_dirs,
-        "search_system_paths": search_system_paths,
         "reload": reload,
         "on_reload": on_reload,
         "on_error": on_error,
