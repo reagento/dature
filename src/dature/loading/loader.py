@@ -19,7 +19,6 @@ delegates to ``loader.load()``.  The original dataclass is never modified.
 
 import logging
 import threading
-import warnings
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import asdict, dataclass, fields, is_dataclass
 from datetime import timedelta
@@ -28,7 +27,6 @@ from typing import Any, NoReturn, cast
 
 from adaptix import Retort
 
-from dature._deprecations import SEARCH_SYSTEM_PATHS_MESSAGE
 from dature.config import DatureConfig, default_config
 from dature.errors import DatureConfigError, DatureError, DatureErrorGroup
 from dature.errors.extraction import handle_load_errors
@@ -86,20 +84,6 @@ class _CacheEntry[T]:
     at: float
 
 
-def _fold_search_system_paths(
-    *,
-    search_system_paths: bool | None,
-    config_dirs: "ConfigDirsArg | None",
-) -> "ConfigDirsArg | None":
-    """Fold the deprecated ``search_system_paths`` flag into ``config_dirs``. Removed in 1.6."""
-    if search_system_paths is None:
-        return config_dirs
-    warnings.warn(SEARCH_SYSTEM_PATHS_MESSAGE, DeprecationWarning, stacklevel=3)
-    if search_system_paths is False and config_dirs is None:
-        return ()
-    return config_dirs
-
-
 def _validate_sources(sources: tuple[SourceProtocol, ...]) -> None:
     if not sources:
         msg = "Loader requires at least one Source"
@@ -136,17 +120,12 @@ class Loader[T: DataclassInstance]:
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
         config_dirs: ConfigDirsArg | None = None,
-        search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
         reload: ReloadTriggerProtocol | None = None,
         on_reload: ReloadCallback[T] | None = None,
         on_error: ReloadErrorCallback | None = None,
         config: DatureConfig | None = None,
     ) -> None:
         _validate_sources(sources)
-        config_dirs = _fold_search_system_paths(
-            search_system_paths=search_system_paths,
-            config_dirs=config_dirs,
-        )
 
         self._config: DatureConfig = apply_masking_mode(
             config if config is not None else default_config(), masking_mode=masking_mode
@@ -467,7 +446,6 @@ class Loader[T: DataclassInstance]:
         nested_resolve_strategy: NestedResolveStrategy | None = None,
         nested_resolve: NestedResolve | None = None,
         config_dirs: ConfigDirsArg | None = None,
-        search_system_paths: bool | None = None,  # deprecated — removed in dature 1.6
         reload: ReloadTriggerProtocol | None = None,
         on_reload: ReloadCallback[DataclassInstance] | None = None,
         on_error: ReloadErrorCallback | None = None,
@@ -502,7 +480,6 @@ class Loader[T: DataclassInstance]:
                 nested_resolve_strategy=nested_resolve_strategy,
                 nested_resolve=nested_resolve,
                 config_dirs=config_dirs,
-                search_system_paths=search_system_paths,
                 reload=reload,
                 on_reload=on_reload,
                 on_error=on_error,

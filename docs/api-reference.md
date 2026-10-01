@@ -51,7 +51,6 @@ Main entry point. Two calling patterns:
 | `nested_resolve_strategy` | `NestedResolveStrategy \| None` | `None` | Default priority for JSON vs flat keys in `FlatKeySource`. See [Nested Resolve](advanced/nested-resolve.md). |
 | `nested_resolve` | `NestedResolve \| None` | `None` | Per-field nested resolve strategy overrides. See [Nested Resolve](advanced/nested-resolve.md#per-field-strategy). |
 | `config_dirs` | `ConfigDirsArg \| None` | `None` | Directories to search for file-source config files. Default from `Dature` instance or `DATURE_*` env, itself defaulting to per-OS locations. Accepts a single `str`/`Path`, an iterable, or a per-platform mapping; `()`/`[]`/`{}` disables search. Can also be set per-`Source` to override it for just that source. See [Automatic Config File Search](advanced/config-search.md). |
-| `search_system_paths` | `bool \| None` | `None` | Deprecated, removed in dature 1.6. `False` folds into `config_dirs=()`; use `config_dirs` directly instead. |
 | `root_validators` | `Iterable[RootPredicate]` | `()` | Post-load validation of the fully-constructed dataclass. Runs once after all sources have been merged. See [Validation](basic/validation.md#root-validators). |
 
 **Returns:**
@@ -344,7 +343,6 @@ Frozen dataclass controlling load behavior defaults.
 | `nested_resolve_strategy` | `NestedResolveStrategy` | `"flat"` | Default nested resolve strategy for `FlatKeySource`. |
 | `expand_env_vars` | `ExpandEnvVarsMode` | `"default"` | Default env var expansion mode applied when neither source nor load-level value is set. |
 | `config_dirs` | `ConfigDirsArg` | per-OS defaults | Directories searched per platform (`linux`/`darwin`/`win32`). Accepts a single `str`/`Path`, an iterable, or a per-platform mapping. `()`/`[]`/`{}` disables search. See [Config Search](advanced/config-search.md). |
-| `search_system_paths` | `bool \| None` | `None` | Deprecated, removed in dature 1.6. `False` folds into `config_dirs=()`; use `config_dirs` directly instead. |
 | `encoding` | `str \| None` | `None` | Default text encoding for file sources. |
 
 ### `VaultConfig`
