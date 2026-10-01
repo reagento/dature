@@ -15,8 +15,9 @@ All ``SourceProtocol`` implementations must be dataclasses (signalled by
 """
 
 from collections.abc import Iterable
+from datetime import timedelta
 from pathlib import Path
-from typing import Any, ClassVar, Protocol, runtime_checkable
+from typing import Any, ClassVar, Protocol, Self, runtime_checkable
 
 from adaptix.provider import Provider
 
@@ -64,9 +65,22 @@ class SourceProtocol(Protocol):
     tag: str | None
     when: Condition | None
     strict: StrictMode | None
+    shared_read: bool | timedelta
 
     @property
     def resolved_tag(self) -> str: ...
+
+    def replace(self, **overrides: object) -> Self:
+        """Return a copy of this source with the given fields overridden.
+
+        Every ``SourceProtocol`` implementation is already required to be a dataclass (see
+        the module docstring) precisely so ``dataclasses.replace()`` works uniformly across
+        the loading machinery — this method standardizes that into a discoverable instance
+        method instead of leaving callers to reach for ``dataclasses.replace()`` (or
+        ``clone_source()``) themselves. A custom source not subclassing ``Source`` can
+        implement it as simply as ``return clone_source(self, overrides)``.
+        """
+        ...
 
     def load_raw(self) -> LoadRawResult:
         """Load and pre-process this source's data.

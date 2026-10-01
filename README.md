@@ -78,6 +78,7 @@ config = dature.load(dature.Yaml12Source(file="config.yaml"), schema=Config)
 - **Special types** — `SecretStr`, `ByteSize`, `PaymentCardNumber`, `URL`, `Base64UrlStr`
 - **Debug report** — `debug=True` shows which source provided each field value
 - **Decorator mode** — `@dature.load(meta)` auto-loads config on dataclass instantiation with caching
+- **Shared reads** — `Source(shared_read=...)` shares one raw file read / remote fetch across multiple `prefix=`-bound schemas
 - **CLI** — `dature validate` and `dature inspect` console commands for CI and debugging
 - **Cross-source refs & conditional sources** — reference values across sources, activate sources based on environment
 - **Extensible** — plug in custom sources, type loaders, and remote backends via `SourceProtocol`

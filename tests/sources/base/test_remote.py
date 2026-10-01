@@ -83,3 +83,24 @@ class TestRemoteSourceResolveLocation:
         src = _FakeRemote(data={"db_password": "s3cret"})
         locations = src.resolve_location(field_path=["db_password"], nested_conflict=None, loaded_data=None)
         assert locations[0].line_content == ["fake://test: db_password"]
+
+
+class TestRemoteSourceSharedRead:
+    """``shared_read`` applied to a remote fetch — a clone made via ``.replace()`` still
+    returns the first, shared fetch instead of hitting ``_fetch()`` again."""
+
+    def test_shares_fetch_across_prefixed_clones(self):
+        base = _FakeRemote(
+            data={"module1": {"x": 1}, "module2": {"x": 2}},
+            shared_read=True,
+        )
+
+        clone1 = base.replace(prefix="module1")
+        result1 = clone1.load_raw()
+        base.data = {"module1": {"x": 999}, "module2": {"x": 999}}
+        clone2 = base.replace(prefix="module2")
+        result2 = clone2.load_raw()
+
+        assert clone1._read_slot is clone2._read_slot
+        assert result1.data == {"x": 1}
+        assert result2.data == {"x": 2}  # not 999 — same cached fetch as result1
