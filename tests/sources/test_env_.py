@@ -400,6 +400,24 @@ class TestEnvSource:
         assert result.password == "from_absolute"
 
 
+class TestEnvSourceSharedRead:
+    def test_shares_raw_read_across_prefixed_clones(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("APP_MODULE1__X", "1")
+        monkeypatch.setenv("APP_MODULE2__X", "2")
+        base = EnvSource(prefix="APP_", shared_read=True, expand_env_vars="disabled")
+
+        clone1 = base.replace(prefix="APP_MODULE1__")
+        result1 = clone1.load_raw()
+        monkeypatch.setenv("APP_MODULE1__X", "999")
+        monkeypatch.setenv("APP_MODULE2__X", "999")
+        clone2 = base.replace(prefix="APP_MODULE2__")
+        result2 = clone2.load_raw()
+
+        assert clone1._read_slot is clone2._read_slot
+        assert result1.data == {"x": "1"}
+        assert result2.data == {"x": "2"}  # not 999 — same cached read as result1
+
+
 class TestEnvSourceDisplayProperties:
     def test_format_name_and_label(self):
         assert EnvSource.format_name == "env"

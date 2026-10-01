@@ -18,5 +18,5 @@ extend-exclude = ["**/advanced/cross_source_refs/t_string.py"]
     "TRY003",  # raise-vanilla-args
     "EM101",   # raw-string-in-exception
     "I001",    # import order: intentional for example clarity
-    "E402",    # import not at top: intentional for example clarity 
+    "E402",    # import not at top: intentional for example clarity
 ]

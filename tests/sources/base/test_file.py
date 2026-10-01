@@ -512,3 +512,23 @@ class TestFileSourceEncoding:
         errors = list(exc_info.value.exceptions)
         assert isinstance(errors[0], FieldLoadError)
         assert errors[0].locations[0].line_content is not None
+
+
+class TestFileSourceSharedRead:
+    """``shared_read`` applied to a real file read — the file changes on disk between
+    reads, and a clone made via ``.replace()`` still returns the first, shared read."""
+
+    def test_shares_raw_read_across_prefixed_clones(self, tmp_path: Path) -> None:
+        config_file = tmp_path / "app.json"
+        config_file.write_text('{"module1": {"x": 1}, "module2": {"x": 2}}')
+        base = JsonSource(file=config_file, shared_read=True, expand_env_vars="disabled")
+
+        clone1 = base.replace(prefix="module1")
+        result1 = clone1.load_raw()
+        config_file.write_text('{"module1": {"x": 999}, "module2": {"x": 999}}')
+        clone2 = base.replace(prefix="module2")
+        result2 = clone2.load_raw()
+
+        assert clone1._read_slot is clone2._read_slot
+        assert result1.data == {"x": 1}
+        assert result2.data == {"x": 2}  # not 999 — same cached read as result1

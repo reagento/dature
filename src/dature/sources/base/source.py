@@ -11,9 +11,9 @@ import json
 import logging
 from collections.abc import Iterable
 from contextlib import suppress
-from dataclasses import MISSING, dataclass, fields, replace
-from datetime import date, datetime, time
-from typing import Any, ClassVar, Final, cast
+from dataclasses import MISSING, dataclass, field, fields, replace
+from datetime import date, datetime, time, timedelta
+from typing import Any, ClassVar, Final, Self, cast
 
 from adaptix import loader
 from adaptix.provider import Provider
@@ -35,6 +35,7 @@ from dature.conditions import Condition
 from dature.errors import CaretSpan, LineRange, SourceLocation
 from dature.expansion.env_expand import expand_env_vars
 from dature.field_path import Absolute, FieldPath
+from dature.loading.cache import aligned_now, cache_is_fresh
 from dature.sources.presentation import (
     compute_line_carets as _compute_line_carets,
 )
@@ -57,6 +58,20 @@ from dature.validators.base import validate_root_validators
 from dature.validators.root import RootPredicate
 
 logger = logging.getLogger("dature")
+
+
+@dataclass
+class _ReadSlot:
+    """Box for one Source lineage's shared raw-read cache entry.
+
+    A plain dataclass field on ``Source`` (not ``init=False``) so ``dataclasses.replace()``
+    carries the same box by reference into every clone that doesn't override it — like any
+    other untouched ``Source`` field. Independently constructed sources each get a fresh slot
+    via their own ``default_factory`` call.
+    """
+
+    data: "JSONValue" = None
+    at: "float | None" = None
 
 
 _STRING_VALUE_LOADERS: Final[tuple[Provider, ...]] = (
@@ -128,6 +143,7 @@ class Source(abc.ABC):
     tag: str | None = None
     when: "Condition | None" = None
     strict: "StrictMode | None" = None
+    shared_read: "bool | timedelta" = False
 
     format_name: str = ""
     location_label: str = ""
@@ -147,6 +163,8 @@ class Source(abc.ABC):
     """
 
     # --8<-- [end:load-metadata]
+    _read_slot: "_ReadSlot" = field(default_factory=_ReadSlot, repr=False, compare=False)
+
     def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init_subclass__(**kwargs)
         if "root_validators" in cls.__dict__:
@@ -309,6 +327,24 @@ class Source(abc.ABC):
     @abc.abstractmethod
     def _load(self) -> JSONValue: ...
 
+    def _load_shared(self) -> JSONValue:
+        """Like :meth:`_load`, but shares the result across clones via :attr:`shared_read`.
+
+        The cache lives in :attr:`_read_slot`, a plain field that ``dataclasses.replace()``
+        (used by :meth:`replace`/``clone_source``) carries by reference into every clone that
+        doesn't override it — independently constructed sources each get a fresh slot instead.
+        Only the *successful* result is cached — a transient failure must never stick around
+        and be replayed to every subsequent clone.
+        """
+        slot = self._read_slot
+        if slot.at is not None and cache_is_fresh(cache=self.shared_read, cached_at=slot.at):
+            return slot.data
+
+        data = self._load()
+        slot.data = data
+        slot.at = aligned_now(self.shared_read)
+        return data
+
     def _apply_prefix(self, data: JSONValue) -> JSONValue:
         root = data
         if self.prefix:
@@ -350,7 +386,7 @@ class Source(abc.ABC):
         return expand_env_vars(prefixed, mode=resolved_expand)
 
     def load_raw(self) -> LoadRawResult:
-        data = self._load()
+        data = self._load_shared() if self.shared_read is not False else self._load()
         processed = self._pre_processing(data, resolved_expand=self.expand_env_vars)  # type: ignore[arg-type]
         logger.debug(
             "[%s] load_raw: source=%s, raw_keys=%s, after_preprocessing_keys=%s",
@@ -403,6 +439,21 @@ class Source(abc.ABC):
         loaded_data: "JSONValue | None" = None,  # noqa: ARG002
     ) -> list[SourceLocation]:
         return [empty_location(self.location_label, None)]
+
+    def replace(self, **overrides: object) -> Self:
+        """Return a copy of this source with the given fields overridden.
+
+        Thin wrapper over :func:`clone_source` — same semantics as ``dataclasses.replace()``
+        (any constructor field, not just ``prefix``), plus it carries cascade provenance
+        forward. Because it's built on ``dataclasses.replace()``, an untouched field keeps its
+        *current value* — including the private ``shared_read`` cache slot — so with
+        ``shared_read=`` set, clones made this way share one cached read::
+
+            base = Yaml11Source(file="app.yaml", shared_read=True)
+            module1 = base.replace(prefix="module1")
+            module2 = base.replace(prefix="module2")
+        """
+        return clone_source(self, overrides)
 
 
 @dataclass(frozen=True, slots=True)

@@ -164,3 +164,41 @@ loader = Loader(source, schema=Config, cache=False, cache_engine=True)
 restarting the process, attach a background trigger with `reload=`; see
 [Background Reloading](reloading.md).
 
+## Sharing a raw read across sources: `shared_read`
+
+Everything above caches at the `Loader` level — a single schema's fully-loaded result, or its
+compiled engine. `shared_read` is a third, lower-level cache that lives on the `Source` itself,
+below any schema:
+
+| What's cached | Parameter | Lives on |
+|---|---|---|
+| The loaded dataclass (result of `load()`) | `cache=` / `Loader.cache` | `Loader` |
+| The compiled engine | `cache_engine=` | `Loader` |
+| Raw data from `_load()`/`_fetch()`, before `prefix=`/any schema | `Source(shared_read=...)` | `Source` |
+
+This matters when you want to bind multiple independent schemas to sections of the *same*
+underlying source — a file split into `module1:`/`module2:` sections, or a single secret
+fetched from Vault — without reading the file or hitting the network again for each one. Here,
+the file changes on disk *after* the first load, and loading from the same `shared_read=True`
+source again still returns the value from that first, shared read. Both calls are function-mode
+`dature.load()`, which never shares a `Loader.cache` across calls on its own (each call builds
+and discards its own `Loader`) — so `shared_read` is the only thing that can explain this:
+
+```python
+--8<-- "docs/examples/advanced/caching/advanced_shared_read.py"
+```
+
+`shared_read` accepts the same `bool | timedelta` semantics as `Loader.cache` (`True` = forever,
+a `timedelta` = TTL, `False` = disabled, the default). The cache lives on the `Source` instance
+itself and travels with it through `.replace()`: clones produced from the same base share one
+cached read, independently of `prefix=`, `field_mapping=`, or which dataclass ends up consuming
+the data. Two sources built *separately* — even with identical fields — each get their own cache;
+sharing follows clone lineage, not coincidental value equality.
+
+`Source.replace(**overrides)` is the companion method for making those clones: a thin,
+discoverable wrapper over `dataclasses.replace()` (any constructor field, not just `prefix=`)
+that also carries cascade provenance forward.
+
+`shared_read` works uniformly for every `Source` subclass, including ones like `EnvSource` where
+there's nothing expensive to avoid re-reading — it just won't buy you anything there.
+

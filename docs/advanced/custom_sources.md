@@ -39,6 +39,7 @@ Every custom source needs:
 | `file_path_for_errors()` | `None` | Your source points to a file on disk (used in error messages). |
 | `resolve_location(...)` | Uses `_build_line_index` + caret computation | Low-level escape hatch — override only when `_build_line_index` is not enough (e.g. env var name in error messages). |
 | `location_label` | inherited | Change the label in error messages (e.g. `"FILE"`, `"ENV"`, `"API"`). |
+| `_resource_key()` | `None` (opts out) | Your source has a stable resource identity (a path, an address) and you want callers to be able to set `shared_read=` on it — see [Caching](caching.md#sharing-a-raw-read-across-sources-shared_read). `FileSource`/`RemoteSource` already provide one; a plain `Source` subclass needs its own. |
 
 If you override `__post_init__`, call `super().__post_init__()` first — it validates `when=`
 and tracks which fields the load/config cascade filled in (so `repr()` shows only what you
