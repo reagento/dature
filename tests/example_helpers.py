@@ -93,9 +93,11 @@ def run_script(
 def resolve_placeholders(template: str, script_path: Path) -> str:
     sources_dir = str(script_path.parent / "sources") + os.sep
     shared_dir = str(script_path.parents[2] / "shared") + os.sep
+    project_src = str(PROJECT_SRC) + os.sep
     return (
         template.replace("{SOURCES_DIR}", sources_dir)
         .replace("{SHARED_DIR}", shared_dir)
+        .replace("{PROJECT_SRC}", project_src)
         .replace("{SCRIPT_PATH}", str(script_path))
     )
 

@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
+import time_machine
 
 from dature import (
     Absolute,
@@ -625,6 +627,106 @@ class TestExpandEnvVars:
         load_result = loader.load_raw()
 
         assert load_result.data == {"host": "localhost", "port": 8080}
+
+
+@dataclass(kw_only=True, repr=False)
+class _FailingMockSource(MockSource):
+    """MockSource variant whose ``_load`` can be toggled to fail, for shared_read tests."""
+
+    should_fail: bool = True
+
+    def _load(self) -> JSONValue:
+        if self.should_fail:
+            msg = "transient failure"
+            raise ValueError(msg)
+        return super()._load()
+
+
+class TestSharedReadCaching:
+    """Tests for ``Source.shared_read`` (raw-read cache) and ``Source.replace()``.
+
+    Sharing is verified two ways: via ``_read_slot`` identity (the mutable box that
+    ``dataclasses.replace()`` carries by reference between clones — see
+    ``source.py::_load_shared``) and, for behavior, by mutating the underlying payload
+    between reads and checking whether a clone sees the fresh or the cached value.
+    """
+
+    def test_disabled_by_default_reads_every_time(self):
+        source = MockSource(test_data={"x": 1}, expand_env_vars="disabled")
+
+        source.load_raw()
+        source.test_data = {"x": 2}
+        result = source.load_raw()
+
+        assert result.data == {"x": 2}
+        assert source._read_slot.at is None
+
+    def test_shared_read_true_reads_once_across_clones(self):
+        base = MockSource(
+            test_data={"module1": {"x": 1}, "module2": {"x": 2}},
+            expand_env_vars="disabled",
+            shared_read=True,
+        )
+
+        clone1 = base.replace(prefix="module1")
+        result1 = clone1.load_raw()
+        base.test_data = {"module1": {"x": 999}, "module2": {"x": 999}}
+        clone2 = base.replace(prefix="module2")
+        result2 = clone2.load_raw()
+
+        assert clone1._read_slot is base._read_slot is clone2._read_slot
+        assert result1.data == {"x": 1}
+        assert result2.data == {"x": 2}  # not 999 — same cached read as result1
+
+    def test_replace_overriding_multiple_fields_still_shares(self):
+        base = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=True)
+
+        clone1 = base.replace(prefix="a", name_style="lower_snake")
+        clone2 = base.replace(prefix="a", tag="other")
+
+        assert clone1._read_slot is clone2._read_slot is base._read_slot
+
+    def test_independently_constructed_sources_do_not_share(self):
+        """Two sources built separately (not via .replace() from one another) each get
+        their own cache slot, even with identical field values — sharing follows clone
+        lineage, not coincidental value equality."""
+        first = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=True)
+        second = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=True)
+
+        assert first._read_slot is not second._read_slot
+
+    def test_replace_no_args_is_a_plain_copy(self):
+        base = MockSource(test_data={"a": 1})
+        base.mark_cascaded(["test_data"])
+
+        clone = base.replace()
+
+        assert clone is not base
+        assert clone.test_data == base.test_data
+        assert clone.cascaded_fields == frozenset({"test_data"})
+
+    def test_ttl_reloads_after_expiry(self, time_control: time_machine.Traveller):
+        base = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=timedelta(seconds=30))
+
+        base.load_raw()
+        base.test_data = {"a": 999}
+        assert base.load_raw().data == {"a": 1}  # still cached
+
+        time_control.shift(31)
+        assert base.load_raw().data == {"a": 999}  # TTL expired, fresh read
+
+    def test_failed_load_is_not_cached(self):
+        source = _FailingMockSource(expand_env_vars="disabled", shared_read=True)
+
+        with pytest.raises(ValueError, match="transient failure"):
+            source.load_raw()
+        assert source._read_slot.at is None  # failed attempt left no cache entry
+
+        source.should_fail = False
+        result = source.load_raw()
+
+        assert result.data == {}
+        assert source._read_slot.at is not None
 
 
 class TestStringValueLoaders:

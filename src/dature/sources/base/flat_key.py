@@ -141,7 +141,7 @@ class FlatKeySource(Source, abc.ABC):
         return data_dict.items()
 
     def load_raw(self) -> LoadRawResult:
-        data = self._load()
+        data = self._load_shared() if self.shared_read is not False else self._load()
         data_dict = cast("dict[str, str]", data)
         result: dict[str, JSONValue] = {}
         conflicts: NestedConflicts = {}

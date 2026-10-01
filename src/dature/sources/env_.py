@@ -44,7 +44,13 @@ class EnvSource(FlatKeySource):
             )
 
     def _load(self) -> JSONValue:
-        return cast("JSONValue", os.environ)
+        """Return a snapshot of the environment, not the live ``os.environ`` mapping.
+
+        Required for ``shared_read`` to mean anything here: caching a reference to the
+        live, mutable ``os.environ`` would still reflect every later change, defeating
+        the point of the cache.
+        """
+        return cast("JSONValue", dict(os.environ))
 
     def _iter_raw_items(self, data_dict: dict[str, str]) -> Iterable[tuple[str, str]]:
         """Skip decoding values for keys ``_pre_process_row`` would reject anyway.
