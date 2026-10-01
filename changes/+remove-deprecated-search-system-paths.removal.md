@@ -1,1 +1,0 @@
-Removed the deprecated `search_system_paths` and `system_config_dirs` parameters (on `Dature(loading=...)`, `load()`, `Loader`, and file sources). Use `config_dirs` instead: `config_dirs=()` replaces `search_system_paths=False`, and `config_dirs=...` replaces `system_config_dirs=...`.

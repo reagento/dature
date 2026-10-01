@@ -1,3 +1,34 @@
+## 1.6.0
+
+### Features
+
+- Added `Source(shared_read=...)` — an opt-in `bool | timedelta` cache around a source's raw `_load()`/`_fetch()` result, keyed by the source's own resource identity (resolved file path, or `remote_address()` for remote sources). Two `Source.replace(...)` clones that only differ in `prefix=` (or other post-read fields) share one cached read instead of hitting the same file or remote secret store twice — useful for binding several independent dataclasses to different sections of one config source. Also added `Source.replace(**overrides)`, a discoverable wrapper over `dataclasses.replace()` that additionally preserves cascade provenance.
+- `Source(shared_read=timedelta(...))` now proactively frees its cached raw-read result via a one-shot background timer once the TTL elapses, instead of only clearing it lazily on the next read. This avoids holding a stale or large document in memory indefinitely for a shared source that's read once and never touched again. `shared_read=True` is unaffected since it never expires.
+
+### Bugfixes
+
+- Fixed `AzureAppConfigSource` corrupting string values inside settings with `content_type=application/json` (e.g. an intentional JSON string `"123"` was silently turned into the integer `123`) when the store's global `decode` mode is `"utf-8"`.
+- Fixed `IniSource` silently returning no data when `prefix` contains a dot and matches a literal section name (e.g. `prefix="app.db"` with a `[app.db]` section) — the section is now nested to match how `prefix` navigation expects it.
+- Fixed a secret leak in error messages for invalid `Literal`/enum values (`BadVariantLoadError`): masking used to compare `str(value)` against a message built from `repr(value)`, so a secret containing `\n`/`\t`/`\\` slipped through unmasked. The value is now masked before it is rendered.
+- `ByteSize(-5)` (constructed from an `int`) now raises `ValueError` instead of silently accepting a negative size, matching the string form (`ByteSize("-5B")`), which already rejected negative values.
+- `field_merges` combined with `strategy="first_found"` now logs a warning explaining that only one source is ever read, so merge strategies like `"append"`/`"prepend"` never actually combine values — previously this was a silent no-op.
+- `field_merges` no longer silently drops the aggregated value when another source overrides an intermediate path segment with an incompatible value (e.g. a whole subtree overridden with `None`). This now raises a clear `DatureConfigError` instead of leaving the field unset with no diagnostic.
+
+### Docs
+
+- Linked https://github.com/reagento/adaptix/issues/461 (the upstream `linecache` leak) from the
+  `RetortCache.evict_generated_sources` and `_TrackingCompiler` docstrings that describe the
+  workaround.
+- Migrated the documentation site from `mkdocs-material` to `mkdocs-shadcn`, including a matching
+  rewrite of the brand palette, pixel-font headings, syntax highlighting, mermaid diagrams (with a
+  click-to-zoom lightbox), the Read the Docs version selector, and the SEO/JSON-LD head content for
+  the new theme's template structure.
+
+### Removals
+
+- Removed the deprecated `search_system_paths` and `system_config_dirs` parameters (on `Dature(loading=...)`, `load()`, `Loader`, and file sources). Use `config_dirs` instead: `config_dirs=()` replaces `search_system_paths=False`, and `config_dirs=...` replaces `system_config_dirs=...`.
+
+
 ## 1.5.0
 
 ### Features

@@ -1,1 +1,0 @@
-Fixed a secret leak in error messages for invalid `Literal`/enum values (`BadVariantLoadError`): masking used to compare `str(value)` against a message built from `repr(value)`, so a secret containing `\n`/`\t`/`\\` slipped through unmasked. The value is now masked before it is rendered.

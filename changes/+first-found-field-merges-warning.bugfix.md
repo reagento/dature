@@ -1,1 +1,0 @@
-`field_merges` combined with `strategy="first_found"` now logs a warning explaining that only one source is ever read, so merge strategies like `"append"`/`"prepend"` never actually combine values — previously this was a silent no-op.

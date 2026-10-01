@@ -1,1 +1,0 @@
-Fixed `IniSource` silently returning no data when `prefix` contains a dot and matches a literal section name (e.g. `prefix="app.db"` with a `[app.db]` section) — the section is now nested to match how `prefix` navigation expects it.
