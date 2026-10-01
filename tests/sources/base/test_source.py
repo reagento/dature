@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -714,6 +715,47 @@ class TestSharedReadCaching:
 
         time_control.shift(31)
         assert base.load_raw().data == {"a": 999}  # TTL expired, fresh read
+
+    def test_shared_read_ttl_clears_slot_proactively(self):
+        """The cleanup timer waits on the real system clock, not `time_control`'s fake
+        `time.monotonic` — CPython's threading primitives bypass the `time` module."""
+        base = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=timedelta(seconds=0.05))
+
+        base.load_raw()
+        assert base._read_slot.data is not None
+
+        deadline = time.monotonic() + 2
+        while base._read_slot.data is not None and time.monotonic() < deadline:
+            time.sleep(0.01)
+
+        assert base._read_slot.data is None
+        assert base._read_slot.at is None
+        assert base._read_slot.timer is None
+
+    def test_shared_read_rescheduling_cancels_previous_timer(self):
+        """A second scheduling call before the old timer fires must cancel it, so it can't
+        zero out freshly cached data moments later."""
+        base = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=timedelta(seconds=10))
+        slot = base._read_slot
+
+        base._schedule_shared_cleanup(slot)
+        first_timer = slot.timer
+        assert first_timer is not None
+        base._schedule_shared_cleanup(slot)
+        second_timer = slot.timer
+        assert second_timer is not None
+
+        assert first_timer.finished.is_set()
+        assert second_timer is not first_timer
+
+        second_timer.cancel()
+
+    def test_shared_read_true_does_not_schedule_cleanup(self):
+        base = MockSource(test_data={"a": 1}, expand_env_vars="disabled", shared_read=True)
+
+        base.load_raw()
+
+        assert base._read_slot.timer is None
 
     def test_failed_load_is_not_cached(self):
         source = _FailingMockSource(expand_env_vars="disabled", shared_read=True)

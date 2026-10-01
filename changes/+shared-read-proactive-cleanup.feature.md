@@ -1,0 +1,1 @@
+`Source(shared_read=timedelta(...))` now proactively frees its cached raw-read result via a one-shot background timer once the TTL elapses, instead of only clearing it lazily on the next read. This avoids holding a stale or large document in memory indefinitely for a shared source that's read once and never touched again. `shared_read=True` is unaffected since it never expires.
