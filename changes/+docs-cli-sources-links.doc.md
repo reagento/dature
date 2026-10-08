@@ -1,0 +1,1 @@
+Linked source classes in the supported-formats table to their documentation, added `ArgparseSource` to it, and fixed the "vs pydantic-settings" comparison, which wrongly stated that dature has no application CLI parsing.
