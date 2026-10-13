@@ -94,7 +94,7 @@ class TestTemplateToStr:
         from string.templatelib import Interpolation, Template  # type: ignore[import-not-found]  # noqa: PLC0415
 
         interpolations = [Interpolation(proxy, expr, None, fmt) for proxy, expr, fmt in interps]
-        args: list[str | Interpolation] = []
+        args: list[str | Interpolation] = []  # pyright: ignore[reportInvalidTypeForm]
         for i, s in enumerate(strings):
             args.append(s)
             if i < len(interpolations):
