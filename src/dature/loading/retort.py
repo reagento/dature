@@ -31,6 +31,7 @@ from dature.loading.default_factory import FactoryNode, unsafe_factory_tree
 from dature.protocols import DataclassInstance
 from dature.skip_field_provider import (
     ConstructorOverrideProvider,
+    ImplicitNestedDefaultProvider,
     ModelToDictProvider,
     RequireUnsafeFactoryFieldsProvider,
     SkipFieldProvider,
@@ -162,10 +163,10 @@ _FINAL_SENTINEL: Final[object] = object()
 # providers (e.g. ConstructorOverrideProvider, root validators in _final_raw) after that list have
 # their own providers wrongly checked *after* the catch-all instead of before it.
 _BASE_FAST: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.DISABLE).extend(
-    recipe=[TrackingModelLoaderProvider()]
+    recipe=[ImplicitNestedDefaultProvider(), TrackingModelLoaderProvider()]
 )
 _BASE_RICH: Final[Retort] = Retort(strict_coercion=True, debug_trail=DebugTrail.ALL).extend(
-    recipe=[TrackingModelLoaderProvider()]
+    recipe=[ImplicitNestedDefaultProvider(), TrackingModelLoaderProvider()]
 )
 
 # Precomputed FAST retorts for the two built-in "uncustomized" default recipes (string-value
