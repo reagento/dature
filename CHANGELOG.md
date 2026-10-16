@@ -1,3 +1,14 @@
+## 1.6.1
+
+### Bugfixes
+
+- A nested dataclass field without a default whose own fields all have defaults is now built from those defaults when its key is absent from the source, instead of failing with `Missing required field`.
+
+### Docs
+
+- Linked source classes in the supported-formats table to their documentation, added `ArgparseSource` to it, and fixed the "vs pydantic-settings" comparison, which wrongly stated that dature has no application CLI parsing.
+
+
 ## 1.6.0
 
 ### Features
