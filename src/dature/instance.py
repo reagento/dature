@@ -145,8 +145,8 @@ class Dature:
     def _from_config(cls, config: DatureConfig, type_loaders: TypeLoaderMap | None) -> "Dature":
         """Build an instance from an already-merged config, bypassing env re-resolution."""
         instance = object.__new__(cls)
-        instance._config = config  # noqa: SLF001
-        instance._type_loaders = dict(type_loaders) if type_loaders is not None else None  # noqa: SLF001
+        instance._config = config
+        instance._type_loaders = dict(type_loaders) if type_loaders is not None else None
         return instance
 
     @property
