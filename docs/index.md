@@ -5,14 +5,14 @@ description: >-
 
 # dature — Type-safe configuration loader for Python dataclasses
 
-Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Docker secrets with automatic type conversion, validation and human-readable error messages.
+Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker secrets and CLI with automatic type conversion, validation and human-readable error messages.
 
 ---
 
 ## Features
 
 - **Type-safe** — automatic conversion from strings to all Python types (`int`, `float`, `bool`, `date`, `datetime`, `Enum`, `IPv4Address`, etc.) and nested dataclasses
-- **Multiple formats** — YAML (1.1, 1.2), JSON, JSON5, TOML (1.0, 1.1), INI, ENV, Docker secrets, environment variables
+- **Multiple formats** — YAML (1.1, 1.2), JSON, JSON5, TOML (1.0, 1.1), INI, ENV, Docker secrets, environment variables, CLI
 - **Merge sources** — combine defaults, overrides, and env vars with configurable strategies
 - **Validation** — built-in validators via `Annotated`, root validators, custom validators
 - **Secret masking** — auto-detect and mask secrets in errors, logs, and debug reports
@@ -104,16 +104,17 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables and Doc
 
 | Format | Source Class | Extra dependency |
 |--------|--------------|------------------|
-| YAML 1.1 | `Yaml11Source` | `ruamel.yaml` |
-| YAML 1.2 | `Yaml12Source` | `ruamel.yaml` |
-| JSON | `JsonSource` | — |
-| JSON5 | `Json5Source` | `json-five` |
-| TOML 1.0 | `Toml10Source` | `toml-rs` |
-| TOML 1.1 | `Toml11Source` | `toml-rs` |
-| INI | `IniSource` | — |
-| ENV file | `EnvFileSource` | — |
-| Environment variables | `EnvSource` | — |
-| Docker secrets | `DockerSecretsSource` | — |
+| YAML 1.1 | [`Yaml11Source`](api-reference.md#yaml11sourcefilesource) | `ruamel.yaml` |
+| YAML 1.2 | [`Yaml12Source`](api-reference.md#yaml12sourcefilesource) | `ruamel.yaml` |
+| JSON | [`JsonSource`](api-reference.md#jsonsourcefilesource) | — |
+| JSON5 | [`Json5Source`](api-reference.md#json5sourcefilesource) | `json-five` |
+| TOML 1.0 | [`Toml10Source`](api-reference.md#toml10sourcefilesource) | `toml-rs` |
+| TOML 1.1 | [`Toml11Source`](api-reference.md#toml11sourcefilesource) | `toml-rs` |
+| INI | [`IniSource`](api-reference.md#inisourcefilesource) | — |
+| ENV file | [`EnvFileSource`](api-reference.md#envfilesourceflatkeysource) | — |
+| Environment variables | [`EnvSource`](api-reference.md#envsourceflatkeysource) | — |
+| Docker secrets | [`DockerSecretsSource`](api-reference.md#dockersecretssourceflatkeysource) | — |
+| CLI arguments | [`ArgparseSource`](advanced/cli/argparse.md) ([custom CLI source](advanced/cli/custom.md)) | — |
 
 Use the specific Source subclass for your format. File-based sources (`FileSource` subclasses) accept `file` as `str`, `Path`, or file-like object (`BytesIO`, `StringIO`). `EnvSource` reads from environment variables (no `file` parameter). `DockerSecretsSource` accepts `dir` pointing to a secrets directory.
 
