@@ -23,7 +23,7 @@ On Python < 3.14 the ``Template`` type does not exist; users must use the
 from typing import Final
 
 try:
-    from string.templatelib import Template  # type: ignore[import-not-found]
+    from string.templatelib import Template  # type: ignore[import-not-found,import-untyped,unused-ignore]
 
     TEMPLATE_SUPPORTED = True
 except ImportError:

@@ -144,6 +144,25 @@ the file but has no line — there is nothing in the source to highlight.
     --8<-- "docs/examples/loading/loading_missing_field.stderr"
     ```
 
+### Nested section with all defaults
+
+A nested dataclass field is not reported as missing when every field of that
+dataclass has a default. The section is simply built from its defaults, so you
+do not need `field(default_factory=...)` for it. If the nested dataclass has
+even one required field, the section stays required.
+
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/loading/loading_nested_defaults.py:example"
+    ```
+
+=== "nested_defaults.yaml"
+
+    ```yaml
+    --8<-- "docs/examples/loading/sources/nested_defaults.yaml"
+    ```
+
 ## Multiple errors at once
 
 dature does not stop at the first error — it keeps going and reports every

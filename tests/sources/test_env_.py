@@ -294,6 +294,33 @@ class TestEnvSource:
 
         assert data == expected_data
 
+    @pytest.mark.parametrize(
+        ("env", "expected_credentials"),
+        [
+            ({}, True),
+            ({"CORS__ALLOW_CREDENTIALS": "false"}, False),
+        ],
+    )
+    def test_nested_section_with_all_defaults(self, monkeypatch, env, expected_credentials):
+        monkeypatch.delenv("CORS__ALLOW_CREDENTIALS", raising=False)
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Cors:
+            allow_origins: tuple[str, ...] = ("http://localhost",)
+            allow_credentials: bool = True
+
+        @dataclass
+        class TestConfig:
+            cors: Cors
+
+        expected_data = TestConfig(cors=Cors(allow_credentials=expected_credentials))
+
+        data = load(EnvSource(), schema=TestConfig)
+
+        assert data == expected_data
+
     def test_custom_split_symbols(self, monkeypatch):
         """Test custom separator for nested keys."""
         monkeypatch.setenv("APP_DB.HOST", "localhost")
