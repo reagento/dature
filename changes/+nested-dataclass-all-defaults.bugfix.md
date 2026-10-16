@@ -1,1 +1,0 @@
-A nested dataclass field without a default whose own fields all have defaults is now built from those defaults when its key is absent from the source, instead of failing with `Missing required field`.
