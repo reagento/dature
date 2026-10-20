@@ -67,10 +67,106 @@ class Config:
 config = dature.load(dature.Yaml12Source(file="config.yaml"), schema=Config)
 ```
 
+## Readable errors
+
+Validation errors point at the source file, the line, and the exact value:
+
+```python
+from dataclasses import dataclass
+from typing import Literal
+
+import dature
+
+
+@dataclass
+class Config:
+    password: str
+    host: Literal["production", "staging"]
+
+
+dature.load(
+    dature.Yaml12Source(file="config.yaml"),
+    schema=Config,
+    masking_mode="secrets_only",  # default is "all"
+)
+```
+
+```yaml title="config.yaml"
+host: "development"
+password: "my_secret_password"
+```
+
+```
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [host]  Invalid variant: 'development'
+    |    ├── host: "development"
+    |    │          ^^^^^^^^^^^
+    |    └── FILE 'config.yaml', line 1
+    +------------------------------------
+```
+
+The same format works for YAML, JSON, JSON5, TOML, INI, ENV files, environment variables, and Docker
+secrets. Values are masked by default (`masking_mode="all"`); the example uses `"secrets_only"` so
+that only `password` is hidden. See
+[Masking](https://dature.readthedocs.io/en/latest/basic/masking/).
+
+## Merging sources
+
+Sources are merged in order, with a strategy for conflicts and per-field rules for lists:
+
+```python
+from dataclasses import dataclass
+
+import dature
+
+
+@dataclass
+class Config:
+    tags: list[str]
+
+
+config = dature.load(
+    dature.Yaml12Source(file="base.yaml"),  # tags: [web, default]
+    dature.Yaml12Source(file="override.yaml"),  # tags: [web, api]
+    schema=Config,
+    field_merges={dature.F[Config].tags: "append"},
+)
+
+print(config.tags)  # ['web', 'default', 'web', 'api']
+```
+
+## Debug report
+
+Pass `debug=True` to see which source provided each value:
+
+```python
+import dature
+
+config = dature.load(
+    dature.Yaml12Source(file="defaults.yaml"),
+    dature.Yaml12Source(file="overrides.yaml"),
+    schema=Config,
+    debug=True,
+)
+
+report = dature.load_report(config)
+for origin in report.field_origins:
+    source = Path(origin.source_file).name if origin.source_file else origin.source_loader_type
+    print(f"{origin.key} = {origin.value!r} <- {source}")
+```
+
+```
+host = 'production.example.com' <- overrides.yaml
+port = 3000 <- defaults.yaml
+tags = ['default'] <- defaults.yaml
+```
+
+
 ## Key Features
 
 - **Multiple sources** — YAML, JSON, JSON5, TOML, INI, ENV, environment variables, Docker secrets, CLI args (`argparse` or your own), HashiCorp Vault, Consul, etcd, Apache ZooKeeper, AWS SSM, AWS Secrets Manager, Azure App Configuration, Azure Key Vault, GCP Secret Manager
-- **Merging** — combine multiple sources with configurable strategies (`"last_wins"`, `"first_wins"`, `"raise_on_conflict"`)
+- **Merging** — combine multiple sources with configurable strategies (`"last_wins"`, `"first_wins"`, `"first_found"`, `"raise_on_conflict"`) and per-field rules (`"append"`, `"prepend"`, `"append_unique"`, custom callables)
 - **Validation** — `Annotated` field validators, root validators, `__post_init__` support
 - **Naming** — automatic field name mapping (`snake_case` ↔ `camelCase` ↔ `UPPER_SNAKE` etc.)
 - **Secret masking** — automatic masking in error messages and logs by field type, name, or heuristic
@@ -84,6 +180,26 @@ config = dature.load(dature.Yaml12Source(file="config.yaml"), schema=Config)
 - **Extensible** — plug in custom sources, type loaders, and remote backends via `SourceProtocol`
 
 See the **[documentation](https://dature.readthedocs.io/)** for detailed guides and API reference.
+
+## Why dature?
+
+- **Your config stays a plain dataclass.** No `BaseSettings` base class, no vendor lock-in, no Pydantic-specific validators for custom types. Full IDE completion and mypy support come from your own class.
+- **Errors you can act on.** The failure names the source, the line, and the value — not a `ValidationError` with a model path.
+- **Merge is explicit.** Four source strategies plus per-field rules (`append`, `prepend`, `append_unique`, field groups), instead of a fixed priority order you have to work around.
+- **One schema, many backends.** The same dataclass loads from files, environment, CLI, Docker secrets, and remote stores (Vault, Consul, etcd, ZooKeeper, AWS, Azure, GCP) — switch sources without touching the schema.
+
+How dature compares in detail:
+
+- [Why not pydantic-settings?](https://dature.readthedocs.io/en/latest/comparison/why-not-pydantic-settings/)
+- [Why not Dynaconf?](https://dature.readthedocs.io/en/latest/comparison/why-not-dynaconf/)
+- [Why not Hydra?](https://dature.readthedocs.io/en/latest/comparison/why-not-hydra/)
+- [Benchmarks](https://dature.readthedocs.io/en/latest/comparison/benchmarks/)
+
+When the other side wins: if Pydantic is already your core dependency, you build on FastAPI/SQLModel,
+or you want a CLI generated from your settings model with subcommands and async entrypoints —
+[pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) is the natural fit.
+For ML experiment sweeps and config composition use [Hydra](https://hydra.cc/). dature is aimed at
+application and service config: a fixed schema, several sources, and readable failures.
 
 ## Requirements
 
