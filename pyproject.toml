@@ -26,6 +26,13 @@ keywords = [
     "env",
     "settings",
     "loader",
+    "pydantic-settings",
+    "dotenv",
+    "secrets",
+    "vault",
+    "12-factor",
+    "environment-variables",
+    "validation",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
