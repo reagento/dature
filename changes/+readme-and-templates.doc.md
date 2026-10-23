@@ -1,1 +1,0 @@
-Expanded the README with a readable-error example (file, line and caret under the value), a list-merge example using `field_merges`, a `debug=True` / `load_report` example and a "Why dature?" section linking the comparison pages, and listed `first_found` among the merge strategies. Added `CONTRIBUTING.md`, issue and pull request templates, and more PyPI keywords.
