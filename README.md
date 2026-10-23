@@ -127,7 +127,7 @@ class Config:
 
 
 config = dature.load(
-    dature.Yaml12Source(file="base.yaml"),      # tags: [web, default]
+    dature.Yaml12Source(file="base.yaml"),  # tags: [web, default]
     dature.Yaml12Source(file="override.yaml"),  # tags: [web, api]
     schema=Config,
     field_merges={dature.F[Config].tags: "append"},
