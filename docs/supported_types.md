@@ -445,6 +445,29 @@ Always encoded as a string.
     | `ADDRS__WORK__CITY`       | `Paris`                                                       |
     | `ADDRS__WORK__ZIP_CODE`   | `75001`                                                       |
 
+### TypedDict
+
+Any `TypedDict` works as a field type — the standard-library one and `typing_extensions.TypedDict`
+alike. PEP 728 options (`typing_extensions` on Python 3.12–3.14, standard library on 3.15+) control
+what happens to keys that the TypedDict does not declare:
+
+| Declaration                   | Keys that are not declared                                     |
+|-------------------------------|----------------------------------------------------------------|
+| `TypedDict, extra_items=T`    | kept, values are loaded as `T`                                 |
+| `TypedDict, closed=False`     | kept as they are                                               |
+| `TypedDict, closed=True`      | rejected with an `Unknown field(s)` error                      |
+| none of the above             | dropped silently                                               |
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict.py:schema"
+```
+
+=== "JSON"
+
+    ```json
+    --8<-- "docs/examples/supported_types/sources/typed_dict.json"
+    ```
+
 ### Other stdlib
 
 | Type       | Python                     | Syntax       |

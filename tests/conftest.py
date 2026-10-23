@@ -251,22 +251,27 @@ def all_types_gcp_secret_manager_file(examples_dir: Path) -> Path:
 
 
 @pytest.fixture
-def _clean_dature_modules() -> Generator[None]:
-    removed: dict[str, object] = {}
-    for key in list(sys.modules):
-        if key.startswith("dature."):
-            removed[key] = sys.modules.pop(key)
-    yield
-    sys.modules.update(removed)
+def block_import() -> Callable[..., AbstractContextManager[None]]:
+    """Make ``import <module_name>`` fail inside the ``with`` block.
 
+    By default every ``dature.*`` module is evicted from ``sys.modules`` for the duration of the
+    block, so that nothing ``dature`` cached at import time about the dependency survives. That
+    is what optional-extra tests (``hvac``, ``kazoo``...) need.
 
-@pytest.fixture
-def block_import(_clean_dature_modules: None) -> Callable[[str], AbstractContextManager[None]]:
+    The eviction detaches the *already imported* ``dature`` classes from their modules:
+    ``typing.get_type_hints`` resolves string annotations such as ``Source.prefix`` through
+    ``sys.modules[cls.__module__]`` and fails with ``NameError``. Tests that load a config inside
+    the block with classes imported up front must pass ``clean_dature=False``.
+    """
     real_import_module = importlib.import_module
 
-    def _block(module_name: str) -> AbstractContextManager[None]:
+    def _block(module_name: str, *, clean_dature: bool = True) -> AbstractContextManager[None]:
         @contextmanager
         def _ctx() -> Generator[None]:
+            evicted_dature: dict[str, object] = {}
+            if clean_dature:
+                evicted_dature = {key: sys.modules.pop(key) for key in list(sys.modules) if key.startswith("dature.")}
+
             # Drop any cached entry so require_dep's import_module() actually goes through the
             # patch below — otherwise a previously-imported module short-circuits the block.
             removed = {
@@ -286,11 +291,21 @@ def block_import(_clean_dature_modules: None) -> Callable[[str], AbstractContext
                     raise ImportError(msg)
                 return real_import_module(name, *args, **kwargs)
 
-            with patch("importlib.import_module", side_effect=_blocker_import_module):
-                try:
+            # ``None`` in ``sys.modules`` makes a plain ``import <module_name>`` statement raise
+            # ``ImportError`` too, covering code that does not go through ``import_module``.
+            blocked = {**dict.fromkeys(removed, None), module_name: None}
+
+            try:
+                with (
+                    patch("importlib.import_module", side_effect=_blocker_import_module),
+                    patch.dict(sys.modules, blocked),
+                ):
                     yield
-                finally:
-                    sys.modules.update(removed)
+            finally:
+                # Must run after ``patch.dict`` exits: it restores the "key absent" state it saw
+                # on entry, which would otherwise undo the restoration below.
+                sys.modules.update(evicted_dature)
+                sys.modules.update(removed)
 
         return _ctx()
 

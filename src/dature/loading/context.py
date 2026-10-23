@@ -11,7 +11,7 @@ from dature.config import ErrorDisplayConfig, MaskingConfig
 from dature.errors.location import ErrorContext
 from dature.field_path import F, extract_field_path
 from dature.protocols import DataclassInstance
-from dature.skip_field_provider import FilterResult, filter_invalid_fields
+from dature.providers.skip import FilterResult, filter_invalid_fields
 from dature.sources.protocol import SourceProtocol
 from dature.type_aliases import JSONValue, NestedConflicts, SkipFieldsInvalid
 

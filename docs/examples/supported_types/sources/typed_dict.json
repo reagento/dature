@@ -1,0 +1,9 @@
+{
+  "name": "app",
+  "credentials": {
+    "user": "admin",
+    "password": "secret",
+    "host": "localhost",
+    "region": "eu"
+  }
+}

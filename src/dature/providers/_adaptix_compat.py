@@ -10,10 +10,18 @@ from adaptix._internal.code_tools.compiler import BasicClosureCompiler, ClosureC
 from adaptix._internal.model_tools.definitions import (
     DefaultFactory,
     DefaultValue,
+    InputField,
     InputShape,
     NoDefault,
     Param,
     ParamKind,
+)
+from adaptix._internal.morphing.model.crown_definitions import (
+    ExtraCollect,
+    ExtraForbid,
+    ExtraSaturate,
+    InpDictCrown,
+    InputNameLayout,
 )
 from adaptix._internal.morphing.model.loader_provider import ModelLoaderProvider
 from adaptix._internal.morphing.request_cls import LoaderRequest
@@ -28,6 +36,12 @@ __all__ = [
     "ClosureCompiler",
     "DefaultFactory",
     "DefaultValue",
+    "ExtraCollect",
+    "ExtraForbid",
+    "ExtraSaturate",
+    "InpDictCrown",
+    "InputField",
+    "InputNameLayout",
     "InputShape",
     "InputShapeRequest",
     "LoaderRequest",

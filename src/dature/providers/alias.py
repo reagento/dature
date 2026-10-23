@@ -4,9 +4,9 @@ from typing import cast
 
 from adaptix import Loader, Mediator, Provider
 
-from dature._adaptix_compat import AlwaysTrueRequestChecker, LoaderRequest, RequestHandlerRegisterRecord
 from dature.field_path import Absolute, FieldPath, resolve_nested_owner
 from dature.protocols import DataclassInstance
+from dature.providers._adaptix_compat import AlwaysTrueRequestChecker, LoaderRequest, RequestHandlerRegisterRecord
 from dature.type_aliases import FieldMapping, JSONValue
 
 
