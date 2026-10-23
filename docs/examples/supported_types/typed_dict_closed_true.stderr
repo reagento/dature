@@ -1,0 +1,17 @@
++ Exception Group Traceback (most recent call last):
+  |   File "{SCRIPT_PATH}", line 24, in <module>
+  |     dature.load(
+  |     ~~~~~~~~~~~^
+  |         dature.JsonSource(file=SOURCES_DIR / "typed_dict.json"), schema=Config
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |     )
+  |     ^
+  | dature.errors.exceptions.DatureConfigError: Config loading errors (1)
+  +-+---------------- 1 ----------------
+    | dature.errors.exceptions.FieldLoadError:   [credentials]  Unknown field(s): host, region
+    |    ├── "credentials": {
+    |    ├──   "user": "<REDACTED>",
+    |    │              ^^^^^^^^^^
+    |    ├── ...
+    |    └── FILE '{SOURCES_DIR}typed_dict.json', line 3-8
+    +------------------------------------

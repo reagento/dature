@@ -458,15 +458,53 @@ what happens to keys that the TypedDict does not declare:
 | `TypedDict, closed=True`      | rejected with an `Unknown field(s)` error                      |
 | none of the above             | dropped silently                                               |
 
-```python
---8<-- "docs/examples/supported_types/typed_dict.py:schema"
-```
+All examples below share the same input:
 
 === "JSON"
 
     ```json
     --8<-- "docs/examples/supported_types/sources/typed_dict.json"
     ```
+
+#### `extra_items=T`
+
+Undeclared keys are kept and their values are loaded as `T`.
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict.py:schema"
+```
+
+#### `closed=False`
+
+Undeclared keys are kept as they are, without any type coercion.
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict_closed_false.py:schema"
+```
+
+#### `closed=True`
+
+Undeclared keys are rejected with an `Unknown field(s)` error.
+
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/supported_types/typed_dict_closed_true.py:schema"
+    ```
+
+=== "Error"
+
+    ```
+    --8<-- "docs/examples/supported_types/typed_dict_closed_true.stderr"
+    ```
+
+#### None of the above
+
+Undeclared keys are dropped silently.
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict_plain.py:schema"
+```
 
 ### Other stdlib
 

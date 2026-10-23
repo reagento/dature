@@ -28,8 +28,6 @@ EXPECTED_CONFIG = Config(
         "region": "eu",
     },  # type: ignore[typeddict-unknown-key]
 )
-# --8<-- [end:schema]
-
 
 SOURCES_DIR = Path(__file__).parent / "sources"
 
@@ -38,3 +36,4 @@ config = dature.load(
 )
 
 assert config == EXPECTED_CONFIG
+# --8<-- [end:schema]
