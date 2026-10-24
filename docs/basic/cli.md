@@ -66,7 +66,7 @@ Inspect the load report in human-readable form:
     --8<-- "docs/examples/basic/cli/cli_quickstart_inspect_text.stdout"
     ```
 
-## `inspect`
+## inspect
 
 Loads the schema with `debug=True`, retrieves the [`LoadReport`](../advanced/debug.md), and prints it.
 
@@ -126,7 +126,7 @@ Narrow the report to a single dotted path — `db.port` here resolves to a scala
     --8<-- "docs/examples/basic/cli/cli_inspect_field.stdout"
     ```
 
-## `validate`
+## validate
 
 Runs `load(*sources, schema=Schema, ...)` and reports the result via exit code. Use it as the final gate in CI/CD.
 
@@ -174,7 +174,7 @@ When validation fails, the error includes the field path, the offending value, a
     --8<-- "docs/examples/basic/cli/cli_validate_fail.stderr"
     ```
 
-## `--source` spec
+## --source spec
 
 Each `--source` is a serialised constructor call for a [`Source`](../api-reference.md#source) subclass. The CLI parses the spec, imports the class, and calls `Class(**kwargs)`:
 
@@ -210,7 +210,7 @@ Use `\,` and `\=` to keep literal `,` / `=` inside a value:
 --8<-- "docs/examples/basic/cli/cli_source_escape.py"
 ```
 
-## `--schema MODULE:ATTR`
+## --schema MODULE:ATTR
 
 Import path to the dataclass schema. Internally the CLI passes the resolved class to the [`schema`](../api-reference.md#datureload) parameter of [`dature.load()`](../api-reference.md#datureload). Both `:` and final-dot separators work:
 

@@ -23,7 +23,7 @@ Three forms are available:
 
 Paths are validated eagerly: accessing a field that does not exist on the owner dataclass raises an `AttributeError` immediately rather than at load time.
 
-## Where `F` is used
+## Where F is used
 
 | Parameter | Used in |
 |-----------|---------|
@@ -34,7 +34,7 @@ Paths are validated eagerly: accessing a field that does not exist on the owner 
 | `skip_field_if_invalid` | `Source(skip_field_if_invalid=F[C].field)` — drop a field silently on validation failure. See [Skip Behaviors](../advanced/skip-behaviors.md#skipping-invalid-fields). |
 | `nested_resolve` | `Source(nested_resolve={F[C].field: "json"})` — per-field nested resolve strategy. See [Nested Resolve](../advanced/nested-resolve.md#per-field-strategy). |
 
-## `F` vs `ref`
+## F vs ref
 
 `F` and `ref` look similar but serve entirely different purposes:
 

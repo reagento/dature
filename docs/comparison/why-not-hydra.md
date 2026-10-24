@@ -68,7 +68,7 @@ dature returns **your actual dataclass**:
 --8<-- "docs/examples/comparison/why-not-hydra/hydra_dataclass.py:example"
 ```
 
-## The `@hydra.main` Problem
+## The @hydra.main Problem
 
 Hydra takes over your application entry point. The `@hydra.main` decorator:
 

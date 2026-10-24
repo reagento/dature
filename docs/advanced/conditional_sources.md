@@ -267,7 +267,7 @@ when a downstream source references that tag:
 Fix: use the same `:-default` in both `when=` conditions so exactly one matches
 when the variable is unset.
 
-## Interaction with `skip_if_broken`
+## Interaction with skip_if_broken
 
 `when=` filtering runs **before** any I/O: a source that doesn't match its
 `when=` condition is never opened, never loaded, and never considered broken.

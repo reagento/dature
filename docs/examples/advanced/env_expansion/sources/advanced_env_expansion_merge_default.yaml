@@ -1,2 +1,0 @@
-default_set_url: "$KNOWN_HOST/api"
-default_unset_url: "$UNSET_VAR/api"

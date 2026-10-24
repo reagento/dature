@@ -129,6 +129,19 @@ See the full list of Source classes and their extra dependencies on the [main pa
 | `type_loaders` | Custom type converters for this source. See [Custom Types & Loaders](advanced/custom_types.md#custom-types) |
 | `tag` | Explicit tag for `${@tag.key}` cross-refs. Defaults to the format name. See [Cross-Source References](advanced/cross_source_refs.md) |
 | `when` | Include this source only when a condition is met, built with the `When()` DSL. See [Conditional Sources](advanced/conditional_sources.md) |
+| `strict` | Unknown-key detection for this source only: `"off"`, `"warn"` or `"error"`. Overrides `strict` from `load()` / `Dature`. See [Strict Mode](advanced/strict-mode.md) |
+| `shared_read` | `bool \| timedelta`. Share one raw read (file or remote fetch) across several sources bound to different `prefix=` values. See [Caching](advanced/caching.md#sharing-a-raw-read-across-sources-shared_read) |
+
+### Class-level attributes
+
+These are not constructor arguments in everyday use — they are set by each `Source` subclass and overridden when you write a [custom source](advanced/custom_sources.md).
+
+| Attribute | Description |
+|-----------|-------------|
+| `format_name` | Format name shown in `repr` and error messages. Also the default `tag` for `${@tag.key}` cross-refs (`"json"`, `"yaml1.2"`, `"env"`, …). See [Custom Sources](advanced/custom_sources.md), [Cross-Source References](advanced/cross_source_refs.md) |
+| `location_label` | Label of the source location in error messages: `"FILE"`, `"ENV"`, `"ENV FILE"`, `"SECRET FILE"`, `"CLI"`, `"VAULT"`, … See [Custom Sources](advanced/custom_sources.md) |
+| `config_group` | Name of the `dature.Dature(...)` / `DATURE_<GROUP>__*` group that fills this source's unset fields (e.g. `VaultSource` → `vault`). `None` means the source has no group. Not extensible from outside the package. See [Configure](basic/configure.md), [Custom Remote Sources](advanced/remote/custom.md) |
+| `root_validators` | `ClassVar` of `V.root(...)` predicates that validate the *source itself* — after config-group merge and cross-ref interpolation, before loading. Not the same as `root_validators=` on `load()`, which checks the merged schema instance. See [Custom Remote Sources](advanced/remote/custom.md), [Validation](basic/validation.md#root-validators) |
 
 **FileSource** subclasses (`JsonSource`, `Yaml*Source`, `Toml*Source`, `IniSource`, `Json5Source`) also have:
 

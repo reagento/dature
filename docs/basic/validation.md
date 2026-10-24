@@ -147,7 +147,7 @@ Field validators (`Annotated` predicates and `source.validators`) fire **per-sou
 Root validators (`root_validators=`) run **once** on the final merged object after all field validation passes have completed.
 
 
-## `__post_init__` and `@property`
+## __post_init__ and @property
 
 Standard dataclass `__post_init__` and `@property` work as expected — dature preserves them during loading:
 

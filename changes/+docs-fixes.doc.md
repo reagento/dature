@@ -1,0 +1,1 @@
+Documentation: listed all optional extras on the home page, described `strict`, `shared_read` and the class-level `format_name`, `location_label`, `config_group`, `root_validators` attributes in the introduction, removed Vault and Consul from the supported types matrix, moved the TypedDict examples into tabs, and fixed several rendering and example issues.

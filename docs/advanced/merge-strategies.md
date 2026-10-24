@@ -74,7 +74,7 @@ Each strategy produces a different result:
 
 Nested fields are supported — see [Field Paths](../basic/field-paths.md) for the full syntax.
 
-### With `raise_on_conflict`
+### With raise_on_conflict
 
 Fields with an explicit strategy are excluded from conflict detection:
 
@@ -98,7 +98,7 @@ Fields with an explicit strategy are excluded from conflict detection:
 
 ## Custom Field Strategy
 
-### The `FieldMergeStrategy` Protocol
+### The FieldMergeStrategy Protocol
 
 Any callable that takes a `list[JSONValue]` (one value per source) and returns the merged value satisfies the public `FieldMergeStrategy` `Protocol`:
 
