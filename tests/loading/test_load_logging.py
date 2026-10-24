@@ -12,7 +12,7 @@ from dature.loading.load_logging import (
     log_single_source_load,
 )
 from dature.loading.merge_runtime import MergeStepEvent
-from dature.report_types import FieldOrigin
+from dature.report_types import FieldOrigin, FieldSource
 from dature.sources.base import Source
 from dature.type_aliases import JSONValue
 
@@ -120,8 +120,16 @@ class TestLogMergeStep:
 class TestLogFieldOrigins:
     def test_one_record_per_origin(self, caplog: pytest.LogCaptureFixture) -> None:
         origins = (
-            FieldOrigin(key="host", value="localhost", source_index=0, source_file=None, source_loader_type="mock"),
-            FieldOrigin(key="port", value=3000, source_index=0, source_file=None, source_loader_type="mock"),
+            FieldOrigin(
+                key="host",
+                value="localhost",
+                sources=(FieldSource(source_index=0, source_file=None, source_loader_type="mock", value="localhost"),),
+            ),
+            FieldOrigin(
+                key="port",
+                value=3000,
+                sources=(FieldSource(source_index=0, source_file=None, source_loader_type="mock", value=3000),),
+            ),
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
@@ -132,9 +140,32 @@ class TestLogFieldOrigins:
             "[Config] Field 'port' = 3000  <-- source 0 (None)",
         ]
 
+    def test_multiple_sources_listed(self, caplog: pytest.LogCaptureFixture) -> None:
+        origins = (
+            FieldOrigin(
+                key="tags",
+                value=["a", "b"],
+                sources=(
+                    FieldSource(source_index=0, source_file="a.yaml", source_loader_type="yaml", value=["a"]),
+                    FieldSource(source_index=2, source_file="b.yaml", source_loader_type="yaml", value=["b"]),
+                ),
+            ),
+        )
+
+        with caplog.at_level(logging.DEBUG, logger="dature"):
+            log_field_origins(dataclass_name="Config", field_origins=origins, masking=_NO_MASKING)
+
+        assert _messages(caplog, "Config") == [
+            "[Config] Field 'tags' = ['a', 'b']  <-- source 0 (a.yaml), source 2 (b.yaml)",
+        ]
+
     def test_secret_key_is_masked(self, caplog: pytest.LogCaptureFixture) -> None:
         origins = (
-            FieldOrigin(key="password", value="hunter2", source_index=0, source_file=None, source_loader_type="mock"),
+            FieldOrigin(
+                key="password",
+                value="hunter2",
+                sources=(FieldSource(source_index=0, source_file=None, source_loader_type="mock", value="hunter2"),),
+            ),
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
@@ -152,7 +183,11 @@ class TestLogFieldOrigins:
     def test_none_mode_keeps_secret_value_in_log(self, caplog: pytest.LogCaptureFixture) -> None:
         """masking_mode="none" means no masking at all, even for a declared secret path."""
         origins = (
-            FieldOrigin(key="password", value="hunter2", source_index=0, source_file=None, source_loader_type="mock"),
+            FieldOrigin(
+                key="password",
+                value="hunter2",
+                sources=(FieldSource(source_index=0, source_file=None, source_loader_type="mock", value="hunter2"),),
+            ),
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
@@ -169,7 +204,11 @@ class TestLogFieldOrigins:
 
     def test_non_secret_value_appears_in_log(self, caplog: pytest.LogCaptureFixture) -> None:
         origins = (
-            FieldOrigin(key="host", value="myserver", source_index=0, source_file=None, source_loader_type="mock"),
+            FieldOrigin(
+                key="host",
+                value="myserver",
+                sources=(FieldSource(source_index=0, source_file=None, source_loader_type="mock", value="myserver"),),
+            ),
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):
@@ -192,7 +231,11 @@ class TestLogFieldOrigins:
     )
     def test_masks_styled_origin_key(self, caplog: pytest.LogCaptureFixture, origin_key: str) -> None:
         origins = (
-            FieldOrigin(key=origin_key, value="hunter2", source_index=0, source_file=None, source_loader_type="mock"),
+            FieldOrigin(
+                key=origin_key,
+                value="hunter2",
+                sources=(FieldSource(source_index=0, source_file=None, source_loader_type="mock", value="hunter2"),),
+            ),
         )
 
         with caplog.at_level(logging.DEBUG, logger="dature"):

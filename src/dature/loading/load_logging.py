@@ -52,24 +52,16 @@ def log_field_origins(
 ) -> None:
     for origin in field_origins:
         if is_secret_path(origin.key, secret_paths=secret_paths, masking=masking):
-            masked = mask_value(str(origin.value), masking)
-            logger.debug(
-                "[%s] Field '%s' = %r  <-- source %d (%s)",
-                dataclass_name,
-                origin.key,
-                masked,
-                origin.source_index,
-                origin.source_file,
-            )
+            shown: JSONValue = mask_value(str(origin.value), masking)
         else:
-            logger.debug(
-                "[%s] Field '%s' = %r  <-- source %d (%s)",
-                dataclass_name,
-                origin.key,
-                origin.value,
-                origin.source_index,
-                origin.source_file,
-            )
+            shown = origin.value
+        logger.debug(
+            "[%s] Field '%s' = %r  <-- %s",
+            dataclass_name,
+            origin.key,
+            shown,
+            ", ".join(f"source {s.source_index} ({s.source_file})" for s in origin.sources),
+        )
 
 
 def log_single_source_load(

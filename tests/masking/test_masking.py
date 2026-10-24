@@ -20,7 +20,7 @@ from dature.masking.masking import (
     mask_source_entries,
     mask_value,
 )
-from dature.report_types import FieldOrigin, SourceEntry
+from dature.report_types import FieldOrigin, FieldSource, SourceEntry
 from dature.type_aliases import MaskingMode, NameStyle
 
 _SECRETS_ONLY = MaskingConfig(masking_mode="secrets_only")
@@ -243,9 +243,7 @@ def _origin(key: str, value: str) -> FieldOrigin:
     return FieldOrigin(
         key=key,
         value=value,
-        source_index=0,
-        source_file="config.yaml",
-        source_loader_type="yaml",
+        sources=(FieldSource(source_index=0, source_file="config.yaml", source_loader_type="yaml", value=value),),
     )
 
 
@@ -273,7 +271,24 @@ class TestMaskFieldOrigins:
         expected_values: tuple[str, ...],
     ) -> None:
         result = mask_field_origins(origins, secret_paths=secret_paths, masking=_SECRETS_ONLY)
+
         assert tuple(r.value for r in result) == expected_values
+        assert tuple(tuple(s.value for s in r.sources) for r in result) == tuple((v,) for v in expected_values)
+
+    def test_mask_field_origins_masks_every_source_value(self) -> None:
+        origin = FieldOrigin(
+            key="password",
+            value=["a", "b"],
+            sources=(
+                FieldSource(source_index=0, source_file="a.yaml", source_loader_type="yaml", value=["a"]),
+                FieldSource(source_index=1, source_file="b.yaml", source_loader_type="yaml", value=["b"]),
+            ),
+        )
+
+        (result,) = mask_field_origins((origin,), secret_paths=frozenset({"password"}), masking=_SECRETS_ONLY)
+
+        assert tuple(s.value for s in result.sources) == ("<REDACTED>", "<REDACTED>")
+        assert tuple(s.source_index for s in result.sources) == (0, 1)
 
 
 class TestMaskSourceEntries:

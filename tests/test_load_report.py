@@ -10,8 +10,10 @@ import pytest
 
 from dature import JsonSource, V, load, load_report
 from dature.errors import DatureConfigError
+from dature.field_path import F
 from dature.report import LoadReport
-from dature.report_types import FieldOrigin, SourceEntry
+from dature.report_types import FieldOrigin, FieldSource, SourceEntry
+from dature.strategies.field import FieldMergeResult
 from dature.strategies.source import SourceFirstWins, SourceLastWins
 
 # This file isn't about masking — disable it so report/merge assertions can
@@ -62,16 +64,26 @@ class TestGetLoadReportMergeFunction:
             FieldOrigin(
                 key="host",
                 value="localhost",
-                source_index=0,
-                source_file=str(defaults),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=0,
+                        source_file=str(defaults),
+                        source_loader_type="json",
+                        value="localhost",
+                    ),
+                ),
             ),
             FieldOrigin(
                 key="port",
                 value=8080,
-                source_index=1,
-                source_file=str(overrides),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=1,
+                        source_file=str(overrides),
+                        source_loader_type="json",
+                        value=8080,
+                    ),
+                ),
             ),
         )
         assert report.merged_data == {"host": "localhost", "port": 8080}
@@ -119,16 +131,26 @@ class TestGetLoadReportMergeFunction:
             FieldOrigin(
                 key="host",
                 value="first-host",
-                source_index=0,
-                source_file=str(first),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=0,
+                        source_file=str(first),
+                        source_loader_type="json",
+                        value="first-host",
+                    ),
+                ),
             ),
             FieldOrigin(
                 key="port",
                 value=1000,
-                source_index=0,
-                source_file=str(first),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=0,
+                        source_file=str(first),
+                        source_loader_type="json",
+                        value=1000,
+                    ),
+                ),
             ),
         )
         assert report.merged_data == {"host": "first-host", "port": 1000}
@@ -163,16 +185,26 @@ class TestGetLoadReportMergeFunction:
             FieldOrigin(
                 key="database.host",
                 value="prod-host",
-                source_index=1,
-                source_file=str(overrides),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=1,
+                        source_file=str(overrides),
+                        source_loader_type="json",
+                        value="prod-host",
+                    ),
+                ),
             ),
             FieldOrigin(
                 key="database.port",
                 value=5432,
-                source_index=0,
-                source_file=str(defaults),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=0,
+                        source_file=str(defaults),
+                        source_loader_type="json",
+                        value=5432,
+                    ),
+                ),
             ),
         )
         assert expected_origins == report.field_origins
@@ -207,16 +239,26 @@ class TestGetLoadReportSingleSource:
                 FieldOrigin(
                     key="name",
                     value="test",
-                    source_index=0,
-                    source_file=str(json_file),
-                    source_loader_type="json",
+                    sources=(
+                        FieldSource(
+                            source_index=0,
+                            source_file=str(json_file),
+                            source_loader_type="json",
+                            value="test",
+                        ),
+                    ),
                 ),
                 FieldOrigin(
                     key="port",
                     value=8080,
-                    source_index=0,
-                    source_file=str(json_file),
-                    source_loader_type="json",
+                    sources=(
+                        FieldSource(
+                            source_index=0,
+                            source_file=str(json_file),
+                            source_loader_type="json",
+                            value=8080,
+                        ),
+                    ),
                 ),
             ),
             merged_data={"name": "test", "port": 8080},
@@ -391,9 +433,14 @@ class TestLoadReportOnError:
             FieldOrigin(
                 key="host",
                 value="override",
-                source_index=1,
-                source_file=str(b),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=1,
+                        source_file=str(b),
+                        source_loader_type="json",
+                        value="override",
+                    ),
+                ),
             ),
         )
         assert report.merged_data == {"host": "override"}
@@ -430,11 +477,27 @@ class TestLoadReportOnError:
             FieldOrigin(
                 key="host",
                 value="localhost",
-                source_index=1,
-                source_file=str(b),
-                source_loader_type="json",
+                sources=(
+                    FieldSource(
+                        source_index=1,
+                        source_file=str(b),
+                        source_loader_type="json",
+                        value="localhost",
+                    ),
+                ),
             ),
-            FieldOrigin(key="port", value=-5, source_index=0, source_file=str(a), source_loader_type="json"),
+            FieldOrigin(
+                key="port",
+                value=-5,
+                sources=(
+                    FieldSource(
+                        source_index=0,
+                        source_file=str(a),
+                        source_loader_type="json",
+                        value=-5,
+                    ),
+                ),
+            ),
         )
         assert report.merged_data == {"host": "localhost", "port": -5}
 
@@ -460,9 +523,14 @@ class TestLoadReportOnError:
                 FieldOrigin(
                     key="host",
                     value="localhost",
-                    source_index=0,
-                    source_file=str(json_file),
-                    source_loader_type="json",
+                    sources=(
+                        FieldSource(
+                            source_index=0,
+                            source_file=str(json_file),
+                            source_loader_type="json",
+                            value="localhost",
+                        ),
+                    ),
                 ),
             ),
             merged_data={"host": "localhost"},
@@ -488,11 +556,205 @@ class TestLoadReportOnError:
                 FieldOrigin(
                     key="port",
                     value=-1,
-                    source_index=0,
-                    source_file=str(json_file),
-                    source_loader_type="json",
+                    sources=(
+                        FieldSource(
+                            source_index=0,
+                            source_file=str(json_file),
+                            source_loader_type="json",
+                            value=-1,
+                        ),
+                    ),
                 ),
             ),
             merged_data={"port": -1},
         )
         assert expected == load_report(Config)
+
+
+class TestLoadReportFieldMerges:
+    @pytest.mark.parametrize(
+        ("strategy", "expected_value", "contributors"),
+        [
+            pytest.param("first_wins", ["x", "y"], [0], id="first_wins"),
+            pytest.param("last_wins", ["y", "z"], [1], id="last_wins"),
+            pytest.param("append", ["x", "y", "y", "z"], [0, 1], id="append"),
+            pytest.param("prepend", ["y", "z", "x", "y"], [0, 1], id="prepend"),
+            pytest.param("append_unique", ["x", "y", "z"], [0, 1], id="append_unique"),
+            pytest.param("prepend_unique", ["y", "z", "x"], [0, 1], id="prepend_unique"),
+        ],
+    )
+    def test_builtin_strategies(self, tmp_path: Path, strategy, expected_value, contributors):
+        a = tmp_path / "a.json"
+        a.write_text('{"tags": ["x", "y"]}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"tags": ["y", "z"]}')
+
+        @dataclass
+        class Config:
+            tags: list[str]
+
+        result = load(
+            JsonSource(file=a),
+            JsonSource(file=b),
+            schema=Config,
+            field_merges={F[Config].tags: strategy},
+            debug=True,
+        )
+
+        report = load_report(result)
+
+        all_sources = (
+            FieldSource(source_index=0, source_file=str(a), source_loader_type="json", value=["x", "y"]),
+            FieldSource(source_index=1, source_file=str(b), source_loader_type="json", value=["y", "z"]),
+        )
+        assert report is not None
+        assert report.field_origins == (
+            FieldOrigin(
+                key="tags",
+                value=expected_value,
+                sources=tuple(all_sources[i] for i in contributors),
+            ),
+        )
+        assert report.merged_data == {"tags": expected_value}
+
+    def test_plain_function_attributes_all_sources(self, tmp_path: Path):
+        a = tmp_path / "a.json"
+        a.write_text('{"tags": ["x", "y"]}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"tags": ["y", "z"]}')
+
+        @dataclass
+        class Config:
+            tags: list[str]
+
+        result = load(
+            JsonSource(file=a),
+            JsonSource(file=b),
+            schema=Config,
+            field_merges={F[Config].tags: max},
+            debug=True,
+        )
+
+        report = load_report(result)
+
+        assert report is not None
+        assert report.field_origins == (
+            FieldOrigin(
+                key="tags",
+                value=["y", "z"],
+                sources=(
+                    FieldSource(source_index=0, source_file=str(a), source_loader_type="json", value=["x", "y"]),
+                    FieldSource(source_index=1, source_file=str(b), source_loader_type="json", value=["y", "z"]),
+                ),
+            ),
+        )
+
+    def test_function_narrows_contributors(self, tmp_path: Path):
+        a = tmp_path / "a.json"
+        a.write_text('{"tags": ["x", "y"]}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"tags": ["y", "z"]}')
+
+        @dataclass
+        class Config:
+            tags: list[str]
+
+        def second(values):
+            return FieldMergeResult(value=values[1], contributors=[1])
+
+        result = load(
+            JsonSource(file=a),
+            JsonSource(file=b),
+            schema=Config,
+            field_merges={F[Config].tags: second},
+            debug=True,
+        )
+
+        report = load_report(result)
+
+        assert report is not None
+        assert report.field_origins == (
+            FieldOrigin(
+                key="tags",
+                value=["y", "z"],
+                sources=(FieldSource(source_index=1, source_file=str(b), source_loader_type="json", value=["y", "z"]),),
+            ),
+        )
+
+    @pytest.mark.parametrize(
+        "contributors",
+        [
+            pytest.param([], id="empty"),
+            pytest.param([0, 0], id="duplicates"),
+            pytest.param([2], id="out_of_range"),
+            pytest.param([-1], id="negative"),
+        ],
+    )
+    def test_invalid_contributors_raise(self, tmp_path: Path, contributors):
+        a = tmp_path / "a.json"
+        a.write_text('{"tags": ["x"]}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"tags": ["y"]}')
+
+        @dataclass
+        class Config:
+            tags: list[str]
+
+        def bad(values):
+            return FieldMergeResult(value=values[0], contributors=contributors)
+
+        with pytest.raises(DatureConfigError) as exc_info:
+            load(
+                JsonSource(file=a),
+                JsonSource(file=b),
+                schema=Config,
+                field_merges={F[Config].tags: bad},
+            )
+
+        assert "invalid contributors" in str(exc_info.value.exceptions[0])
+
+    def test_dict_field_gets_single_origin(self, tmp_path: Path):
+        a = tmp_path / "a.json"
+        a.write_text('{"db": {"host": "h1", "port": 1}}')
+
+        b = tmp_path / "b.json"
+        b.write_text('{"db": {"host": "h2", "port": 2}}')
+
+        @dataclass
+        class Db:
+            host: str
+            port: int
+
+        @dataclass
+        class Config:
+            db: Db
+
+        result = load(
+            JsonSource(file=a),
+            JsonSource(file=b),
+            schema=Config,
+            field_merges={F[Config].db: "first_wins"},
+            debug=True,
+        )
+
+        report = load_report(result)
+
+        assert report is not None
+        assert report.field_origins == (
+            FieldOrigin(
+                key="db",
+                value={"host": "h1", "port": 1},
+                sources=(
+                    FieldSource(
+                        source_index=0,
+                        source_file=str(a),
+                        source_loader_type="json",
+                        value={"host": "h1", "port": 1},
+                    ),
+                ),
+            ),
+        )

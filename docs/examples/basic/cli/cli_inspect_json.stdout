@@ -21,9 +21,17 @@
         "host": "<REDACTED>",
         "port": "<REDACTED>"
       },
-      "source_index": 0,
-      "source_file": "sources/config.json",
-      "source_loader_type": "json"
+      "sources": [
+        {
+          "source_index": 0,
+          "source_file": "sources/config.json",
+          "source_loader_type": "json",
+          "value": {
+            "host": "<REDACTED>",
+            "port": "<REDACTED>"
+          }
+        }
+      ]
     }
   ],
   "merged_data": {

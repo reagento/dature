@@ -350,7 +350,11 @@ def mask_field_origins(
             raise ValueError(msg)
 
     return tuple(
-        replace(origin, value=mask_value(str(origin.value), masking))
+        replace(
+            origin,
+            value=mask_value(str(origin.value), masking),
+            sources=tuple(replace(s, value=mask_value(str(s.value), masking)) for s in origin.sources),
+        )
         if is_secret_path(origin.key, secret_paths=secret_paths, masking=masking)
         else origin
         for origin in origins

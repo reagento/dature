@@ -98,9 +98,14 @@ class TestInspectGoldenPath:
                 {
                     "key": "db",
                     "value": {"host": "<REDACTED>", "port": "<REDACTED>"},
-                    "source_index": 0,
-                    "source_file": str(cfg),
-                    "source_loader_type": "json",
+                    "sources": [
+                        {
+                            "source_index": 0,
+                            "source_file": str(cfg),
+                            "source_loader_type": "json",
+                            "value": {"host": "<REDACTED>", "port": "<REDACTED>"},
+                        },
+                    ],
                 },
             ],
             "merged_data": {"db": {"host": "<REDACTED>", "port": "<REDACTED>"}},
@@ -653,16 +658,26 @@ class TestInspectGoldenPath:
                 {
                     "key": "host",
                     "value": "<REDACTED>",
-                    "source_index": 0,
-                    "source_file": str(defaults),
-                    "source_loader_type": "json",
+                    "sources": [
+                        {
+                            "source_index": 0,
+                            "source_file": str(defaults),
+                            "source_loader_type": "json",
+                            "value": "<REDACTED>",
+                        },
+                    ],
                 },
                 {
                     "key": "port",
                     "value": "<REDACTED>",
-                    "source_index": 1,
-                    "source_file": str(overrides),
-                    "source_loader_type": "json",
+                    "sources": [
+                        {
+                            "source_index": 1,
+                            "source_file": str(overrides),
+                            "source_loader_type": "json",
+                            "value": "<REDACTED>",
+                        },
+                    ],
                 },
             ],
             "merged_data": {"host": "<REDACTED>", "port": "<REDACTED>"},

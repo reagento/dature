@@ -61,9 +61,9 @@ def format_text(report: LoadReport, *, field: str | None = None) -> str:
         max_key = max(len(o.key) for o in origins)
         for o in origins:
             value_repr = json.dumps(o.value, ensure_ascii=False, default=str)
-            origin_label = o.source_file or o.source_loader_type
+            origin_label = ", ".join(f"[{s.source_index}] {s.source_file or s.source_loader_type}" for s in o.sources)
             lines.append(
-                f"  {o.key:<{max_key}} = {value_repr}   <- [{o.source_index}] {origin_label}",
+                f"  {o.key:<{max_key}} = {value_repr}   <- {origin_label}",
             )
         lines.append("")
 
@@ -87,9 +87,7 @@ def _table_row(values: tuple[str, ...], widths: tuple[int, ...]) -> str:
 
 
 def _table_source_label(origin: FieldOrigin) -> str:
-    if origin.source_file is not None:
-        return origin.source_file
-    return origin.source_loader_type
+    return ", ".join(s.source_file if s.source_file is not None else s.source_loader_type for s in origin.sources)
 
 
 def _table_value_repr(value: JSONValue) -> str:
