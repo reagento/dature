@@ -445,6 +445,67 @@ Always encoded as a string.
     | `ADDRS__WORK__CITY`       | `Paris`                                                       |
     | `ADDRS__WORK__ZIP_CODE`   | `75001`                                                       |
 
+### TypedDict
+
+Any `TypedDict` works as a field type — the standard-library one and `typing_extensions.TypedDict`
+alike. PEP 728 options (`typing_extensions` on Python 3.12–3.14, standard library on 3.15+) control
+what happens to keys that the TypedDict does not declare:
+
+| Declaration                   | Keys that are not declared                                     |
+|-------------------------------|----------------------------------------------------------------|
+| `TypedDict, extra_items=T`    | kept, values are loaded as `T`                                 |
+| `TypedDict, closed=False`     | kept as they are                                               |
+| `TypedDict, closed=True`      | rejected with an `Unknown field(s)` error                      |
+| none of the above             | dropped silently                                               |
+
+All examples below share the same input:
+
+=== "JSON"
+
+    ```json
+    --8<-- "docs/examples/supported_types/sources/typed_dict.json"
+    ```
+
+#### `extra_items=T`
+
+Undeclared keys are kept and their values are loaded as `T`.
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict.py:schema"
+```
+
+#### `closed=False`
+
+Undeclared keys are kept as they are, without any type coercion.
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict_closed_false.py:schema"
+```
+
+#### `closed=True`
+
+Undeclared keys are rejected with an `Unknown field(s)` error.
+
+=== "Python"
+
+    ```python
+    --8<-- "docs/examples/supported_types/typed_dict_closed_true.py:schema"
+    ```
+
+=== "Error"
+
+    ```
+    --8<-- "docs/examples/supported_types/typed_dict_closed_true.stderr"
+    ```
+
+#### None of the above
+
+Undeclared keys are dropped silently.
+
+```python
+--8<-- "docs/examples/supported_types/typed_dict_plain.py:schema"
+```
+
 ### Other stdlib
 
 | Type       | Python                     | Syntax       |

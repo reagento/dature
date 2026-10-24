@@ -8,7 +8,7 @@ whose type is not itself a dataclass and has no such element (``dict[str, Any]``
 
 Aliases are resolved by *owning dataclass type*, not by string path — this matches
 ``AliasProvider``'s real lookup key (``_get_entries_for_type`` in
-``expansion/alias_provider.py``), which applies regardless of where that dataclass
+``providers/alias.py``), which applies regardless of where that dataclass
 type is nested in the schema.
 """
 
@@ -18,9 +18,9 @@ from dataclasses import dataclass, fields, is_dataclass
 from functools import lru_cache
 from typing import Annotated, Union, cast, get_args, get_origin, get_type_hints
 
-from dature.expansion.alias_provider import build_alias_map
 from dature.naming import canonical_name
 from dature.protocols import DataclassInstance
+from dature.providers.alias import build_alias_map
 from dature.type_aliases import FieldMapping, TypeAnnotation
 from dature.type_utils import find_nested_dataclasses
 
@@ -160,7 +160,7 @@ def alias_keys_by_type(field_mapping: FieldMapping | None) -> "dict[type[Datacla
     accepted keys matches what would actually be recognized at load time — both
     same-level (``AliasEntry``) and cross-level (``CrossLevelEntry``) aliases are read
     from the *owner*'s own dict level (see ``_apply_cross_level_entry`` in
-    ``expansion/alias_provider.py``), so both are grouped under ``owner`` here.
+    ``providers/alias.py``), so both are grouped under ``owner`` here.
     """
     if not field_mapping:
         return {}

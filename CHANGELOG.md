@@ -1,3 +1,18 @@
+## 1.6.2
+
+### Features
+
+- Added `TypedDict` support for PEP 728 (`typing_extensions.TypedDict` and, on Python 3.15+, `typing.TypedDict`): `extra_items=T` and `closed=False` keep keys that are not declared in the TypedDict (`extra_items` values are loaded as `T`), `closed=True` rejects them with an `Unknown field(s)` error, and a TypedDict without these options keeps dropping them. `typing_extensions.TypedDict` is now recognised the same way as the standard-library one.
+
+### Docs
+
+- Expanded the README with a readable-error example (file, line and caret under the value), a list-merge example using `field_merges`, a `debug=True` / `load_report` example and a "Why dature?" section linking the comparison pages, and listed `first_found` among the merge strategies. Added `CONTRIBUTING.md`, issue and pull request templates, and more PyPI keywords.
+
+### Refactoring
+
+- Moved every adaptix provider dature adds to a recipe into a dedicated `dature/providers/` subpackage: `compiler.py` (tracking compiler and `TrackingModelLoaderProvider`), `model.py` (dataclass shape providers), `skip.py` (`skip_field_if_invalid`), `typed_dict.py` (TypedDict support), `alias.py` and `recipe.py` (recipes and precomputed retorts). Previously these lived in `skip_field_provider.py`, `typed_dict.py`, `expansion/alias_provider.py` and `loading/retort.py`, which mixed provider definitions with orchestration. The modules were private, so no public API changed.
+
+
 ## 1.6.1
 
 ### Bugfixes
