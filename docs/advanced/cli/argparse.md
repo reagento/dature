@@ -143,7 +143,7 @@ Args of subparsers that were **not** chosen are simply absent — adaptix uses
     --8<-- "docs/examples/advanced/cli/argparse/subparsers.stdout"
     ```
 
-## Bootstrap pattern — peek `argv` before `load()`
+## Bootstrap pattern — peek argv before load()
 
 Sometimes a CLI flag selects which other config file to read. Since
 `argparse.ArgumentParser` is stateless across `parse_args()` calls, you can

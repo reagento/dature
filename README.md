@@ -45,6 +45,7 @@ pip install dature[aws]        # AWS SSM & Secrets Manager (boto3)
 pip install dature[azure-appconfig] # Azure App Configuration
 pip install dature[azure-keyvault]  # Azure Key Vault
 pip install dature[gcp]        # GCP Secret Manager
+pip install dature[watch]      # File watching for background reload (watchdog)
 pip install dature[secure]     # Secret detection heuristics
 pip install dature[type-stubs] # Type stubs for the integrations above (mypy/pyright users)
 ```

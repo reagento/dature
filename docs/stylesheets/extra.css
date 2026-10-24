@@ -61,9 +61,9 @@ article .typography h6 {
    transform-origin is left TOP (not center): scaleY then grows the glyph
    downward from its existing top edge instead of splitting the extra
    height above and below, which read as added space before the heading. */
-article h1:not(:has(code)),
-article h2:not(:has(code)),
-article h3:not(:has(code)) {
+article h1,
+article h2,
+article h3 {
   font-family: 'Press Start 2P', monospace;
   letter-spacing: -0.5px;
   line-height: 1.2;

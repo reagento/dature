@@ -11,7 +11,7 @@ one method: `_parse_argv() -> dict[str, JSONValue]`.
 
 For the built-in argparse integration, see [ArgparseSource](argparse.md).
 
-## The `_parse_argv` contract
+## The _parse_argv contract
 
 - Top-level args → key = field name.
 - Groups / subcommands → emit a discriminator key + prefix the group's args

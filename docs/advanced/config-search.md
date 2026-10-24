@@ -70,7 +70,7 @@ When you specify a config file, dature searches in the following order:
 === "common_app.yaml"
 
     ```yaml
-    --8<-- "docs/examples/advanced/shared/common_app.yaml"
+    --8<-- "docs/examples/shared/common_app.yaml"
     ```
 
 ## Configuration

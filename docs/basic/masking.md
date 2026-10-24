@@ -35,7 +35,7 @@ Config loading errors (1)
 
 | Mode | Behavior |
 |------|----------|
-| `all` (default) | Every string value is masked, regardless of field name or type |
+| `all` (default) | Every value is masked — strings, numbers, booleans and nulls alike — regardless of field name or type |
 | `secrets_only` | Only fields matched by name, type, or heuristic are masked (see [Detection Methods](#detection-methods) below) |
 | `none` | No masking at all |
 
@@ -49,7 +49,7 @@ the one shown in the error — watch how its value changes across modes:
 
 === "all (default)"
 
-    Every string value is masked, including `host` — even though its name matches no secret pattern:
+    Every value is masked, including `host` — even though its name matches no secret pattern:
 
     ```python
     --8<-- "docs/examples/basic/masking/masking_mode_all.py:example"
@@ -84,7 +84,7 @@ the one shown in the error — watch how its value changes across modes:
     --8<-- "docs/examples/basic/masking/masking_mode_none.stderr"
     ```
 
-## Detection Methods (`masking_mode="secrets_only"`)
+## Detection Methods (masking_mode="secrets_only")
 
 With `masking_mode="secrets_only"`, dature uses three methods to identify secrets:
 
@@ -102,7 +102,7 @@ Matching is substring-based and case-insensitive, so this also covers common var
 `api_key`, `api-key`, `apikey`, `access_key`, `private-key`, `secret-key`, `connection_uri`, and
 `service_url`.
 
-### Name-Style and `field_mapping` Awareness
+### Name-Style and field_mapping Awareness
 
 Secret detection is based on dataclass field names (e.g. `secret_key`), but matching against a
 source's raw keys is case/separator-insensitive, so a source's `name_style` (`lower_kebab`,

@@ -43,7 +43,7 @@ explicitly, keep a reference to the `Loader` yourself:
 `stop()` must itself be safe to call repeatedly, per its protocol contract) — the background
 reload thread starts lazily after the first successful `load()`, not at construction time.
 
-## `reload=` and function mode
+## reload= and function mode
 
 `reload=` requires keeping a `Loader` instance around to have anything to reload into — in
 function mode (`dature.load(src, schema=Cls)`), the `Loader` is discarded right after the one
@@ -51,7 +51,7 @@ function mode (`dature.load(src, schema=Cls)`), the `Loader` is discarded right 
 function mode raises `ValueError` immediately; construct a `Loader` explicitly instead (see
 [Function-mode caching](caching.md#function-mode-caching-loader)).
 
-## Interaction with `cache`
+## Interaction with cache
 
 Reloading writes into the same cache slot that `cache=True`/`cache=False` control — see the
 table below. `cache=timedelta(...)` combined with `reload=` raises `ValueError`: the trigger
@@ -64,7 +64,7 @@ is already the invalidation signal, so a TTL on top of it would only add a redun
 | `timedelta(N)` | `ValueError` — mutually exclusive with `reload=`. Use `cache=True` and set the interval on the trigger instead. |
 | `False` | Reload still runs and still fires `on_reload`/`on_error`, but nothing is published — every `.load()` does its own full synchronous load regardless. Logs a warning, since this is usually a configuration mistake (though a legitimate use is wanting only the `on_reload` notification, with no caching at all). |
 
-## `on_error` and `stale_on_error`
+## on_error and stale_on_error
 
 A failed reload never replaces the currently loaded config — `stale_on_error` (see
 [Caching](caching.md#stale_on_error-keeping-the-last-good-config)) decides what happens to the
@@ -97,7 +97,7 @@ A failed reload never replaces the currently loaded config — `stale_on_error` 
   register on a dedicated `Scheduler` instead of the process-wide default — the sanctioned way
   to give a slow or unreliable reload source its own thread, isolated from every other trigger.
 
-## Without `watchdog`
+## Without watchdog
 
 `FileWatchTrigger` requires the optional `watchdog` package — there is no fallback. The first
 `load()` raises `ImportError` if it isn't installed:
