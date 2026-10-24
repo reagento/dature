@@ -1,7 +1,7 @@
 """Frozen leaf value types for load reports.
 
-Owns ``SourceEntry`` and ``FieldOrigin`` — the atomic entries that describe
-individual sources and field origins within a report. Intentionally free of
+Owns ``SourceEntry``, ``FieldSource`` and ``FieldOrigin`` — the atomic entries that
+describe individual sources and field origins within a report. Intentionally free of
 any ``merge_runtime`` import (no cycle). The public aggregate
 ``LoadReport`` lives in :mod:`dature.report`; the internal accumulator
 snapshot ``_LoadCtxSnapshot`` lives in :mod:`dature.loading.merge_runtime`.
@@ -22,12 +22,18 @@ class SourceEntry:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class FieldOrigin:
-    key: str
-    value: JSONValue
+class FieldSource:
     source_index: int
     source_file: str | None
     source_loader_type: str
+    value: JSONValue
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FieldOrigin:
+    key: str
+    value: JSONValue
+    sources: tuple[FieldSource, ...]
 
 
 # --8<-- [end:value-types]

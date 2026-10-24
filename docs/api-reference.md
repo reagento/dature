@@ -242,15 +242,24 @@ Frozen dataclass describing one source in the load pipeline.
 
 #### FieldOrigin
 
-Frozen dataclass describing which source provided a specific field value.
+Frozen dataclass describing which sources provided a specific field value.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `key` | `str` | Dot-separated field path (e.g. `"database.host"`). |
-| `value` | `JSONValue` | The value that was used. |
-| `source_index` | `int` | Index of the winning source. |
-| `source_file` | `str \| None` | File path of the winning source. |
-| `source_loader_type` | `str` | Class name of the winning source. |
+| `value` | `JSONValue` | The final value that was used. |
+| `sources` | `tuple[FieldSource, ...]` | Sources that contributed to the value, in load order. Ordinary fields have exactly one; fields under `field_merges` list every source passed to the strategy, or only those the strategy reported via `FieldMergeResult`. |
+
+#### FieldSource
+
+Frozen dataclass describing one source's contribution to a field.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_index` | `int` | Index of the source. |
+| `source_file` | `str \| None` | File path of the source. |
+| `source_loader_type` | `str` | Class name of the source. |
+| `value` | `JSONValue` | The value this source provided for the field. |
 
 #### LoadReport
 
@@ -967,7 +976,8 @@ line. Re-exported via `dature.errors`.
 | `FieldMergeMap` | `dict[FieldRef, FieldMergeStrategyName \| Callable[..., Any]]` | `dature.type_aliases` |
 | `FieldMergeCallable` | `Callable[[list[JSONValue]], JSONValue]` | `dature.type_aliases` |
 | `FieldMergeStrategyName` | `Literal["first_wins", "last_wins", "append", "append_unique", "prepend", "prepend_unique"]` | `dature.type_aliases` |
-| `FieldMergeStrategy` | `Protocol` with `__call__(values: list[JSONValue]) -> JSONValue` | `dature.strategies.field` |
+| `FieldMergeStrategy` | `Protocol` with `__call__(values: list[JSONValue]) -> JSONValue \| FieldMergeResult` | `dature.strategies.field` |
+| `FieldMergeResult` | Frozen dataclass `(value: JSONValue, contributors: Sequence[int])`; `contributors` are indices into `values` that shaped `value` | `dature.strategies.field` |
 | `FieldGroupTuple` | `Sequence[FieldRef]` | `dature.type_aliases` |
 | `TypeLoaderMap` | `dict[type, Callable[..., Any]]` | `dature.type_aliases` |
 | `MergeStrategyName` | `Literal["last_wins", "first_wins", "first_found", "raise_on_conflict"]` | `dature.type_aliases` |

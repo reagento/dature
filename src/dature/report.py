@@ -16,7 +16,7 @@ from typing import Any
 from dature.config import MaskingConfig
 from dature.loading.merge_runtime import SourceMergeStrategy
 from dature.masking.masking import mask_field_origins, mask_json_value, mask_source_entries
-from dature.report_types import FieldOrigin, SourceEntry
+from dature.report_types import FieldOrigin, FieldSource, SourceEntry
 from dature.type_aliases import JSONValue
 
 logger = logging.getLogger("dature")
@@ -81,9 +81,14 @@ def build_single_source_report(
                 FieldOrigin(
                     key=key,
                     value=value,
-                    source_index=0,
-                    source_file=file_path,
-                    source_loader_type=loader_type,
+                    sources=(
+                        FieldSource(
+                            source_index=0,
+                            source_file=file_path,
+                            source_loader_type=loader_type,
+                            value=value,
+                        ),
+                    ),
                 ),
             )
 

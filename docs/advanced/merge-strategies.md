@@ -106,7 +106,9 @@ Any callable that takes a `list[JSONValue]` (one value per source) and returns t
 --8<-- "src/dature/strategies/field.py:field-merge-strategy"
 ```
 
-The built-in field strategies are also exposed as classes from `dature.strategies.field`: `FieldFirstWins`, `FieldLastWins`, `FieldAppend`, `FieldAppendUnique`, `FieldPrepend`, `FieldPrependUnique`. They satisfy the same `Protocol`, so you can pass them directly to `field_merges` or compose them inside your own strategy.
+With `debug=True`, `LoadReport.field_origins` lists every source whose value was passed to the strategy. A strategy can narrow this down by returning `FieldMergeResult(value=..., contributors=[...])`, where `contributors` are indices into `values`; they must be non-empty, unique and in range, otherwise loading fails with an error.
+
+The built-in field strategies are also exposed as classes from `dature.strategies.field`: `FieldFirstWins`, `FieldLastWins`, `FieldAppend`, `FieldAppendUnique`, `FieldPrepend`, `FieldPrependUnique`. They satisfy the same `Protocol`, so you can pass them directly to `field_merges` or compose them inside your own strategy. They return `FieldMergeResult`, so use `.value` when composing them.
 
 ### Examples
 

@@ -25,6 +25,7 @@ try:
             file=SOURCES_DIR / "advanced_debug_error_defaults.yaml",
         ),
         schema=Config,
+        field_merges={dature.F[Config].tags: "append"},
         debug=True,
     )
 except DatureConfigError:
@@ -37,7 +38,7 @@ except DatureConfigError:
     assert report.merged_data == {
         "host": "<REDACTED>",
         "port": "<REDACTED>",
-        "tags": ["<REDACTED>"],
+        "tags": ["<REDACTED>", "<REDACTED>", "<REDACTED>"],
     }
 
     assert len(report.sources) == 2
@@ -65,9 +66,15 @@ except DatureConfigError:
     }
 
     assert len(report.field_origins) == 3
-    for origin in report.field_origins:
-        assert origin.source_index == 1
-        assert origin.source_file == str(
+    host, port, tags = report.field_origins
+
+    for origin in (host, port):
+        assert len(origin.sources) == 1
+        assert origin.sources[0].source_index == 1
+        assert origin.sources[0].source_file == str(
             SOURCES_DIR / "advanced_debug_error_defaults.yaml"
         )
+
+    assert tags.key == "tags"
+    assert [s.source_index for s in tags.sources] == [0, 1]
 # --8<-- [end:example]

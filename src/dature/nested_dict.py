@@ -74,14 +74,14 @@ def get_nested_value(data: JSONValue, dot_path: str) -> Any:  # noqa: ANN401
     return current
 
 
-def collect_field_values(raw_dicts: list[JSONValue], field_path: str) -> list[JSONValue]:
-    """Return the values found at *field_path* in each dict in *raw_dicts*.
+def collect_field_values(raw_dicts: list[JSONValue], field_path: str) -> list[tuple[int, JSONValue]]:
+    """Return ``(position_in_raw_dicts, value)`` for each dict in *raw_dicts* that has *field_path*.
 
     Dicts that do not contain the path are silently skipped.
     """
     parts = field_path.split(".")
-    values: list[JSONValue] = []
-    for raw in raw_dicts:
+    values: list[tuple[int, JSONValue]] = []
+    for pos, raw in enumerate(raw_dicts):
         current: JSONValue = raw
         found = True
         for part in parts:
@@ -90,7 +90,7 @@ def collect_field_values(raw_dicts: list[JSONValue], field_path: str) -> list[JS
                 break
             current = current[part]
         if found:
-            values.append(current)
+            values.append((pos, current))
     return values
 
 
