@@ -37,9 +37,10 @@ from dature.merging.predicate import ResolvedFieldGroup, build_field_group_paths
 from dature.nested_dict import ABSENT, collect_field_values, get_nested_value, set_nested_value
 from dature.protocols import DataclassInstance
 from dature.report import LoadReport, attach_load_report, build_merge_report, build_single_source_report
+from dature.report_types import FieldSource
 from dature.sources.base import IndexedSource
 from dature.sources.protocol import FileSourceProtocol
-from dature.strategies.field import FieldMergeStrategy
+from dature.strategies.field import FieldMergeResult, FieldMergeStrategy
 from dature.strategies.source import SourceFirstFound, resolve_source_strategy
 from dature.type_aliases import NOT_LOADED, JSONValue, TypeLoaderMap
 
@@ -331,18 +332,59 @@ def _finalize_load[T: DataclassInstance](
     return result
 
 
+def _run_field_strategy(
+    strategy: FieldMergeStrategy,
+    values: list[JSONValue],
+    *,
+    field_path: str,
+    dataclass_name: str,
+) -> tuple[JSONValue, list[int]]:
+    """Run *strategy* and normalize its result to ``(value, contributor_indices)``.
+
+    A plain return value means every input value took part; ``FieldMergeResult`` narrows that down.
+    """
+    result = strategy(values)
+    if not isinstance(result, FieldMergeResult):
+        return result, list(range(len(values)))
+
+    contributors = list(result.contributors)
+    invalid = (
+        not contributors
+        or len(set(contributors)) != len(contributors)
+        or any(not isinstance(i, int) or not 0 <= i < len(values) for i in contributors)
+    )
+    if invalid:
+        error = FieldLoadError(
+            field_path=field_path.split("."),
+            message=(
+                f"field_merges strategy {type(strategy).__name__} returned invalid contributors "
+                f"{contributors!r}: expected a non-empty list of unique indices in range({len(values)})"
+            ),
+        )
+        raise DatureConfigError(dataclass_name, [error])
+    return result.value, contributors
+
+
 def apply_field_merges(
     merged: JSONValue,
     field_merge_strategies: dict[str, FieldMergeStrategy],
     *,
-    loaded_for_fields: list[JSONValue],
+    ctx: LoadCtx,
     dataclass_name: str,
 ) -> JSONValue:
+    raw_dicts = ctx.loaded_raw_dicts()
+    loaded = ctx.loaded_field_sources()
     for field_path, field_strategy in field_merge_strategies.items():
-        values = collect_field_values(loaded_for_fields, field_path)
-        if not values:
+        found = collect_field_values(raw_dicts, field_path)
+        if not found:
             continue
-        aggregated = field_strategy(values)
+        values = [value for _, value in found]
+        aggregated, contributors = _run_field_strategy(
+            field_strategy,
+            values,
+            field_path=field_path,
+            dataclass_name=dataclass_name,
+        )
         merged = set_nested_value(merged, field_path, aggregated)
         if get_nested_value(merged, field_path) is ABSENT:
             # `set_nested_value` silently no-ops when an intermediate segment of
@@ -358,6 +400,19 @@ def apply_field_merges(
                 ),
             )
             raise DatureConfigError(dataclass_name, [error])
+        field_sources: list[FieldSource] = []
+        for i in contributors:
+            pos, value = found[i]
+            source_idx, entry = loaded[pos]
+            field_sources.append(
+                FieldSource(
+                    source_index=source_idx,
+                    source_file=entry.file_path,
+                    source_loader_type=entry.loader_type,
+                    value=value,
+                ),
+            )
+        ctx.record_field_merge(field_path, aggregated, field_sources)
     return merged
 
 
@@ -451,7 +506,7 @@ def load_and_merge[T: DataclassInstance](  # noqa: C901, PLR0915
         merged = apply_field_merges(
             merged,
             field_merge_strategies,
-            loaded_for_fields=ctx.loaded_raw_dicts(),
+            ctx=ctx,
             dataclass_name=schema.__name__,
         )
 

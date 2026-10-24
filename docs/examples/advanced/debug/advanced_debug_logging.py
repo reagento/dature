@@ -28,6 +28,7 @@ config = dature.load(
     dature.Yaml12Source(file=SHARED_DIR / "common_defaults.yaml"),
     dature.Yaml12Source(file=SHARED_DIR / "common_overrides.yaml"),
     schema=Config,
+    field_merges={dature.F[Config].tags: "append"},
 )
 
 log_lines = [
@@ -45,6 +46,10 @@ overrides_data = (
     "{'host': '<REDACTED>', 'port': '<REDACTED>', "
     "'tags': ['<REDACTED>', '<REDACTED>']}"
 )
+merged_data = (
+    "{'host': '<REDACTED>', 'port': '<REDACTED>', "
+    "'tags': ['<REDACTED>', '<REDACTED>', '<REDACTED>']}"
+)
 
 expected_log_lines = [
     f"[Config] Source 0 loaded: loader=yaml1.2, file={defaults}, keys={keys}",
@@ -61,13 +66,13 @@ expected_log_lines = [
         "added=[], overwritten=['host', 'port', 'tags']"
     ),
     f"[Config] State after step 1: {overrides_data}",
-    (
-        "[Config] Merged result (strategy=last_wins, 2 sources): "
-        f"{overrides_data}"
-    ),
-    (f"[Config] Field 'host' = '<REDACTED>'  <-- source 1 ({overrides})"),
+    (f"[Config] Merged result (strategy=last_wins, 2 sources): {merged_data}"),
+    f"[Config] Field 'host' = '<REDACTED>'  <-- source 1 ({overrides})",
     f"[Config] Field 'port' = '<REDACTED>'  <-- source 1 ({overrides})",
-    f"[Config] Field 'tags' = '<REDACTED>'  <-- source 1 ({overrides})",
+    (
+        f"[Config] Field 'tags' = '<REDACTED>'  <-- source 0 ({defaults}), "
+        f"source 1 ({overrides})"
+    ),
 ]
 
 diff = difflib.ndiff(expected_log_lines, log_lines)

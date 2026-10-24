@@ -98,11 +98,11 @@ class TestCollectFieldValues:
     @pytest.mark.parametrize(
         ("raw_dicts", "path", "expected"),
         [
-            ([{"a": 1}, {"a": 2}, {"a": 3}], "a", [1, 2, 3]),
-            ([{"a": 1}, {"b": 2}, {"a": 3}], "a", [1, 3]),  # missing key skipped
-            ([{"x": {"y": 10}}, {"x": {"y": 20}}], "x.y", [10, 20]),
+            ([{"a": 1}, {"a": 2}, {"a": 3}], "a", [(0, 1), (1, 2), (2, 3)]),
+            ([{"a": 1}, {"b": 2}, {"a": 3}], "a", [(0, 1), (2, 3)]),  # missing key skipped, positions kept
+            ([{"x": {"y": 10}}, {"x": {"y": 20}}], "x.y", [(0, 10), (1, 20)]),
             ([], "a", []),
-            ([{"a": None}, {"a": 1}], "a", [None, 1]),  # None is a valid value
+            ([{"a": None}, {"a": 1}], "a", [(0, None), (1, 1)]),  # None is a valid value
         ],
     )
     def test_cases(self, raw_dicts, path, expected):

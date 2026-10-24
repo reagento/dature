@@ -50,7 +50,7 @@ from dature.masking.masking import mask_json_value
 from dature.merging.deep_merge import deep_merge_last_wins
 from dature.nested_dict import flatten_dict
 from dature.protocols import DataclassInstance
-from dature.report_types import FieldOrigin, SourceEntry
+from dature.report_types import FieldOrigin, FieldSource, SourceEntry
 from dature.sources.base import IndexedSource, clone_source, mark_source_cascaded
 from dature.sources.protocol import FileSourceProtocol, RedactableProtocol, SourceProtocol
 from dature.type_aliases import (
@@ -515,10 +515,33 @@ class LoadCtx:
                 self._field_origins[key] = FieldOrigin(
                     key=key,
                     value=val,
-                    source_index=source_idx,
-                    source_file=entry.file_path,
-                    source_loader_type=entry.loader_type,
+                    sources=(
+                        FieldSource(
+                            source_index=source_idx,
+                            source_file=entry.file_path,
+                            source_loader_type=entry.loader_type,
+                            value=val,
+                        ),
+                    ),
                 )
+
+    def loaded_field_sources(self) -> list[tuple[int, SourceEntry]]:
+        """Return ``(source_idx, entry)`` for each loaded source, aligned with :meth:`loaded_raw_dicts`.
+
+        Internal API consumed by ``merge.py`` when applying ``field_merges``.
+        """
+        idx_by_pos = {pos: idx for idx, pos in self._entry_pos_by_source_idx.items()}
+        return [(idx_by_pos[pos], entry) for pos, entry in enumerate(self._source_entries)]
+
+    def record_field_merge(self, field_path: str, value: JSONValue, sources: Sequence[FieldSource]) -> None:
+        """Replace the origin of *field_path* (and of any leaves under it) with a multi-source origin.
+
+        Internal API consumed by ``merge.py`` after ``field_merges`` aggregation.
+        """
+        prefix = field_path + "."
+        for key in [k for k in self._field_origins if k == field_path or k.startswith(prefix)]:
+            del self._field_origins[key]
+        self._field_origins[field_path] = FieldOrigin(key=field_path, value=value, sources=tuple(sources))
 
     def load(self, source_idx: int, *, skip_on_error: bool = False) -> JSONValue | None:
         """Load a source with full pre-processing.

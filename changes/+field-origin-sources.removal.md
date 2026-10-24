@@ -1,0 +1,1 @@
+`FieldOrigin.source_index`, `source_file` and `source_loader_type` are replaced by `FieldOrigin.sources` (a tuple of `FieldSource`). Built-in field merge strategies now return `FieldMergeResult`; use `.value` when calling them directly.
