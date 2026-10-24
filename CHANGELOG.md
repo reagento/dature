@@ -1,3 +1,22 @@
+## 1.6.3
+
+### Features
+
+- `LoadReport.field_origins` now lists every source that contributed to a field merged via `field_merges`. Custom strategies can narrow the list by returning `FieldMergeResult(value, contributors)`.
+
+### Bugfixes
+
+- `FieldOrigin.value` for fields merged via `field_merges` is now the final merged value instead of the last source's value.
+
+### Docs
+
+- Documentation: listed all optional extras on the home page, described `strict`, `shared_read` and the class-level `format_name`, `location_label`, `config_group`, `root_validators` attributes in the introduction, removed Vault and Consul from the supported types matrix, moved the TypedDict examples into tabs, and fixed several rendering and example issues.
+
+### Removals
+
+- `FieldOrigin.source_index`, `source_file` and `source_loader_type` are replaced by `FieldOrigin.sources` (a tuple of `FieldSource`). Built-in field merge strategies now return `FieldMergeResult`; use `.value` when calling them directly.
+
+
 ## 1.6.2
 
 ### Features
