@@ -1,3 +1,10 @@
+## 1.6.4
+
+### Bugfixes
+
+- Fixed `Expected Mapping, got str` for `SecretStr`, `PaymentCardNumber`, `ByteSize` and custom-loader types when another field has an `Annotated` validator.
+
+
 ## 1.6.3
 
 ### Features
