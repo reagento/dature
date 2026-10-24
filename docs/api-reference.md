@@ -7,7 +7,7 @@ description: >-
 
 ## Core
 
-### `dature.load()`
+### dature.load()
 
 ```python
 --8<-- "src/dature/main.py:load"
@@ -68,7 +68,7 @@ Main entry point. Two calling patterns:
 
 ---
 
-### `dature.Loader`
+### dature.Loader
 
 ```python
 class Loader[T: DataclassInstance]:
@@ -80,7 +80,7 @@ Public class that carries all the load-time parameters and the cache state. Use 
 
 ---
 
-### `Source`
+### Source
 
 ```python
 --8<-- "src/dature/sources/base/source.py:load-metadata"
@@ -112,7 +112,7 @@ Abstract base class for all sources. See [Introduction — Source Reference](int
 | `file_path_for_errors()` | `Path \| None` | File path used in error messages. Returns `None` by default. |
 | `resolve_location(...)` | `list[SourceLocation]` | Locate a field in the source content for error reporting. Returns `SourceLocation` with line range, env var name, etc. |
 
-### `FileSource(Source)`
+### FileSource(Source)
 
 Base class for file-based sources (`JsonSource`, `Yaml11Source`, `Toml10Source`, `IniSource`, etc.).
 
@@ -132,7 +132,7 @@ Base class for file-based sources (`JsonSource`, `Yaml11Source`, `Toml10Source`,
 | `file_path_for_errors()` | Returns `Path` for string/Path inputs, `None` for streams or `None`. |
 | `__repr__()` | Returns `"format_name 'file_path'"` or just `"format_name"`. |
 
-### `FlatKeySource(Source)`
+### FlatKeySource(Source)
 
 Base class for flat key=value sources (`EnvSource`, `EnvFileSource`, `DockerSecretsSource`).
 
@@ -182,7 +182,7 @@ The built-ins are also exposed as classes from `dature.strategies.field` (`Field
 
 ## Field Path
 
-### `F`
+### F
 
 Factory for building type-safe field paths. Used for `field_mapping`, `field_merges`, `field_groups`, `validators`, `skip_field_if_invalid`, and `nested_resolve`.
 
@@ -190,7 +190,7 @@ Factory for building type-safe field paths. Used for `field_mapping`, `field_mer
 --8<-- "docs/examples/api_reference/api_reference_field_path.py"
 ```
 
-### `FieldPath`
+### FieldPath
 
 Immutable dataclass (`frozen=True, slots=True`) created via `F[Config].field_name`.
 
@@ -210,7 +210,7 @@ Immutable dataclass (`frozen=True, slots=True`) created via `F[Config].field_nam
 
 ## Report
 
-### `load_report()`
+### load_report()
 
 ```python
 --8<-- "src/dature/report.py:load-report"
@@ -222,14 +222,14 @@ Retrieves the `LoadReport` attached to a loaded instance. Returns `None` and emi
 |-----------|------|-------------|
 | `instance` | `Any` | The loaded dataclass instance (or the type in decorator mode on error). |
 
-### `LoadReport`, `SourceEntry`, `FieldOrigin`
+### LoadReport, SourceEntry, FieldOrigin
 
 ```python
 --8<-- "src/dature/report_types.py:value-types"
 --8<-- "src/dature/report.py:report-structure"
 ```
 
-#### `SourceEntry`
+#### SourceEntry
 
 Frozen dataclass describing one source in the load pipeline.
 
@@ -240,7 +240,7 @@ Frozen dataclass describing one source in the load pipeline.
 | `loader_type` | `str` | Source class name (e.g. `"JsonSource"`, `"EnvSource"`). |
 | `raw_data` | `JSONValue` | Raw data loaded from this source before merging. |
 
-#### `FieldOrigin`
+#### FieldOrigin
 
 Frozen dataclass describing which source provided a specific field value.
 
@@ -252,7 +252,7 @@ Frozen dataclass describing which source provided a specific field value.
 | `source_file` | `str \| None` | File path of the winning source. |
 | `source_loader_type` | `str` | Class name of the winning source. |
 
-#### `LoadReport`
+#### LoadReport
 
 Frozen dataclass with full load diagnostics.
 
@@ -268,7 +268,7 @@ Frozen dataclass with full load diagnostics.
 
 ## Configuration
 
-### `Dature`
+### Dature
 
 ```python
 --8<-- "src/dature/instance.py:dature-init"
@@ -291,7 +291,7 @@ Explicit, immutable configuration instance. All parameters merge on top of `DATU
 | `gcp_secret_manager` | `GcpSecretManagerOptions \| None` | `None` | GCP Secret Manager connection defaults, used by `GcpSecretManagerSource` when its own fields are unset. |
 | `type_loaders` | `TypeLoaderMap \| None` | `None` | Instance-level custom type loaders `{type: callable}`. Merged with load-level and source-level loaders (source takes priority). |
 
-### `MaskingConfig`
+### MaskingConfig
 
 ```python
 --8<-- "src/dature/config.py:masking-config"
@@ -309,7 +309,7 @@ Frozen dataclass controlling secret masking behavior.
 | `secret_field_names` | `tuple[str, ...]` | `("password", "passwd", ...)` | Field name patterns that trigger masking. |
 | `masking_mode` | `MaskingMode` | `"all"` | Global masking mode: `"all"`, `"secrets_only"`, or `"none"`. Overridden per call via `load(masking_mode=...)`. |
 
-### `ErrorDisplayConfig`
+### ErrorDisplayConfig
 
 ```python
 --8<-- "src/dature/config.py:error-display-config"
@@ -326,7 +326,7 @@ inherit unless they override it. Values of `max_line_length` at or below 3 degra
 | `max_errors` | `int` | `7` | Maximum number of error blocks shown for any dature error group — validation, merge conflicts, field groups, env-var expansion, cross-source references, and [strict mode](advanced/strict-mode.md) unknown keys alike. |
 | `max_line_length` | `int` | `80` | Maximum characters per line before truncation. |
 
-### `LoadingConfig`
+### LoadingConfig
 
 ```python
 --8<-- "src/dature/config.py:loading-config"
@@ -345,7 +345,7 @@ Frozen dataclass controlling load behavior defaults.
 | `config_dirs` | `ConfigDirsArg` | per-OS defaults | Directories searched per platform (`linux`/`darwin`/`win32`). Accepts a single `str`/`Path`, an iterable, or a per-platform mapping. `()`/`[]`/`{}` disables search. See [Config Search](advanced/config-search.md). |
 | `encoding` | `str \| None` | `None` | Default text encoding for file sources. |
 
-### `VaultConfig`
+### VaultConfig
 
 ```python
 --8<-- "src/dature/config.py:vault-config"
@@ -460,7 +460,7 @@ the fully-loaded dataclass instance:
 
 ## Special Types
 
-### `SecretStr`
+### SecretStr
 
 Module: `dature.fields.secret_str`. A string wrapper that hides its value in `str()` and `repr()`.
 
@@ -473,7 +473,7 @@ Module: `dature.fields.secret_str`. A string wrapper that hides its value in `st
 | `__len__()` | `int` | Length of the underlying secret. |
 | `__eq__()`, `__hash__()` | — | Equality and hashing based on the secret value. |
 
-### `ByteSize`
+### ByteSize
 
 Module: `dature.fields.byte_size`. Parses human-readable byte sizes (`"1.5 GB"`, `"512 KiB"`) into an integer byte count.
 
@@ -489,7 +489,7 @@ Module: `dature.fields.byte_size`. Parses human-readable byte sizes (`"1.5 GB"`,
 | `__eq__()`, `__hash__()` | — | Equality and hashing based on byte count. |
 | `__lt__()`, `__le__()`, `__gt__()`, `__ge__()` | `bool` | Comparison operators based on byte count. |
 
-### `PaymentCardNumber`
+### PaymentCardNumber
 
 Module: `dature.fields.payment_card`. Luhn-validated payment card number with brand detection.
 
@@ -517,7 +517,7 @@ Constructor strips spaces and dashes, validates digit-only 12–19 chars, and ru
 
 ## Source Classes
 
-### File-based sources (inherit `FileSource`)
+### File-based sources (inherit FileSource)
 
 All file-based sources accept the `file` parameter from [`FileSource`](#filesourcesource) plus all common parameters from [`Source`](#source).
 
@@ -525,7 +525,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 
 `file_display()` returns the path as string, `"<stream>"` for file-like objects, or `None` when `file=None`.
 
-#### `JsonSource(FileSource)`
+#### JsonSource(FileSource)
 
 | | |
 |---|---|
@@ -535,7 +535,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 | **Error label** | `FILE` |
 | **String parsing** | `float`, `date`, `datetime`, `time`, `bytearray` from strings |
 
-#### `Json5Source(FileSource)`
+#### Json5Source(FileSource)
 
 | | |
 |---|---|
@@ -545,7 +545,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 | **Error label** | `FILE` |
 | **String parsing** | `str` (from JSON5 identifiers), `float`, `date`, `datetime`, `time`, `bytearray` from strings |
 
-#### `Yaml11Source(FileSource)`
+#### Yaml11Source(FileSource)
 
 | | |
 |---|---|
@@ -555,7 +555,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 | **Error label** | `FILE` |
 | **Native types** | `date`, `datetime` parsed natively by YAML. `time` from int, `bytearray` from strings |
 
-#### `Yaml12Source(FileSource)`
+#### Yaml12Source(FileSource)
 
 | | |
 |---|---|
@@ -565,7 +565,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 | **Error label** | `FILE` |
 | **Native types** | `date`, `datetime` parsed natively by YAML. `time`, `bytearray` from strings |
 
-#### `Toml10Source(FileSource)`
+#### Toml10Source(FileSource)
 
 | | |
 |---|---|
@@ -575,7 +575,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 | **Error label** | `FILE` |
 | **Native types** | `date`, `datetime`, `time` parsed natively by TOML. `bytearray`, `None`, `str \| None` from strings |
 
-#### `Toml11Source(FileSource)`
+#### Toml11Source(FileSource)
 
 | | |
 |---|---|
@@ -585,7 +585,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 | **Error label** | `FILE` |
 | **Native types** | `date`, `datetime`, `time` parsed natively by TOML. `bytearray`, `None`, `str \| None` from strings |
 
-#### `IniSource(FileSource)`
+#### IniSource(FileSource)
 
 | | |
 |---|---|
@@ -597,7 +597,7 @@ All file-based sources accept the `file` parameter from [`FileSource`](#filesour
 
 Section headers become top-level dict keys. Dotted sections (`database.pool`) create nested dicts. `prefix` selects a single section.
 
-### Flat key-value sources (inherit `FlatKeySource`)
+### Flat key-value sources (inherit FlatKeySource)
 
 All flat key-value sources accept `nested_sep`, `nested_resolve_strategy` and `nested_resolve` from [`FlatKeySource`](#flatkeysourcesource) plus all common parameters from [`Source`](#source).
 
@@ -605,7 +605,7 @@ All values are strings. Automatic parsing of `str`, `float`, `date`, `datetime`,
 
 Nesting is built from `nested_sep` (default `"__"`): `APP__DB__HOST=x` → `{"db": {"host": "x"}}`.
 
-#### `EnvSource(FlatKeySource)`
+#### EnvSource(FlatKeySource)
 
 | | |
 |---|---|
@@ -616,7 +616,7 @@ Nesting is built from `nested_sep` (default `"__"`): `APP__DB__HOST=x` → `{"db
 
 Keys are lowercased after stripping `prefix`. `resolve_location()` returns `env_var_name` instead of file/line info.
 
-#### `EnvFileSource(FlatKeySource)`
+#### EnvFileSource(FlatKeySource)
 
 | | |
 |---|---|
@@ -627,7 +627,7 @@ Keys are lowercased after stripping `prefix`. `resolve_location()` returns `env_
 
 Inherits from both `FileFieldMixin` and `EnvSource`, so accepts the `file` parameter. `resolve_location()` returns line range within the `.env` file.
 
-#### `DockerSecretsSource(FlatKeySource)`
+#### DockerSecretsSource(FlatKeySource)
 
 | | |
 |---|---|
@@ -643,14 +643,14 @@ Each file in `dir_` becomes a key (filename, lowercased) with the file content (
 | `dir_` | `FilePath` | — | Path to the Docker secrets directory (e.g. `/run/secrets`). Required. |
 | `encoding` | `str \| None` | `None` | Text encoding used to read each secret file. |
 
-### CLI sources (inherit `CliSource`)
+### CLI sources (inherit CliSource)
 
 All CLI sources accept the common parameters from [`Source`](#source). `CliSource`
 overrides `FlatKeySource`'s defaults: `nested_sep` defaults to `"--"` and
 `expand_env_vars` defaults to `"disabled"` (the shell already expands `$VAR` before
 argv reaches the parser).
 
-#### `ArgparseSource(CliSource)`
+#### ArgparseSource(CliSource)
 
 | | |
 |---|---|
@@ -667,12 +667,12 @@ Unset defaults (`argparse.SUPPRESS`) are suppressed so they don't leak into merg
 mode; explicit `bool` flags are kept. Subcommands emit a discriminator field plus
 their own prefixed sub-arguments.
 
-### Remote sources (inherit `RemoteSource`)
+### Remote sources (inherit RemoteSource)
 
 All remote sources accept the common parameters from [`Source`](#source). Values are
 fetched over the network via `_fetch()` rather than read from a local file.
 
-#### `VaultSource(RemoteSource)`
+#### VaultSource(RemoteSource)
 
 | | |
 |---|---|
@@ -699,7 +699,7 @@ Requires either `token` or `role_id`+`secret_id` (raises at construction if neit
 both are given). Raises `KeyError` on an invalid path, `PermissionError` on a
 forbidden/unauthorized response. See [`VaultConfig`](#vaultconfig) for global defaults.
 
-#### `AzureAppConfigSource(RemoteSource)`
+#### AzureAppConfigSource(RemoteSource)
 
 | | |
 |---|---|
@@ -725,7 +725,7 @@ forbidden/unauthorized response. See [`VaultConfig`](#vaultconfig) for global de
 to denest. Raises `KeyError` when no keys match, `PermissionError` on auth failure. See
 [AzureAppConfigSource](advanced/remote/azure_app_config.md) for details.
 
-#### `AzureKeyVaultSource(RemoteSource)`
+#### AzureKeyVaultSource(RemoteSource)
 
 | | |
 |---|---|
@@ -750,7 +750,7 @@ with [`AzureAppConfigSource`](#azureappconfigsourceremotesource) instead. Raises
 missing secret or an empty vault, `PermissionError` on auth failure. See
 [AzureKeyVaultSource](advanced/remote/azure_key_vault.md) for details.
 
-#### `GcpSecretManagerSource(RemoteSource)`
+#### GcpSecretManagerSource(RemoteSource)
 
 | | |
 |---|---|
@@ -790,11 +790,11 @@ call site instead of showing dature's loading internals.
 A `DatureError` raised directly from your own code (rather than by dature) keeps its full
 traceback, since only dature's internal frames are stripped.
 
-### `DatureError`
+### DatureError
 
 Base exception for all dature errors.
 
-### `ValidatorTypeError(DatureError)`
+### ValidatorTypeError(DatureError)
 
 Raised at schema-build time (not data-loading time) when a `V` predicate is
 incompatible with a field's type — e.g. `V.len()` applied to an `int` field. Signals
@@ -805,12 +805,12 @@ that the schema itself is ill-formed; raised before any configuration data is re
 | `field_path` | `list[str]` | Path to the offending field. |
 | `message` | `str` | Human-readable description of the incompatibility. |
 
-### `DatureErrorGroup(ExceptionGroup[DatureError])`
+### DatureErrorGroup(ExceptionGroup[DatureError])
 
 Base for all dature exception groups. Subclasses add domain-specific context; see
 `DatureConfigError`, `EnvVarExpandError`, `CrossRefExpandError` below.
 
-### `DatureConfigError(DatureErrorGroup)`
+### DatureConfigError(DatureErrorGroup)
 
 Aggregated config loading errors. Contains one or more `FieldLoadError` sub-exceptions.
 
@@ -821,7 +821,7 @@ Aggregated config loading errors. Contains one or more `FieldLoadError` sub-exce
 
 `str()` returns `"<name> loading errors (<count>)"`.
 
-### `FieldLoadError(DatureError)`
+### FieldLoadError(DatureError)
 
 Single field loading error with source location.
 
@@ -834,7 +834,7 @@ Single field loading error with source location.
 
 `str()` returns a formatted multi-line message with source context and caret pointing at the value.
 
-### `SourceLoadError(DatureError)`
+### SourceLoadError(DatureError)
 
 Source-level loading failure (e.g. file not found, parse error).
 
@@ -843,11 +843,11 @@ Source-level loading failure (e.g. file not found, parse error).
 | `message` | `str` | Error description. |
 | `location` | `SourceLocation \| None` | Source location, if available. |
 
-### `MergeConflictError(DatureConfigError)`
+### MergeConflictError(DatureConfigError)
 
 Raised with `strategy="raise_on_conflict"` when sources provide different values. Contains `MergeConflictFieldError` sub-exceptions.
 
-### `MergeConflictFieldError(DatureError)`
+### MergeConflictFieldError(DatureError)
 
 Per-field merge conflict.
 
@@ -857,11 +857,11 @@ Per-field merge conflict.
 | `message` | `str` | Conflict description. |
 | `locations` | `list[SourceLocation]` | Conflicting source locations. |
 
-### `FieldGroupError(DatureConfigError)`
+### FieldGroupError(DatureConfigError)
 
 Field group constraint violation. Contains `FieldGroupViolationError` sub-exceptions.
 
-### `FieldGroupViolationError(DatureError)`
+### FieldGroupViolationError(DatureError)
 
 Single field group violation.
 
@@ -874,18 +874,18 @@ Single field group violation.
 | `unchanged_sources` | `tuple[str, ...]` | Source names for unchanged fields. |
 | `source_index` | `int` | Index of the source that caused the violation. |
 
-### `EnvVarExpandError(DatureErrorGroup)`
+### EnvVarExpandError(DatureErrorGroup)
 
 Missing environment variables in `expand_env_vars="strict"` mode. Contains
 `MissingEnvVarError` sub-exceptions. The exception actually raised during config
 loading is `ConfigEnvVarExpandError` (below), which also carries `dataclass_name`.
 
-### `ConfigEnvVarExpandError(EnvVarExpandError, DatureConfigError)`
+### ConfigEnvVarExpandError(EnvVarExpandError, DatureConfigError)
 
 The concrete exception raised by `load()`/`Loader.load()` when env var expansion fails
 in strict mode. `str()` returns `"<dataclass_name> env expand errors (<count>)"`.
 
-### `MissingEnvVarError(DatureError)`
+### MissingEnvVarError(DatureError)
 
 Single missing env var.
 
@@ -897,7 +897,7 @@ Single missing env var.
 | `field_path` | `list[str]` | Field path, if known. |
 | `location` | `SourceLocation \| None` | Source location, if available. |
 
-### `CrossRefError(DatureError)`
+### CrossRefError(DatureError)
 
 Single failure resolving a `${@tag.key}` cross-source reference — see
 [Cross-Source References](advanced/cross_source_refs.md).
@@ -908,12 +908,12 @@ Single failure resolving a `${@tag.key}` cross-source reference — see
 | `message` | `str` | Human-readable failure description. |
 | `field_path` | `list[str]` | Field path, if known. |
 
-### `CrossRefExpandError(DatureErrorGroup)`
+### CrossRefExpandError(DatureErrorGroup)
 
 Aggregated cross-source reference errors. Contains one or more `CrossRefError`
 sub-exceptions.
 
-### `SourceLocation`
+### SourceLocation
 
 Frozen dataclass used in error messages to point at the source of a value.
 
@@ -928,7 +928,7 @@ Frozen dataclass used in error messages to point at the source of a value.
 | `env_var_value` | `str \| None` | Raw env var value for conflict reporting. |
 | `line_carets` | `list[CaretSpan] \| None` | `^^^`-style caret spans pointing at the offending substring(s) within `line_content`. |
 
-### `LineRange`
+### LineRange
 
 Frozen dataclass for file line ranges.
 
@@ -939,7 +939,7 @@ Frozen dataclass for file line ranges.
 
 `repr()` returns `"line 5"` or `"line 5-8"`.
 
-### `CaretSpan`
+### CaretSpan
 
 Frozen dataclass describing a `^^^` caret span within a `SourceLocation.line_content`
 line. Re-exported via `dature.errors`.

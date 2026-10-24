@@ -92,7 +92,7 @@ By default the decorator (like the function) does **not** retain its compiled en
 contrasts that default against the explicit `cache_engine=True` opt-in, which is what pays for
 the cheap warm reuse in section 3.
 
-### ENV (`os.environ` → typed dataclass)
+### ENV (os.environ → typed dataclass)
 
 | Library | Speed | vs | Memory (RSS) | vs |
 |---------|------:|---:|-------------:|---:|
@@ -103,7 +103,7 @@ the cheap warm reuse in section 3.
 | dature (decorator, `cache_engine=True`) | 1.3 ms | 8.2× | 102.3 KiB | 9.1× |
 | dynaconf | 3.7 ms | 22.8× | 11.7 KiB | baseline |
 
-### ENV file (`.env` → typed dataclass)
+### ENV file (.env → typed dataclass)
 
 | Library | Speed | vs | Memory (RSS) | vs |
 |---------|------:|---:|-------------:|---:|

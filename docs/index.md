@@ -44,46 +44,76 @@ Load config from YAML, JSON, TOML, INI, ENV files, environment variables, Docker
 === "pip"
 
     ```bash
-    pip install dature[yaml]    # YAML support (ruamel.yaml)
-    pip install dature[json5]   # JSON5 support
-    pip install dature[toml]    # TOML support (toml_rs)
-    pip install dature[secure]  # Secret detection heuristics
+    pip install dature[yaml]            # YAML (ruamel.yaml)
+    pip install dature[json5]           # JSON5
+    pip install dature[toml]            # TOML (toml_rs)
+    pip install dature[vault]           # HashiCorp Vault (hvac)
+    pip install dature[consul]          # Consul (py-consul)
+    pip install dature[etcd]            # etcd (etcd3gw)
+    pip install dature[zookeeper]       # Apache ZooKeeper (kazoo)
+    pip install dature[aws]             # AWS SSM & Secrets Manager (boto3)
+    pip install dature[azure-appconfig] # Azure App Configuration
+    pip install dature[azure-keyvault]  # Azure Key Vault
+    pip install dature[gcp]             # GCP Secret Manager
+    pip install dature[watch]           # File watching for background reload (watchdog)
+    pip install dature[secure]          # Secret detection heuristics
+    pip install dature[type-stubs]      # Type stubs for the integrations above (mypy/pyright users)
     ```
 
     Install everything:
 
     ```bash
-    pip install dature[yaml,json5,toml,secure]
+    pip install dature[yaml,json5,toml,vault,consul,etcd,zookeeper,aws,azure-appconfig,azure-keyvault,gcp,watch,secure]
     ```
 
 === "uv"
 
     ```bash
-    uv add dature[yaml]    # YAML support (ruamel.yaml)
-    uv add dature[json5]   # JSON5 support
-    uv add dature[toml]    # TOML support (toml_rs)
-    uv add dature[secure]  # Secret detection heuristics
+    uv add dature[yaml]            # YAML (ruamel.yaml)
+    uv add dature[json5]           # JSON5
+    uv add dature[toml]            # TOML (toml_rs)
+    uv add dature[vault]           # HashiCorp Vault (hvac)
+    uv add dature[consul]          # Consul (py-consul)
+    uv add dature[etcd]            # etcd (etcd3gw)
+    uv add dature[zookeeper]       # Apache ZooKeeper (kazoo)
+    uv add dature[aws]             # AWS SSM & Secrets Manager (boto3)
+    uv add dature[azure-appconfig] # Azure App Configuration
+    uv add dature[azure-keyvault]  # Azure Key Vault
+    uv add dature[gcp]             # GCP Secret Manager
+    uv add dature[watch]           # File watching for background reload (watchdog)
+    uv add dature[secure]          # Secret detection heuristics
+    uv add dature[type-stubs]      # Type stubs for the integrations above (mypy/pyright users)
     ```
 
     Install everything:
 
     ```bash
-    uv add dature[yaml,json5,toml,secure]
+    uv add dature[yaml,json5,toml,vault,consul,etcd,zookeeper,aws,azure-appconfig,azure-keyvault,gcp,watch,secure]
     ```
 
 === "poetry"
 
     ```bash
-    poetry add dature[yaml]    # YAML support (ruamel.yaml)
-    poetry add dature[json5]   # JSON5 support
-    poetry add dature[toml]    # TOML support (toml_rs)
-    poetry add dature[secure]  # Secret detection heuristics
+    poetry add dature[yaml]            # YAML (ruamel.yaml)
+    poetry add dature[json5]           # JSON5
+    poetry add dature[toml]            # TOML (toml_rs)
+    poetry add dature[vault]           # HashiCorp Vault (hvac)
+    poetry add dature[consul]          # Consul (py-consul)
+    poetry add dature[etcd]            # etcd (etcd3gw)
+    poetry add dature[zookeeper]       # Apache ZooKeeper (kazoo)
+    poetry add dature[aws]             # AWS SSM & Secrets Manager (boto3)
+    poetry add dature[azure-appconfig] # Azure App Configuration
+    poetry add dature[azure-keyvault]  # Azure Key Vault
+    poetry add dature[gcp]             # GCP Secret Manager
+    poetry add dature[watch]           # File watching for background reload (watchdog)
+    poetry add dature[secure]          # Secret detection heuristics
+    poetry add dature[type-stubs]      # Type stubs for the integrations above (mypy/pyright users)
     ```
 
     Install everything:
 
     ```bash
-    poetry add dature[yaml,json5,toml,secure]
+    poetry add dature[yaml,json5,toml,vault,consul,etcd,zookeeper,aws,azure-appconfig,azure-keyvault,gcp,watch,secure]
     ```
 
 ## Quick Start

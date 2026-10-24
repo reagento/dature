@@ -92,7 +92,7 @@ nothing else changes. `Json5Source` behaves exactly like `JsonSource`.
     --8<-- "docs/examples/advanced/strict_mode/strict_env_file.stderr"
     ```
 
-## `strict="warn"`
+## strict="warn"
 
 Instead of raising, `"warn"` logs each unknown key and lets the load continue:
 
@@ -104,7 +104,7 @@ Instead of raising, `"warn"` logs each unknown key and lets the load continue:
 --8<-- "docs/examples/advanced/strict_mode/strict_warn.stdout"
 ```
 
-## `EnvSource` Without a Prefix
+## EnvSource Without a Prefix
 
 `EnvSource` reads from the whole process environment. Without a `prefix`, *every* environment
 variable is a candidate key — in a real shell that's easily 30+ variables, none of which have

@@ -59,7 +59,7 @@ Example with `cache=timedelta(minutes=15)`:
 
 The first load in a window has an effectively shortened TTL (up to one period less than the full duration). This is the standard cron-style trade-off and matches the intuitive "invalidate every N minutes" mental model.
 
-## `stale_on_error`: keeping the last good config
+## stale_on_error: keeping the last good config
 
 When a TTL window expires (or `when=` routing changes), the next `.load()` reloads from sources.
 If that reload fails — a `Vault`/`Consul` outage, a YAML file rewritten mid-deploy — `stale_on_error`
@@ -71,7 +71,7 @@ decides what happens to the config that was already loaded successfully:
 | `"retry"` | Return the previous config but leave the TTL window as-is — the **next** call retries the reload immediately |
 | `"raise"` | Propagate the error (dature's original behavior, before `stale_on_error` existed) |
 
-=== "stale_on_error=\"keep\""
+=== "stale_on_error="keep""
 
     Reload fails → the previous config is returned and the TTL window restarts, so the broken
     source is not retried until the new window expires too.
@@ -80,7 +80,7 @@ decides what happens to the config that was already loaded successfully:
     --8<-- "docs/examples/advanced/caching/advanced_caching_stale_on_error_keep.py"
     ```
 
-=== "stale_on_error=\"retry\""
+=== "stale_on_error="retry""
 
     Reload fails → the previous config is returned but the TTL window is left as-is, so the
     very next call retries the reload immediately.
@@ -89,7 +89,7 @@ decides what happens to the config that was already loaded successfully:
     --8<-- "docs/examples/advanced/caching/advanced_caching_stale_on_error_retry.py"
     ```
 
-=== "stale_on_error=\"raise\""
+=== "stale_on_error="raise""
 
     Reload fails → the error propagates, same as dature's behavior before `stale_on_error` existed.
 
@@ -113,7 +113,7 @@ Notes:
 - `stale_on_error=None` (the default) falls back to `Dature(loading={"stale_on_error": ...})`
   (or the `DATURE_LOADING__STALE_ON_ERROR` env var), same as `cache`/`cache_engine`.
 
-## Function-mode caching: `Loader`
+## Function-mode caching: Loader
 
 `dature.load(src, schema=Cls)` is a **thin shortcut** that constructs a throwaway `Loader` and calls `.load()` once. Repeated `load(...)` calls **do not share a cache** — each call is a fresh load.
 
@@ -134,7 +134,7 @@ The `Loader` carries all the load-time parameters and the cache state. Identity 
 
 `Loader` supports the same constructor parameters as `dature.load(...)` for function mode.
 
-## `cache_engine`: retaining the compiled engine
+## cache_engine: retaining the compiled engine
 
 `cache` caches the *loaded result*. `cache_engine` is a separate knob that controls whether the
 **compiled engine** dature builds internally to convert raw source data into your dataclass is
@@ -164,7 +164,7 @@ loader = Loader(source, schema=Config, cache=False, cache_engine=True)
 restarting the process, attach a background trigger with `reload=`; see
 [Background Reloading](reloading.md).
 
-## Sharing a raw read across sources: `shared_read`
+## Sharing a raw read across sources: shared_read
 
 Everything above caches at the `Loader` level — a single schema's fully-loaded result, or its
 compiled engine. `shared_read` is a third, lower-level cache that lives on the `Source` itself,

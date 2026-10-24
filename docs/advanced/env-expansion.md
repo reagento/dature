@@ -42,7 +42,8 @@ String values in all file formats support environment variable expansion:
 
 The `"default"` mode is named so because it matches the behavior of Python's built-in `os.path.expandvars()` — missing variables are kept as-is rather than being replaced with empty strings or raising errors.
 
-Set the mode on `Source`:
+Set the mode on `Source`. `dature.load()` also accepts `expand_env_vars` as a global default for all
+sources; a source's own value overrides it:
 
 === "Python"
 
@@ -56,30 +57,28 @@ Set the mode on `Source`:
     --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_strict.yaml"
     ```
 
-For merge mode, pass `expand_env_vars` to `dature.load()` as default for all sources:
+The same file under each mode, with `KNOWN_HOST` set and `UNSET_VAR` unset:
 
-=== "Python"
+```yaml title="advanced_env_expansion_merge.yaml"
+--8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge.yaml"
+```
+
+=== "default"
 
     ```python
-    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge.py:example"
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge_default.py:example"
     ```
 
-=== "advanced_env_expansion_merge_default.yaml"
+=== "empty"
 
-    ```yaml
-    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge_default.yaml"
+    ```python
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge_empty.py:example"
     ```
 
-=== "advanced_env_expansion_merge_empty.yaml"
+=== "disabled"
 
-    ```yaml
-    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge_empty.yaml"
-    ```
-
-=== "advanced_env_expansion_merge_disabled.yaml"
-
-    ```yaml
-    --8<-- "docs/examples/advanced/env_expansion/sources/advanced_env_expansion_merge_disabled.yaml"
+    ```python
+    --8<-- "docs/examples/advanced/env_expansion/advanced_env_expansion_merge_disabled.py:example"
     ```
 
 In `"strict"` mode, all missing variables are collected and reported at once:
