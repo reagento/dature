@@ -1,13 +1,25 @@
 """Tests for providers/model.py."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, make_dataclass
 from typing import Any
 
 import pytest
-from adaptix import NameStyle, Provider, Retort, name_mapping
+from adaptix import NameStyle, Provider, Retort, loader, name_mapping
 from adaptix.load_error import LoadError
 
-from dature.providers.model import ImplicitNestedDefaultProvider, RequireUnsafeFactoryFieldsProvider
+from dature.coercion.base import (
+    byte_size_from_string,
+    payment_card_number_from_string,
+    secret_str_from_string,
+)
+from dature.fields.byte_size import ByteSize
+from dature.fields.payment_card import PaymentCardNumber
+from dature.fields.secret_str import SecretStr
+from dature.providers.model import (
+    ImplicitNestedDefaultProvider,
+    ModelToDictProvider,
+    RequireUnsafeFactoryFieldsProvider,
+)
 
 
 @dataclass
@@ -194,3 +206,33 @@ class TestImplicitNestedDefaultProvider:
         result = retort.load({}, _User)
 
         assert result == _User(address=_Address())
+
+
+class TestModelToDictProvider:
+    @pytest.mark.parametrize(
+        ("field_type", "type_loader", "raw", "expected"),
+        [
+            (SecretStr, secret_str_from_string, "secret-password", SecretStr("secret-password")),
+            (
+                PaymentCardNumber,
+                payment_card_number_from_string,
+                "4111111111111111",
+                PaymentCardNumber("4111111111111111"),
+            ),
+            (ByteSize, byte_size_from_string, "1KB", ByteSize("1KB")),
+        ],
+        ids=["secret_str", "payment_card_number", "byte_size"],
+    )
+    def test_custom_loader_type_is_not_converted_to_dict(
+        self,
+        field_type: type,
+        type_loader: Any,
+        raw: str,
+        expected: Any,
+    ):
+        schema = make_dataclass("Config", [("value", field_type)])
+        retort = Retort(recipe=[ModelToDictProvider(), loader(field_type, type_loader)])
+
+        result: dict[str, Any] = retort.load({"value": raw}, schema)
+
+        assert result == {"value": expected}

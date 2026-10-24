@@ -215,7 +215,7 @@ class ModelToDictProvider(_TrackingCompilerMixin, TypedDictLayoutMixin, ModelLoa
         request: LocatedRequest[Loader[ProbeDict]],
     ) -> Loader[ProbeDict]:
         loc_type = getattr(request.last_loc, "type", None)
-        if loc_type in self._exclude:
+        if loc_type in self._exclude or not (isinstance(loc_type, type) and is_dataclass(loc_type)):
             raise CannotProvide
         return super().provide_loader(mediator, request)  # type: ignore[arg-type]
 
