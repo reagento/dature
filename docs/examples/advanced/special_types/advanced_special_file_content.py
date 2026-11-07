@@ -7,7 +7,9 @@ SOURCES_DIR = Path(__file__).parent / "sources"
 config_file = SOURCES_DIR / "advanced_special_file_content.json"
 config_template = config_file.read_text()
 
-config_with_paths = config_template.replace("/app/secrets", str(SOURCES_DIR))
+config_with_paths = config_template.replace(
+    "/app/secrets", SOURCES_DIR.as_posix()
+)
 with tempfile.NamedTemporaryFile(
     mode="w",
     suffix=".json",
