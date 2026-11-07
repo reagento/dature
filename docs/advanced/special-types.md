@@ -55,10 +55,25 @@ Type aliases decoded from Base64 string in the config. `Base64UrlStr` decodes to
 
 A path to an existing file. The config value is the path; the file content is available through `data`, and the path through `path`:
 
-```python
---8<-- "docs/examples/advanced/special_types/advanced_special_file_content.py"
-```
+=== "Python"
 
+    ```python
+    --8<-- "docs/examples/advanced/special_types/advanced_special_file_content.py:example"
+    ```
+
+=== "advanced_special_file_content.json"
+
+    ```json
+    --8<-- "docs/examples/advanced/special_types/sources/advanced_special_file_content.json"
+    ```
+
+=== "db_password.txt"
+
+    ```
+    --8<-- "docs/examples/advanced/special_types/sources/db_password.txt"
+    ```
+
+- Relative paths are resolved from the current working directory, not from the config file.
 - `FileContent` and `FileContent[str]` read the file as text, `FileContent[bytes]` reads it as bytes.
 - Options are optional and passed via `Annotated[FileContent, FileOptions(...)]`:
     - `encoding` (default `"utf-8"`), text mode only.

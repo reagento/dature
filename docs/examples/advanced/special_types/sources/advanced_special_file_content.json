@@ -1,0 +1,5 @@
+{
+  "password": "/app/secrets/db_password.txt",
+  "stripped_password": "/app/secrets/db_password.txt",
+  "raw_bytes": "/app/secrets/db_password.txt"
+}
