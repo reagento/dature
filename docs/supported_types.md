@@ -289,6 +289,7 @@ Always encoded as a string.
 | SecretStr         | `SecretStr("supersecret123")`               | `supersecret123`     | masked on repr       |
 | PaymentCardNumber | `PaymentCardNumber("4111111111111111")`     | `4111111111111111`   | Luhn-validated       |
 | ByteSize          | `ByteSize("1.5 GB")`                        | `1.5 GB`             | parses unit suffixes |
+| FileContent       | `FileContent("/run/secrets/db_password")`   | `/run/secrets/db_password` | path must be an existing file, content read lazily |
 
 For runtime behavior (masking, size comparison, Luhn validation, Base64 decoding), see [Special Types](advanced/special-types.md).
 

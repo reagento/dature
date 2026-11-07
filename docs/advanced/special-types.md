@@ -51,4 +51,20 @@ Type aliases decoded from Base64 string in the config. `Base64UrlStr` decodes to
 --8<-- "docs/examples/advanced/special_types/advanced_special_base64.py"
 ```
 
+## FileContent
+
+A path to an existing file. The config value is the path; the file content is available through `data`, and the path through `path`:
+
+```python
+--8<-- "docs/examples/advanced/special_types/advanced_special_file_content.py"
+```
+
+- `FileContent` and `FileContent[str]` read the file as text, `FileContent[bytes]` reads it as bytes.
+- Options are optional and passed via `Annotated[FileContent, FileOptions(...)]`:
+    - `encoding` (default `"utf-8"`), text mode only.
+    - `strip` (default `False`), strips surrounding whitespace; not allowed for `FileContent[bytes]`.
+    - `cache_data` (default `False`), reads the file once, on the first `data` access, and reuses the result. A failed first read is not cached.
+- While loading, only the existence of the file is checked. By default `data` is **not** cached: the file is read on every access (with `cache_data=True` the content is read once and stays in memory for the lifetime of the object), so read errors (a removed file, a wrong encoding) are raised at that moment, outside of config loading and without a field path.
+- `repr()` and `str()` show only the path, never the content. The value is handled like a regular string field by `masking_mode`.
+
 

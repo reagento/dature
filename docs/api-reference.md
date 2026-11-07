@@ -498,6 +498,28 @@ Module: `dature.fields.byte_size`. Parses human-readable byte sizes (`"1.5 GB"`,
 | `__eq__()`, `__hash__()` | — | Equality and hashing based on byte count. |
 | `__lt__()`, `__le__()`, `__gt__()`, `__ge__()` | `bool` | Comparison operators based on byte count. |
 
+### FileContent
+
+Module: `dature.fields.file_content`. Generic path to an existing file: `FileContent[str]` (default) reads text, `FileContent[bytes]` reads bytes. The content is read lazily: on every `data` access by default, or once on the first access with `cache_data=True`.
+
+| Method / Property | Return type | Description |
+|-------------------|-------------|-------------|
+| `FileContent(path, options=None, *, mode="r")` | — | Constructor. `mode` is `"r"` or `"rb"`. |
+| `path` | `Path` | Path to the file. |
+| `data` | `str` or `bytes` | Reads the file and returns its content. |
+| `__repr__()` | `str` | Returns `"FileContent(path=...)"`, never the content. |
+| `__eq__()`, `__hash__()` | — | Equality and hashing based on path, mode and options. |
+
+### FileOptions
+
+Module: `dature.fields.file_content`. Optional settings passed via `Annotated[FileContent, FileOptions(...)]`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `encoding` | `str` | `"utf-8"` | Text encoding, text mode only. |
+| `strip` | `bool` | `False` | Strip surrounding whitespace. Not allowed for `FileContent[bytes]`. |
+| `cache_data` | `bool` | `False` | Read the file on the first `data` access and reuse the result. By default the file is read on every access. |
+
 ### PaymentCardNumber
 
 Module: `dature.fields.payment_card`. Luhn-validated payment card number with brand detection.

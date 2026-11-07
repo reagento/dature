@@ -1,0 +1,1 @@
+Added the `FileContent` field type: a path to an existing file that exposes the file's `path` and lazily read `data`. `FileContent[str]` (the default) reads text, `FileContent[bytes]` reads bytes, and `Annotated[FileContent, FileOptions(...)]` configures `encoding`, `strip` and `cache_data`. Only the existence of the file is checked while loading.
