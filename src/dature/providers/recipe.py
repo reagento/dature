@@ -26,6 +26,7 @@ from dature.fields.secret_str import SecretStr
 from dature.protocols import DataclassInstance
 from dature.providers.alias import AliasProvider
 from dature.providers.compiler import TrackingModelLoaderProvider
+from dature.providers.file_content import FileContentProvider
 from dature.providers.model import ImplicitNestedDefaultProvider
 from dature.providers.typed_dict import TypedDictModelLoaderProvider
 from dature.sources.base import bytes_value_loaders, remote_value_loaders, string_value_loaders
@@ -110,6 +111,7 @@ _DEFAULT_LOADERS: Final[tuple[Provider, ...]] = (
     loader(SecretStr, secret_str_from_string),
     loader(PaymentCardNumber, payment_card_number_from_string),
     loader(ByteSize, byte_size_from_string),
+    FileContentProvider(),
 )
 
 

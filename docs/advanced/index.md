@@ -49,7 +49,7 @@ Control how field values are expanded and interpreted.
 | Page | What you'll learn |
 |------|-------------------|
 | [ENV Expansion](env-expansion.md) | Expand `${VAR}` references inside config values |
-| [Special Types](special-types.md) | `SecretStr`, `ByteSize`, `PaymentCardNumber`, `URL`, `Base64Url*` |
+| [Special Types](special-types.md) | `SecretStr`, `ByteSize`, `PaymentCardNumber`, `FileContent`, `URL`, `Base64Url*` |
 
 ## Observability
 
