@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from watchdog.observers.polling import PollingObserver
 
 from dature import JsonSource, Loader
 from dature.reloading.file_watch import SHARED_OBSERVER, FileWatchTrigger
@@ -95,7 +96,6 @@ class TestFileWatchTrigger:
         assert trigger._poll() is True
 
     def test_two_triggers_share_one_observer(self, tmp_path: Path) -> None:
-        pytest.importorskip("watchdog")
         first = tmp_path / "a.json"
         second = tmp_path / "b.json"
         first.write_text("{}")
@@ -106,12 +106,73 @@ class TestFileWatchTrigger:
         trigger_a._prepare(ReloadContext(schema_name="A", file_paths=(first,)))
         trigger_b._prepare(ReloadContext(schema_name="B", file_paths=(second,)))
 
-        assert SHARED_OBSERVER.get() is SHARED_OBSERVER.get()
+        try:
+            assert SHARED_OBSERVER.get() is SHARED_OBSERVER.get()
+        finally:
+            trigger_a.stop()
+            trigger_b.stop()
+
+    @pytest.mark.parametrize("stop_calls", [1, 2])
+    def test_stop_unschedules_watch(self, tmp_path: Path, stop_calls: int) -> None:
+        watched = tmp_path / "config.json"
+        watched.write_text("{}")
+        fake_observer = _FakeObserver()
+
+        trigger = FileWatchTrigger(observer=fake_observer)
+        trigger._prepare(ReloadContext(schema_name="_Config", file_paths=(watched,)))
+
+        for _ in range(stop_calls):
+            trigger.stop()
+
+        assert fake_observer.unscheduled == [str(tmp_path)]
+        assert fake_observer._handlers == {}
+
+    def test_stop_without_start_is_safe(self) -> None:
+        fake_observer = _FakeObserver()
+        trigger = FileWatchTrigger(observer=fake_observer)
+
+        trigger.stop()
+
+        assert fake_observer.unscheduled == []
+
+    def test_stop_keeps_watch_used_by_another_trigger(self, tmp_path: Path) -> None:
+        first = tmp_path / "a.json"
+        second = tmp_path / "b.json"
+        first.write_text("{}")
+        second.write_text("{}")
+
+        fake_observer = _FakeObserver()
+        trigger_a = FileWatchTrigger(observer=fake_observer)
+        trigger_b = FileWatchTrigger(observer=fake_observer)
+        trigger_a._prepare(ReloadContext(schema_name="A", file_paths=(first,)))
+        trigger_b._prepare(ReloadContext(schema_name="B", file_paths=(second,)))
+
+        trigger_a.stop()
+
+        assert fake_observer.unscheduled == []
+
+        trigger_b.stop()
+
+        assert fake_observer.unscheduled == [str(tmp_path)]
+
+    def test_stop_releases_emitters_on_real_observer(self, tmp_path: Path) -> None:
+        watched = tmp_path / "config.json"
+        watched.write_text("{}")
+        poller = PollingObserver(timeout=0.1)
+        poller.start()
+        try:
+            trigger = FileWatchTrigger(observer=poller)
+            trigger._prepare(ReloadContext(schema_name="_Config", file_paths=(watched,)))
+            assert len(poller.emitters) == 1
+
+            trigger.stop()
+
+            assert poller.emitters == set()
+        finally:
+            poller.stop()
+            poller.join(timeout=5.0)
 
     def test_real_watchdog_smoke(self, tmp_path: Path, scheduler: Scheduler) -> None:
-        pytest.importorskip("watchdog")
-        from watchdog.observers.polling import PollingObserver  # noqa: PLC0415
-
         watched = tmp_path / "config.json"
         watched.write_text('{"host": "h", "port": 1}')
         source = JsonSource(file=watched)
@@ -147,8 +208,21 @@ class _FakeEvent:
 
 
 class _FakeObserver:
+    """Mimics watchdog's dedup of watches: the watch for a directory is its path string."""
+
     def __init__(self) -> None:
         self.scheduled: list[tuple[Any, str]] = []
+        self._handlers: dict[str, set[Any]] = {}
+        self.unscheduled: list[str] = []
 
-    def schedule(self, handler: Any, path: str, *, recursive: bool = False) -> None:  # noqa: ARG002
+    def schedule(self, handler: Any, path: str, *, recursive: bool = False) -> str:  # noqa: ARG002
         self.scheduled.append((handler, path))
+        self._handlers.setdefault(path, set()).add(handler)
+        return path
+
+    def remove_handler_for_watch(self, handler: Any, watch: str) -> None:
+        self._handlers[watch].remove(handler)
+
+    def unschedule(self, watch: str) -> None:
+        del self._handlers[watch]
+        self.unscheduled.append(watch)

@@ -1,0 +1,1 @@
+`FileWatchTrigger.stop()` now detaches its handler from the watchdog observer and unschedules the watch once no other trigger uses it, so per-directory emitter threads (and their directory handles on Windows) are no longer leaked after a `Loader` stops reloading.
