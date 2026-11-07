@@ -47,7 +47,6 @@ class MockFlatKeySource(FlatKeySource):
         return self.test_data
 
 
-@dataclass(kw_only=True)
 class TestTransformToDataclass:
     def test_basic_transform(self):
         @dataclass

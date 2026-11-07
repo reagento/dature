@@ -4,6 +4,7 @@ Requires ``watchdog`` (extra ``dature[watch]``); by default shares one process-w
 ``Observer`` across every ``FileWatchTrigger`` instance.
 """
 
+import contextlib
 import threading
 from pathlib import Path
 from typing import Any
@@ -86,11 +87,28 @@ class FileWatchTrigger(ReloadTrigger):
         self._observer = observer
         self._dirty = threading.Event()
         self._paths: tuple[Path, ...] = ()
+        self._handler: _DirtyHandler | None = None
+        self._watches: list[Any] = []
+        self._watch_lock = threading.Lock()
         super().__init__(interval=debounce, scheduler=scheduler)
 
     def _prepare(self, context: ReloadContext) -> None:
         require_dep("watchdog", "watch")
 
+        paths = self._resolve_paths(context)
+        observer = self._observer if self._observer is not None else SHARED_OBSERVER.get()
+        handler = _DirtyHandler(frozenset(p.name for p in paths), self._dirty)
+        watches = [
+            observer.schedule(handler, str(directory), recursive=False) for directory in {p.parent for p in paths}
+        ]
+
+        with self._watch_lock:
+            self._paths = paths
+            self._observer = observer
+            self._handler = handler
+            self._watches = watches
+
+    def _resolve_paths(self, context: ReloadContext) -> tuple[Path, ...]:
         candidates = self._explicit_paths or context.file_paths
         paths = tuple(p for p in candidates if p.parent.exists())
         if not paths:
@@ -99,13 +117,32 @@ class FileWatchTrigger(ReloadTrigger):
                 f"(no FileSource with a resolved path). Pass paths=[...] explicitly."
             )
             raise ValueError(msg)
-        self._paths = paths
+        return paths
 
-        observer = self._observer if self._observer is not None else SHARED_OBSERVER.get()
-        names = frozenset(p.name for p in paths)
-        handler = _DirtyHandler(names, self._dirty)
-        for directory in {p.parent for p in paths}:
-            observer.schedule(handler, str(directory), recursive=False)
+    def stop(self) -> None:
+        """Detach this trigger's handler from the observer, then stop polling. Idempotent.
+
+        The observer itself (possibly the process-wide shared one) keeps running; a watch is
+        unscheduled only when no other trigger still uses it, which releases the per-directory
+        emitter thread and, on Windows, its directory handle.
+        """
+        with self._watch_lock:
+            handler = self._handler
+            watches = self._watches
+            self._handler = None
+            self._watches = []
+
+        if handler is not None:
+            for watch in watches:
+                with contextlib.suppress(KeyError):
+                    self._observer.remove_handler_for_watch(handler, watch)
+                # watchdog dedupes watches by (path, recursive, filter), so another trigger may
+                # still use this one: unschedule only once no handler is left on it.
+                if not self._observer._handlers.get(watch):  # noqa: SLF001
+                    with contextlib.suppress(KeyError):
+                        self._observer.unschedule(watch)
+
+        super().stop()
 
     def _poll(self) -> bool:
         if self._dirty.is_set():
