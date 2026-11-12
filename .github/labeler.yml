@@ -5,7 +5,7 @@ feature:
 chore:
   - head-branch: ['^chore/.*']
 documentation:
-  - head-branch: ['^docs/.*']
+  - head-branch: ['^docs/.*', "^doc/.*"]
 refactor:
   - head-branch: ['^refactor/.*']
 test:
