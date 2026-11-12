@@ -14,7 +14,7 @@ uv sync --all-extras --all-groups
 
 1. Open an issue first for anything non-trivial (new feature, public API change).
 2. Create a branch whose prefix matches the change type — the PR labeler uses it:
-   `fix/`, `bugfix/`, `bug/`, `feat/`, `feature/`, `docs/`, `refactor/`, `test/`, `chore/`, `ci/`, `removal/`, `deps/`.
+   `fix/`, `bugfix/`, `bug/`, `feat/`, `feature/`, `docs/`, `doc/`, `refactor/`, `test/`, `chore/`, `ci/`, `removal/`, `deps/`.
 3. Make the change. Rules of thumb:
    - Zero required dependencies; optional ones live behind extras and are imported inside the function that needs them.
    - Type hints everywhere; the package ships `py.typed`.
